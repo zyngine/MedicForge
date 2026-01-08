@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, Badge, Button, Dropdown, DropdownItem, DropdownSeparator } from "@/components/ui";
+import { NotificationBell } from "@/components/notifications";
 import {
   Stethoscope,
   Menu,
   X,
-  Bell,
   Search,
   ChevronDown,
   LogOut,
@@ -162,23 +162,7 @@ export function DashboardLayout({
             {/* Right side */}
             <div className="flex items-center gap-2">
               {/* Notifications */}
-              <Dropdown
-                trigger={
-                  <button className="relative p-2 hover:bg-muted rounded-md">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
-                  </button>
-                }
-                align="right"
-                className="w-80"
-              >
-                <div className="p-3 border-b">
-                  <h4 className="font-medium">Notifications</h4>
-                </div>
-                <div className="p-3 text-sm text-muted-foreground text-center">
-                  No new notifications
-                </div>
-              </Dropdown>
+              <NotificationBell />
 
               {/* User menu */}
               <Dropdown
