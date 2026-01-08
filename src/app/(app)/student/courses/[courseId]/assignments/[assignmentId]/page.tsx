@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -12,6 +12,7 @@ import {
   Alert,
   Spinner,
   Badge,
+  Textarea,
 } from "@/components/ui";
 import {
   Clock,
@@ -20,6 +21,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Send,
+  Upload,
+  FileText,
+  X,
+  Paperclip,
 } from "lucide-react";
 
 interface Question {
@@ -51,11 +56,19 @@ interface Submission {
   submitted_at: string | null;
 }
 
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  path: string;
+}
+
 export default function AssignmentPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
   const assignmentId = params.assignmentId as string;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -74,6 +87,12 @@ export default function AssignmentPage() {
     total: number;
     percentage: number;
   } | null>(null);
+
+  // Written assignment state
+  const [writtenContent, setWrittenContent] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [writtenSubmitted, setWrittenSubmitted] = useState(false);
 
   useEffect(() => {
     fetchAssignment();
@@ -160,8 +179,72 @@ export default function AssignmentPage() {
     }
   };
 
+  const handleStartWritten = () => {
+    setIsStarted(true);
+  };
+
   const handleAnswerSelect = (questionId: string, answer: number | string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Not authenticated");
+
+      for (const file of Array.from(files)) {
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        }
+
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${assignmentId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("submissions")
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        setUploadedFiles((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            path: fileName,
+          },
+        ]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload file");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveFile = async (filePath: string) => {
+    const supabase = createClient();
+
+    try {
+      await supabase.storage.from("submissions").remove([filePath]);
+      setUploadedFiles((prev) => prev.filter((f) => f.path !== filePath));
+    } catch (err) {
+      console.error("Failed to remove file:", err);
+    }
   };
 
   const handleSubmit = async () => {
@@ -217,13 +300,25 @@ export default function AssignmentPage() {
 
       const attemptNumber = previousSubmissions.length + 1;
 
+      // Build content based on assignment type
+      let content;
+      if (assignment.type === "quiz") {
+        content = JSON.stringify({ answers });
+      } else if (assignment.type === "written") {
+        content = JSON.stringify({
+          text: writtenContent,
+          files: uploadedFiles
+        });
+      }
+
       // Create submission
       const { error: submitError } = await supabase.from("submissions").insert({
         tenant_id: profile.tenant_id,
         assignment_id: assignmentId,
         student_id: user.id,
         attempt_number: attemptNumber,
-        content: JSON.stringify({ answers }),
+        content,
+        file_urls: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : null,
         submitted_at: new Date().toISOString(),
         status: assignment.type === "quiz" ? "graded" : "submitted",
         raw_score: assignment.type === "quiz" ? score : null,
@@ -236,8 +331,10 @@ export default function AssignmentPage() {
         setSubmissionResult({
           score,
           total: totalPoints,
-          percentage: Math.round((score / totalPoints) * 100),
+          percentage: totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0,
         });
+      } else if (assignment.type === "written") {
+        setWrittenSubmitted(true);
       }
 
       setIsStarted(false);
@@ -252,6 +349,12 @@ export default function AssignmentPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (isLoading) {
@@ -274,7 +377,30 @@ export default function AssignmentPage() {
     return <div>Assignment not found</div>;
   }
 
-  // Show results after submission
+  // Show written assignment submission success
+  if (writtenSubmitted) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-success/20">
+              <CheckCircle className="h-10 w-10 text-success" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Submission Received!</h2>
+            <p className="text-muted-foreground mb-6">
+              Your assignment has been submitted successfully. Your instructor will review and grade it soon.
+            </p>
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Course
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show quiz results after submission
   if (submissionResult) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
@@ -311,6 +437,127 @@ export default function AssignmentPage() {
                   Try Again
                 </Button>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Written assignment in progress
+  if (isStarted && assignment.type === "written") {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => setIsStarted(false)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <Badge>{assignment.type}</Badge>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{assignment.title}</CardTitle>
+            {assignment.instructions && (
+              <p className="text-sm text-muted-foreground mt-2">{assignment.instructions}</p>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Text Editor */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Your Response</label>
+              <Textarea
+                value={writtenContent}
+                onChange={(e) => setWrittenContent(e.target.value)}
+                placeholder="Write your response here..."
+                rows={12}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                {writtenContent.length} characters
+              </p>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Attachments</label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+                />
+                <Paperclip className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Drag and drop files here, or
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Browse Files
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Max file size: 10MB. Supported: PDF, DOC, DOCX, TXT, PNG, JPG
+                </p>
+              </div>
+
+              {/* Uploaded Files List */}
+              {uploadedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {uploadedFiles.map((file) => (
+                    <div
+                      key={file.path}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveFile(file.path)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                isLoading={isSubmitting}
+                disabled={!writtenContent.trim() && uploadedFiles.length === 0}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Submit Assignment
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -437,9 +684,8 @@ export default function AssignmentPage() {
     );
   }
 
-  // Pre-quiz screen
+  // Pre-assignment screen (for all types)
   const canAttempt = previousSubmissions.length < (assignment.attempts_allowed ?? 1);
-  const lastSubmission = previousSubmissions[0];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -468,14 +714,14 @@ export default function AssignmentPage() {
           {assignment.instructions && (
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-medium mb-2">Instructions</h4>
-              <p className="text-sm text-muted-foreground">{assignment.instructions}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{assignment.instructions}</p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 border rounded-lg">
               <p className="text-sm text-muted-foreground">Points</p>
-              <p className="text-xl font-semibold">{assignment.points_possible}</p>
+              <p className="text-xl font-semibold">{assignment.points_possible ?? "N/A"}</p>
             </div>
             {assignment.time_limit_minutes && (
               <div className="p-4 border rounded-lg">
@@ -500,7 +746,7 @@ export default function AssignmentPage() {
           {/* Previous attempts */}
           {previousSubmissions.length > 0 && (
             <div>
-              <h4 className="font-medium mb-3">Previous Attempts</h4>
+              <h4 className="font-medium mb-3">Previous Submissions</h4>
               <div className="space-y-2">
                 {previousSubmissions.map((sub) => (
                   <div
@@ -513,11 +759,18 @@ export default function AssignmentPage() {
                         {sub.submitted_at && new Date(sub.submitted_at).toLocaleString()}
                       </span>
                     </div>
-                    {sub.final_score !== null && (
-                      <Badge variant={sub.final_score >= 70 ? "success" : "warning"}>
-                        {sub.final_score}%
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {sub.status && (
+                        <Badge variant={sub.status === "graded" ? "success" : "secondary"}>
+                          {sub.status}
+                        </Badge>
+                      )}
+                      {sub.final_score !== null && (
+                        <Badge variant={sub.final_score >= 70 ? "success" : "warning"}>
+                          {sub.final_score}%
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -525,8 +778,15 @@ export default function AssignmentPage() {
           )}
 
           {canAttempt ? (
-            <Button className="w-full" size="lg" onClick={handleStartQuiz}>
-              {previousSubmissions.length > 0 ? "Retake Quiz" : "Start Quiz"}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={assignment.type === "quiz" ? handleStartQuiz : handleStartWritten}
+            >
+              {previousSubmissions.length > 0
+                ? (assignment.type === "quiz" ? "Retake Quiz" : "Submit Again")
+                : (assignment.type === "quiz" ? "Start Quiz" : "Start Assignment")
+              }
             </Button>
           ) : (
             <Alert>
