@@ -1,0 +1,606 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Button,
+  Badge,
+  Avatar,
+  Input,
+  Select,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Modal,
+  Label,
+  Textarea,
+} from "@/components/ui";
+import {
+  Search,
+  Filter,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  ChevronRight,
+  FileText,
+  ClipboardCheck,
+  MessageSquare,
+  Download,
+  BarChart3,
+} from "lucide-react";
+
+// Mock data for submissions
+const pendingSubmissions = [
+  {
+    id: "1",
+    student: { name: "Michael Chen", email: "m.chen@email.com" },
+    assignment: "Module 3 Quiz - Patient Assessment",
+    assignmentType: "quiz",
+    course: "EMT Basic - Spring 2024",
+    submittedAt: "2024-02-15T10:30:00",
+    dueDate: "2024-02-20T23:59:00",
+    autoScore: 85,
+    maxScore: 100,
+  },
+  {
+    id: "2",
+    student: { name: "Emily Rodriguez", email: "e.rodriguez@email.com" },
+    assignment: "Written Assignment - Cardiac Emergencies",
+    assignmentType: "written",
+    course: "Paramedic - Fall 2024",
+    submittedAt: "2024-02-15T09:15:00",
+    dueDate: "2024-02-25T23:59:00",
+    autoScore: null,
+    maxScore: 50,
+  },
+  {
+    id: "3",
+    student: { name: "James Wilson", email: "j.wilson@email.com" },
+    assignment: "Skill Checklist - Vital Signs",
+    assignmentType: "skill",
+    course: "AEMT - Spring 2024",
+    submittedAt: "2024-02-14T16:45:00",
+    dueDate: "2024-02-28T23:59:00",
+    autoScore: null,
+    maxScore: 100,
+  },
+  {
+    id: "4",
+    student: { name: "Sarah Thompson", email: "s.thompson@email.com" },
+    assignment: "Module 2 Quiz - Airway Management",
+    assignmentType: "quiz",
+    course: "EMT Basic - Spring 2024",
+    submittedAt: "2024-02-14T14:20:00",
+    dueDate: "2024-02-18T23:59:00",
+    autoScore: 72,
+    maxScore: 100,
+  },
+  {
+    id: "5",
+    student: { name: "David Martinez", email: "d.martinez@email.com" },
+    assignment: "Written Assignment - Trauma Assessment",
+    assignmentType: "written",
+    course: "EMT Basic - Spring 2024",
+    submittedAt: "2024-02-14T11:00:00",
+    dueDate: "2024-02-20T23:59:00",
+    autoScore: null,
+    maxScore: 75,
+  },
+];
+
+const gradedSubmissions = [
+  {
+    id: "6",
+    student: { name: "Ashley Brown", email: "a.brown@email.com" },
+    assignment: "Module 1 Quiz - Introduction to EMS",
+    assignmentType: "quiz",
+    course: "EMT Basic - Spring 2024",
+    submittedAt: "2024-02-10T09:30:00",
+    gradedAt: "2024-02-11T14:00:00",
+    rawScore: 88,
+    curvedScore: 92,
+    maxScore: 100,
+  },
+  {
+    id: "7",
+    student: { name: "Kevin Lee", email: "k.lee@email.com" },
+    assignment: "Written Assignment - Legal Issues",
+    assignmentType: "written",
+    course: "AEMT - Spring 2024",
+    submittedAt: "2024-02-08T15:45:00",
+    gradedAt: "2024-02-10T10:30:00",
+    rawScore: 42,
+    curvedScore: 42,
+    maxScore: 50,
+  },
+];
+
+const courseOptions = [
+  { value: "all", label: "All Courses" },
+  { value: "1", label: "EMT Basic - Spring 2024" },
+  { value: "2", label: "Paramedic - Fall 2024" },
+  { value: "3", label: "AEMT - Spring 2024" },
+];
+
+const typeOptions = [
+  { value: "all", label: "All Types" },
+  { value: "quiz", label: "Quiz" },
+  { value: "written", label: "Written" },
+  { value: "skill", label: "Skill Checklist" },
+];
+
+type CurveMethod = "none" | "bell" | "sqrt" | "linear" | "flat";
+
+const curveOptions: { value: CurveMethod; label: string; description: string }[] = [
+  { value: "none", label: "No Curve", description: "Keep original scores" },
+  { value: "bell", label: "Bell Curve", description: "Adjust mean to target (e.g., 80%)" },
+  { value: "sqrt", label: "Square Root", description: "sqrt(score) * 10" },
+  { value: "linear", label: "Linear", description: "Highest score becomes 100%" },
+  { value: "flat", label: "Flat Bonus", description: "Add fixed points to all" },
+];
+
+function getTypeIcon(type: string) {
+  switch (type) {
+    case "quiz":
+      return <ClipboardCheck className="h-4 w-4" />;
+    case "written":
+      return <FileText className="h-4 w-4" />;
+    case "skill":
+      return <CheckCircle className="h-4 w-4" />;
+    default:
+      return <FileText className="h-4 w-4" />;
+  }
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+
+  if (hours < 24) {
+    return hours === 0 ? "Just now" : `${hours}h ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+
+  return date.toLocaleDateString();
+}
+
+export default function GradingPage() {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [courseFilter, setCourseFilter] = React.useState("all");
+  const [typeFilter, setTypeFilter] = React.useState("all");
+  const [selectedSubmission, setSelectedSubmission] = React.useState<typeof pendingSubmissions[0] | null>(null);
+  const [curveModalOpen, setCurveModalOpen] = React.useState(false);
+  const [curveMethod, setCurveMethod] = React.useState<CurveMethod>("none");
+  const [curveValue, setCurveValue] = React.useState("80");
+
+  const filteredPending = pendingSubmissions.filter((sub) => {
+    const matchesSearch =
+      sub.student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.assignment.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCourse = courseFilter === "all" || sub.course.includes(courseFilter);
+    const matchesType = typeFilter === "all" || sub.assignmentType === typeFilter;
+    return matchesSearch && matchesCourse && matchesType;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Grading Center</h1>
+          <p className="text-muted-foreground">
+            Review and grade student submissions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setCurveModalOpen(true)}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Apply Curve
+          </Button>
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export Grades
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-warning/10 text-warning">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{pendingSubmissions.length}</p>
+              <p className="text-sm text-muted-foreground">Pending Review</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-success/10 text-success">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{gradedSubmissions.length}</p>
+              <p className="text-sm text-muted-foreground">Graded Today</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-destructive/10 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">3</p>
+              <p className="text-sm text-muted-foreground">Past Due</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by student or assignment..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                leftIcon={<Search className="h-4 w-4" />}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select
+                options={courseOptions}
+                value={courseFilter}
+                onChange={setCourseFilter}
+                className="w-[200px]"
+              />
+              <Select
+                options={typeOptions}
+                value={typeFilter}
+                onChange={setTypeFilter}
+                className="w-[140px]"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Tabs defaultValue="pending">
+        <TabsList>
+          <TabsTrigger value="pending">
+            Pending ({pendingSubmissions.length})
+          </TabsTrigger>
+          <TabsTrigger value="graded">
+            Recently Graded ({gradedSubmissions.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending">
+          <Card>
+            <CardContent className="p-0">
+              {filteredPending.length === 0 ? (
+                <div className="text-center py-12">
+                  <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">All caught up!</p>
+                  <p className="text-muted-foreground">No submissions pending review</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredPending.map((submission) => (
+                    <div
+                      key={submission.id}
+                      className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedSubmission(submission)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <Avatar fallback={submission.student.name} size="md" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{submission.student.name}</p>
+                            <Badge variant="secondary" className="text-xs">
+                              {getTypeIcon(submission.assignmentType)}
+                              <span className="ml-1 capitalize">{submission.assignmentType}</span>
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{submission.assignment}</p>
+                          <p className="text-xs text-muted-foreground">{submission.course}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        {submission.autoScore !== null && (
+                          <div className="text-right">
+                            <p className="font-medium">{submission.autoScore}/{submission.maxScore}</p>
+                            <p className="text-xs text-muted-foreground">Auto-graded</p>
+                          </div>
+                        )}
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">{formatDate(submission.submittedAt)}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="graded">
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {gradedSubmissions.map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar fallback={submission.student.name} size="md" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{submission.student.name}</p>
+                          <Badge variant="success" className="text-xs">Graded</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{submission.assignment}</p>
+                        <p className="text-xs text-muted-foreground">{submission.course}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        {submission.curvedScore !== submission.rawScore ? (
+                          <>
+                            <p className="font-medium">
+                              <span className="line-through text-muted-foreground mr-2">{submission.rawScore}</span>
+                              {submission.curvedScore}/{submission.maxScore}
+                            </p>
+                            <p className="text-xs text-success">Curved</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium">{submission.rawScore}/{submission.maxScore}</p>
+                            <p className="text-xs text-muted-foreground">Final</p>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">{formatDate(submission.gradedAt)}</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Grading Modal */}
+      <Modal
+        isOpen={selectedSubmission !== null}
+        onClose={() => setSelectedSubmission(null)}
+        title="Grade Submission"
+        size="lg"
+      >
+        {selectedSubmission && (
+          <div className="space-y-6">
+            {/* Student Info */}
+            <div className="flex items-center gap-4 pb-4 border-b">
+              <Avatar fallback={selectedSubmission.student.name} size="lg" />
+              <div>
+                <p className="font-medium text-lg">{selectedSubmission.student.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedSubmission.student.email}</p>
+              </div>
+            </div>
+
+            {/* Assignment Info */}
+            <div className="space-y-2">
+              <h4 className="font-medium">{selectedSubmission.assignment}</h4>
+              <p className="text-sm text-muted-foreground">{selectedSubmission.course}</p>
+              <div className="flex gap-4 text-sm">
+                <span>Submitted: {formatDate(selectedSubmission.submittedAt)}</span>
+                <span>Due: {new Date(selectedSubmission.dueDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {/* Auto Score */}
+            {selectedSubmission.autoScore !== null && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Auto-Graded Score</p>
+                      <p className="text-sm text-muted-foreground">Based on quiz answers</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">{selectedSubmission.autoScore}</p>
+                      <p className="text-sm text-muted-foreground">out of {selectedSubmission.maxScore}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Grading Form */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Score</Label>
+                  <Input
+                    type="number"
+                    placeholder={`0 - ${selectedSubmission.maxScore}`}
+                    defaultValue={selectedSubmission.autoScore || ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Points</Label>
+                  <Input type="number" value={selectedSubmission.maxScore} disabled />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Feedback</Label>
+                <Textarea
+                  placeholder="Provide feedback to the student..."
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setSelectedSubmission(null)}>
+                Cancel
+              </Button>
+              <Button variant="outline">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Request Revision
+              </Button>
+              <Button>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Submit Grade
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Curve Modal */}
+      <Modal
+        isOpen={curveModalOpen}
+        onClose={() => setCurveModalOpen(false)}
+        title="Apply Grade Curve"
+        size="md"
+      >
+        <div className="space-y-6">
+          <p className="text-muted-foreground">
+            Apply a curve to adjust grades for an assignment or entire course.
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Assignment</Label>
+              <Select
+                options={[
+                  { value: "all", label: "All assignments in course" },
+                  { value: "1", label: "Module 3 Quiz - Patient Assessment" },
+                  { value: "2", label: "Module 2 Quiz - Airway Management" },
+                ]}
+                value="1"
+                onChange={() => {}}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Curve Method</Label>
+              <div className="grid gap-2">
+                {curveOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      curveMethod === option.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="curve"
+                      value={option.value}
+                      checked={curveMethod === option.value}
+                      onChange={() => setCurveMethod(option.value)}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <p className="font-medium">{option.label}</p>
+                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {curveMethod === "bell" && (
+              <div className="space-y-2">
+                <Label>Target Mean (%)</Label>
+                <Input
+                  type="number"
+                  value={curveValue}
+                  onChange={(e) => setCurveValue(e.target.value)}
+                  placeholder="80"
+                />
+              </div>
+            )}
+
+            {curveMethod === "flat" && (
+              <div className="space-y-2">
+                <Label>Bonus Points</Label>
+                <Input
+                  type="number"
+                  value={curveValue}
+                  onChange={(e) => setCurveValue(e.target.value)}
+                  placeholder="5"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Preview */}
+          {curveMethod !== "none" && (
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm">Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Mean:</span>
+                    <span>72%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">New Mean:</span>
+                    <span className="text-success font-medium">
+                      {curveMethod === "bell" ? `${curveValue}%` : "78%"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Students Affected:</span>
+                    <span>32</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setCurveModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={curveMethod === "none"}>
+              Apply Curve
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

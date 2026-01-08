@@ -27,7 +27,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -37,9 +37,25 @@ function LoginForm() {
         return;
       }
 
-      // Redirect based on user role (will be implemented with middleware)
-      router.push(redirect);
-      router.refresh();
+      // Get user profile to determine redirect
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+
+        // Redirect based on user role
+        if (profile?.role === "student") {
+          router.push("/student/dashboard");
+        } else {
+          router.push("/instructor/dashboard");
+        }
+        router.refresh();
+      } else {
+        router.push(redirect);
+        router.refresh();
+      }
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {

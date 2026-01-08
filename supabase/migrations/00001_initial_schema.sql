@@ -1,8 +1,8 @@
 -- MedicForge Database Schema
 -- Multi-tenant EMS Learning Management System
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension (use gen_random_uuid() which is built-in)
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
 -- ENUMS
@@ -31,7 +31,7 @@ CREATE TYPE log_type AS ENUM ('hours', 'patient_contact');
 
 -- Tenants (Organizations/Institutions)
 CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
     custom_domain VARCHAR(255) UNIQUE,
@@ -49,7 +49,7 @@ CREATE TABLE tenants (
 
 -- Platform Admins (MedicForge staff)
 CREATE TABLE platform_admins (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     role VARCHAR(50) DEFAULT 'admin',
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -57,7 +57,7 @@ CREATE TABLE platform_admins (
 
 -- Subscription History
 CREATE TABLE subscription_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     tier subscription_tier NOT NULL,
     started_at TIMESTAMPTZ NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE users (
 
 -- Courses
 CREATE TABLE courses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -108,7 +108,7 @@ CREATE TABLE courses (
 
 -- Enrollments
 CREATE TABLE enrollments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -121,7 +121,7 @@ CREATE TABLE enrollments (
 
 -- Modules
 CREATE TABLE modules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE modules (
 
 -- Lessons
 CREATE TABLE lessons (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -148,7 +148,7 @@ CREATE TABLE lessons (
 
 -- Assignments
 CREATE TABLE assignments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE assignments (
 
 -- Quiz Questions
 CREATE TABLE quiz_questions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
@@ -181,7 +181,7 @@ CREATE TABLE quiz_questions (
 
 -- Submissions
 CREATE TABLE submissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -205,7 +205,7 @@ CREATE TABLE submissions (
 
 -- Skill Categories
 CREATE TABLE skill_categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_type course_type NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -216,7 +216,7 @@ CREATE TABLE skill_categories (
 
 -- Skills
 CREATE TABLE skills (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     category_id UUID NOT NULL REFERENCES skill_categories(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -227,7 +227,7 @@ CREATE TABLE skills (
 
 -- Skill Attempts
 CREATE TABLE skill_attempts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -243,7 +243,7 @@ CREATE TABLE skill_attempts (
 
 -- Clinical Logs
 CREATE TABLE clinical_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
@@ -270,7 +270,7 @@ CREATE TABLE clinical_logs (
 
 -- Discussion Threads
 CREATE TABLE discussion_threads (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
@@ -286,7 +286,7 @@ CREATE TABLE discussion_threads (
 
 -- Discussion Posts
 CREATE TABLE discussion_posts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     thread_id UUID NOT NULL REFERENCES discussion_threads(id) ON DELETE CASCADE,
     parent_id UUID REFERENCES discussion_posts(id) ON DELETE CASCADE,
@@ -304,7 +304,7 @@ CREATE TABLE discussion_posts (
 
 -- Events
 CREATE TABLE events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -320,7 +320,7 @@ CREATE TABLE events (
 
 -- Attendance
 CREATE TABLE attendance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -337,7 +337,7 @@ CREATE TABLE attendance (
 
 -- Notifications
 CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type notification_type NOT NULL,
@@ -350,7 +350,7 @@ CREATE TABLE notifications (
 
 -- Announcements
 CREATE TABLE announcements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -367,7 +367,7 @@ CREATE TABLE announcements (
 
 -- Files
 CREATE TABLE files (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     uploaded_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     filename VARCHAR(255) NOT NULL,
