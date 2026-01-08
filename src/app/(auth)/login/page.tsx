@@ -148,6 +148,15 @@ function LoginForm() {
       <Button variant="outline" className="w-full" size="lg" asChild>
         <Link href="/register">Create an account</Link>
       </Button>
+
+      <div className="text-center">
+        <Link
+          href="/demo"
+          className="text-sm text-muted-foreground hover:text-primary hover:underline"
+        >
+          Or try our demo accounts
+        </Link>
+      </div>
     </form>
   );
 }

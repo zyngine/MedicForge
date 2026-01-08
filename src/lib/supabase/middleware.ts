@@ -40,10 +40,16 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protected routes
+  // Route type detection
   const isAuthRoute = pathname.startsWith("/login") ||
                       pathname.startsWith("/register") ||
-                      pathname.startsWith("/forgot-password");
+                      pathname.startsWith("/forgot-password") ||
+                      pathname.startsWith("/demo");
+
+  const isPlatformAdminRoute = pathname.startsWith("/platform-admin") &&
+                               !pathname.startsWith("/platform-admin/login");
+
+  const isPlatformAdminLoginRoute = pathname === "/platform-admin";
 
   const isProtectedRoute = pathname.startsWith("/admin") ||
                            pathname.startsWith("/instructor") ||
@@ -52,6 +58,32 @@ export async function updateSession(request: NextRequest) {
   const isInstructorRoute = pathname.startsWith("/instructor");
   const isStudentRoute = pathname.startsWith("/student");
   const isAdminRoute = pathname.startsWith("/admin");
+
+  // Platform admin route protection
+  if (isPlatformAdminRoute) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/platform-admin";
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user is a platform admin
+    const { data: platformAdmin } = await supabase
+      .from("platform_admins")
+      .select("id, role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!platformAdmin) {
+      // Not a platform admin, redirect to regular login
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // User is a platform admin, allow access
+    return supabaseResponse;
+  }
 
   // If user is not logged in and trying to access protected routes
   if (!user && isProtectedRoute) {
@@ -63,6 +95,18 @@ export async function updateSession(request: NextRequest) {
 
   // If user is logged in, check role-based access
   if (user && isProtectedRoute) {
+    // First check if this is a platform admin trying to access tenant routes
+    const { data: platformAdmin } = await supabase
+      .from("platform_admins")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    // Platform admins can access all routes for inspection
+    if (platformAdmin) {
+      return supabaseResponse;
+    }
+
     // Get user profile with role
     const { data: profile } = await supabase
       .from("users")
@@ -97,7 +141,20 @@ export async function updateSession(request: NextRequest) {
   }
 
   // If user is logged in and trying to access auth routes, redirect to appropriate dashboard
-  if (user && isAuthRoute) {
+  if (user && isAuthRoute && !isPlatformAdminLoginRoute) {
+    // Check if platform admin first
+    const { data: platformAdmin } = await supabase
+      .from("platform_admins")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (platformAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/platform-admin/dashboard";
+      return NextResponse.redirect(url);
+    }
+
     const { data: profile } = await supabase
       .from("users")
       .select("role")

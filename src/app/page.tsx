@@ -159,7 +159,7 @@ export default function HomePage() {
               </Button>
               <Button size="xl" variant="outline" asChild>
                 <Link href="/demo">
-                  <Play className="mr-2 h-5 w-5" /> Watch Demo
+                  <Play className="mr-2 h-5 w-5" /> Try Demo
                 </Link>
               </Button>
             </div>
