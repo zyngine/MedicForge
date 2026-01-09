@@ -121,9 +121,15 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <span className="font-bold">MedicForge</span>
               </Link>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 Where First Responders Are Forged. The modern LMS for EMS education.
               </p>
+              <a
+                href="mailto:admin@medicforge.com"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                admin@medicforge.com
+              </a>
             </div>
 
             {/* Product */}
