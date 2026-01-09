@@ -75,9 +75,20 @@ export async function updateSession(request: NextRequest) {
                            pathname.startsWith("/instructor") ||
                            pathname.startsWith("/student");
 
-  // For auth routes, only check user if we need to redirect logged-in users
-  // Otherwise allow through without network call
+  // For auth routes, only check user if cookies suggest they might be logged in
   if (isAuthRoute) {
+    // Quick check: if no auth cookies exist, user is definitely not logged in
+    // Skip the network call entirely for faster page loads
+    const hasAuthCookies = request.cookies.getAll().some(
+      cookie => cookie.name.includes("supabase") || cookie.name.includes("sb-")
+    );
+
+    if (!hasAuthCookies) {
+      // No auth cookies = not logged in, allow through immediately
+      return supabaseResponse;
+    }
+
+    // Has cookies, need to verify if actually logged in
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -88,7 +99,6 @@ export async function updateSession(request: NextRequest) {
       }
     } catch {
       // If auth check fails, just let them through to the auth page
-      console.warn("Auth check failed in middleware, allowing through");
     }
     return supabaseResponse;
   }
