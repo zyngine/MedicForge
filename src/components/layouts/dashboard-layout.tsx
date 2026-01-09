@@ -35,6 +35,7 @@ interface DashboardLayoutProps {
   };
   navigation: NavItem[];
   portalName: string;
+  onSignOut?: () => void;
 }
 
 export function DashboardLayout({
@@ -42,6 +43,7 @@ export function DashboardLayout({
   user,
   navigation,
   portalName,
+  onSignOut,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const pathname = usePathname();
@@ -195,7 +197,7 @@ export function DashboardLayout({
                   Settings
                 </DropdownItem>
                 <DropdownSeparator />
-                <DropdownItem icon={<LogOut className="h-4 w-4" />} destructive>
+                <DropdownItem icon={<LogOut className="h-4 w-4" />} destructive onClick={onSignOut}>
                   Sign out
                 </DropdownItem>
               </Dropdown>

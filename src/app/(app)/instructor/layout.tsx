@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts";
 import { useUser } from "@/lib/hooks/use-user";
 import { Spinner } from "@/components/ui";
@@ -63,7 +64,13 @@ export default function InstructorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile, isLoading } = useUser();
+  const router = useRouter();
+  const { profile, isLoading, signOut } = useUser();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   if (isLoading) {
     return (
@@ -85,6 +92,7 @@ export default function InstructorLayout({
       user={user}
       navigation={instructorNavigation}
       portalName="Instructor Portal"
+      onSignOut={handleSignOut}
     >
       {children}
     </DashboardLayout>

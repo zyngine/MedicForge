@@ -59,7 +59,12 @@ export default function PlatformAdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isPlatformAdmin, isLoading } = usePlatformAdmin();
+  const { user, isPlatformAdmin, isLoading, signOut } = usePlatformAdmin();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   useEffect(() => {
     if (!isLoading && !isPlatformAdmin) {
@@ -99,6 +104,7 @@ export default function PlatformAdminLayout({
       user={adminUser}
       navigation={platformAdminNavigation}
       portalName="Platform Admin"
+      onSignOut={handleSignOut}
     >
       {children}
     </DashboardLayout>
