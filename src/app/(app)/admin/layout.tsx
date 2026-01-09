@@ -10,6 +10,7 @@ import {
   CreditCard,
   Building2,
   BarChart3,
+  Stethoscope,
 } from "lucide-react";
 
 const adminNavigation = [
@@ -27,6 +28,11 @@ const adminNavigation = [
     title: "Organization",
     href: "/admin/organization",
     icon: <Building2 className="h-5 w-5" />,
+  },
+  {
+    title: "Clinical Sites",
+    href: "/admin/clinical-sites",
+    icon: <Stethoscope className="h-5 w-5" />,
   },
   {
     title: "Billing",

@@ -35,7 +35,10 @@ import {
   Heart,
   Syringe,
   Thermometer,
+  CalendarPlus,
+  ClipboardList,
 } from "lucide-react";
+import Link from "next/link";
 
 // Mock data
 const clinicalRequirements = {
@@ -169,6 +172,12 @@ export default function ClinicalTrackerPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/student/clinical/schedule">
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              Book Shift
+            </Link>
+          </Button>
           <Button variant="outline" onClick={() => setShowContactModal(true)}>
             <Users className="h-4 w-4 mr-2" />
             Log Patient Contact
