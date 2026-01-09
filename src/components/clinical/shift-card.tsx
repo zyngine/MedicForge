@@ -11,6 +11,7 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
+  Eye,
 } from "lucide-react";
 import type { ClinicalShiftWithDetails } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -20,6 +21,7 @@ interface ShiftCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onBook?: () => void;
+  onViewBookings?: () => void;
   showBookButton?: boolean;
   showActions?: boolean;
   isBooked?: boolean;
@@ -30,6 +32,7 @@ export function ShiftCard({
   onEdit,
   onDelete,
   onBook,
+  onViewBookings,
   showBookButton = false,
   showActions = true,
   isBooked = false,
@@ -143,6 +146,11 @@ export function ShiftCard({
 
           {showActions && (
             <div className="flex items-center gap-2 ml-auto">
+              {onViewBookings && (
+                <Button variant="ghost" size="icon" onClick={onViewBookings}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
               {onEdit && (
                 <Button variant="ghost" size="icon" onClick={onEdit}>
                   <Pencil className="h-4 w-4" />

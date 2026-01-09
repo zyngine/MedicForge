@@ -114,7 +114,7 @@ export default function NewShiftPage() {
             sites={mockSites}
             onSubmit={handleSubmit}
             onCancel={() => router.push("/instructor/clinical/shifts")}
-            isSubmitting={isSubmitting}
+            isLoading={isSubmitting}
           />
         </CardContent>
       </Card>

@@ -22,6 +22,7 @@ interface SiteCardProps {
   site: ClinicalSite;
   onEdit?: () => void;
   onDelete?: () => void;
+  onManageShifts?: () => void;
   showActions?: boolean;
 }
 
@@ -45,6 +46,7 @@ export function SiteCard({
   site,
   onEdit,
   onDelete,
+  onManageShifts,
   showActions = true,
 }: SiteCardProps) {
   const address = [site.city, site.state].filter(Boolean).join(", ");
@@ -74,11 +76,17 @@ export function SiteCard({
 
           {showActions && (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href={`/admin/clinical-sites/${site.id}/shifts`}>
+              {onManageShifts ? (
+                <Button variant="ghost" size="icon" onClick={onManageShifts}>
                   <Calendar className="h-4 w-4" />
-                </Link>
-              </Button>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href={`/admin/clinical-sites/${site.id}/shifts`}>
+                    <Calendar className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
               {onEdit && (
                 <Button variant="ghost" size="icon" onClick={onEdit}>
                   <Pencil className="h-4 w-4" />

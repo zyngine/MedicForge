@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ClinicalSite, ClinicalSiteForm } from "@/types";
+import type { ClinicalSite, ClinicalSiteForm, Preceptor } from "@/types";
+
+// Helper to transform database site to ClinicalSite type
+const transformSite = (data: any): ClinicalSite => ({
+  ...data,
+  preceptors: (data.preceptors || []) as Preceptor[],
+});
 
 export function useClinicalSites() {
   const [sites, setSites] = useState<ClinicalSite[]>([]);
@@ -24,7 +30,7 @@ export function useClinicalSites() {
 
       if (fetchError) throw fetchError;
 
-      setSites(data || []);
+      setSites((data || []).map(transformSite));
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch sites"));
     } finally {
@@ -38,16 +44,34 @@ export function useClinicalSites() {
 
   const createSite = async (siteData: ClinicalSiteForm): Promise<ClinicalSite | null> => {
     try {
+      // Get current user for tenant_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Get user's tenant_id
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+
+      if (userError) throw userError;
+
       const { data, error: createError } = await supabase
         .from("clinical_sites")
-        .insert([siteData])
+        .insert([{
+          ...siteData,
+          preceptors: siteData.preceptors as any,
+          tenant_id: userData.tenant_id,
+        }])
         .select()
         .single();
 
       if (createError) throw createError;
 
-      setSites((prev) => [...prev, data]);
-      return data;
+      const site = transformSite(data);
+      setSites((prev) => [...prev, site]);
+      return site;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to create site"));
       return null;
@@ -61,17 +85,21 @@ export function useClinicalSites() {
     try {
       const { data, error: updateError } = await supabase
         .from("clinical_sites")
-        .update(updates)
+        .update({
+          ...updates,
+          preceptors: updates.preceptors as any,
+        })
         .eq("id", siteId)
         .select()
         .single();
 
       if (updateError) throw updateError;
 
+      const site = transformSite(data);
       setSites((prev) =>
-        prev.map((site) => (site.id === siteId ? data : site))
+        prev.map((s) => (s.id === siteId ? site : s))
       );
-      return data;
+      return site;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to update site"));
       return null;
@@ -134,7 +162,7 @@ export function useClinicalSite(siteId: string | null) {
 
         if (fetchError) throw fetchError;
 
-        setSite(data);
+        setSite(transformSite(data));
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch site"));
       } finally {

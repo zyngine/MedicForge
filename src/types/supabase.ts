@@ -684,6 +684,367 @@ export type Database = {
           },
         ]
       }
+      clinical_sites: {
+        Row: {
+          id: string
+          tenant_id: string
+          name: string
+          site_type: Database["public"]["Enums"]["clinical_site_type"]
+          address: string | null
+          city: string | null
+          state: string | null
+          zip: string | null
+          phone: string | null
+          contact_name: string | null
+          contact_email: string | null
+          preceptors: Json | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          name: string
+          site_type?: Database["public"]["Enums"]["clinical_site_type"]
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip?: string | null
+          phone?: string | null
+          contact_name?: string | null
+          contact_email?: string | null
+          preceptors?: Json | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          name?: string
+          site_type?: Database["public"]["Enums"]["clinical_site_type"]
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip?: string | null
+          phone?: string | null
+          contact_name?: string | null
+          contact_email?: string | null
+          preceptors?: Json | null
+          notes?: string | null
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_sites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_shifts: {
+        Row: {
+          id: string
+          tenant_id: string
+          site_id: string
+          course_id: string | null
+          title: string
+          shift_date: string
+          start_time: string
+          end_time: string
+          capacity: number
+          notes: string | null
+          created_by: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          site_id: string
+          course_id?: string | null
+          title: string
+          shift_date: string
+          start_time: string
+          end_time: string
+          capacity?: number
+          notes?: string | null
+          created_by: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          site_id?: string
+          course_id?: string | null
+          title?: string
+          shift_date?: string
+          start_time?: string
+          end_time?: string
+          capacity?: number
+          notes?: string | null
+          created_by?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_shifts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_shifts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_shifts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_shifts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_shift_bookings: {
+        Row: {
+          id: string
+          tenant_id: string
+          shift_id: string
+          student_id: string
+          status: Database["public"]["Enums"]["booking_status"]
+          booked_at: string
+          cancelled_at: string | null
+          cancellation_reason: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          hours_completed: number | null
+          preceptor_name: string | null
+          preceptor_signature: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          shift_id: string
+          student_id: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          booked_at?: string
+          cancelled_at?: string | null
+          cancellation_reason?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          hours_completed?: number | null
+          preceptor_name?: string | null
+          preceptor_signature?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          shift_id?: string
+          student_id?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          booked_at?: string
+          cancelled_at?: string | null
+          cancellation_reason?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          hours_completed?: number | null
+          preceptor_name?: string | null
+          preceptor_signature?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_shift_bookings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_shift_bookings_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_shift_bookings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_patient_contacts: {
+        Row: {
+          id: string
+          tenant_id: string
+          booking_id: string
+          student_id: string
+          course_id: string | null
+          patient_age_range: Database["public"]["Enums"]["patient_age_range"]
+          patient_gender: string | null
+          call_type: string | null
+          call_nature: string | null
+          dispatch_complaint: string | null
+          chief_complaint: string | null
+          primary_impression: string | null
+          secondary_impression: string | null
+          level_of_consciousness: string | null
+          mental_status: string | null
+          vitals: Json | null
+          skills_performed: Json | null
+          medications_given: Json | null
+          procedures: Json | null
+          disposition: string | null
+          transport_destination: string | null
+          transport_mode: string | null
+          was_team_lead: boolean
+          role_description: string | null
+          narrative: string | null
+          preceptor_feedback: string | null
+          preceptor_signature: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          verified_by: string | null
+          verified_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          booking_id: string
+          student_id: string
+          course_id?: string | null
+          patient_age_range: Database["public"]["Enums"]["patient_age_range"]
+          patient_gender?: string | null
+          call_type?: string | null
+          call_nature?: string | null
+          dispatch_complaint?: string | null
+          chief_complaint?: string | null
+          primary_impression?: string | null
+          secondary_impression?: string | null
+          level_of_consciousness?: string | null
+          mental_status?: string | null
+          vitals?: Json | null
+          skills_performed?: Json | null
+          medications_given?: Json | null
+          procedures?: Json | null
+          disposition?: string | null
+          transport_destination?: string | null
+          transport_mode?: string | null
+          was_team_lead?: boolean
+          role_description?: string | null
+          narrative?: string | null
+          preceptor_feedback?: string | null
+          preceptor_signature?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_by?: string | null
+          verified_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          booking_id?: string
+          student_id?: string
+          course_id?: string | null
+          patient_age_range?: Database["public"]["Enums"]["patient_age_range"]
+          patient_gender?: string | null
+          call_type?: string | null
+          call_nature?: string | null
+          dispatch_complaint?: string | null
+          chief_complaint?: string | null
+          primary_impression?: string | null
+          secondary_impression?: string | null
+          level_of_consciousness?: string | null
+          mental_status?: string | null
+          vitals?: Json | null
+          skills_performed?: Json | null
+          medications_given?: Json | null
+          procedures?: Json | null
+          disposition?: string | null
+          transport_destination?: string | null
+          transport_mode?: string | null
+          was_team_lead?: boolean
+          role_description?: string | null
+          narrative?: string | null
+          preceptor_feedback?: string | null
+          preceptor_signature?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_by?: string | null
+          verified_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_patient_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_patient_contacts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shift_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_patient_contacts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_patient_contacts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_patient_contacts_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           content: Json | null
@@ -1321,6 +1682,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      book_clinical_shift: {
+        Args: {
+          p_shift_id: string
+          p_student_id: string
+          p_tenant_id: string
+        }
+        Returns: Database["public"]["Tables"]["clinical_shift_bookings"]["Row"]
+      }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1331,6 +1700,8 @@ export type Database = {
     Enums: {
       assignment_type: "quiz" | "written" | "skill_checklist" | "discussion"
       attendance_status: "present" | "absent" | "late" | "excused"
+      booking_status: "booked" | "completed" | "cancelled" | "no_show"
+      clinical_site_type: "hospital" | "ambulance_service" | "fire_department" | "urgent_care" | "other"
       content_type: "video" | "document" | "text" | "embed"
       course_type: "EMR" | "EMT" | "AEMT" | "Paramedic" | "Custom"
       enrollment_status: "active" | "completed" | "dropped"
@@ -1338,6 +1709,7 @@ export type Database = {
       file_context: "course" | "assignment" | "submission" | "profile"
       log_type: "hours" | "patient_contact"
       notification_type: "assignment" | "grade" | "announcement" | "reminder"
+      patient_age_range: "neonate" | "infant" | "toddler" | "preschool" | "school_age" | "adolescent" | "adult" | "geriatric"
       question_type:
         | "multiple_choice"
         | "true_false"
@@ -1478,6 +1850,8 @@ export const Constants = {
     Enums: {
       assignment_type: ["quiz", "written", "skill_checklist", "discussion"],
       attendance_status: ["present", "absent", "late", "excused"],
+      booking_status: ["booked", "completed", "cancelled", "no_show"],
+      clinical_site_type: ["hospital", "ambulance_service", "fire_department", "urgent_care", "other"],
       content_type: ["video", "document", "text", "embed"],
       course_type: ["EMR", "EMT", "AEMT", "Paramedic", "Custom"],
       enrollment_status: ["active", "completed", "dropped"],
@@ -1485,6 +1859,7 @@ export const Constants = {
       file_context: ["course", "assignment", "submission", "profile"],
       log_type: ["hours", "patient_contact"],
       notification_type: ["assignment", "grade", "announcement", "reminder"],
+      patient_age_range: ["neonate", "infant", "toddler", "preschool", "school_age", "adolescent", "adult", "geriatric"],
       question_type: [
         "multiple_choice",
         "true_false",

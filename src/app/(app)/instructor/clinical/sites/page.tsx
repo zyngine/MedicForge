@@ -98,14 +98,24 @@ export default function InstructorSitesPage() {
   const filteredSites = sites.filter(
     (site) =>
       site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      site.city.toLowerCase().includes(searchQuery.toLowerCase())
+      site.city?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleAddSite = (data: ClinicalSiteForm) => {
     const newSite: ClinicalSite = {
       id: Date.now().toString(),
       tenant_id: "t1",
-      ...data,
+      name: data.name,
+      site_type: data.site_type,
+      address: data.address || null,
+      city: data.city || null,
+      state: data.state || null,
+      zip: data.zip || null,
+      phone: data.phone || null,
+      contact_name: data.contact_name || null,
+      contact_email: data.contact_email || null,
+      preceptors: data.preceptors || [],
+      notes: data.notes || null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -119,7 +129,21 @@ export default function InstructorSitesPage() {
     setSites(
       sites.map((s) =>
         s.id === editingSite.id
-          ? { ...s, ...data, updated_at: new Date().toISOString() }
+          ? {
+              ...s,
+              name: data.name,
+              site_type: data.site_type,
+              address: data.address || null,
+              city: data.city || null,
+              state: data.state || null,
+              zip: data.zip || null,
+              phone: data.phone || null,
+              contact_name: data.contact_name || null,
+              contact_email: data.contact_email || null,
+              preceptors: data.preceptors || [],
+              notes: data.notes || null,
+              updated_at: new Date().toISOString(),
+            }
           : s
       )
     );
@@ -173,7 +197,19 @@ export default function InstructorSitesPage() {
         <Card>
           <CardContent className="pt-6">
             <SiteForm
-              initialData={editingSite || undefined}
+              defaultValues={editingSite ? {
+                name: editingSite.name,
+                site_type: editingSite.site_type,
+                address: editingSite.address ?? undefined,
+                city: editingSite.city ?? undefined,
+                state: editingSite.state ?? undefined,
+                zip: editingSite.zip ?? undefined,
+                phone: editingSite.phone ?? undefined,
+                contact_name: editingSite.contact_name ?? undefined,
+                contact_email: editingSite.contact_email ?? undefined,
+                preceptors: editingSite.preceptors,
+                notes: editingSite.notes ?? undefined,
+              } : undefined}
               onSubmit={editingSite ? handleEditSite : handleAddSite}
               onCancel={() => {
                 setShowAddForm(false);

@@ -2,7 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ShiftBooking, ShiftBookingWithDetails, BookingStatus } from "@/types";
+import type { ShiftBooking, ShiftBookingWithDetails, BookingStatus, Preceptor } from "@/types";
+
+// Helper to transform database booking to ShiftBookingWithDetails type
+const transformBooking = (data: any): ShiftBookingWithDetails => ({
+  ...data,
+  shift: data.shift ? {
+    ...data.shift,
+    site: data.shift.site ? {
+      ...data.shift.site,
+      preceptors: (data.shift.site.preceptors || []) as Preceptor[],
+    } : undefined,
+  } : undefined,
+});
 
 interface UseBookingsOptions {
   studentId?: string;
@@ -54,7 +66,7 @@ export function useShiftBookings(options: UseBookingsOptions = {}) {
 
       if (fetchError) throw fetchError;
 
-      setBookings(data || []);
+      setBookings((data || []).map(transformBooking));
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch bookings"));
     } finally {

@@ -2,9 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ClinicalPatientContact, PatientContactForm } from "@/types";
+import type { ClinicalPatientContact, PatientContactForm, VitalSigns, MedicationGiven } from "@/types";
 
 type VerificationStatus = "pending" | "verified" | "rejected";
+
+// Helper to transform database contact to ClinicalPatientContact type
+const transformContact = (data: any): ClinicalPatientContact => ({
+  ...data,
+  vitals: (data.vitals || []) as VitalSigns[],
+  skills_performed: (data.skills_performed || []) as string[],
+  medications_given: (data.medications_given || []) as MedicationGiven[],
+  procedures: (data.procedures || []) as string[],
+});
 
 interface UsePatientContactsOptions {
   studentId?: string;
@@ -64,7 +73,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
 
       if (fetchError) throw fetchError;
 
-      setContacts(data || []);
+      setContacts((data || []).map(transformContact));
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch patient contacts"));
     } finally {
@@ -98,6 +107,10 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
         .insert([
           {
             ...contactData,
+            vitals: contactData.vitals as any,
+            skills_performed: contactData.skills_performed as any,
+            medications_given: contactData.medications_given as any,
+            procedures: contactData.procedures as any,
             tenant_id: userProfile.tenant_id,
             student_id: userData.user.id,
             verification_status: "pending",
@@ -109,7 +122,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
       if (createError) throw createError;
 
       await fetchContacts();
-      return data;
+      return transformContact(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to create patient contact"));
       return null;
@@ -124,7 +137,13 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
     try {
       const { data, error: updateError } = await supabase
         .from("clinical_patient_contacts")
-        .update(updates)
+        .update({
+          ...updates,
+          vitals: updates.vitals as any,
+          skills_performed: updates.skills_performed as any,
+          medications_given: updates.medications_given as any,
+          procedures: updates.procedures as any,
+        })
         .eq("id", contactId)
         .select()
         .single();
@@ -132,7 +151,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
       if (updateError) throw updateError;
 
       await fetchContacts();
-      return data;
+      return transformContact(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to update patient contact"));
       return null;
@@ -267,7 +286,7 @@ export function usePatientContact(contactId: string | null) {
 
         if (fetchError) throw fetchError;
 
-        setContact(data);
+        setContact(transformContact(data));
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch patient contact"));
       } finally {

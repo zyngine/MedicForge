@@ -56,6 +56,10 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
       // Transform data to include computed fields
       const transformedShifts: ClinicalShiftWithDetails[] = (data || []).map((shift: any) => ({
         ...shift,
+        site: shift.site ? {
+          ...shift.site,
+          preceptors: (shift.site.preceptors || []) as any,
+        } : undefined,
         bookings_count: shift.bookings?.[0]?.count || 0,
         available_slots: shift.capacity - (shift.bookings?.[0]?.count || 0),
         is_available:
@@ -77,9 +81,26 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
 
   const createShift = async (shiftData: ClinicalShiftForm): Promise<ClinicalShift | null> => {
     try {
+      // Get current user for tenant_id and created_by
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Get user's tenant_id
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+
+      if (userError) throw userError;
+
       const { data, error: createError } = await supabase
         .from("clinical_shifts")
-        .insert([shiftData])
+        .insert([{
+          ...shiftData,
+          tenant_id: userData.tenant_id,
+          created_by: user.id,
+        }])
         .select()
         .single();
 
@@ -179,14 +200,18 @@ export function useClinicalShift(shiftId: string | null) {
 
         if (fetchError) throw fetchError;
 
-        const transformedShift: ClinicalShiftWithDetails = {
+        const transformedShift = {
           ...data,
+          site: data.site ? {
+            ...data.site,
+            preceptors: (data.site.preceptors || []) as any,
+          } : undefined,
           bookings_count: data.bookings?.length || 0,
           available_slots: data.capacity - (data.bookings?.length || 0),
           is_available:
             (data.capacity - (data.bookings?.length || 0)) > 0 &&
             new Date(data.shift_date) >= new Date(),
-        };
+        } as ClinicalShiftWithDetails;
 
         setShift(transformedShift);
       } catch (err) {
