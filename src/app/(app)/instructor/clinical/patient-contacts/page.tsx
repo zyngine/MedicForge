@@ -30,12 +30,12 @@ import {
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
-import type { ClinicalPatientContact } from "@/types";
+import type { ClinicalPatientContactWithDetails } from "@/types";
 import { PATIENT_AGE_LABELS } from "@/types";
 import { format, addDays } from "date-fns";
 
 // Mock data
-const mockPatientContacts: ClinicalPatientContact[] = [
+const mockPatientContacts: ClinicalPatientContactWithDetails[] = [
   {
     id: "pc1",
     tenant_id: "t1",
@@ -223,7 +223,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PatientContactsPage() {
-  const [contacts, setContacts] = useState<ClinicalPatientContact[]>(mockPatientContacts);
+  const [contacts, setContacts] = useState<ClinicalPatientContactWithDetails[]>(mockPatientContacts);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<VerificationStatus>("pending");
 

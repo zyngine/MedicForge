@@ -32,12 +32,12 @@ import {
   AlertCircle,
   MessageSquare,
 } from "lucide-react";
-import type { ClinicalPatientContact } from "@/types";
+import type { ClinicalPatientContactWithDetails } from "@/types";
 import { PATIENT_AGE_LABELS } from "@/types";
 import { format, addDays } from "date-fns";
 
 // Mock data
-const mockContact: ClinicalPatientContact = {
+const mockContact: ClinicalPatientContactWithDetails = {
   id: "pc1",
   tenant_id: "t1",
   booking_id: "b1",
@@ -133,7 +133,7 @@ export default function PatientContactDetailPage() {
   const params = useParams();
   const contactId = params.contactId as string;
 
-  const [contact, setContact] = useState<ClinicalPatientContact>(mockContact);
+  const [contact, setContact] = useState<ClinicalPatientContactWithDetails>(mockContact);
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
