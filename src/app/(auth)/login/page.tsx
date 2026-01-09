@@ -4,11 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
-import { Button, Input, Label, Checkbox, Alert, LoadingState } from "@/components/ui";
+import { Button, Input, Label, Checkbox, Alert, Spinner } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-function LoginForm() {
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/student/dashboard";
@@ -161,14 +161,22 @@ function LoginForm() {
   );
 }
 
+function LoginFormFallback() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Spinner size="lg" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back"
       description="Sign in to your MedicForge account"
     >
-      <React.Suspense fallback={<LoadingState message="Loading..." />}>
-        <LoginForm />
+      <React.Suspense fallback={<LoginFormFallback />}>
+        <LoginFormContent />
       </React.Suspense>
     </AuthLayout>
   );

@@ -20,6 +20,7 @@ import {
   Modal,
   Label,
   Textarea,
+  Spinner,
 } from "@/components/ui";
 import {
   Search,
@@ -34,99 +35,8 @@ import {
   Download,
   BarChart3,
 } from "lucide-react";
-
-// Mock data for submissions
-const pendingSubmissions = [
-  {
-    id: "1",
-    student: { name: "Michael Chen", email: "m.chen@email.com" },
-    assignment: "Module 3 Quiz - Patient Assessment",
-    assignmentType: "quiz",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "2024-02-15T10:30:00",
-    dueDate: "2024-02-20T23:59:00",
-    autoScore: 85,
-    maxScore: 100,
-  },
-  {
-    id: "2",
-    student: { name: "Emily Rodriguez", email: "e.rodriguez@email.com" },
-    assignment: "Written Assignment - Cardiac Emergencies",
-    assignmentType: "written",
-    course: "Paramedic - Fall 2024",
-    submittedAt: "2024-02-15T09:15:00",
-    dueDate: "2024-02-25T23:59:00",
-    autoScore: null,
-    maxScore: 50,
-  },
-  {
-    id: "3",
-    student: { name: "James Wilson", email: "j.wilson@email.com" },
-    assignment: "Skill Checklist - Vital Signs",
-    assignmentType: "skill",
-    course: "AEMT - Spring 2024",
-    submittedAt: "2024-02-14T16:45:00",
-    dueDate: "2024-02-28T23:59:00",
-    autoScore: null,
-    maxScore: 100,
-  },
-  {
-    id: "4",
-    student: { name: "Sarah Thompson", email: "s.thompson@email.com" },
-    assignment: "Module 2 Quiz - Airway Management",
-    assignmentType: "quiz",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "2024-02-14T14:20:00",
-    dueDate: "2024-02-18T23:59:00",
-    autoScore: 72,
-    maxScore: 100,
-  },
-  {
-    id: "5",
-    student: { name: "David Martinez", email: "d.martinez@email.com" },
-    assignment: "Written Assignment - Trauma Assessment",
-    assignmentType: "written",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "2024-02-14T11:00:00",
-    dueDate: "2024-02-20T23:59:00",
-    autoScore: null,
-    maxScore: 75,
-  },
-];
-
-const gradedSubmissions = [
-  {
-    id: "6",
-    student: { name: "Ashley Brown", email: "a.brown@email.com" },
-    assignment: "Module 1 Quiz - Introduction to EMS",
-    assignmentType: "quiz",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "2024-02-10T09:30:00",
-    gradedAt: "2024-02-11T14:00:00",
-    rawScore: 88,
-    curvedScore: 92,
-    maxScore: 100,
-  },
-  {
-    id: "7",
-    student: { name: "Kevin Lee", email: "k.lee@email.com" },
-    assignment: "Written Assignment - Legal Issues",
-    assignmentType: "written",
-    course: "AEMT - Spring 2024",
-    submittedAt: "2024-02-08T15:45:00",
-    gradedAt: "2024-02-10T10:30:00",
-    rawScore: 42,
-    curvedScore: 42,
-    maxScore: 50,
-  },
-];
-
-const courseOptions = [
-  { value: "all", label: "All Courses" },
-  { value: "1", label: "EMT Basic - Spring 2024" },
-  { value: "2", label: "Paramedic - Fall 2024" },
-  { value: "3", label: "AEMT - Spring 2024" },
-];
+import { useSubmissions, usePendingSubmissions } from "@/lib/hooks/use-submissions";
+import { useInstructorCourses } from "@/lib/hooks/use-courses";
 
 const typeOptions = [
   { value: "all", label: "All Types" },
@@ -175,14 +85,76 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString();
 }
 
+interface SubmissionDisplay {
+  id: string;
+  student: { name: string; email: string };
+  assignment: string;
+  assignmentType: string;
+  course: string;
+  submittedAt: string;
+  dueDate?: string;
+  autoScore: number | null;
+  maxScore: number;
+  rawScore?: number | null;
+  curvedScore?: number | null;
+  gradedAt?: string | null;
+}
+
 export default function GradingPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [courseFilter, setCourseFilter] = React.useState("all");
   const [typeFilter, setTypeFilter] = React.useState("all");
-  const [selectedSubmission, setSelectedSubmission] = React.useState<typeof pendingSubmissions[0] | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = React.useState<SubmissionDisplay | null>(null);
   const [curveModalOpen, setCurveModalOpen] = React.useState(false);
   const [curveMethod, setCurveMethod] = React.useState<CurveMethod>("none");
   const [curveValue, setCurveValue] = React.useState("80");
+  const [gradeScore, setGradeScore] = React.useState("");
+  const [gradeFeedback, setGradeFeedback] = React.useState("");
+  const [isGrading, setIsGrading] = React.useState(false);
+
+  // Fetch data using hooks
+  const { submissions: pendingSubmissionsRaw, isLoading: pendingLoading, gradeSubmission, refetch: refetchPending } = usePendingSubmissions();
+  const { submissions: gradedSubmissionsRaw, isLoading: gradedLoading, refetch: refetchGraded } = useSubmissions({ status: "graded" });
+  const { courses, isLoading: coursesLoading } = useInstructorCourses();
+
+  // Transform submissions for display
+  const pendingSubmissions: SubmissionDisplay[] = pendingSubmissionsRaw.map((sub) => ({
+    id: sub.id,
+    student: {
+      name: sub.student?.full_name || "Unknown Student",
+      email: sub.student?.email || ""
+    },
+    assignment: sub.assignment?.title || "Unknown Assignment",
+    assignmentType: sub.assignment?.type || "quiz",
+    course: "Course", // Would need to join with course data
+    submittedAt: sub.submitted_at || sub.started_at || "",
+    dueDate: sub.assignment?.due_date || undefined,
+    autoScore: sub.raw_score,
+    maxScore: sub.assignment?.points_possible || 100,
+  }));
+
+  const gradedSubmissions: SubmissionDisplay[] = gradedSubmissionsRaw.map((sub) => ({
+    id: sub.id,
+    student: {
+      name: sub.student?.full_name || "Unknown Student",
+      email: sub.student?.email || ""
+    },
+    assignment: sub.assignment?.title || "Unknown Assignment",
+    assignmentType: sub.assignment?.type || "quiz",
+    course: "Course",
+    submittedAt: sub.submitted_at || sub.started_at || "",
+    gradedAt: sub.graded_at,
+    rawScore: sub.raw_score,
+    curvedScore: sub.curved_score,
+    autoScore: sub.raw_score,
+    maxScore: sub.assignment?.points_possible || 100,
+  }));
+
+  // Build course options for filter
+  const courseOptions = [
+    { value: "all", label: "All Courses" },
+    ...courses.map(c => ({ value: c.id, label: c.title }))
+  ];
 
   const filteredPending = pendingSubmissions.filter((sub) => {
     const matchesSearch =
@@ -192,6 +164,40 @@ export default function GradingPage() {
     const matchesType = typeFilter === "all" || sub.assignmentType === typeFilter;
     return matchesSearch && matchesCourse && matchesType;
   });
+
+  const handleGradeSubmit = async () => {
+    if (!selectedSubmission || !gradeScore) return;
+
+    setIsGrading(true);
+    try {
+      const score = parseFloat(gradeScore);
+      await gradeSubmission(selectedSubmission.id, {
+        raw_score: score,
+        final_score: score,
+        feedback: gradeFeedback ? { text: gradeFeedback } : undefined,
+      });
+
+      setSelectedSubmission(null);
+      setGradeScore("");
+      setGradeFeedback("");
+      refetchPending();
+      refetchGraded();
+    } catch (error) {
+      console.error("Failed to grade submission:", error);
+    } finally {
+      setIsGrading(false);
+    }
+  };
+
+  const isLoading = pendingLoading || gradedLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -382,7 +388,7 @@ export default function GradingPage() {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">{formatDate(submission.gradedAt)}</p>
+                        <p className="text-sm text-muted-foreground">{submission.gradedAt ? formatDate(submission.gradedAt) : ""}</p>
                       </div>
                       <Button variant="ghost" size="sm">
                         View
@@ -419,8 +425,10 @@ export default function GradingPage() {
               <h4 className="font-medium">{selectedSubmission.assignment}</h4>
               <p className="text-sm text-muted-foreground">{selectedSubmission.course}</p>
               <div className="flex gap-4 text-sm">
-                <span>Submitted: {formatDate(selectedSubmission.submittedAt)}</span>
-                <span>Due: {new Date(selectedSubmission.dueDate).toLocaleDateString()}</span>
+                <span>Submitted: {selectedSubmission.submittedAt ? formatDate(selectedSubmission.submittedAt) : "Not submitted"}</span>
+                {selectedSubmission.dueDate && (
+                  <span>Due: {new Date(selectedSubmission.dueDate).toLocaleDateString()}</span>
+                )}
               </div>
             </div>
 
@@ -450,7 +458,8 @@ export default function GradingPage() {
                   <Input
                     type="number"
                     placeholder={`0 - ${selectedSubmission.maxScore}`}
-                    defaultValue={selectedSubmission.autoScore || ""}
+                    value={gradeScore || (selectedSubmission.autoScore?.toString() || "")}
+                    onChange={(e) => setGradeScore(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -464,6 +473,8 @@ export default function GradingPage() {
                 <Textarea
                   placeholder="Provide feedback to the student..."
                   rows={4}
+                  value={gradeFeedback}
+                  onChange={(e) => setGradeFeedback(e.target.value)}
                 />
               </div>
             </div>
@@ -477,7 +488,7 @@ export default function GradingPage() {
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Request Revision
               </Button>
-              <Button>
+              <Button onClick={handleGradeSubmit} isLoading={isGrading} disabled={!gradeScore}>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Submit Grade
               </Button>

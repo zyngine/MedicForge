@@ -26,183 +26,31 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
-import type {
-  ClinicalShiftWithDetails,
-  ShiftBookingWithDetails,
-  ClinicalSite,
-} from "@/types";
-import { format, addDays, startOfWeek, addWeeks, isSameDay, parseISO } from "date-fns";
-
-// Mock data
-const mockSites: ClinicalSite[] = [
-  {
-    id: "1",
-    tenant_id: "t1",
-    name: "Memorial Hospital",
-    site_type: "hospital",
-    address: "123 Medical Center Dr",
-    city: "Springfield",
-    state: "IL",
-    zip: "62701",
-    phone: "(555) 123-4567",
-    contact_name: "Dr. Sarah Johnson",
-    contact_email: "sjohnson@memorial.org",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    tenant_id: "t1",
-    name: "County Fire & Rescue",
-    site_type: "fire_department",
-    address: "456 Station Road",
-    city: "Springfield",
-    state: "IL",
-    zip: "62702",
-    phone: "(555) 987-6543",
-    contact_name: "Chief Williams",
-    contact_email: "chief@countyfire.gov",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const generateMockShifts = (): ClinicalShiftWithDetails[] => {
-  const today = new Date();
-  const shifts: ClinicalShiftWithDetails[] = [];
-
-  // Generate shifts for the next 2 weeks
-  for (let i = 1; i <= 14; i++) {
-    const date = addDays(today, i);
-    const dateStr = format(date, "yyyy-MM-dd");
-
-    // Day shift at hospital
-    if (i % 2 === 0) {
-      shifts.push({
-        id: `s${i}a`,
-        tenant_id: "t1",
-        site_id: "1",
-        course_id: null,
-        title: "Day Shift - 12 Hours",
-        shift_date: dateStr,
-        start_time: "07:00",
-        end_time: "19:00",
-        capacity: 2,
-        notes: "Report to EMS station at 0645",
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[0],
-        bookings_count: i === 2 ? 2 : i === 4 ? 1 : 0,
-        available_slots: i === 2 ? 0 : i === 4 ? 1 : 2,
-        is_available: i !== 2,
-      });
-    }
-
-    // Night shift at hospital
-    if (i % 3 === 0) {
-      shifts.push({
-        id: `s${i}b`,
-        tenant_id: "t1",
-        site_id: "1",
-        course_id: null,
-        title: "Night Shift - 12 Hours",
-        shift_date: dateStr,
-        start_time: "19:00",
-        end_time: "07:00",
-        capacity: 1,
-        notes: null,
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[0],
-        bookings_count: i === 3 ? 1 : 0,
-        available_slots: i === 3 ? 0 : 1,
-        is_available: i !== 3,
-      });
-    }
-
-    // Fire station shifts
-    if (i % 4 === 0) {
-      shifts.push({
-        id: `s${i}c`,
-        tenant_id: "t1",
-        site_id: "2",
-        course_id: null,
-        title: "24-Hour Shift",
-        shift_date: dateStr,
-        start_time: "08:00",
-        end_time: "08:00",
-        capacity: 2,
-        notes: "Bring turnout gear",
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[1],
-        bookings_count: 0,
-        available_slots: 2,
-        is_available: true,
-      });
-    }
-  }
-
-  return shifts;
-};
-
-const mockBookings: ShiftBookingWithDetails[] = [
-  {
-    id: "b1",
-    tenant_id: "t1",
-    shift_id: "s4a",
-    student_id: "student1",
-    status: "booked",
-    booked_at: new Date().toISOString(),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: {
-      id: "s4a",
-      tenant_id: "t1",
-      site_id: "1",
-      course_id: null,
-      title: "Day Shift - 12 Hours",
-      shift_date: format(addDays(new Date(), 4), "yyyy-MM-dd"),
-      start_time: "07:00",
-      end_time: "19:00",
-      capacity: 2,
-      notes: "Report to EMS station at 0645",
-      created_by: "admin1",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      site: mockSites[0],
-    },
-  },
-];
+import { useClinicalShifts } from "@/lib/hooks/use-clinical-shifts";
+import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
+import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
+import { format, addDays, startOfWeek, addWeeks, isSameDay } from "date-fns";
 
 export default function ClinicalSchedulePage() {
-  const [shifts] = useState<ClinicalShiftWithDetails[]>(generateMockShifts());
-  const [bookings, setBookings] = useState<ShiftBookingWithDetails[]>(mockBookings);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+
+  // Fetch real data from hooks
+  const { sites, isLoading: sitesLoading } = useClinicalSites();
+  const { shifts, isLoading: shiftsLoading, refetch: refetchShifts } = useClinicalShifts({
+    startDate: format(new Date(), "yyyy-MM-dd"),
+  });
+  const {
+    bookings,
+    isLoading: bookingsLoading,
+    bookShift,
+    cancelBooking,
+    refetch: refetchBookings,
+  } = useMyBookings();
+
+  const isLoading = sitesLoading || shiftsLoading || bookingsLoading;
 
   // Get booked shift IDs for the current student
   const bookedShiftIds = new Set(
@@ -224,47 +72,23 @@ export default function ClinicalSchedulePage() {
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
 
   const handleBookShift = async (shiftId: string) => {
-    // TODO: Replace with actual API call using book_clinical_shift function
-    const shift = shifts.find((s) => s.id === shiftId);
-    if (!shift) return;
-
-    const newBooking: ShiftBookingWithDetails = {
-      id: Date.now().toString(),
-      tenant_id: "t1",
-      shift_id: shiftId,
-      student_id: "student1",
-      status: "booked",
-      booked_at: new Date().toISOString(),
-      cancelled_at: null,
-      cancellation_reason: null,
-      check_in_time: null,
-      check_out_time: null,
-      hours_completed: null,
-      preceptor_name: null,
-      preceptor_signature: null,
-      notes: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      shift: shift,
-    };
-
-    setBookings([...bookings, newBooking]);
+    try {
+      await bookShift(shiftId);
+      // Refetch both shifts and bookings to update availability
+      await Promise.all([refetchShifts(), refetchBookings()]);
+    } catch (error) {
+      // Error is handled by the hook
+      console.error("Failed to book shift:", error);
+    }
   };
 
   const handleCancelBooking = async (bookingId: string, reason?: string) => {
-    // TODO: Replace with actual API call
-    setBookings(
-      bookings.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              status: "cancelled" as const,
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: reason || null,
-            }
-          : b
-      )
-    );
+    try {
+      await cancelBooking(bookingId, reason);
+      await refetchShifts();
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+    }
   };
 
   if (isLoading) {
@@ -280,18 +104,24 @@ export default function ClinicalSchedulePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href="/student/clinical"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Clinical Tracker
-        </Link>
-        <h1 className="text-2xl font-bold">Clinical Schedule</h1>
-        <p className="text-muted-foreground">
-          View available shifts and book your clinical rotations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <Link
+            href="/student/clinical"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Clinical Tracker
+          </Link>
+          <h1 className="text-2xl font-bold">Clinical Schedule</h1>
+          <p className="text-muted-foreground">
+            View available shifts and book your clinical rotations
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => { refetchShifts(); refetchBookings(); }}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* My Bookings Summary */}
@@ -342,7 +172,7 @@ export default function ClinicalSchedulePage() {
               className="text-sm border rounded-md px-2 py-1"
             >
               <option value="all">All Sites</option>
-              {mockSites.map((site) => (
+              {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}
                 </option>
@@ -423,10 +253,10 @@ export default function ClinicalSchedulePage() {
                                 key={shift.id}
                                 className={`text-xs p-2 rounded ${
                                   isBooked
-                                    ? "bg-green-100 border border-green-300"
+                                    ? "bg-green-100 border border-green-300 dark:bg-green-900/30 dark:border-green-700"
                                     : shift.is_available
-                                    ? "bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer"
-                                    : "bg-gray-100 border border-gray-200"
+                                    ? "bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer dark:bg-blue-900/20 dark:border-blue-700"
+                                    : "bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
                                 }`}
                                 title={`${shift.title} at ${shift.site?.name}`}
                               >

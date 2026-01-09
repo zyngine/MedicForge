@@ -22,173 +22,10 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
-import type { ShiftBookingWithDetails, ClinicalSite, BookingStatus } from "@/types";
-import { format, addDays, parseISO, isPast } from "date-fns";
-
-// Mock data
-const mockSite: ClinicalSite = {
-  id: "1",
-  tenant_id: "t1",
-  name: "Memorial Hospital",
-  site_type: "hospital",
-  address: "123 Medical Center Dr",
-  city: "Springfield",
-  state: "IL",
-  zip: "62701",
-  phone: "(555) 123-4567",
-  contact_name: "Dr. Sarah Johnson",
-  contact_email: "sjohnson@memorial.org",
-  preceptors: [],
-  notes: null,
-  is_active: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const mockBookings: ShiftBookingWithDetails[] = [
-  {
-    id: "b1",
-    tenant_id: "t1",
-    shift_id: "s1",
-    student_id: "student1",
-    status: "booked",
-    booked_at: new Date().toISOString(),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: {
-      id: "s1",
-      tenant_id: "t1",
-      site_id: "1",
-      course_id: null,
-      title: "Day Shift - 12 Hours",
-      shift_date: format(addDays(new Date(), 4), "yyyy-MM-dd"),
-      start_time: "07:00",
-      end_time: "19:00",
-      capacity: 2,
-      notes: "Report to EMS station at 0645",
-      created_by: "admin1",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      site: mockSite,
-    },
-  },
-  {
-    id: "b2",
-    tenant_id: "t1",
-    shift_id: "s2",
-    student_id: "student1",
-    status: "booked",
-    booked_at: new Date().toISOString(),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: {
-      id: "s2",
-      tenant_id: "t1",
-      site_id: "1",
-      course_id: null,
-      title: "Night Shift - 12 Hours",
-      shift_date: format(addDays(new Date(), 8), "yyyy-MM-dd"),
-      start_time: "19:00",
-      end_time: "07:00",
-      capacity: 1,
-      notes: null,
-      created_by: "admin1",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      site: mockSite,
-    },
-  },
-  {
-    id: "b3",
-    tenant_id: "t1",
-    shift_id: "s3",
-    student_id: "student1",
-    status: "completed",
-    booked_at: format(addDays(new Date(), -10), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: format(addDays(new Date(), -5), "yyyy-MM-dd") + "T07:00:00Z",
-    check_out_time: format(addDays(new Date(), -5), "yyyy-MM-dd") + "T19:00:00Z",
-    hours_completed: 12,
-    preceptor_name: "Mike Thompson",
-    preceptor_signature: "signature",
-    notes: "Great shift!",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: {
-      id: "s3",
-      tenant_id: "t1",
-      site_id: "1",
-      course_id: null,
-      title: "Day Shift - 12 Hours",
-      shift_date: format(addDays(new Date(), -5), "yyyy-MM-dd"),
-      start_time: "07:00",
-      end_time: "19:00",
-      capacity: 2,
-      notes: null,
-      created_by: "admin1",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      site: mockSite,
-    },
-  },
-  {
-    id: "b4",
-    tenant_id: "t1",
-    shift_id: "s4",
-    student_id: "student1",
-    status: "cancelled",
-    booked_at: format(addDays(new Date(), -15), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    cancelled_at: format(addDays(new Date(), -12), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    cancellation_reason: "Schedule conflict",
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: {
-      id: "s4",
-      tenant_id: "t1",
-      site_id: "1",
-      course_id: null,
-      title: "Night Shift - 12 Hours",
-      shift_date: format(addDays(new Date(), -10), "yyyy-MM-dd"),
-      start_time: "19:00",
-      end_time: "07:00",
-      capacity: 1,
-      notes: null,
-      created_by: "admin1",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      site: mockSite,
-    },
-  },
-];
+import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
+import type { BookingStatus } from "@/types";
 
 const STATUS_TABS: { value: BookingStatus | "all"; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "All Shifts", icon: <Calendar className="h-4 w-4" /> },
@@ -198,24 +35,22 @@ const STATUS_TABS: { value: BookingStatus | "all"; label: string; icon: React.Re
 ];
 
 export default function MyShiftsPage() {
-  const [bookings, setBookings] = useState<ShiftBookingWithDetails[]>(mockBookings);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<BookingStatus | "all">("all");
 
+  // Fetch real bookings data
+  const {
+    bookings,
+    isLoading,
+    cancelBooking,
+    refetch,
+  } = useMyBookings();
+
   const handleCancelBooking = async (bookingId: string, reason?: string) => {
-    // TODO: Replace with actual API call
-    setBookings(
-      bookings.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              status: "cancelled" as const,
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: reason || null,
-            }
-          : b
-      )
-    );
+    try {
+      await cancelBooking(bookingId, reason);
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+    }
   };
 
   const filteredBookings =
@@ -250,25 +85,31 @@ export default function MyShiftsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href="/student/clinical"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Clinical Tracker
-        </Link>
-        <h1 className="text-2xl font-bold">My Clinical Shifts</h1>
-        <p className="text-muted-foreground">
-          View and manage your booked clinical rotations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <Link
+            href="/student/clinical"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Clinical Tracker
+          </Link>
+          <h1 className="text-2xl font-bold">My Clinical Shifts</h1>
+          <p className="text-muted-foreground">
+            View and manage your booked clinical rotations
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
+            <div className="p-3 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
               <Clock className="h-5 w-5" />
             </div>
             <div>
@@ -280,7 +121,7 @@ export default function MyShiftsPage() {
 
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-green-100 text-green-600">
+            <div className="p-3 rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
               <CheckCircle className="h-5 w-5" />
             </div>
             <div>
@@ -292,7 +133,7 @@ export default function MyShiftsPage() {
 
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-purple-100 text-purple-600">
+            <div className="p-3 rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
               <Calendar className="h-5 w-5" />
             </div>
             <div>

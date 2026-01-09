@@ -2,17 +2,28 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ClinicalPatientContact, PatientContactForm, VitalSigns, MedicationGiven } from "@/types";
+import type { ClinicalPatientContact, ClinicalPatientContactWithDetails, PatientContactForm, VitalSigns, MedicationGiven, Preceptor } from "@/types";
 
 type VerificationStatus = "pending" | "verified" | "rejected";
 
-// Helper to transform database contact to ClinicalPatientContact type
-const transformContact = (data: any): ClinicalPatientContact => ({
+// Helper to transform database contact to ClinicalPatientContactWithDetails type
+const transformContact = (data: any): ClinicalPatientContactWithDetails => ({
   ...data,
   vitals: (data.vitals || []) as VitalSigns[],
   skills_performed: (data.skills_performed || []) as string[],
   medications_given: (data.medications_given || []) as MedicationGiven[],
   procedures: (data.procedures || []) as string[],
+  student: data.student || undefined,
+  booking: data.booking ? {
+    ...data.booking,
+    shift: data.booking.shift ? {
+      ...data.booking.shift,
+      site: data.booking.shift.site ? {
+        ...data.booking.shift.site,
+        preceptors: (data.booking.shift.site.preceptors || []) as Preceptor[],
+      } : undefined,
+    } : undefined,
+  } : undefined,
 });
 
 interface UsePatientContactsOptions {
@@ -23,7 +34,7 @@ interface UsePatientContactsOptions {
 }
 
 export function usePatientContacts(options: UsePatientContactsOptions = {}) {
-  const [contacts, setContacts] = useState<ClinicalPatientContact[]>([]);
+  const [contacts, setContacts] = useState<ClinicalPatientContactWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -88,7 +99,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
   // Create a new patient contact
   const createContact = async (
     contactData: PatientContactForm & { booking_id: string; course_id?: string }
-  ): Promise<ClinicalPatientContact | null> => {
+  ): Promise<ClinicalPatientContactWithDetails | null> => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
@@ -133,7 +144,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
   const updateContact = async (
     contactId: string,
     updates: Partial<PatientContactForm>
-  ): Promise<ClinicalPatientContact | null> => {
+  ): Promise<ClinicalPatientContactWithDetails | null> => {
     try {
       const { data, error: updateError } = await supabase
         .from("clinical_patient_contacts")
@@ -250,7 +261,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
 
 // Hook for getting a single patient contact
 export function usePatientContact(contactId: string | null) {
-  const [contact, setContact] = useState<ClinicalPatientContact | null>(null);
+  const [contact, setContact] = useState<ClinicalPatientContactWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 

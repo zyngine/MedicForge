@@ -14,6 +14,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Spinner,
 } from "@/components/ui";
 import { ShiftCard } from "@/components/clinical";
 import {
@@ -26,148 +27,34 @@ import {
   Clock,
   Building2,
   Filter,
+  RefreshCw,
 } from "lucide-react";
-import type { ClinicalShiftWithDetails, ClinicalSite } from "@/types";
+import { useClinicalShifts } from "@/lib/hooks/use-clinical-shifts";
+import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
+import { useShiftBookings } from "@/lib/hooks/use-shift-bookings";
 import {
   format,
   addDays,
   startOfWeek,
   addWeeks,
   isSameDay,
-  parseISO,
-  isPast,
 } from "date-fns";
-
-// Mock data
-const mockSites: ClinicalSite[] = [
-  {
-    id: "1",
-    tenant_id: "t1",
-    name: "Memorial Hospital",
-    site_type: "hospital",
-    address: "123 Medical Center Dr",
-    city: "Springfield",
-    state: "IL",
-    zip: "62701",
-    phone: "(555) 123-4567",
-    contact_name: "Dr. Sarah Johnson",
-    contact_email: "sjohnson@memorial.org",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    tenant_id: "t1",
-    name: "County Fire & Rescue",
-    site_type: "fire_department",
-    address: "456 Station Road",
-    city: "Springfield",
-    state: "IL",
-    zip: "62702",
-    phone: "(555) 987-6543",
-    contact_name: "Chief Williams",
-    contact_email: "chief@countyfire.gov",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const generateMockShifts = (): ClinicalShiftWithDetails[] => {
-  const today = new Date();
-  const shifts: ClinicalShiftWithDetails[] = [];
-
-  for (let i = -3; i <= 14; i++) {
-    const date = addDays(today, i);
-    const dateStr = format(date, "yyyy-MM-dd");
-
-    if (i % 2 === 0) {
-      shifts.push({
-        id: `s${i}a`,
-        tenant_id: "t1",
-        site_id: "1",
-        course_id: null,
-        title: "Day Shift - 12 Hours",
-        shift_date: dateStr,
-        start_time: "07:00",
-        end_time: "19:00",
-        capacity: 2,
-        notes: "Report to EMS station at 0645",
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[0],
-        bookings_count: i < 0 ? 2 : i === 2 ? 2 : i === 4 ? 1 : 0,
-        available_slots: i < 0 ? 0 : i === 2 ? 0 : i === 4 ? 1 : 2,
-        is_available: i >= 0 && i !== 2,
-      });
-    }
-
-    if (i % 3 === 0) {
-      shifts.push({
-        id: `s${i}b`,
-        tenant_id: "t1",
-        site_id: "1",
-        course_id: null,
-        title: "Night Shift - 12 Hours",
-        shift_date: dateStr,
-        start_time: "19:00",
-        end_time: "07:00",
-        capacity: 1,
-        notes: null,
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[0],
-        bookings_count: i < 0 ? 1 : i === 3 ? 1 : 0,
-        available_slots: i < 0 ? 0 : i === 3 ? 0 : 1,
-        is_available: i >= 0 && i !== 3,
-      });
-    }
-
-    if (i % 4 === 0) {
-      shifts.push({
-        id: `s${i}c`,
-        tenant_id: "t1",
-        site_id: "2",
-        course_id: null,
-        title: "24-Hour Shift",
-        shift_date: dateStr,
-        start_time: "08:00",
-        end_time: "08:00",
-        capacity: 2,
-        notes: "Bring turnout gear",
-        created_by: "admin1",
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        site: mockSites[1],
-        bookings_count: i < 0 ? 1 : 0,
-        available_slots: i < 0 ? 1 : 2,
-        is_available: i >= 0,
-      });
-    }
-  }
-
-  return shifts;
-};
 
 export default function InstructorShiftsPage() {
   const searchParams = useSearchParams();
   const siteFilter = searchParams.get("site");
 
-  const [shifts] = useState<ClinicalShiftWithDetails[]>(generateMockShifts());
   const [selectedSite, setSelectedSite] = useState<string>(siteFilter || "all");
   const [currentWeek, setCurrentWeek] = useState(
     startOfWeek(new Date(), { weekStartsOn: 0 })
   );
+
+  // Fetch real data from hooks
+  const { sites, isLoading: sitesLoading } = useClinicalSites();
+  const { shifts, isLoading: shiftsLoading, deleteShift, refetch: refetchShifts } = useClinicalShifts();
+  const { bookings, isLoading: bookingsLoading } = useShiftBookings();
+
+  const isLoading = sitesLoading || shiftsLoading || bookingsLoading;
 
   const filteredShifts = shifts.filter(
     (shift) => selectedSite === "all" || shift.site_id === selectedSite
@@ -191,18 +78,26 @@ export default function InstructorShiftsPage() {
   };
 
   const handleEditShift = (shiftId: string) => {
-    // TODO: Navigate to edit page or open modal
-    console.log("Edit shift:", shiftId);
+    window.location.href = `/instructor/clinical/shifts/${shiftId}/edit`;
   };
 
-  const handleDeleteShift = (shiftId: string) => {
-    // TODO: Implement delete
-    console.log("Delete shift:", shiftId);
+  const handleDeleteShift = async (shiftId: string) => {
+    if (confirm("Are you sure you want to delete this shift?")) {
+      await deleteShift(shiftId);
+    }
   };
 
   const handleViewBookings = (shiftId: string) => {
     window.location.href = `/instructor/clinical/shifts/${shiftId}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -221,19 +116,25 @@ export default function InstructorShiftsPage() {
             Manage shifts and view student bookings
           </p>
         </div>
-        <Button asChild>
-          <Link href="/instructor/clinical/shifts/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Shift
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetchShifts()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button asChild>
+            <Link href="/instructor/clinical/shifts/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Shift
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+            <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
@@ -245,7 +146,7 @@ export default function InstructorShiftsPage() {
 
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100 text-green-600">
+            <div className="p-2 rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
               <Clock className="h-5 w-5" />
             </div>
             <div>
@@ -257,7 +158,7 @@ export default function InstructorShiftsPage() {
 
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+            <div className="p-2 rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
               <Users className="h-5 w-5" />
             </div>
             <div>
@@ -269,7 +170,7 @@ export default function InstructorShiftsPage() {
 
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-yellow-100 text-yellow-600">
+            <div className="p-2 rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
@@ -297,7 +198,7 @@ export default function InstructorShiftsPage() {
               className="text-sm border rounded-md px-2 py-1"
             >
               <option value="all">All Sites</option>
-              {mockSites.map((site) => (
+              {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}
                 </option>
@@ -377,10 +278,10 @@ export default function InstructorShiftsPage() {
                               key={shift.id}
                               className={`text-xs p-2 rounded cursor-pointer transition-colors ${
                                 shift.bookings_count === shift.capacity
-                                  ? "bg-green-100 border border-green-300 hover:bg-green-150"
+                                  ? "bg-green-100 border border-green-300 hover:bg-green-150 dark:bg-green-900/30 dark:border-green-700"
                                   : shift.bookings_count && shift.bookings_count > 0
-                                  ? "bg-yellow-50 border border-yellow-200 hover:bg-yellow-100"
-                                  : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
+                                  ? "bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-700"
+                                  : "bg-gray-50 border border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700"
                               }`}
                               onClick={() => handleViewBookings(shift.id)}
                               title={`${shift.title} at ${shift.site?.name}`}
