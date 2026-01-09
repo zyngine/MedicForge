@@ -2,6 +2,18 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/supabase";
 
+// Domains that should show the main marketing site (no tenant)
+const MAIN_DOMAINS = ["www.medicforge.net", "medicforge.net", "localhost", "localhost:3000"];
+
+interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string;
+  custom_domain: string | null;
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -39,6 +51,72 @@ export async function updateSession(request: NextRequest) {
   );
 
   const pathname = request.nextUrl.pathname;
+  const hostname = request.headers.get("host") || "";
+
+  // ============================================
+  // MULTI-TENANT SUBDOMAIN DETECTION
+  // ============================================
+
+  let tenantSlug: string | null = null;
+  let tenantInfo: TenantInfo | null = null;
+
+  // Check if this is the main marketing domain
+  const isMainDomain = MAIN_DOMAINS.some(domain =>
+    hostname === domain || hostname.startsWith("localhost")
+  );
+
+  if (!isMainDomain) {
+    // Check for custom domain first
+    const customDomainTenant = await lookupTenantByCustomDomain(supabase, hostname);
+    if (customDomainTenant) {
+      tenantInfo = customDomainTenant;
+      tenantSlug = customDomainTenant.slug;
+    } else {
+      // Extract subdomain from hostname (e.g., "metro-ems" from "metro-ems.medicforge.net")
+      const parts = hostname.split(".");
+      if (parts.length >= 3 || (parts.length === 2 && parts[1].includes("localhost"))) {
+        const potentialSlug = parts[0];
+        // Don't treat "www" as a tenant slug
+        if (potentialSlug !== "www") {
+          tenantSlug = potentialSlug;
+        }
+      }
+    }
+
+    // Look up tenant by slug if we found one
+    if (tenantSlug && !tenantInfo) {
+      tenantInfo = await lookupTenantBySlug(supabase, tenantSlug);
+    }
+
+    // If we have a subdomain but no tenant found, redirect to main site
+    if (tenantSlug && !tenantInfo) {
+      const mainUrl = new URL(request.url);
+      mainUrl.host = "www.medicforge.net";
+      return NextResponse.redirect(mainUrl);
+    }
+
+    // Set tenant info in response headers/cookies for the app to use
+    if (tenantInfo) {
+      supabaseResponse.headers.set("x-tenant-id", tenantInfo.id);
+      supabaseResponse.headers.set("x-tenant-slug", tenantInfo.slug);
+      supabaseResponse.cookies.set("tenant_id", tenantInfo.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+      supabaseResponse.cookies.set("tenant_slug", tenantInfo.slug, {
+        httpOnly: false, // Allow client-side access
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+    }
+  }
+
+  // ============================================
+  // ROUTE PROTECTION (existing logic)
+  // ============================================
 
   // Skip auth check for public routes (faster response - no network calls)
   const isPublicRoute = pathname === "/" ||
@@ -124,4 +202,64 @@ export async function updateSession(request: NextRequest) {
   }
 
   return supabaseResponse;
+}
+
+// ============================================
+// TENANT LOOKUP HELPERS
+// ============================================
+
+async function lookupTenantBySlug(
+  supabase: ReturnType<typeof createServerClient<Database>>,
+  slug: string
+): Promise<TenantInfo | null> {
+  try {
+    const { data, error } = await supabase
+      .from("tenants")
+      .select("id, name, slug, logo_url, primary_color, custom_domain")
+      .eq("slug", slug)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      logo_url: data.logo_url,
+      primary_color: data.primary_color || "#C53030",
+      custom_domain: data.custom_domain,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function lookupTenantByCustomDomain(
+  supabase: ReturnType<typeof createServerClient<Database>>,
+  domain: string
+): Promise<TenantInfo | null> {
+  try {
+    const { data, error } = await supabase
+      .from("tenants")
+      .select("id, name, slug, logo_url, primary_color, custom_domain")
+      .eq("custom_domain", domain)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      logo_url: data.logo_url,
+      primary_color: data.primary_color || "#C53030",
+      custom_domain: data.custom_domain,
+    };
+  } catch {
+    return null;
+  }
 }
