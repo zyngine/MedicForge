@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Skip auth check for public routes (faster response)
+  // Skip auth check for public routes (faster response - no network calls)
   const isPublicRoute = pathname === "/" ||
                         pathname.startsWith("/features") ||
                         pathname.startsWith("/pricing") ||
@@ -62,12 +62,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Get user session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Route type detection
+  // Route type detection - check BEFORE making network call
   const isAuthRoute = pathname.startsWith("/login") ||
                       pathname.startsWith("/register") ||
                       pathname.startsWith("/forgot-password") ||
@@ -80,28 +75,41 @@ export async function updateSession(request: NextRequest) {
                            pathname.startsWith("/instructor") ||
                            pathname.startsWith("/student");
 
-  // Auth routes - allow if not logged in
+  // For auth routes, only check user if we need to redirect logged-in users
+  // Otherwise allow through without network call
   if (isAuthRoute) {
-    if (user) {
-      // User is logged in, redirect to dashboard
-      // Just redirect to student dashboard, the page can handle role-based routing
-      const url = request.nextUrl.clone();
-      url.pathname = "/student/dashboard";
-      return NextResponse.redirect(url);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is logged in, redirect to dashboard
+        const url = request.nextUrl.clone();
+        url.pathname = "/student/dashboard";
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // If auth check fails, just let them through to the auth page
+      console.warn("Auth check failed in middleware, allowing through");
     }
-    // Not logged in, allow access to auth routes
     return supabaseResponse;
   }
 
   // Protected routes - require login
   if (isProtectedRoute || isPlatformAdminRoute) {
-    if (!user) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // If auth check fails, redirect to login
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
-    // User is logged in, allow access (role checking is done in the pages)
     return supabaseResponse;
   }
 
