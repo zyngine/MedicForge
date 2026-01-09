@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope } from "lucide-react";
+import Image from "next/image";
+import { useTenantBranding } from "@/lib/hooks/use-tenant";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,8 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, description }: AuthLayoutProps) {
+  const { logoUrl, tenantName, isWhiteLabeled } = useTenantBranding();
+
   return (
     <div className="min-h-screen flex">
       {/* Left side - Branding */}
@@ -21,10 +24,24 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         </div>
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-              <Stethoscope className="w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold">MedicForge</span>
+            {isWhiteLabeled ? (
+              <Image
+                src={logoUrl}
+                alt={tenantName}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-lg object-contain bg-white/20 p-1"
+              />
+            ) : (
+              <Image
+                src="/logo-icon.svg"
+                alt="MedicForge"
+                width={40}
+                height={40}
+                className="w-10 h-10"
+              />
+            )}
+            <span className="text-2xl font-bold">{tenantName}</span>
           </Link>
 
           <div className="space-y-6">
@@ -64,10 +81,24 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         {/* Mobile header */}
         <div className="lg:hidden p-6 border-b">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Stethoscope className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">MedicForge</span>
+            {isWhiteLabeled ? (
+              <Image
+                src={logoUrl}
+                alt={tenantName}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-lg object-contain"
+              />
+            ) : (
+              <Image
+                src="/logo-icon.svg"
+                alt="MedicForge"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+            )}
+            <span className="text-xl font-bold">{tenantName}</span>
           </Link>
         </div>
 

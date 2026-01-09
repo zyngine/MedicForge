@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, Badge, Button, Dropdown, DropdownItem, DropdownSeparator } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications";
+import { useTenantBranding } from "@/lib/hooks/use-tenant";
 import {
-  Stethoscope,
   Menu,
   X,
   Search,
@@ -47,6 +48,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const pathname = usePathname();
+  const { logoUrl, tenantName, isWhiteLabeled } = useTenantBranding();
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -68,10 +70,24 @@ export function DashboardLayout({
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Stethoscope className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold">MedicForge</span>
+            {isWhiteLabeled ? (
+              <Image
+                src={logoUrl}
+                alt={tenantName}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-lg object-contain"
+              />
+            ) : (
+              <Image
+                src="/logo-icon.svg"
+                alt="MedicForge"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+            )}
+            <span className="font-bold">{tenantName}</span>
           </Link>
           <button
             className="lg:hidden p-2 hover:bg-muted rounded-md"

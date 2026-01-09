@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
-import { Stethoscope, Menu, X } from "lucide-react";
+import { useTenantBranding, useTenant } from "@/lib/hooks/use-tenant";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
   { title: "Features", href: "/features" },
@@ -17,6 +19,8 @@ const navItems = [
 export function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const pathname = usePathname();
+  const { logoUrl, tenantName, isWhiteLabeled } = useTenantBranding();
+  const { isMainSite } = useTenant();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,10 +30,24 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <Stethoscope className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">MedicForge</span>
+              {isWhiteLabeled ? (
+                <Image
+                  src={logoUrl}
+                  alt={tenantName}
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 rounded-lg object-contain"
+                />
+              ) : (
+                <Image
+                  src="/logo-icon.svg"
+                  alt="MedicForge"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9"
+                />
+              )}
+              <span className="text-xl font-bold">{tenantName}</span>
             </Link>
 
             {/* Desktop nav */}
@@ -116,10 +134,24 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
             {/* Brand */}
             <div className="col-span-2 md:col-span-4 lg:col-span-1">
               <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Stethoscope className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-bold">MedicForge</span>
+                {isWhiteLabeled ? (
+                  <Image
+                    src={logoUrl}
+                    alt={tenantName}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-lg object-contain"
+                  />
+                ) : (
+                  <Image
+                    src="/logo-icon.svg"
+                    alt="MedicForge"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8"
+                  />
+                )}
+                <span className="font-bold">{tenantName}</span>
               </Link>
               <p className="text-sm text-muted-foreground mb-4">
                 Where First Responders Are Forged. The modern LMS for EMS education.
