@@ -14,3 +14,4 @@ export * from "./table";
 export * from "./dropdown";
 export * from "./progress";
 export * from "./tabs";
+export * from "./logo";

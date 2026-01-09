@@ -1,45 +1,45 @@
 @import "tailwindcss";
 
-/* MedicForge Custom Theme */
+/* MedicForge Custom Theme - Medic Red & Forge Gray */
 :root {
-  /* Brand Colors - Deep medical blues and emergency red accents */
-  --primary: #1e40af;
+  /* Brand Colors - Based on MedicForge logo */
+  --primary: #C53030;
   --primary-foreground: #ffffff;
-  --primary-hover: #1d4ed8;
+  --primary-hover: #E53E3E;
 
-  --secondary: #64748b;
+  --secondary: #4A5568;
   --secondary-foreground: #ffffff;
-  --secondary-hover: #475569;
+  --secondary-hover: #2D3748;
 
-  --accent: #dc2626;
+  --accent: #ED8936;
   --accent-foreground: #ffffff;
-  --accent-hover: #b91c1c;
+  --accent-hover: #F6AD55;
 
   /* UI Colors */
   --background: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #1A202C;
 
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1A202C;
 
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #1A202C;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted: #F7FAFC;
+  --muted-foreground: #4A5568;
 
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #1e40af;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #C53030;
 
   /* Status Colors */
-  --success: #16a34a;
+  --success: #38A169;
   --success-foreground: #ffffff;
-  --warning: #f59e0b;
+  --warning: #ED8936;
   --warning-foreground: #ffffff;
-  --error: #dc2626;
+  --error: #E53E3E;
   --error-foreground: #ffffff;
-  --info: #0ea5e9;
+  --info: #3182CE;
   --info-foreground: #ffffff;
 
   /* Radius */
@@ -48,38 +48,38 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #3b82f6;
+    --primary: #E53E3E;
     --primary-foreground: #ffffff;
-    --primary-hover: #2563eb;
+    --primary-hover: #FC8181;
 
-    --secondary: #64748b;
+    --secondary: #718096;
     --secondary-foreground: #ffffff;
-    --secondary-hover: #475569;
+    --secondary-hover: #A0AEC0;
 
-    --accent: #ef4444;
-    --accent-foreground: #ffffff;
-    --accent-hover: #dc2626;
+    --accent: #F6AD55;
+    --accent-foreground: #1A202C;
+    --accent-hover: #FBD38D;
 
-    --background: #0f172a;
-    --foreground: #f8fafc;
+    --background: #1A202C;
+    --foreground: #F7FAFC;
 
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
+    --card: #2D3748;
+    --card-foreground: #F7FAFC;
 
-    --popover: #1e293b;
-    --popover-foreground: #f8fafc;
+    --popover: #2D3748;
+    --popover-foreground: #F7FAFC;
 
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
+    --muted: #2D3748;
+    --muted-foreground: #A0AEC0;
 
-    --border: #334155;
-    --input: #334155;
-    --ring: #3b82f6;
+    --border: #4A5568;
+    --input: #4A5568;
+    --ring: #E53E3E;
 
-    --success: #22c55e;
-    --warning: #fbbf24;
-    --error: #ef4444;
-    --info: #38bdf8;
+    --success: #48BB78;
+    --warning: #F6AD55;
+    --error: #FC8181;
+    --info: #63B3ED;
   }
 }
 
