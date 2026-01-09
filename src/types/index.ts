@@ -282,7 +282,7 @@ export interface ShiftBooking {
 
 export interface ShiftBookingWithDetails extends ShiftBooking {
   shift?: ClinicalShiftWithDetails;
-  student?: User;
+  student?: { id: string; full_name: string; email: string };
 }
 
 export interface VitalSigns {
@@ -341,9 +341,9 @@ export interface ClinicalPatientContact {
 
 export interface ClinicalPatientContactWithDetails extends ClinicalPatientContact {
   booking?: ShiftBookingWithDetails;
-  student?: User;
+  student?: { id: string; full_name: string; email: string };
   course?: Course;
-  verifier?: User;
+  verifier?: { id: string; full_name: string; email: string };
 }
 
 // Clinical Form Types
