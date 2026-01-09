@@ -11,6 +11,7 @@ import {
   BarChart3,
   Calendar,
   Settings,
+  Stethoscope,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -39,6 +40,11 @@ const instructorNavigation = [
     title: "Reports",
     href: "/instructor/reports",
     icon: <BarChart3 className="h-5 w-5" />,
+  },
+  {
+    title: "Clinical",
+    href: "/instructor/clinical",
+    icon: <Stethoscope className="h-5 w-5" />,
   },
   {
     title: "Calendar",

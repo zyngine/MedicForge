@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, useFieldArray } from "react-hook-form";
-import { Button, Input, Label, Textarea, Select } from "@/components/ui";
+import { Button, Input, Label, Textarea } from "@/components/ui";
 import { Plus, Trash2 } from "lucide-react";
 import type { ClinicalSiteForm, ClinicalSiteType, SITE_TYPE_LABELS } from "@/types";
 
@@ -74,13 +74,17 @@ export function SiteForm({
 
           <div className="space-y-2">
             <Label htmlFor="site_type">Site Type *</Label>
-            <Select {...register("site_type")}>
+            <select
+              id="site_type"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              {...register("site_type")}
+            >
               {SITE_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
         </div>
 

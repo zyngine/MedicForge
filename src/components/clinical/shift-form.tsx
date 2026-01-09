@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Button, Input, Label, Textarea, Select } from "@/components/ui";
+import { Button, Input, Label, Textarea } from "@/components/ui";
 import type { ClinicalShiftForm, ClinicalSite, Course } from "@/types";
 
 interface ShiftFormProps {
@@ -44,7 +44,9 @@ export function ShiftForm({
       {/* Site Selection */}
       <div className="space-y-2">
         <Label htmlFor="site_id">Clinical Site *</Label>
-        <Select
+        <select
+          id="site_id"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           {...register("site_id", { required: "Please select a clinical site" })}
         >
           <option value="">Select a site...</option>
@@ -53,7 +55,7 @@ export function ShiftForm({
               {site.name}
             </option>
           ))}
-        </Select>
+        </select>
         {errors.site_id && (
           <p className="text-sm text-red-500">{errors.site_id.message}</p>
         )}
@@ -63,14 +65,18 @@ export function ShiftForm({
       {courses.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="course_id">Limit to Course (Optional)</Label>
-          <Select {...register("course_id")}>
+          <select
+            id="course_id"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            {...register("course_id")}
+          >
             <option value="">All courses</option>
             {courses.map((course) => (
               <option key={course.id} value={course.id}>
                 {course.title}
               </option>
             ))}
-          </Select>
+          </select>
           <p className="text-xs text-muted-foreground">
             Leave empty to make this shift available to all students
           </p>
