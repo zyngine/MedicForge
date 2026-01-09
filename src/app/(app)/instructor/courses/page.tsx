@@ -13,6 +13,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownSeparator,
+  Spinner,
 } from "@/components/ui";
 import {
   Plus,
@@ -27,86 +28,10 @@ import {
   Trash2,
   Eye,
   GraduationCap,
+  RefreshCw,
 } from "lucide-react";
-
-// Mock data
-const courses = [
-  {
-    id: "1",
-    title: "EMT Basic - Spring 2024",
-    description: "Comprehensive EMT certification course covering all NREMT requirements.",
-    type: "EMT",
-    enrollmentCode: "EMT2024S",
-    students: 32,
-    maxStudents: 40,
-    progress: 65,
-    startDate: "2024-01-15",
-    endDate: "2024-05-15",
-    status: "active",
-    modules: 12,
-    completedModules: 8,
-  },
-  {
-    id: "2",
-    title: "Paramedic - Fall 2024",
-    description: "Advanced paramedic training program with clinical rotations.",
-    type: "Paramedic",
-    enrollmentCode: "PARA2024F",
-    students: 28,
-    maxStudents: 30,
-    progress: 42,
-    startDate: "2024-08-20",
-    endDate: "2025-05-20",
-    status: "active",
-    modules: 24,
-    completedModules: 10,
-  },
-  {
-    id: "3",
-    title: "AEMT - Spring 2024",
-    description: "Advanced EMT training bridging EMT-Basic to Paramedic.",
-    type: "AEMT",
-    enrollmentCode: "AEMT2024S",
-    students: 22,
-    maxStudents: 25,
-    progress: 78,
-    startDate: "2024-01-10",
-    endDate: "2024-04-10",
-    status: "active",
-    modules: 8,
-    completedModules: 6,
-  },
-  {
-    id: "4",
-    title: "EMR Refresher Course",
-    description: "Refresher course for Emergency Medical Responders.",
-    type: "EMR",
-    enrollmentCode: "EMR2024R",
-    students: 15,
-    maxStudents: 20,
-    progress: 100,
-    startDate: "2023-10-01",
-    endDate: "2023-12-15",
-    status: "completed",
-    modules: 6,
-    completedModules: 6,
-  },
-  {
-    id: "5",
-    title: "EMT Basic - Fall 2024",
-    description: "Upcoming EMT certification course for Fall semester.",
-    type: "EMT",
-    enrollmentCode: "EMT2024F",
-    students: 0,
-    maxStudents: 40,
-    progress: 0,
-    startDate: "2024-08-15",
-    endDate: "2024-12-15",
-    status: "draft",
-    modules: 12,
-    completedModules: 0,
-  },
-];
+import { useInstructorCourses, type CourseWithDetails } from "@/lib/hooks/use-courses";
+import { formatDate } from "@/lib/utils";
 
 const courseTypes = [
   { value: "all", label: "All Types" },
@@ -114,46 +39,62 @@ const courseTypes = [
   { value: "EMT", label: "EMT" },
   { value: "AEMT", label: "AEMT" },
   { value: "Paramedic", label: "Paramedic" },
+  { value: "Custom", label: "Custom" },
 ];
 
 const statusFilters = [
   { value: "all", label: "All Status" },
   { value: "active", label: "Active" },
-  { value: "draft", label: "Draft" },
-  { value: "completed", label: "Completed" },
   { value: "archived", label: "Archived" },
 ];
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "active":
-      return <Badge variant="success">Active</Badge>;
-    case "draft":
-      return <Badge variant="secondary">Draft</Badge>;
-    case "completed":
-      return <Badge variant="info">Completed</Badge>;
-    case "archived":
-      return <Badge variant="default">Archived</Badge>;
-    default:
-      return <Badge>{status}</Badge>;
+function getStatusBadge(course: CourseWithDetails) {
+  if (course.is_archived) {
+    return <Badge variant="default">Archived</Badge>;
   }
+
+  const now = new Date();
+  const startDate = course.start_date ? new Date(course.start_date) : null;
+  const endDate = course.end_date ? new Date(course.end_date) : null;
+
+  if (endDate && now > endDate) {
+    return <Badge variant="info">Completed</Badge>;
+  }
+  if (startDate && now < startDate) {
+    return <Badge variant="secondary">Upcoming</Badge>;
+  }
+  return <Badge variant="success">Active</Badge>;
+}
+
+function getCourseStatus(course: CourseWithDetails): string {
+  if (course.is_archived) return "archived";
+
+  const now = new Date();
+  const startDate = course.start_date ? new Date(course.start_date) : null;
+  const endDate = course.end_date ? new Date(course.end_date) : null;
+
+  if (endDate && now > endDate) return "completed";
+  if (startDate && now < startDate) return "upcoming";
+  return "active";
 }
 
 function getTypeBadge(type: string) {
   const colors: Record<string, string> = {
-    EMR: "bg-green-100 text-green-800",
-    EMT: "bg-blue-100 text-blue-800",
-    AEMT: "bg-purple-100 text-purple-800",
-    Paramedic: "bg-red-100 text-red-800",
+    EMR: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    EMT: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    AEMT: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+    Paramedic: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    Custom: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
   };
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[type] || "bg-gray-100 text-gray-800"}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[type] || colors.Custom}`}>
       {type}
     </span>
   );
 }
 
 export default function InstructorCoursesPage() {
+  const { courses, isLoading, error, refetch, archiveCourse, deleteCourse } = useInstructorCourses();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
@@ -161,11 +102,46 @@ export default function InstructorCoursesPage() {
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || course.type === typeFilter;
-    const matchesStatus = statusFilter === "all" || course.status === statusFilter;
+      (course.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = typeFilter === "all" || course.course_type === typeFilter;
+    const status = getCourseStatus(course);
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const handleArchive = async (courseId: string) => {
+    if (confirm("Are you sure you want to archive this course?")) {
+      await archiveCourse(courseId);
+    }
+  };
+
+  const handleDelete = async (courseId: string) => {
+    if (confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+      await deleteCourse(courseId);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <p className="text-error mb-4">{error.message}</p>
+          <Button onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -246,11 +222,11 @@ export default function InstructorCoursesPage() {
                       <BookOpen className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      {getTypeBadge(course.type)}
+                      {getTypeBadge(course.course_type)}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {getStatusBadge(course.status)}
+                    {getStatusBadge(course)}
                     <Dropdown
                       trigger={
                         <button className="p-1 hover:bg-muted rounded">
@@ -259,20 +235,33 @@ export default function InstructorCoursesPage() {
                       }
                       align="right"
                     >
-                      <DropdownItem icon={<Eye className="h-4 w-4" />}>
+                      <DropdownItem
+                        icon={<Eye className="h-4 w-4" />}
+                        onClick={() => window.location.href = `/instructor/courses/${course.id}`}
+                      >
                         View Course
                       </DropdownItem>
-                      <DropdownItem icon={<Edit className="h-4 w-4" />}>
+                      <DropdownItem
+                        icon={<Edit className="h-4 w-4" />}
+                        onClick={() => window.location.href = `/instructor/courses/${course.id}/edit`}
+                      >
                         Edit Course
                       </DropdownItem>
                       <DropdownItem icon={<Copy className="h-4 w-4" />}>
                         Duplicate
                       </DropdownItem>
                       <DropdownSeparator />
-                      <DropdownItem icon={<Archive className="h-4 w-4" />}>
+                      <DropdownItem
+                        icon={<Archive className="h-4 w-4" />}
+                        onClick={() => handleArchive(course.id)}
+                      >
                         Archive
                       </DropdownItem>
-                      <DropdownItem icon={<Trash2 className="h-4 w-4" />} destructive>
+                      <DropdownItem
+                        icon={<Trash2 className="h-4 w-4" />}
+                        destructive
+                        onClick={() => handleDelete(course.id)}
+                      >
                         Delete
                       </DropdownItem>
                     </Dropdown>
@@ -285,7 +274,7 @@ export default function InstructorCoursesPage() {
                     {course.title}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {course.description}
+                    {course.description || "No description"}
                   </p>
                 </Link>
 
@@ -294,31 +283,32 @@ export default function InstructorCoursesPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {course.students}/{course.maxStudents} students
+                      {course.enrollments_count || 0}
+                      {course.max_students ? `/${course.max_students}` : ""} students
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {course.completedModules}/{course.modules} modules
+                      {course.modules_count || 0} modules
                     </span>
                   </div>
                 </div>
 
-                {/* Progress */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Course Progress</span>
-                    <span className="font-medium">{course.progress}%</span>
+                {/* Dates */}
+                {(course.start_date || course.end_date) && (
+                  <div className="text-xs text-muted-foreground mb-4">
+                    {course.start_date && formatDate(course.start_date)}
+                    {course.start_date && course.end_date && " - "}
+                    {course.end_date && formatDate(course.end_date)}
                   </div>
-                  <Progress value={course.progress} size="sm" />
-                </div>
+                )}
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>Code: {course.enrollmentCode}</span>
+                    <span>Code: {course.enrollment_code}</span>
                   </div>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/instructor/courses/${course.id}`}>
