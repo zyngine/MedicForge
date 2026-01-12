@@ -16,3 +16,6 @@ export * from "./progress";
 export * from "./tabs";
 export * from "./logo";
 export * from "./switch";
+export * from "./toast";
+export * from "./skeleton";
+export * from "./theme-toggle";
