@@ -11,6 +11,7 @@ import {
   Badge,
   Progress,
   Spinner,
+  SkeletonDashboard,
 } from "@/components/ui";
 import {
   BookOpen,
@@ -88,11 +89,7 @@ export default function StudentDashboardPage() {
     .slice(0, 3);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   if (enrollmentsError) {

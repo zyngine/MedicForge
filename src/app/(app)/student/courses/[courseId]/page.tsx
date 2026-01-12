@@ -35,12 +35,16 @@ import {
   Calendar,
   AlertCircle,
   Loader2,
+  Award,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useModule } from "@/lib/hooks/use-modules";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { useCourseProgress } from "@/lib/hooks/use-progress";
+import { useMyCertificates, Certificate } from "@/lib/hooks/use-certificates";
+import { CertificateViewer } from "@/components/certificates/certificate-viewer";
+import { useTenant } from "@/lib/hooks/use-tenant";
 
 function getStatusIcon(isPublished: boolean) {
   if (isPublished) {
@@ -70,8 +74,15 @@ export default function StudentCourseDetailPage() {
   const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments({ courseId });
   const { data: submissions = [] } = useMySubmissions();
   const { data: progress } = useCourseProgress(courseId);
+  const { data: certificates = [] } = useMyCertificates();
+  const { tenant } = useTenant();
 
   const [expandedModule, setExpandedModule] = React.useState<string | null>(null);
+  const [showCertificate, setShowCertificate] = React.useState(false);
+
+  // Find certificate for this course
+  const courseCertificate = certificates.find(c => c.course_id === courseId);
+  const isCompleted = progress?.overallProgress === 100;
 
   const isLoading = courseLoading || modulesLoading || assignmentsLoading;
 
@@ -134,16 +145,28 @@ export default function StudentCourseDetailPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="info">{course.course_type}</Badge>
-                  <Badge variant="success">In Progress</Badge>
+                  {isCompleted ? (
+                    <Badge variant="success">Completed</Badge>
+                  ) : (
+                    <Badge variant="secondary">In Progress</Badge>
+                  )}
                 </div>
                 <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
                 <p className="text-muted-foreground max-w-2xl">{course.description || "No description provided."}</p>
               </div>
             </div>
-            <Button size="lg">
-              <Play className="h-4 w-4 mr-2" />
-              Continue Learning
-            </Button>
+            <div className="flex gap-2">
+              {isCompleted && courseCertificate && (
+                <Button size="lg" variant="outline" onClick={() => setShowCertificate(true)}>
+                  <Award className="h-4 w-4 mr-2" />
+                  View Certificate
+                </Button>
+              )}
+              <Button size="lg">
+                <Play className="h-4 w-4 mr-2" />
+                {isCompleted ? "Review Course" : "Continue Learning"}
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -186,6 +209,34 @@ export default function StudentCourseDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Completion Celebration */}
+      {isCompleted && (
+        <Card className="bg-gradient-to-r from-success/10 via-success/5 to-transparent border-success/20">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-success/20">
+                <Award className="h-8 w-8 text-success" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-success">Course Completed!</h3>
+                <p className="text-muted-foreground">
+                  Congratulations on completing this course.
+                  {courseCertificate
+                    ? " Your certificate is ready to download."
+                    : " Your certificate will be available once issued by your instructor."}
+                </p>
+              </div>
+              {courseCertificate && (
+                <Button onClick={() => setShowCertificate(true)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Certificate
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Content Tabs */}
       <Tabs defaultValue="modules">
@@ -407,6 +458,16 @@ export default function StudentCourseDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Certificate Viewer Modal */}
+      {courseCertificate && (
+        <CertificateViewer
+          certificate={courseCertificate}
+          tenant={tenant ? { name: tenant.name, logo_url: tenant.logo_url || undefined } : undefined}
+          open={showCertificate}
+          onClose={() => setShowCertificate(false)}
+        />
+      )}
     </div>
   );
 }

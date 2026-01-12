@@ -13,6 +13,7 @@ import {
   Avatar,
   Progress,
   Spinner,
+  SkeletonDashboard,
 } from "@/components/ui";
 import {
   BookOpen,
@@ -93,11 +94,7 @@ export default function InstructorDashboardPage() {
   ];
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   if (coursesError) {

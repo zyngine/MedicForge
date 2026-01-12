@@ -14,6 +14,7 @@ import {
   DropdownItem,
   DropdownSeparator,
   Spinner,
+  SkeletonCourseGrid,
 } from "@/components/ui";
 import {
   Plus,
@@ -124,11 +125,7 @@ export default function InstructorCoursesPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <SkeletonCourseGrid count={6} />;
   }
 
   if (error) {

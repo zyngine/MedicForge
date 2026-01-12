@@ -14,8 +14,8 @@ import {
   Badge,
   Textarea,
 } from "@/components/ui";
+import { QuizTimer, useQuizTimer } from "@/components/quiz/quiz-timer";
 import {
-  Clock,
   CheckCircle,
   AlertCircle,
   ArrowLeft,
@@ -80,13 +80,15 @@ export default function AssignmentPage() {
   const [isStarted, setIsStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
     score: number;
     total: number;
     percentage: number;
   } | null>(null);
+
+  // Quiz timer hook - initialize with 0, will be set when quiz starts
+  const quizTimer = useQuizTimer(assignment?.time_limit_minutes ? assignment.time_limit_minutes * 60 : 0);
 
   // Written assignment state
   const [writtenContent, setWrittenContent] = useState("");
@@ -98,23 +100,12 @@ export default function AssignmentPage() {
     fetchAssignment();
   }, [assignmentId]);
 
-  // Timer effect
+  // Handle time up - auto submit quiz
   useEffect(() => {
-    if (!isStarted || timeRemaining === null || timeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 0) {
-          clearInterval(timer);
-          handleSubmit(); // Auto-submit when time runs out
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isStarted, timeRemaining]);
+    if (quizTimer.isTimeUp && isStarted && assignment?.type === "quiz") {
+      handleSubmit();
+    }
+  }, [quizTimer.isTimeUp, isStarted]);
 
   const fetchAssignment = async () => {
     const supabase = createClient();
@@ -175,7 +166,7 @@ export default function AssignmentPage() {
   const handleStartQuiz = () => {
     setIsStarted(true);
     if (assignment?.time_limit_minutes) {
-      setTimeRemaining(assignment.time_limit_minutes * 60);
+      quizTimer.reset();
     }
   };
 
@@ -345,12 +336,6 @@ export default function AssignmentPage() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -432,6 +417,7 @@ export default function AssignmentPage() {
                   setSubmissionResult(null);
                   setAnswers({});
                   setCurrentQuestionIndex(0);
+                  quizTimer.reset();
                   fetchAssignment();
                 }}>
                   Try Again
@@ -577,11 +563,15 @@ export default function AssignmentPage() {
           <div className="text-sm text-muted-foreground">
             Question {currentQuestionIndex + 1} of {questions.length}
           </div>
-          {timeRemaining !== null && (
-            <Badge variant={timeRemaining < 60 ? "destructive" : "secondary"} className="text-lg px-4 py-1">
-              <Clock className="h-4 w-4 mr-2" />
-              {formatTime(timeRemaining)}
-            </Badge>
+          {assignment?.time_limit_minutes && (
+            <QuizTimer
+              totalSeconds={assignment.time_limit_minutes * 60}
+              onTimeUp={quizTimer.handleTimeUp}
+              onTick={quizTimer.handleTick}
+              isPaused={quizTimer.isPaused}
+              warningThreshold={300}
+              criticalThreshold={60}
+            />
           )}
         </div>
 

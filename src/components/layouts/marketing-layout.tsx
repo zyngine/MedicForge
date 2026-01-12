@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui";
+import { Button, ThemeToggle } from "@/components/ui";
 import { useTenantBranding, useTenant } from "@/lib/hooks/use-tenant";
 import { Menu, X } from "lucide-react";
 
@@ -70,6 +70,7 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
 
             {/* Auth buttons */}
             <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle variant="icon" />
               <Button variant="ghost" asChild>
                 <Link href="/login">Sign in</Link>
               </Button>
