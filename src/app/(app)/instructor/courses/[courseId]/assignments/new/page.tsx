@@ -15,32 +15,24 @@ import {
   Textarea,
   Select,
   Checkbox,
+  Alert,
+  Spinner,
 } from "@/components/ui";
 import {
   ArrowLeft,
-  Plus,
-  Trash2,
-  GripVertical,
   ClipboardCheck,
   FileText,
   CheckCircle,
-  HelpCircle,
   Save,
   Eye,
+  Plus,
 } from "lucide-react";
+import { QuizBuilder, useQuizBuilderState, type QuizQuestion } from "@/components/quiz/quiz-builder";
+import { useModules } from "@/lib/hooks/use-modules";
+import { useCreateAssignment } from "@/lib/hooks/use-assignments";
+import { useBulkCreateQuizQuestions } from "@/lib/hooks/use-quiz-questions";
 
 type AssignmentType = "quiz" | "written" | "skill_checklist";
-type QuestionType = "multiple_choice" | "true_false" | "short_answer" | "matching";
-
-interface QuizQuestion {
-  id: string;
-  type: QuestionType;
-  text: string;
-  points: number;
-  options: string[];
-  correctAnswer: number | string;
-  explanation?: string;
-}
 
 const assignmentTypes = [
   { value: "quiz", label: "Quiz", icon: <ClipboardCheck className="h-5 w-5" />, description: "Multiple choice, true/false, matching questions" },
@@ -48,95 +40,111 @@ const assignmentTypes = [
   { value: "skill_checklist", label: "Skill Checklist", icon: <CheckCircle className="h-5 w-5" />, description: "Hands-on skill evaluation" },
 ];
 
-const questionTypes = [
-  { value: "multiple_choice", label: "Multiple Choice" },
-  { value: "true_false", label: "True/False" },
-  { value: "short_answer", label: "Short Answer" },
-  { value: "matching", label: "Matching" },
-];
-
-const moduleOptions = [
-  { value: "1", label: "Module 1: Introduction to EMS" },
-  { value: "2", label: "Module 2: Medical, Legal, and Ethical Issues" },
-  { value: "3", label: "Module 3: Patient Assessment" },
-  { value: "4", label: "Module 4: Airway Management" },
-  { value: "5", label: "Module 5: Cardiac Emergencies" },
-];
-
 export default function NewAssignmentPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
+
+  // Fetch modules for this course
+  const { data: modules = [], isLoading: modulesLoading } = useModules(courseId);
+  const { mutateAsync: createAssignment, isPending: isCreating } = useCreateAssignment();
+  const { mutateAsync: bulkCreateQuestions } = useBulkCreateQuizQuestions();
 
   const [assignmentType, setAssignmentType] = React.useState<AssignmentType | null>(null);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [moduleId, setModuleId] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
-  const [points, setPoints] = React.useState("100");
+  const [availableFrom, setAvailableFrom] = React.useState("");
+  const [availableUntil, setAvailableUntil] = React.useState("");
   const [timeLimit, setTimeLimit] = React.useState("");
   const [attempts, setAttempts] = React.useState("1");
   const [shuffleQuestions, setShuffleQuestions] = React.useState(false);
   const [showCorrectAnswers, setShowCorrectAnswers] = React.useState(true);
+  const [publishImmediately, setPublishImmediately] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [questions, setQuestions] = React.useState<QuizQuestion[]>([]);
+  // Quiz builder state
+  const { questions, setQuestions, totalPoints } = useQuizBuilderState([]);
 
-  const addQuestion = (type: QuestionType) => {
-    const newQuestion: QuizQuestion = {
-      id: Date.now().toString(),
-      type,
-      text: "",
-      points: 10,
-      options: type === "multiple_choice" ? ["", "", "", ""] : type === "true_false" ? ["True", "False"] : [],
-      correctAnswer: type === "true_false" ? 0 : "",
-      explanation: "",
-    };
-    setQuestions([...questions, newQuestion]);
+  // Module options for select
+  const moduleOptions = modules.map((m) => ({
+    value: m.id,
+    label: m.title,
+  }));
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setError("Please enter a title");
+      return;
+    }
+
+    if (!moduleId) {
+      setError("Please select a module");
+      return;
+    }
+
+    if (assignmentType === "quiz" && questions.length === 0) {
+      setError("Please add at least one question");
+      return;
+    }
+
+    setError(null);
+
+    try {
+      // Create the assignment
+      const assignment = await createAssignment({
+        moduleId,
+        data: {
+          title,
+          description,
+          type: assignmentType || "quiz",
+          due_date: dueDate || undefined,
+          available_from: availableFrom || undefined,
+          points_possible: totalPoints || 100,
+          time_limit_minutes: timeLimit ? parseInt(timeLimit) : undefined,
+          attempts_allowed: attempts === "unlimited" ? 999 : parseInt(attempts),
+          settings: {
+            shuffle_questions: shuffleQuestions,
+            show_correct_answers: showCorrectAnswers,
+            available_until: availableUntil || null,
+          },
+          is_published: publishImmediately,
+        },
+      });
+
+      // If it's a quiz, create the questions
+      if (assignmentType === "quiz" && questions.length > 0) {
+        const questionsData = questions.map((q, index) => ({
+          question_text: q.question_text,
+          question_type: q.question_type,
+          options: q.options.length > 0 ? q.options : null,
+          correct_answer: q.correct_answer,
+          points: q.points,
+          order_index: index,
+          explanation: q.explanation || undefined,
+        }));
+
+        await bulkCreateQuestions({
+          assignmentId: assignment.id,
+          questions: questionsData,
+        });
+      }
+
+      // Navigate back to course
+      router.push(`/instructor/courses/${courseId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create assignment");
+    }
   };
 
-  const updateQuestion = (id: string, updates: Partial<QuizQuestion>) => {
-    setQuestions(questions.map((q) => (q.id === id ? { ...q, ...updates } : q)));
-  };
-
-  const removeQuestion = (id: string) => {
-    setQuestions(questions.filter((q) => q.id !== id));
-  };
-
-  const updateOption = (questionId: string, optionIndex: number, value: string) => {
-    setQuestions(
-      questions.map((q) => {
-        if (q.id === questionId) {
-          const newOptions = [...q.options];
-          newOptions[optionIndex] = value;
-          return { ...q, options: newOptions };
-        }
-        return q;
-      })
+  if (modulesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
     );
-  };
-
-  const addOption = (questionId: string) => {
-    setQuestions(
-      questions.map((q) => {
-        if (q.id === questionId && q.options.length < 6) {
-          return { ...q, options: [...q.options, ""] };
-        }
-        return q;
-      })
-    );
-  };
-
-  const removeOption = (questionId: string, optionIndex: number) => {
-    setQuestions(
-      questions.map((q) => {
-        if (q.id === questionId && q.options.length > 2) {
-          const newOptions = q.options.filter((_, i) => i !== optionIndex);
-          return { ...q, options: newOptions };
-        }
-        return q;
-      })
-    );
-  };
+  }
 
   if (!assignmentType) {
     return (
@@ -194,16 +202,22 @@ export default function NewAssignmentPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" disabled>
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button>
+          <Button onClick={handleSave} isLoading={isCreating}>
             <Save className="h-4 w-4 mr-2" />
             Save Assignment
           </Button>
         </div>
       </div>
+
+      {error && (
+        <Alert variant="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -236,12 +250,13 @@ export default function NewAssignmentPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="module">Module</Label>
+                  <Label htmlFor="module" required>Module</Label>
                   <Select
                     id="module"
                     options={moduleOptions}
                     value={moduleId}
                     onChange={setModuleId}
+                    placeholder="Select a module"
                   />
                 </div>
                 <div className="space-y-2">
@@ -249,9 +264,15 @@ export default function NewAssignmentPage() {
                   <Input
                     id="points"
                     type="number"
-                    value={points}
-                    onChange={(e) => setPoints(e.target.value)}
+                    value={assignmentType === "quiz" ? totalPoints : 100}
+                    disabled={assignmentType === "quiz"}
+                    readOnly={assignmentType === "quiz"}
                   />
+                  {assignmentType === "quiz" && (
+                    <p className="text-xs text-muted-foreground">
+                      Calculated from questions
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -260,176 +281,17 @@ export default function NewAssignmentPage() {
           {/* Quiz Questions */}
           {assignmentType === "quiz" && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Questions</CardTitle>
-                  <CardDescription>
-                    {questions.length} question{questions.length !== 1 ? "s" : ""} -{" "}
-                    {questions.reduce((sum, q) => sum + q.points, 0)} points total
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Select
-                    options={questionTypes}
-                    value=""
-                    onChange={(value) => addQuestion(value as QuestionType)}
-                    placeholder="Add Question"
-                    className="w-[180px]"
-                  />
-                </div>
+              <CardHeader>
+                <CardTitle>Questions</CardTitle>
+                <CardDescription>
+                  Build your quiz by adding questions below
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {questions.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                    <HelpCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">No questions yet. Add your first question above.</p>
-                    <div className="flex justify-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => addQuestion("multiple_choice")}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Multiple Choice
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => addQuestion("true_false")}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        True/False
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {questions.map((question, index) => (
-                      <div key={question.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start gap-4">
-                          <div className="cursor-move text-muted-foreground">
-                            <GripVertical className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">Question {index + 1}</span>
-                                <span className="text-xs px-2 py-0.5 bg-muted rounded">
-                                  {questionTypes.find((t) => t.value === question.type)?.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  value={question.points}
-                                  onChange={(e) => updateQuestion(question.id, { points: parseInt(e.target.value) || 0 })}
-                                  className="w-20"
-                                />
-                                <span className="text-sm text-muted-foreground">pts</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeQuestion(question.id)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            <Textarea
-                              placeholder="Enter your question..."
-                              value={question.text}
-                              onChange={(e) => updateQuestion(question.id, { text: e.target.value })}
-                              rows={2}
-                            />
-
-                            {/* Multiple Choice Options */}
-                            {question.type === "multiple_choice" && (
-                              <div className="space-y-2">
-                                <Label>Answer Options</Label>
-                                {question.options.map((option, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`correct-${question.id}`}
-                                      checked={question.correctAnswer === optIndex}
-                                      onChange={() => updateQuestion(question.id, { correctAnswer: optIndex })}
-                                      className="h-4 w-4"
-                                    />
-                                    <Input
-                                      placeholder={`Option ${optIndex + 1}`}
-                                      value={option}
-                                      onChange={(e) => updateOption(question.id, optIndex, e.target.value)}
-                                    />
-                                    {question.options.length > 2 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeOption(question.id, optIndex)}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                ))}
-                                {question.options.length < 6 && (
-                                  <Button variant="ghost" size="sm" onClick={() => addOption(question.id)}>
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Add Option
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-
-                            {/* True/False Options */}
-                            {question.type === "true_false" && (
-                              <div className="space-y-2">
-                                <Label>Correct Answer</Label>
-                                <div className="flex gap-4">
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`correct-${question.id}`}
-                                      checked={question.correctAnswer === 0}
-                                      onChange={() => updateQuestion(question.id, { correctAnswer: 0 })}
-                                    />
-                                    True
-                                  </label>
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`correct-${question.id}`}
-                                      checked={question.correctAnswer === 1}
-                                      onChange={() => updateQuestion(question.id, { correctAnswer: 1 })}
-                                    />
-                                    False
-                                  </label>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Short Answer */}
-                            {question.type === "short_answer" && (
-                              <div className="space-y-2">
-                                <Label>Expected Answer (for reference)</Label>
-                                <Textarea
-                                  placeholder="Enter the expected answer..."
-                                  value={question.correctAnswer as string}
-                                  onChange={(e) => updateQuestion(question.id, { correctAnswer: e.target.value })}
-                                  rows={2}
-                                />
-                              </div>
-                            )}
-
-                            {/* Explanation */}
-                            <div className="space-y-2">
-                              <Label>Explanation (shown after submission)</Label>
-                              <Textarea
-                                placeholder="Explain why this is the correct answer..."
-                                value={question.explanation}
-                                onChange={(e) => updateQuestion(question.id, { explanation: e.target.value })}
-                                rows={2}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <QuizBuilder
+                  questions={questions}
+                  onChange={setQuestions}
+                />
               </CardContent>
             </Card>
           )}
@@ -563,6 +425,8 @@ export default function NewAssignmentPage() {
                 <Input
                   id="availableFrom"
                   type="datetime-local"
+                  value={availableFrom}
+                  onChange={(e) => setAvailableFrom(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -570,13 +434,16 @@ export default function NewAssignmentPage() {
                 <Input
                   id="availableUntil"
                   type="datetime-local"
+                  value={availableUntil}
+                  onChange={(e) => setAvailableUntil(e.target.value)}
                 />
               </div>
               <div className="pt-4">
                 <Checkbox
                   id="publish"
                   label="Publish immediately"
-                  defaultChecked
+                  checked={publishImmediately}
+                  onChange={(checked) => setPublishImmediately(checked)}
                 />
               </div>
             </CardContent>
