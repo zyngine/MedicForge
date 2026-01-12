@@ -14,6 +14,7 @@ export interface Tenant {
   settings: Record<string, unknown>;
   subscription_tier: "free" | "pro" | "institution" | "enterprise";
   subscription_status: "active" | "canceled" | "past_due" | "trialing";
+  trial_ends_at: string | null;
 }
 
 interface TenantContextType {
@@ -93,6 +94,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           settings: (data.settings as Record<string, unknown>) || {},
           subscription_tier: data.subscription_tier as Tenant["subscription_tier"],
           subscription_status: data.subscription_status as Tenant["subscription_status"],
+          trial_ends_at: data.trial_ends_at,
         });
       }
     } catch (err) {

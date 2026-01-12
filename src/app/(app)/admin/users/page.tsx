@@ -31,8 +31,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
+import { useSubscriptionEnforcement, getLimitMessage } from "@/lib/hooks/use-subscription-enforcement";
+import { LimitWarningBanner, LimitReachedAlert, UpgradeModal } from "@/components/subscription";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -220,10 +223,26 @@ export default function AdminUsersPage() {
   const { mutateAsync: bulkImport, isPending: isImporting } = useBulkImportUsers();
   const { mutateAsync: updateUser } = useUpdateUser();
 
+  // Subscription enforcement
+  const {
+    usage,
+    canAddInstructor,
+    canAddStudent,
+    instructorWarning,
+    studentWarning,
+    instructorAtLimit,
+    studentAtLimit,
+    limits,
+    tier,
+    refetch: refetchUsage,
+  } = useSubscriptionEnforcement();
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState("all");
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [showImportModal, setShowImportModal] = React.useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [upgradeModalType, setUpgradeModalType] = React.useState<"instructor" | "student">("student");
   const [error, setError] = React.useState<string | null>(null);
   const [importResults, setImportResults] = React.useState<Array<{
     email: string;
@@ -269,8 +288,24 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setError(null);
 
+    // Check subscription limits before creating user
+    if (newUser.role === "instructor" && !canAddInstructor) {
+      setShowAddModal(false);
+      setUpgradeModalType("instructor");
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (newUser.role === "student" && !canAddStudent) {
+      setShowAddModal(false);
+      setUpgradeModalType("student");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       await createUser(newUser);
+      refetchUsage(); // Refresh usage counts
       setShowAddModal(false);
       setNewUser({ email: "", full_name: "", role: "student" });
     } catch (err) {
@@ -339,10 +374,29 @@ export default function AdminUsersPage() {
   const handleBulkImport = async () => {
     if (csvData.length === 0) return;
 
+    // Check if import would exceed limits
+    const instructorsToAdd = csvData.filter((u) => u.role === "instructor").length;
+    const studentsToAdd = csvData.filter((u) => u.role === "student").length;
+
+    if (limits.instructors !== -1 && usage.instructorCount + instructorsToAdd > limits.instructors) {
+      setError(
+        `Cannot import: Adding ${instructorsToAdd} instructors would exceed your limit of ${limits.instructors}. Current: ${usage.instructorCount}.`
+      );
+      return;
+    }
+
+    if (limits.students !== -1 && usage.studentCount + studentsToAdd > limits.students) {
+      setError(
+        `Cannot import: Adding ${studentsToAdd} students would exceed your limit of ${limits.students}. Current: ${usage.studentCount}.`
+      );
+      return;
+    }
+
     setError(null);
     try {
       const results = await bulkImport(csvData);
       setImportResults(results);
+      refetchUsage(); // Refresh usage counts
     } catch (err) {
       setError(err instanceof Error ? err.message : "Import failed");
     }
@@ -405,6 +459,40 @@ export default function AdminUsersPage() {
         </Alert>
       )}
 
+      {/* Subscription Limit Warnings */}
+      {instructorAtLimit && limits.instructors !== -1 && (
+        <LimitReachedAlert
+          type="instructor"
+          current={usage.instructorCount}
+          limit={limits.instructors}
+          tier={tier}
+          isAdmin
+        />
+      )}
+      {studentAtLimit && limits.students !== -1 && (
+        <LimitReachedAlert
+          type="student"
+          current={usage.studentCount}
+          limit={limits.students}
+          tier={tier}
+          isAdmin
+        />
+      )}
+      {instructorWarning && limits.instructors !== -1 && (
+        <LimitWarningBanner
+          type="instructor"
+          current={usage.instructorCount}
+          limit={limits.instructors}
+        />
+      )}
+      {studentWarning && limits.students !== -1 && (
+        <LimitWarningBanner
+          type="student"
+          current={usage.studentCount}
+          limit={limits.students}
+        />
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -422,21 +510,35 @@ export default function AdminUsersPage() {
         </Card>
         {["admin", "instructor", "student"].map((role) => {
           const count = users.filter((u) => u.role === role).length;
+          const limit =
+            role === "instructor"
+              ? limits.instructors
+              : role === "student"
+              ? limits.students
+              : -1;
+          const atLimit = limit !== -1 && count >= limit;
           const colors: Record<string, string> = {
             admin: "bg-error/10 text-error",
-            instructor: "bg-info/10 text-info",
-            student: "bg-success/10 text-success",
+            instructor: atLimit ? "bg-error/10 text-error" : "bg-info/10 text-info",
+            student: atLimit ? "bg-error/10 text-error" : "bg-success/10 text-success",
           };
           return (
             <Card key={role}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${colors[role]}`}>
-                    <Users className="h-5 w-5" />
+                    {atLimit ? <Lock className="h-5 w-5" /> : <Users className="h-5 w-5" />}
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground capitalize">{role}s</p>
-                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-2xl font-bold">
+                      {count}
+                      {limit !== -1 && (
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{limit}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -733,6 +835,14 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        type={upgradeModalType}
+        currentTier={tier}
+      />
     </div>
   );
 }

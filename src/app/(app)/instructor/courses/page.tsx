@@ -30,8 +30,11 @@ import {
   Eye,
   GraduationCap,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import { useInstructorCourses, useArchiveCourse, useDeleteCourse, type CourseWithDetails } from "@/lib/hooks/use-courses";
+import { useSubscriptionEnforcement } from "@/lib/hooks/use-subscription-enforcement";
+import { LimitWarningBanner, LimitReachedAlert, UpgradeModal } from "@/components/subscription";
 import { formatDate } from "@/lib/utils";
 
 const courseTypes = [
@@ -98,9 +101,21 @@ export default function InstructorCoursesPage() {
   const { data: courses = [], isLoading, error, refetch } = useInstructorCourses();
   const { mutateAsync: archiveCourse } = useArchiveCourse();
   const { mutateAsync: deleteCourse } = useDeleteCourse();
+
+  // Subscription enforcement
+  const {
+    usage,
+    canAddCourse,
+    courseWarning,
+    courseAtLimit,
+    limits,
+    tier,
+  } = useSubscriptionEnforcement();
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
 
   const filteredCourses = courses.filter((course: CourseWithDetails) => {
     const matchesSearch =
@@ -142,6 +157,13 @@ export default function InstructorCoursesPage() {
     );
   }
 
+  const handleCreateCourse = (e: React.MouseEvent) => {
+    if (!canAddCourse) {
+      e.preventDefault();
+      setShowUpgradeModal(true);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -150,15 +172,45 @@ export default function InstructorCoursesPage() {
           <h1 className="text-2xl font-bold">My Courses</h1>
           <p className="text-muted-foreground">
             Manage your courses and track student progress.
+            {limits.courses !== -1 && (
+              <span className="ml-2 text-sm">
+                ({usage.courseCount}/{limits.courses} courses used)
+              </span>
+            )}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/instructor/courses/new">
-            <Plus className="h-4 w-4 mr-2" />
+        {canAddCourse ? (
+          <Button asChild>
+            <Link href="/instructor/courses/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Course
+            </Link>
+          </Button>
+        ) : (
+          <Button onClick={handleCreateCourse}>
+            <Lock className="h-4 w-4 mr-2" />
             Create Course
-          </Link>
-        </Button>
+          </Button>
+        )}
       </div>
+
+      {/* Subscription Limit Warnings */}
+      {courseAtLimit && limits.courses !== -1 && (
+        <LimitReachedAlert
+          type="course"
+          current={usage.courseCount}
+          limit={limits.courses}
+          tier={tier}
+          isAdmin
+        />
+      )}
+      {courseWarning && limits.courses !== -1 && (
+        <LimitWarningBanner
+          type="course"
+          current={usage.courseCount}
+          limit={limits.courses}
+        />
+      )}
 
       {/* Filters */}
       <Card>
@@ -320,6 +372,14 @@ export default function InstructorCoursesPage() {
           ))}
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        type="course"
+        currentTier={tier}
+      />
     </div>
   );
 }

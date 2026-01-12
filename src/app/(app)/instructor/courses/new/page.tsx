@@ -12,8 +12,10 @@ import {
   Textarea,
   Select,
 } from "@/components/ui";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Lock, AlertTriangle } from "lucide-react";
 import { useCreateCourse } from "@/lib/hooks/use-courses";
+import { useSubscriptionEnforcement } from "@/lib/hooks/use-subscription-enforcement";
+import { LimitReachedAlert } from "@/components/subscription";
 import type { CourseForm } from "@/types";
 
 const courseTypes = [
@@ -27,6 +29,13 @@ const courseTypes = [
 export default function NewCoursePage() {
   const router = useRouter();
   const { mutateAsync: createCourse, isPending: isSubmitting } = useCreateCourse();
+  const {
+    usage,
+    canAddCourse,
+    limits,
+    tier,
+    refetch: refetchUsage,
+  } = useSubscriptionEnforcement();
   const [error, setError] = React.useState<string | null>(null);
 
   const [formData, setFormData] = React.useState<CourseForm>({
@@ -42,6 +51,12 @@ export default function NewCoursePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Check subscription limit
+    if (!canAddCourse) {
+      setError(`You've reached your ${tier} plan limit of ${limits.courses} courses. Please upgrade to create more.`);
+      return;
+    }
 
     if (!formData.title.trim()) {
       setError("Course title is required");
@@ -59,6 +74,7 @@ export default function NewCoursePage() {
         max_students: formData.maxStudents || null,
       });
       if (course) {
+        refetchUsage(); // Refresh usage counts
         router.push(`/instructor/courses/${course.id}`);
       }
     } catch (err) {
@@ -84,6 +100,17 @@ export default function NewCoursePage() {
           Set up a new course for your students. An enrollment code will be automatically generated.
         </p>
       </div>
+
+      {/* Subscription Limit Alert */}
+      {!canAddCourse && limits.courses !== -1 && (
+        <LimitReachedAlert
+          type="course"
+          current={usage.courseCount}
+          limit={limits.courses}
+          tier={tier}
+          isAdmin
+        />
+      )}
 
       {/* Form */}
       <Card>
@@ -224,11 +251,16 @@ export default function NewCoursePage() {
               <Button type="button" variant="outline" asChild>
                 <Link href="/instructor/courses">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !canAddCourse}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creating...
+                  </>
+                ) : !canAddCourse ? (
+                  <>
+                    <Lock className="h-4 w-4 mr-2" />
+                    Limit Reached
                   </>
                 ) : (
                   "Create Course"

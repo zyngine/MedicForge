@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts";
 import { useUser } from "@/lib/hooks/use-user";
 import { Spinner } from "@/components/ui";
+import { SubscriptionGate } from "@/components/subscription";
 import {
   LayoutDashboard,
   BookOpen,
@@ -88,13 +89,15 @@ export default function StudentLayout({
   };
 
   return (
-    <DashboardLayout
-      user={user}
-      navigation={studentNavigation}
-      portalName="Student Portal"
-      onSignOut={handleSignOut}
-    >
-      {children}
-    </DashboardLayout>
+    <SubscriptionGate>
+      <DashboardLayout
+        user={user}
+        navigation={studentNavigation}
+        portalName="Student Portal"
+        onSignOut={handleSignOut}
+      >
+        {children}
+      </DashboardLayout>
+    </SubscriptionGate>
   );
 }
