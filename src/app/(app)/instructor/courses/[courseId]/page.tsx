@@ -47,7 +47,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
-import { useModules } from "@/lib/hooks/use-modules";
+import { useModules, useCreateModule } from "@/lib/hooks/use-modules";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
@@ -77,14 +77,15 @@ export default function CourseDetailPage() {
   const courseId = params.courseId as string;
 
   // Fetch real data using hooks
-  const { course, isLoading: courseLoading } = useCourse(courseId);
-  const { modules, isLoading: modulesLoading, createModule } = useModules(courseId);
-  const { enrollments, isLoading: enrollmentsLoading } = useCourseEnrollments(courseId);
-  const { assignments, isLoading: assignmentsLoading } = useAssignments({
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: modules = [], isLoading: modulesLoading } = useModules(courseId);
+  const { mutateAsync: createModule } = useCreateModule();
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useCourseEnrollments(courseId);
+  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments({
     courseId,
     includeUnpublished: true
   });
-  const { submissions } = useSubmissions({});
+  const { data: submissions = [] } = useSubmissions({});
 
   const isLoading = courseLoading || modulesLoading || enrollmentsLoading || assignmentsLoading;
 
@@ -430,7 +431,7 @@ export default function CourseDetailPage() {
               </div>
               <Button onClick={() => {
                 const title = prompt("Enter module title:");
-                if (title) createModule({ title });
+                if (title) createModule({ courseId, data: { title } });
               }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Module

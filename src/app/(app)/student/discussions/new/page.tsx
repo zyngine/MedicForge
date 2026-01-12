@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardHeader,
@@ -14,59 +13,34 @@ import {
   Alert,
   Spinner,
 } from "@/components/ui";
-import { ArrowLeft, Send } from "lucide-react";
-
-interface Course {
-  id: string;
-  title: string;
-}
+import { ArrowLeft, Send, AlertCircle } from "lucide-react";
+import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
+import { useCreateThread } from "@/lib/hooks/use-discussions";
 
 export default function NewDiscussionPage() {
   const router = useRouter();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data: enrollments = [], isLoading: isLoadingEnrollments } = useMyEnrollments();
+  const { mutateAsync: createThread, isPending: isSubmitting } = useCreateThread();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
+  // Get active enrollments with course data
+  const courses = enrollments
+    .filter((e) => e.status === "active" && e.course)
+    .map((e) => ({
+      id: e.course!.id,
+      title: e.course!.title,
+    }));
+
+  // Auto-select first course
   useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
-    const supabase = createClient();
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      // Get enrolled courses
-      const { data: enrollments } = await supabase
-        .from("enrollments")
-        .select("course_id, course:courses(id, title)")
-        .eq("student_id", user.id);
-
-      if (enrollments) {
-        const courseList = enrollments
-          .filter((e) => e.course)
-          .map((e) => e.course as unknown as Course);
-        setCourses(courseList);
-        if (courseList.length > 0) {
-          setSelectedCourse(courseList[0].id);
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load courses");
-    } finally {
-      setIsLoading(false);
+    if (!selectedCourse && courses.length > 0) {
+      setSelectedCourse(courses[0].id);
     }
-  };
+  }, [courses, selectedCourse]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,52 +50,46 @@ export default function NewDiscussionPage() {
       return;
     }
 
-    setIsSubmitting(true);
     setError(null);
 
-    const supabase = createClient();
-
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile?.tenant_id) throw new Error("No tenant found");
-
-      const { data: thread, error: threadError } = await supabase
-        .from("discussion_threads")
-        .insert({
-          tenant_id: profile.tenant_id,
-          course_id: selectedCourse,
-          title: title.trim(),
-          content: content.trim(),
-          author_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (threadError) throw threadError;
+      const thread = await createThread({
+        courseId: selectedCourse,
+        title: title.trim(),
+        content: content.trim(),
+      });
 
       router.push(`/student/discussions/${thread.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create discussion");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoadingEnrollments) {
     return (
       <div className="flex items-center justify-center h-64">
         <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Button variant="ghost" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Discussions
+        </Button>
+
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="font-semibold mb-2">No Courses Available</h3>
+            <p className="text-muted-foreground">
+              You need to be enrolled in a course to start a discussion.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -20,7 +20,9 @@ import {
   Video,
   ClipboardList,
   BookOpen,
+  Download,
 } from "lucide-react";
+import { CalendarSync } from "@/components/calendar";
 import {
   format,
   startOfMonth,
@@ -420,6 +422,15 @@ export default function CalendarPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Calendar Sync Section */}
+      <div className="pt-6 border-t">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Download className="h-5 w-5" />
+          Export & Sync
+        </h2>
+        <CalendarSync />
+      </div>
     </div>
   );
 }

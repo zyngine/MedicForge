@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
 import {
   Card,
@@ -9,6 +12,7 @@ import {
   Badge,
   Avatar,
   Progress,
+  Spinner,
 } from "@/components/ui";
 import {
   BookOpen,
@@ -22,162 +26,104 @@ import {
   FileText,
   GraduationCap,
   BarChart3,
+  RefreshCw,
 } from "lucide-react";
-
-// Mock data - will be replaced with real data from Supabase
-const stats = [
-  {
-    title: "Active Courses",
-    value: "4",
-    change: "+1 this month",
-    icon: <BookOpen className="h-5 w-5" />,
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
-  {
-    title: "Total Students",
-    value: "127",
-    change: "+12 this month",
-    icon: <Users className="h-5 w-5" />,
-    color: "text-success",
-    bgColor: "bg-success/10",
-  },
-  {
-    title: "Pending Grades",
-    value: "23",
-    change: "8 due today",
-    icon: <ClipboardCheck className="h-5 w-5" />,
-    color: "text-warning",
-    bgColor: "bg-warning/10",
-  },
-  {
-    title: "Avg. Completion",
-    value: "78%",
-    change: "+5% this month",
-    icon: <TrendingUp className="h-5 w-5" />,
-    color: "text-info",
-    bgColor: "bg-info/10",
-  },
-];
-
-const recentSubmissions = [
-  {
-    id: "1",
-    student: "Michael Chen",
-    assignment: "Module 3 Quiz - Patient Assessment",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "10 minutes ago",
-    status: "pending",
-  },
-  {
-    id: "2",
-    student: "Emily Rodriguez",
-    assignment: "Written Assignment - Cardiac Emergencies",
-    course: "Paramedic - Fall 2024",
-    submittedAt: "25 minutes ago",
-    status: "pending",
-  },
-  {
-    id: "3",
-    student: "James Wilson",
-    assignment: "Skill Checklist - IV Insertion",
-    course: "AEMT - Spring 2024",
-    submittedAt: "1 hour ago",
-    status: "pending",
-  },
-  {
-    id: "4",
-    student: "Sarah Thompson",
-    assignment: "Module 2 Quiz - Airway Management",
-    course: "EMT Basic - Spring 2024",
-    submittedAt: "2 hours ago",
-    status: "graded",
-    score: 92,
-  },
-];
-
-const atRiskStudents = [
-  {
-    id: "1",
-    name: "David Martinez",
-    course: "EMT Basic - Spring 2024",
-    issue: "3 missed assignments",
-    progress: 45,
-  },
-  {
-    id: "2",
-    name: "Ashley Brown",
-    course: "Paramedic - Fall 2024",
-    issue: "Below 70% average",
-    progress: 62,
-  },
-  {
-    id: "3",
-    name: "Kevin Lee",
-    course: "AEMT - Spring 2024",
-    issue: "2 failed skill attempts",
-    progress: 55,
-  },
-];
-
-const upcomingDeadlines = [
-  {
-    id: "1",
-    title: "Module 4 Quiz Due",
-    course: "EMT Basic - Spring 2024",
-    date: "Today, 11:59 PM",
-    submissions: "18/32",
-  },
-  {
-    id: "2",
-    title: "Clinical Hours Review",
-    course: "Paramedic - Fall 2024",
-    date: "Tomorrow, 5:00 PM",
-    submissions: "24/28",
-  },
-  {
-    id: "3",
-    title: "Midterm Exam",
-    course: "AEMT - Spring 2024",
-    date: "In 3 days",
-    submissions: "0/22",
-  },
-];
-
-const activeCourses = [
-  {
-    id: "1",
-    title: "EMT Basic - Spring 2024",
-    type: "EMT",
-    students: 32,
-    progress: 65,
-    nextClass: "Today, 2:00 PM",
-  },
-  {
-    id: "2",
-    title: "Paramedic - Fall 2024",
-    type: "Paramedic",
-    students: 28,
-    progress: 42,
-    nextClass: "Tomorrow, 9:00 AM",
-  },
-  {
-    id: "3",
-    title: "AEMT - Spring 2024",
-    type: "AEMT",
-    students: 22,
-    progress: 78,
-    nextClass: "Wed, 1:00 PM",
-  },
-];
+import { useUser } from "@/lib/hooks/use-user";
+import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import { usePendingSubmissions } from "@/lib/hooks/use-submissions";
+import { useAssignments } from "@/lib/hooks/use-assignments";
+import { formatDate, formatRelativeTime } from "@/lib/utils";
 
 export default function InstructorDashboardPage() {
+  const { profile, isLoading: userLoading } = useUser();
+  const { data: courses = [], isLoading: coursesLoading, error: coursesError, refetch: refetchCourses } = useInstructorCourses();
+  const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = usePendingSubmissions();
+  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments({ includeUnpublished: true });
+
+  const isLoading = userLoading || coursesLoading || submissionsLoading || assignmentsLoading;
+
+  // Calculate stats from real data
+  const activeCourses = courses.filter((c: any) => !c.is_archived);
+  const totalStudents = activeCourses.reduce((sum, course) => sum + (course.enrollments_count || 0), 0);
+  const pendingGradesCount = submissions.length;
+  const avgCompletion = activeCourses.length > 0
+    ? Math.round(activeCourses.reduce((sum, course) => sum + (course.modules_count || 0), 0) / activeCourses.length * 10) // Approximate
+    : 0;
+
+  // Get upcoming deadlines (assignments due in the future)
+  const now = new Date();
+  const upcomingDeadlines = assignments
+    .filter(a => a.due_date && new Date(a.due_date) > now)
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+    .slice(0, 5);
+
+  const stats = [
+    {
+      title: "Active Courses",
+      value: activeCourses.length.toString(),
+      change: `${totalStudents} total students`,
+      icon: <BookOpen className="h-5 w-5" />,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      title: "Total Students",
+      value: totalStudents.toString(),
+      change: `Across ${activeCourses.length} courses`,
+      icon: <Users className="h-5 w-5" />,
+      color: "text-success",
+      bgColor: "bg-success/10",
+    },
+    {
+      title: "Pending Grades",
+      value: pendingGradesCount.toString(),
+      change: pendingGradesCount > 0 ? "Review needed" : "All caught up!",
+      icon: <ClipboardCheck className="h-5 w-5" />,
+      color: "text-warning",
+      bgColor: "bg-warning/10",
+    },
+    {
+      title: "Active Assignments",
+      value: assignments.filter(a => a.is_published).length.toString(),
+      change: `${upcomingDeadlines.length} due soon`,
+      icon: <TrendingUp className="h-5 w-5" />,
+      color: "text-info",
+      bgColor: "bg-info/10",
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (coursesError) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
+          <h3 className="text-lg font-medium mb-2">Error Loading Dashboard</h3>
+          <p className="text-muted-foreground mb-4">{coursesError.message}</p>
+          <Button onClick={() => { refetchCourses(); refetchSubmissions(); }}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back, Dr. Johnson</h1>
+          <h1 className="text-2xl font-bold">
+            Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+          </h1>
           <p className="text-muted-foreground">
             Here&apos;s what&apos;s happening with your courses today.
           </p>
@@ -236,72 +182,80 @@ export default function InstructorDashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentSubmissions.map((submission) => (
-                <div
-                  key={submission.id}
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar fallback={submission.student} size="sm" />
-                    <div>
-                      <p className="font-medium text-sm">{submission.student}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {submission.assignment}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {submission.course}
+            {submissions.length === 0 ? (
+              <div className="text-center py-8">
+                <ClipboardCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No submissions pending review</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {submissions.slice(0, 5).map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar fallback={submission.student?.full_name || "Student"} size="sm" />
+                      <div>
+                        <p className="font-medium text-sm">
+                          {submission.student?.full_name || "Unknown Student"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {submission.assignment?.title || "Assignment"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="warning">Needs Review</Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {submission.submitted_at
+                          ? formatRelativeTime(submission.submitted_at)
+                          : "Just now"}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    {submission.status === "pending" ? (
-                      <Badge variant="warning">Needs Review</Badge>
-                    ) : (
-                      <Badge variant="success">{submission.score}%</Badge>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {submission.submittedAt}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* At-Risk Students */}
+        {/* Upcoming Deadlines */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-warning" />
-                At-Risk Students
+                <Clock className="h-5 w-5 text-info" />
+                Upcoming Deadlines
               </CardTitle>
-              <CardDescription>Students needing attention</CardDescription>
+              <CardDescription>Assignments due soon</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {atRiskStudents.map((student) => (
-                <div key={student.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Avatar fallback={student.name} size="sm" />
+            {upcomingDeadlines.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No upcoming deadlines</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingDeadlines.map((deadline) => (
+                  <div key={deadline.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-sm">{student.name}</p>
+                        <p className="font-medium text-sm">{deadline.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {student.issue}
+                          {deadline.due_date && formatDate(deadline.due_date)}
                         </p>
                       </div>
+                      <Badge variant="secondary">{deadline.type}</Badge>
                     </div>
                   </div>
-                  <Progress value={student.progress} size="sm" variant="warning" />
-                </div>
-              ))}
-            </div>
-            <Button variant="outline" className="w-full mt-4" size="sm">
-              View All Students
+                ))}
+              </div>
+            )}
+            <Button variant="outline" className="w-full mt-4" size="sm" asChild>
+              <Link href="/instructor/calendar">View Calendar</Link>
             </Button>
           </CardContent>
         </Card>
@@ -323,84 +277,107 @@ export default function InstructorDashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {activeCourses.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/instructor/courses/${course.id}`}
-                  className="block p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <GraduationCap className="h-5 w-5 text-primary" />
+            {activeCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">No active courses yet</p>
+                <Button asChild>
+                  <Link href="/instructor/courses/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Course
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeCourses.slice(0, 4).map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/instructor/courses/${course.id}`}
+                    className="block p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <GraduationCap className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{course.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.enrollments_count || 0} students enrolled
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{course.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {course.students} students enrolled
+                      <Badge variant="secondary">{course.course_type}</Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Modules</span>
+                        <span className="font-medium">{course.modules_count || 0}</span>
+                      </div>
+                      {course.start_date && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Started: {formatDate(course.start_date)}
                         </p>
-                      </div>
+                      )}
                     </div>
-                    <Badge variant="secondary">{course.type}</Badge>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{course.progress}%</span>
-                    </div>
-                    <Progress value={course.progress} size="sm" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Next class: {course.nextClass}
-                  </p>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Upcoming Deadlines */}
+        {/* Course Quick Stats */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Upcoming Deadlines</CardTitle>
-              <CardDescription>Assignments and exams due soon</CardDescription>
+              <CardTitle>Course Statistics</CardTitle>
+              <CardDescription>Overview of your courses</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/instructor/calendar">
-                View Calendar <ChevronRight className="h-4 w-4 ml-1" />
+              <Link href="/instructor/reports">
+                Reports <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingDeadlines.map((deadline) => (
-                <div
-                  key={deadline.id}
-                  className="flex items-center justify-between p-3 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <FileText className="h-4 w-4" />
+            {activeCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No course data yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeCourses.slice(0, 4).map((course) => (
+                  <div
+                    key={course.id}
+                    className="flex items-center justify-between p-3 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <GraduationCap className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{course.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {course.course_type}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{deadline.title}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {course.enrollments_count || 0} students
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {deadline.course}
+                        {course.modules_count || 0} modules
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{deadline.date}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {deadline.submissions} submitted
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

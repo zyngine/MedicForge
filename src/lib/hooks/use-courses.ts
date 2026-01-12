@@ -1,101 +1,214 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { generateEnrollmentCode } from "@/lib/utils";
-import type { Course, CourseForm, User } from "@/types";
+import { Database } from "@/types/database.types";
+import { useTenant } from "./use-tenant";
+import { useUser } from "./use-user";
+
+type Course = Database["public"]["Tables"]["courses"]["Row"];
+type CourseInsert = Database["public"]["Tables"]["courses"]["Insert"];
+type CourseUpdate = Database["public"]["Tables"]["courses"]["Update"];
 
 export interface CourseWithDetails extends Course {
-  instructor?: Pick<User, "id" | "full_name" | "email">;
-  enrollments_count?: number;
-  modules_count?: number;
+  instructor?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+  enrollment_count?: number;
+  enrollments_count?: number; // Alias for backward compatibility
+  module_count?: number;
+  modules_count?: number; // Alias for backward compatibility
 }
 
-interface UseCoursesOptions {
+/**
+ * Generate a unique enrollment code
+ */
+export function generateEnrollmentCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed similar looking chars
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
+ * Get all courses with optional filters
+ */
+export function useCourses(options?: {
   instructorId?: string;
+  isActive?: boolean;
+  isArchived?: boolean;
   includeArchived?: boolean;
-}
+}) {
+  const { tenant } = useTenant();
 
-export function useCourses(options: UseCoursesOptions = {}) {
-  const [courses, setCourses] = useState<CourseWithDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  return useQuery({
+    queryKey: ["courses", tenant?.id, options],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
 
-  const supabase = createClient();
-
-  const fetchCourses = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+      const supabase = createClient();
       let query = supabase
         .from("courses")
         .select(`
           *,
-          instructor:users!courses_instructor_id_fkey(id, full_name, email),
-          enrollments:enrollments(count),
-          modules:modules(count)
+          instructor:users!courses_instructor_id_fkey(id, full_name, email)
         `)
-        .eq("is_active", true)
+        .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false });
 
-      if (!options.includeArchived) {
-        query = query.eq("is_archived", false);
-      }
-
-      if (options.instructorId) {
+      if (options?.instructorId) {
         query = query.eq("instructor_id", options.instructorId);
       }
+      if (options?.isActive !== undefined) {
+        query = query.eq("is_active", options.isActive);
+      }
+      if (!options?.includeArchived && options?.isArchived === undefined) {
+        query = query.eq("is_archived", false);
+      } else if (options?.isArchived !== undefined) {
+        query = query.eq("is_archived", options.isArchived);
+      }
 
-      const { data, error: fetchError } = await query;
+      const { data, error } = await query;
+      if (error) throw error;
 
-      if (fetchError) throw fetchError;
+      // Get enrollment counts for each course
+      const courseIds = data?.map((c) => c.id) || [];
+      if (courseIds.length === 0) return [];
 
-      // Transform data to include computed fields
-      const transformedCourses: CourseWithDetails[] = (data || []).map((course: any) => ({
-        ...course,
-        instructor: course.instructor || undefined,
-        enrollments_count: course.enrollments?.[0]?.count || 0,
-        modules_count: course.modules?.[0]?.count || 0,
-      }));
+      const { data: enrollmentCounts } = await supabase
+        .from("enrollments")
+        .select("course_id")
+        .in("course_id", courseIds)
+        .eq("status", "active");
 
-      setCourses(transformedCourses);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch courses"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, options.instructorId, options.includeArchived]);
+      const countMap = new Map<string, number>();
+      enrollmentCounts?.forEach((e) => {
+        countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
+      });
 
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+      // Get module counts
+      const { data: moduleCounts } = await supabase
+        .from("modules")
+        .select("course_id")
+        .in("course_id", courseIds);
 
-  const createCourse = async (courseData: CourseForm): Promise<Course | null> => {
-    try {
-      // Get current user for tenant_id and instructor_id
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const moduleCountMap = new Map<string, number>();
+      moduleCounts?.forEach((m) => {
+        moduleCountMap.set(m.course_id, (moduleCountMap.get(m.course_id) || 0) + 1);
+      });
 
-      // Get user's tenant_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
+      return data.map((course) => {
+        const enrollmentCount = countMap.get(course.id) || 0;
+        const moduleCount = moduleCountMap.get(course.id) || 0;
+        return {
+          ...course,
+          enrollment_count: enrollmentCount,
+          enrollments_count: enrollmentCount, // Alias
+          module_count: moduleCount,
+          modules_count: moduleCount, // Alias
+        };
+      }) as CourseWithDetails[];
+    },
+    enabled: !!tenant?.id,
+  });
+}
+
+/**
+ * Get courses for the current instructor
+ */
+export function useInstructorCourses() {
+  const { user } = useUser();
+
+  return useCourses({
+    instructorId: user?.id,
+    isArchived: false,
+  });
+}
+
+/**
+ * Get a single course by ID
+ */
+export function useCourse(courseId: string | null | undefined) {
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ["course", courseId],
+    queryFn: async () => {
+      if (!courseId || !tenant?.id) return null;
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("courses")
+        .select(`
+          *,
+          instructor:users!courses_instructor_id_fkey(id, full_name, email)
+        `)
+        .eq("id", courseId)
+        .eq("tenant_id", tenant.id)
         .single();
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      // Generate unique enrollment code
-      let enrollmentCode = generateEnrollmentCode();
+      // Get enrollment count
+      const { count: enrollmentCount } = await supabase
+        .from("enrollments")
+        .select("*", { count: "exact", head: true })
+        .eq("course_id", courseId)
+        .eq("status", "active");
 
-      // Make sure enrollment code is unique within tenant
+      // Get module count
+      const { count: moduleCount } = await supabase
+        .from("modules")
+        .select("*", { count: "exact", head: true })
+        .eq("course_id", courseId);
+
+      return {
+        ...data,
+        enrollment_count: enrollmentCount || 0,
+        enrollments_count: enrollmentCount || 0, // Alias
+        module_count: moduleCount || 0,
+        modules_count: moduleCount || 0, // Alias
+      } as CourseWithDetails;
+    },
+    enabled: !!courseId && !!tenant?.id,
+  });
+}
+
+/**
+ * Create a new course
+ */
+export function useCreateCourse() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      input: Omit<CourseInsert, "tenant_id" | "instructor_id" | "enrollment_code"> & {
+        enrollment_code?: string;
+      }
+    ) => {
+      if (!tenant?.id || !user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
+
+      // Generate enrollment code if not provided
+      let enrollmentCode = input.enrollment_code || generateEnrollmentCode();
+
+      // Ensure unique enrollment code
       let isUnique = false;
-      while (!isUnique) {
+      let attempts = 0;
+      while (!isUnique && attempts < 10) {
         const { data: existing } = await supabase
           .from("courses")
           .select("id")
-          .eq("tenant_id", userData.tenant_id)
+          .eq("tenant_id", tenant.id)
           .eq("enrollment_code", enrollmentCode)
           .single();
 
@@ -103,237 +216,235 @@ export function useCourses(options: UseCoursesOptions = {}) {
           isUnique = true;
         } else {
           enrollmentCode = generateEnrollmentCode();
+          attempts++;
         }
       }
 
-      const { data, error: createError } = await supabase
+      if (!isUnique) {
+        throw new Error("Could not generate unique enrollment code");
+      }
+
+      const { data, error } = await supabase
         .from("courses")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          ...input,
+          tenant_id: tenant.id,
           instructor_id: user.id,
-          title: courseData.title,
-          description: courseData.description || null,
-          course_code: courseData.courseCode || null,
-          course_type: courseData.courseType,
           enrollment_code: enrollmentCode,
-          start_date: courseData.startDate || null,
-          end_date: courseData.endDate || null,
-          max_students: courseData.maxStudents || null,
-        }])
-        .select()
+        })
+        .select(`
+          *,
+          instructor:users!courses_instructor_id_fkey(id, full_name, email)
+        `)
         .single();
 
-      if (createError) throw createError;
+      if (error) throw error;
+      return data as CourseWithDetails;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
 
-      // Refetch to get the full data with relations
-      await fetchCourses();
-      return data as Course;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create course";
-      setError(new Error(message));
-      throw err;
-    }
-  };
+/**
+ * Update a course
+ */
+export function useUpdateCourse() {
+  const queryClient = useQueryClient();
 
-  const updateCourse = async (
-    courseId: string,
-    updates: Partial<CourseForm>
-  ): Promise<Course | null> => {
-    try {
-      const updateData: any = {};
+  return useMutation({
+    mutationFn: async ({
+      courseId,
+      updates,
+    }: {
+      courseId: string;
+      updates: CourseUpdate;
+    }) => {
+      const supabase = createClient();
 
-      if (updates.title !== undefined) updateData.title = updates.title;
-      if (updates.description !== undefined) updateData.description = updates.description;
-      if (updates.courseCode !== undefined) updateData.course_code = updates.courseCode;
-      if (updates.courseType !== undefined) updateData.course_type = updates.courseType;
-      if (updates.startDate !== undefined) updateData.start_date = updates.startDate;
-      if (updates.endDate !== undefined) updateData.end_date = updates.endDate;
-      if (updates.maxStudents !== undefined) updateData.max_students = updates.maxStudents;
-
-      const { data, error: updateError } = await supabase
+      const { data, error } = await supabase
         .from("courses")
-        .update(updateData)
+        .update(updates)
+        .eq("id", courseId)
+        .select(`
+          *,
+          instructor:users!courses_instructor_id_fkey(id, full_name, email)
+        `)
+        .single();
+
+      if (error) throw error;
+      return data as CourseWithDetails;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
+
+/**
+ * Archive a course (soft delete)
+ */
+export function useArchiveCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (courseId: string) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("courses")
+        .update({ is_archived: true, is_active: false })
         .eq("id", courseId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
 
-      await fetchCourses();
-      return data as Course;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to update course"));
-      return null;
-    }
-  };
+/**
+ * Restore an archived course
+ */
+export function useRestoreCourse() {
+  const queryClient = useQueryClient();
 
-  const archiveCourse = async (courseId: string): Promise<boolean> => {
-    try {
-      const { error: archiveError } = await supabase
+  return useMutation({
+    mutationFn: async (courseId: string) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
         .from("courses")
-        .update({ is_archived: true })
-        .eq("id", courseId);
-
-      if (archiveError) throw archiveError;
-
-      setCourses((prev) => prev.filter((course) => course.id !== courseId));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to archive course"));
-      return false;
-    }
-  };
-
-  const deleteCourse = async (courseId: string): Promise<boolean> => {
-    try {
-      // Soft delete
-      const { error: deleteError } = await supabase
-        .from("courses")
-        .update({ is_active: false })
-        .eq("id", courseId);
-
-      if (deleteError) throw deleteError;
-
-      setCourses((prev) => prev.filter((course) => course.id !== courseId));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to delete course"));
-      return false;
-    }
-  };
-
-  const regenerateEnrollmentCode = async (courseId: string): Promise<string | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
+        .update({ is_archived: false, is_active: true })
+        .eq("id", courseId)
+        .select()
         .single();
 
-      if (!userData) throw new Error("User not found");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
 
-      // Generate new unique code
-      let newCode = generateEnrollmentCode();
+/**
+ * Delete a course permanently (admin only)
+ */
+export function useDeleteCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (courseId: string) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from("courses")
+        .delete()
+        .eq("id", courseId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
+
+/**
+ * Regenerate enrollment code for a course
+ */
+export function useRegenerateEnrollmentCode() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (courseId: string) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
+      }
+
+      const supabase = createClient();
+
+      // Generate unique code
+      let enrollmentCode = generateEnrollmentCode();
       let isUnique = false;
-      while (!isUnique) {
+      let attempts = 0;
+
+      while (!isUnique && attempts < 10) {
         const { data: existing } = await supabase
           .from("courses")
           .select("id")
-          .eq("tenant_id", userData.tenant_id)
-          .eq("enrollment_code", newCode)
+          .eq("tenant_id", tenant.id)
+          .eq("enrollment_code", enrollmentCode)
           .neq("id", courseId)
           .single();
 
         if (!existing) {
           isUnique = true;
         } else {
-          newCode = generateEnrollmentCode();
+          enrollmentCode = generateEnrollmentCode();
+          attempts++;
         }
       }
 
-      const { error: updateError } = await supabase
+      if (!isUnique) {
+        throw new Error("Could not generate unique enrollment code");
+      }
+
+      const { data, error } = await supabase
         .from("courses")
-        .update({ enrollment_code: newCode })
-        .eq("id", courseId);
+        .update({ enrollment_code: enrollmentCode })
+        .eq("id", courseId)
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
-
-      await fetchCourses();
-      return newCode;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to regenerate enrollment code"));
-      return null;
-    }
-  };
-
-  return {
-    courses,
-    isLoading,
-    error,
-    refetch: fetchCourses,
-    createCourse,
-    updateCourse,
-    archiveCourse,
-    deleteCourse,
-    regenerateEnrollmentCode,
-  };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
 }
 
-// Hook for getting a single course with full details
-export function useCourse(courseId: string | null) {
-  const [course, setCourse] = useState<CourseWithDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+/**
+ * Get course by enrollment code
+ */
+export function useCourseByEnrollmentCode(code: string | undefined) {
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
+  return useQuery({
+    queryKey: ["course-by-code", code],
+    queryFn: async () => {
+      if (!code || !tenant?.id) return null;
 
-  const fetchCourse = useCallback(async () => {
-    if (!courseId) {
-      setCourse(null);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
+      const supabase = createClient();
+      const { data, error } = await supabase
         .from("courses")
         .select(`
           *,
-          instructor:users!courses_instructor_id_fkey(id, full_name, email),
-          enrollments:enrollments(count),
-          modules:modules(
-            *,
-            lessons:lessons(count),
-            assignments:assignments(count)
-          )
+          instructor:users!courses_instructor_id_fkey(id, full_name, email)
         `)
-        .eq("id", courseId)
+        .eq("tenant_id", tenant.id)
+        .eq("enrollment_code", code.toUpperCase())
+        .eq("is_active", true)
+        .eq("is_archived", false)
         .single();
 
-      if (fetchError) throw fetchError;
-
-      const transformedCourse = {
-        ...data,
-        instructor: data.instructor || undefined,
-        enrollments_count: data.enrollments?.[0]?.count || 0,
-        modules_count: data.modules?.length || 0,
-      } as CourseWithDetails;
-
-      setCourse(transformedCourse);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch course"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [courseId, supabase]);
-
-  useEffect(() => {
-    fetchCourse();
-  }, [fetchCourse]);
-
-  return { course, isLoading, error, refetch: fetchCourse };
-}
-
-// Hook for instructor's own courses
-export function useInstructorCourses() {
-  const [instructorId, setInstructorId] = useState<string | null>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setInstructorId(data.user.id);
-      }
-    };
-    getUser();
-  }, [supabase]);
-
-  return useCourses({ instructorId: instructorId || undefined });
+      if (error && error.code !== "PGRST116") throw error;
+      return data as CourseWithDetails | null;
+    },
+    enabled: !!code && code.length >= 6 && !!tenant?.id,
+  });
 }

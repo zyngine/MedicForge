@@ -1,13 +1,33 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { Submission, Assignment, User } from "@/types";
+import { useTenant } from "./use-tenant";
+import { useUser } from "./use-user";
+import type { Database } from "@/types/database.types";
+
+type Submission = Database["public"]["Tables"]["submissions"]["Row"];
+type Assignment = Database["public"]["Tables"]["assignments"]["Row"];
 
 export interface SubmissionWithDetails extends Submission {
-  assignment?: Assignment;
-  student?: Pick<User, "id" | "full_name" | "email">;
-  grader?: Pick<User, "id" | "full_name" | "email">;
+  assignment?: Assignment & {
+    module?: {
+      id: string;
+      title: string;
+      course_id: string;
+    };
+    quiz_questions?: any[];
+  };
+  student?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+  grader?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
 }
 
 type SubmissionStatus = "in_progress" | "submitted" | "graded" | "returned";
@@ -18,17 +38,16 @@ interface UseSubmissionsOptions {
   status?: SubmissionStatus | SubmissionStatus[];
 }
 
+/**
+ * Get submissions with optional filters
+ */
 export function useSubmissions(options: UseSubmissionsOptions = {}) {
-  const [submissions, setSubmissions] = useState<SubmissionWithDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
-
-  const fetchSubmissions = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  return useQuery({
+    queryKey: ["submissions", tenant?.id, options],
+    queryFn: async () => {
+      const supabase = createClient();
 
       let query = supabase
         .from("submissions")
@@ -56,12 +75,12 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
         }
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error } = await query;
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
       // Transform data
-      const transformedSubmissions: SubmissionWithDetails[] = (data || []).map((sub: any) => ({
+      return (data || []).map((sub: any) => ({
         ...sub,
         status: sub.status ?? "in_progress",
         assignment: sub.assignment ? {
@@ -70,34 +89,71 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
         } : undefined,
         student: sub.student || undefined,
         grader: sub.grader || undefined,
-      }));
+      })) as SubmissionWithDetails[];
+    },
+    enabled: !!tenant?.id,
+  });
+}
 
-      setSubmissions(transformedSubmissions);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch submissions"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, options.assignmentId, options.studentId, options.status]);
+/**
+ * Get a single submission with full details
+ */
+export function useSubmission(submissionId: string | null | undefined) {
+  const { tenant } = useTenant();
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, [fetchSubmissions]);
+  return useQuery({
+    queryKey: ["submission", submissionId],
+    queryFn: async () => {
+      if (!submissionId) return null;
 
-  // Start a new submission (student)
-  const startSubmission = async (assignmentId: string): Promise<Submission | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      // Get user's tenant_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("submissions")
+        .select(`
+          *,
+          assignment:assignments(
+            *,
+            module:modules(id, title, course_id),
+            quiz_questions:quiz_questions(*)
+          ),
+          student:users!submissions_student_id_fkey(id, full_name, email),
+          grader:users!submissions_graded_by_fkey(id, full_name, email)
+        `)
+        .eq("id", submissionId)
         .single();
 
-      if (userError) throw userError;
+      if (error) throw error;
+
+      return {
+        ...data,
+        status: data.status ?? "in_progress",
+        assignment: data.assignment ? {
+          ...data.assignment,
+          type: data.assignment.type ?? "quiz",
+        } : undefined,
+        student: data.student || undefined,
+        grader: data.grader || undefined,
+      } as SubmissionWithDetails;
+    },
+    enabled: !!submissionId && !!tenant?.id,
+  });
+}
+
+/**
+ * Start a new submission (student)
+ */
+export function useStartSubmission() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (assignmentId: string) => {
+      if (!tenant?.id || !user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
 
       // Check existing attempts
       const { data: existingSubmissions } = await supabase
@@ -109,38 +165,47 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
 
       const maxAttempt = existingSubmissions?.[0]?.attempt_number || 0;
 
-      const { data, error: createError } = await supabase
+      const { data, error } = await supabase
         .from("submissions")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          tenant_id: tenant.id,
           assignment_id: assignmentId,
           student_id: user.id,
           attempt_number: maxAttempt + 1,
           status: "in_progress",
           started_at: new Date().toISOString(),
-        }])
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
-
-      await fetchSubmissions();
+      if (error) throw error;
       return data as Submission;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start submission";
-      setError(new Error(message));
-      throw err;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+    },
+  });
+}
 
-  // Submit a submission (student)
-  const submitSubmission = async (
-    submissionId: string,
-    content: any,
-    fileUrls?: string[]
-  ): Promise<Submission | null> => {
-    try {
-      const { data, error: updateError } = await supabase
+/**
+ * Submit a submission (student)
+ */
+export function useSubmitSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      content,
+      fileUrls,
+    }: {
+      submissionId: string;
+      content: any;
+      fileUrls?: string[];
+    }) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
         .from("submissions")
         .update({
           content,
@@ -152,57 +217,80 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
         .select()
         .single();
 
-      if (updateError) throw updateError;
-
-      await fetchSubmissions();
+      if (error) throw error;
       return data as Submission;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to submit submission"));
-      return null;
-    }
-  };
+    },
+    onSuccess: (submission) => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["submission", submission.id] });
+    },
+  });
+}
 
-  // Save draft (student) - auto-save in progress
-  const saveDraft = async (
-    submissionId: string,
-    content: any
-  ): Promise<boolean> => {
-    try {
-      const { error: updateError } = await supabase
+/**
+ * Save draft (student) - auto-save in progress
+ */
+export function useSaveDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      content,
+    }: {
+      submissionId: string;
+      content: any;
+    }) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
         .from("submissions")
         .update({ content })
         .eq("id", submissionId);
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      return { submissionId };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["submission", result.submissionId] });
+    },
+  });
+}
 
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to save draft"));
-      return false;
-    }
-  };
+/**
+ * Grade a submission (instructor)
+ */
+export function useGradeSubmission() {
+  const { user } = useUser();
+  const queryClient = useQueryClient();
 
-  // Grade a submission (instructor)
-  const gradeSubmission = async (
-    submissionId: string,
-    gradeData: {
-      raw_score: number;
-      curved_score?: number;
-      final_score: number;
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      rawScore,
+      curvedScore,
+      finalScore,
+      feedback,
+    }: {
+      submissionId: string;
+      rawScore: number;
+      curvedScore?: number;
+      finalScore: number;
       feedback?: any;
-    }
-  ): Promise<Submission | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+    }) => {
+      if (!user?.id) {
+        throw new Error("Not authenticated");
+      }
 
-      const { data, error: updateError } = await supabase
+      const supabase = createClient();
+
+      const { data, error } = await supabase
         .from("submissions")
         .update({
-          raw_score: gradeData.raw_score,
-          curved_score: gradeData.curved_score || null,
-          final_score: gradeData.final_score,
-          feedback: gradeData.feedback || null,
+          raw_score: rawScore,
+          curved_score: curvedScore || null,
+          final_score: finalScore,
+          feedback: feedback || null,
           graded_by: user.id,
           graded_at: new Date().toISOString(),
           status: "graded",
@@ -211,26 +299,38 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
         .select()
         .single();
 
-      if (updateError) throw updateError;
-
-      await fetchSubmissions();
+      if (error) throw error;
       return data as Submission;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to grade submission"));
-      return null;
-    }
-  };
+    },
+    onSuccess: (submission) => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["submission", submission.id] });
+    },
+  });
+}
 
-  // Return submission for revisions (instructor)
-  const returnSubmission = async (
-    submissionId: string,
-    feedback: any
-  ): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+/**
+ * Return submission for revisions (instructor)
+ */
+export function useReturnSubmission() {
+  const { user } = useUser();
+  const queryClient = useQueryClient();
 
-      const { error: updateError } = await supabase
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      feedback,
+    }: {
+      submissionId: string;
+      feedback: any;
+    }) => {
+      if (!user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
+
+      const { data, error } = await supabase
         .from("submissions")
         .update({
           feedback,
@@ -238,149 +338,151 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
           graded_at: new Date().toISOString(),
           status: "returned",
         })
-        .eq("id", submissionId);
+        .eq("id", submissionId)
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      return data as Submission;
+    },
+    onSuccess: (submission) => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["submission", submission.id] });
+    },
+  });
+}
 
-      await fetchSubmissions();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to return submission"));
-      return false;
-    }
-  };
+type CurveMethod = "none" | "bell" | "sqrt" | "linear" | "flat";
 
-  // Batch grade (apply curve)
-  const applyGradeCurve = async (
-    submissionIds: string[],
-    curveAdjustment: (rawScore: number) => number
-  ): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+interface ApplyGradeCurveParams {
+  assignmentId?: string; // If provided, only curve this assignment's submissions
+  curveMethod: CurveMethod;
+  targetMean?: number; // For bell curve (0-100)
+  bonusPoints?: number; // For flat curve
+  maxPoints: number;
+}
 
-      // Get all submissions to curve
-      const submissionsToGrade = submissions.filter(s =>
-        submissionIds.includes(s.id) && s.raw_score !== null
-      );
+/**
+ * Apply grade curve to multiple submissions
+ */
+export function useApplyGradeCurve() {
+  const { user } = useUser();
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
-      for (const submission of submissionsToGrade) {
-        const curvedScore = curveAdjustment(submission.raw_score!);
-        await supabase
+  return useMutation({
+    mutationFn: async (params: ApplyGradeCurveParams) => {
+      if (!user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
+
+      // Fetch graded submissions to curve
+      let query = supabase
+        .from("submissions")
+        .select("id, raw_score, student_id")
+        .eq("status", "graded")
+        .not("raw_score", "is", null);
+
+      if (params.assignmentId) {
+        query = query.eq("assignment_id", params.assignmentId);
+      }
+
+      const { data: submissions, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      if (!submissions || submissions.length === 0) {
+        throw new Error("No graded submissions found to curve");
+      }
+
+      // Calculate curved scores based on method
+      const calculateCurvedScore = (rawScore: number): number => {
+        switch (params.curveMethod) {
+          case "bell": {
+            // Shift scores so mean equals target
+            const currentMean = submissions.reduce((sum, s) => sum + (s.raw_score || 0), 0) / submissions.length;
+            const targetScore = ((params.targetMean || 80) / 100) * params.maxPoints;
+            const adjustment = targetScore - currentMean;
+            return Math.min(params.maxPoints, Math.max(0, rawScore + adjustment));
+          }
+          case "sqrt": {
+            // Square root curve
+            const normalized = rawScore / params.maxPoints;
+            return Math.sqrt(normalized) * params.maxPoints;
+          }
+          case "linear": {
+            // Highest score becomes 100%
+            const highest = Math.max(...submissions.map(s => s.raw_score || 0));
+            if (highest === 0) return 0;
+            const multiplier = params.maxPoints / highest;
+            return rawScore * multiplier;
+          }
+          case "flat": {
+            // Add fixed bonus points
+            return Math.min(params.maxPoints, rawScore + (params.bonusPoints || 5));
+          }
+          default:
+            return rawScore;
+        }
+      };
+
+      // Apply curves to all submissions
+      const results = [];
+      for (const submission of submissions) {
+        const rawScore = submission.raw_score || 0;
+        const curvedScore = Math.round(calculateCurvedScore(rawScore) * 100) / 100;
+
+        const { data, error } = await supabase
           .from("submissions")
           .update({
             curved_score: curvedScore,
             final_score: curvedScore,
             graded_by: user.id,
             graded_at: new Date().toISOString(),
-            status: "graded",
           })
-          .eq("id", submission.id);
+          .eq("id", submission.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        results.push(data);
       }
 
-      await fetchSubmissions();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to apply grade curve"));
-      return false;
-    }
-  };
-
-  return {
-    submissions,
-    isLoading,
-    error,
-    refetch: fetchSubmissions,
-    startSubmission,
-    submitSubmission,
-    saveDraft,
-    gradeSubmission,
-    returnSubmission,
-    applyGradeCurve,
-  };
+      return results as Submission[];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+    },
+  });
 }
 
-// Hook for getting a single submission
-export function useSubmission(submissionId: string | null) {
-  const [submission, setSubmission] = useState<SubmissionWithDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const supabase = createClient();
-
-  const fetchSubmission = useCallback(async () => {
-    if (!submissionId) {
-      setSubmission(null);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from("submissions")
-        .select(`
-          *,
-          assignment:assignments(
-            *,
-            module:modules(*),
-            quiz_questions:quiz_questions(*)
-          ),
-          student:users!submissions_student_id_fkey(id, full_name, email),
-          grader:users!submissions_graded_by_fkey(id, full_name, email)
-        `)
-        .eq("id", submissionId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const transformedSubmission = {
-        ...data,
-        status: data.status ?? "in_progress",
-        assignment: data.assignment ? {
-          ...data.assignment,
-          type: data.assignment.type ?? "quiz",
-        } : undefined,
-        student: data.student || undefined,
-        grader: data.grader || undefined,
-      } as SubmissionWithDetails;
-
-      setSubmission(transformedSubmission);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch submission"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [submissionId, supabase]);
-
-  useEffect(() => {
-    fetchSubmission();
-  }, [fetchSubmission]);
-
-  return { submission, isLoading, error, refetch: fetchSubmission };
-}
-
-// Hook for getting submissions for the current user
+/**
+ * Get submissions for the current user
+ */
 export function useMySubmissions() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const supabase = createClient();
+  const { user } = useUser();
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    };
-    getUser();
-  }, [supabase]);
-
-  return useSubmissions({ studentId: userId || undefined });
+  return useSubmissions({
+    studentId: user?.id,
+  });
 }
 
-// Hook for getting pending submissions (instructor view)
+/**
+ * Get pending submissions (instructor view)
+ */
 export function usePendingSubmissions() {
-  return useSubmissions({ status: "submitted" });
+  return useSubmissions({
+    status: "submitted",
+  });
+}
+
+/**
+ * Get submissions for a specific assignment
+ */
+export function useAssignmentSubmissions(assignmentId: string | null | undefined) {
+  return useSubmissions({
+    assignmentId: assignmentId || undefined,
+  });
 }

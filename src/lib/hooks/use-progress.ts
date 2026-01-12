@@ -1,8 +1,25 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { Enrollment, Module, Assignment, Submission } from "@/types";
+import { useTenant } from "./use-tenant";
+import { useUser } from "./use-user";
+
+// Type for lesson_progress table (migration: 20240309000000_lesson_progress.sql)
+// This can be removed once types are regenerated from Supabase
+interface LessonProgressRecord {
+  id: string;
+  tenant_id: string;
+  lesson_id: string;
+  student_id: string;
+  started_at: string | null;
+  completed_at: string | null;
+  time_spent_seconds: number | null;
+  last_position: any;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface ModuleProgress {
   moduleId: string;
@@ -25,30 +42,25 @@ export interface CourseProgress {
   completedModules: number;
   totalAssignments: number;
   completedAssignments: number;
+  totalLessons: number;
+  completedLessons: number;
   averageScore: number | null;
   isComplete: boolean;
 }
 
-export function useCourseProgress(courseId: string | null) {
-  const [progress, setProgress] = useState<CourseProgress | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+/**
+ * Get progress for a specific course
+ */
+export function useCourseProgress(courseId: string | null | undefined) {
+  const { tenant } = useTenant();
+  const { user } = useUser();
 
-  const supabase = createClient();
+  return useQuery({
+    queryKey: ["course-progress", courseId, user?.id],
+    queryFn: async () => {
+      if (!courseId || !user?.id) return null;
 
-  const fetchProgress = useCallback(async () => {
-    if (!courseId) {
-      setProgress(null);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const supabase = createClient();
 
       // Fetch enrollment
       const { data: enrollment, error: enrollError } = await supabase
@@ -77,6 +89,15 @@ export function useCourseProgress(courseId: string | null) {
 
       if (modulesError) throw modulesError;
 
+      // Fetch lesson progress for this student
+      // Note: lesson_progress table added in migration 20240309000000
+      const { data: lessonProgress } = await (supabase as any)
+        .from("lesson_progress")
+        .select("lesson_id, completed_at")
+        .eq("student_id", user.id);
+
+      const completedLessonIds = new Set((lessonProgress || []).map((lp: any) => lp.lesson_id));
+
       // Fetch all submissions for this student in this course
       const assignmentIds = (modules || []).flatMap(m =>
         (m.assignments || []).map((a: any) => a.id)
@@ -100,26 +121,25 @@ export function useCourseProgress(courseId: string | null) {
       const gradedSubmissions = submissions.filter(s => s.status === "graded" && s.final_score !== null);
 
       const moduleProgressList: ModuleProgress[] = (modules || []).map((module: any) => {
-        const lessonCount = module.lessons?.length || 0;
+        const lessonIds = (module.lessons || []).map((l: any) => l.id);
+        const lessonCount = lessonIds.length;
+        const completedLessonsInModule = lessonIds.filter((id: string) => completedLessonIds.has(id)).length;
+
         const assignmentCount = module.assignments?.length || 0;
         const moduleAssignmentIds = (module.assignments || []).map((a: any) => a.id);
         const completedAssignments = moduleAssignmentIds.filter((id: string) =>
           submittedAssignmentIds.has(id)
         ).length;
 
-        // For now, assume all lessons in a module are complete if any assignment is submitted
-        // In a real app, you'd have a lesson_progress table
-        const completedLessons = completedAssignments > 0 ? lessonCount : 0;
-
         const total = lessonCount + assignmentCount;
-        const completed = completedLessons + completedAssignments;
+        const completed = completedLessonsInModule + completedAssignments;
         const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
         return {
           moduleId: module.id,
           moduleTitle: module.title,
           totalLessons: lessonCount,
-          completedLessons,
+          completedLessons: completedLessonsInModule,
           totalAssignments: assignmentCount,
           completedAssignments,
           progressPercent,
@@ -129,8 +149,11 @@ export function useCourseProgress(courseId: string | null) {
 
       // Calculate overall progress
       const totalAssignments = assignmentIds.length;
-      const completedAssignments = submittedAssignmentIds.size;
+      const completedAssignmentsTotal = submittedAssignmentIds.size;
       const completedModules = moduleProgressList.filter(m => m.isComplete).length;
+
+      const totalLessons = moduleProgressList.reduce((sum, m) => sum + m.totalLessons, 0);
+      const completedLessonsTotal = moduleProgressList.reduce((sum, m) => sum + m.completedLessons, 0);
 
       // Calculate average score
       let averageScore: number | null = null;
@@ -139,8 +162,10 @@ export function useCourseProgress(courseId: string | null) {
         averageScore = Math.round(totalScore / gradedSubmissions.length);
       }
 
-      const overallProgress = totalAssignments > 0
-        ? Math.round((completedAssignments / totalAssignments) * 100)
+      const totalItems = totalLessons + totalAssignments;
+      const completedItems = completedLessonsTotal + completedAssignmentsTotal;
+      const overallProgress = totalItems > 0
+        ? Math.round((completedItems / totalItems) * 100)
         : 0;
 
       const courseProgress: CourseProgress = {
@@ -152,49 +177,40 @@ export function useCourseProgress(courseId: string | null) {
         totalModules: modules?.length || 0,
         completedModules,
         totalAssignments,
-        completedAssignments,
+        completedAssignments: completedAssignmentsTotal,
+        totalLessons,
+        completedLessons: completedLessonsTotal,
         averageScore,
         isComplete: overallProgress === 100,
       };
 
-      setProgress(courseProgress);
-
-      // Update enrollment completion percentage
+      // Update enrollment completion percentage if changed
       if (enrollment.completion_percentage !== overallProgress) {
         await supabase
           .from("enrollments")
           .update({ completion_percentage: overallProgress })
           .eq("id", enrollment.id);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch progress"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [courseId, supabase]);
 
-  useEffect(() => {
-    fetchProgress();
-  }, [fetchProgress]);
-
-  return { progress, isLoading, error, refetch: fetchProgress };
+      return courseProgress;
+    },
+    enabled: !!courseId && !!user?.id && !!tenant?.id,
+  });
 }
 
-// Hook for getting progress across all enrolled courses
+/**
+ * Get progress across all enrolled courses
+ */
 export function useAllCoursesProgress() {
-  const [progress, setProgress] = useState<CourseProgress[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
+  const { user } = useUser();
 
-  const supabase = createClient();
+  return useQuery({
+    queryKey: ["all-courses-progress", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
 
-  const fetchProgress = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const supabase = createClient();
 
       // Fetch all active enrollments with course data
       const { data: enrollments, error: enrollError } = await supabase
@@ -216,6 +232,15 @@ export function useAllCoursesProgress() {
 
       if (enrollError) throw enrollError;
 
+      // Fetch lesson progress for this student
+      // Note: lesson_progress table added in migration 20240309000000
+      const { data: lessonProgress } = await (supabase as any)
+        .from("lesson_progress")
+        .select("lesson_id, completed_at")
+        .eq("student_id", user.id);
+
+      const completedLessonIds = new Set((lessonProgress || []).map((lp: any) => lp.lesson_id));
+
       // Fetch all submissions for this student
       const { data: submissions, error: subsError } = await supabase
         .from("submissions")
@@ -232,23 +257,25 @@ export function useAllCoursesProgress() {
         const modules = enrollment.course?.modules || [];
 
         const moduleProgressList: ModuleProgress[] = modules.map((module: any) => {
-          const lessonCount = module.lessons?.length || 0;
+          const lessonIds = (module.lessons || []).map((l: any) => l.id);
+          const lessonCount = lessonIds.length;
+          const completedLessonsInModule = lessonIds.filter((id: string) => completedLessonIds.has(id)).length;
+
           const assignmentCount = module.assignments?.length || 0;
           const moduleAssignmentIds = (module.assignments || []).map((a: any) => a.id);
           const completedAssignments = moduleAssignmentIds.filter((id: string) =>
             submittedAssignmentIds.has(id)
           ).length;
 
-          const completedLessons = completedAssignments > 0 ? lessonCount : 0;
           const total = lessonCount + assignmentCount;
-          const completed = completedLessons + completedAssignments;
+          const completed = completedLessonsInModule + completedAssignments;
           const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
           return {
             moduleId: module.id,
             moduleTitle: module.title,
             totalLessons: lessonCount,
-            completedLessons,
+            completedLessons: completedLessonsInModule,
             totalAssignments: assignmentCount,
             completedAssignments,
             progressPercent,
@@ -260,10 +287,13 @@ export function useAllCoursesProgress() {
         const allAssignmentIds = modules.flatMap((m: any) =>
           (m.assignments || []).map((a: any) => a.id)
         );
-        const completedAssignments = allAssignmentIds.filter((id: string) =>
+        const completedAssignmentsTotal = allAssignmentIds.filter((id: string) =>
           submittedAssignmentIds.has(id)
         ).length;
         const completedModules = moduleProgressList.filter(m => m.isComplete).length;
+
+        const totalLessons = moduleProgressList.reduce((sum, m) => sum + m.totalLessons, 0);
+        const completedLessonsTotal = moduleProgressList.reduce((sum, m) => sum + m.completedLessons, 0);
 
         // Calculate average score for this course
         const courseSubmissions = gradedSubmissions.filter(s =>
@@ -275,8 +305,10 @@ export function useAllCoursesProgress() {
           averageScore = Math.round(totalScore / courseSubmissions.length);
         }
 
-        const overallProgress = totalAssignments > 0
-          ? Math.round((completedAssignments / totalAssignments) * 100)
+        const totalItems = totalLessons + totalAssignments;
+        const completedItems = completedLessonsTotal + completedAssignmentsTotal;
+        const overallProgress = totalItems > 0
+          ? Math.round((completedItems / totalItems) * 100)
           : 0;
 
         return {
@@ -288,23 +320,220 @@ export function useAllCoursesProgress() {
           totalModules: modules.length,
           completedModules,
           totalAssignments,
-          completedAssignments,
+          completedAssignments: completedAssignmentsTotal,
+          totalLessons,
+          completedLessons: completedLessonsTotal,
           averageScore,
           isComplete: overallProgress === 100,
         };
       });
 
-      setProgress(allProgress);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch progress"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase]);
+      return allProgress;
+    },
+    enabled: !!user?.id && !!tenant?.id,
+  });
+}
 
-  useEffect(() => {
-    fetchProgress();
-  }, [fetchProgress]);
+/**
+ * Get progress for a specific module
+ */
+export function useModuleProgress(moduleId: string | null | undefined) {
+  const { tenant } = useTenant();
+  const { user } = useUser();
 
-  return { progress, isLoading, error, refetch: fetchProgress };
+  return useQuery({
+    queryKey: ["module-progress", moduleId, user?.id],
+    queryFn: async () => {
+      if (!moduleId || !user?.id) return null;
+
+      const supabase = createClient();
+
+      // Fetch module with lessons and assignments
+      const { data: module, error: moduleError } = await supabase
+        .from("modules")
+        .select(`
+          *,
+          lessons:lessons(id),
+          assignments:assignments(id, points_possible)
+        `)
+        .eq("id", moduleId)
+        .single();
+
+      if (moduleError) throw moduleError;
+
+      // Fetch lesson progress
+      const lessonIds = (module.lessons || []).map((l: any) => l.id);
+      const { data: lessonProgress } = await (supabase as any)
+        .from("lesson_progress")
+        .select("lesson_id")
+        .eq("student_id", user.id)
+        .in("lesson_id", lessonIds);
+
+      const completedLessonIds = new Set((lessonProgress || []).map((lp: any) => lp.lesson_id));
+
+      // Fetch submissions
+      const assignmentIds = (module.assignments || []).map((a: any) => a.id);
+      let submissions: any[] = [];
+      if (assignmentIds.length > 0) {
+        const { data: subs } = await supabase
+          .from("submissions")
+          .select("assignment_id")
+          .eq("student_id", user.id)
+          .in("assignment_id", assignmentIds)
+          .in("status", ["submitted", "graded"]);
+        submissions = subs || [];
+      }
+
+      const submittedAssignmentIds = new Set(submissions.map(s => s.assignment_id));
+
+      const lessonCount = lessonIds.length;
+      const completedLessonsInModule = lessonIds.filter((id: string) => completedLessonIds.has(id)).length;
+      const assignmentCount = module.assignments?.length || 0;
+      const completedAssignments = assignmentIds.filter((id: string) =>
+        submittedAssignmentIds.has(id)
+      ).length;
+
+      const total = lessonCount + assignmentCount;
+      const completed = completedLessonsInModule + completedAssignments;
+      const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      return {
+        moduleId: module.id,
+        moduleTitle: module.title,
+        totalLessons: lessonCount,
+        completedLessons: completedLessonsInModule,
+        totalAssignments: assignmentCount,
+        completedAssignments,
+        progressPercent,
+        isComplete: progressPercent === 100,
+      } as ModuleProgress;
+    },
+    enabled: !!moduleId && !!user?.id && !!tenant?.id,
+  });
+}
+
+/**
+ * Mark a lesson as complete
+ */
+export function useMarkLessonComplete() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (lessonId: string) => {
+      if (!tenant?.id || !user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
+
+      // Check if already completed
+      const { data: existing } = await (supabase as any)
+        .from("lesson_progress")
+        .select("id")
+        .eq("lesson_id", lessonId)
+        .eq("student_id", user.id)
+        .single();
+
+      if (existing) {
+        return existing; // Already completed
+      }
+
+      // Create progress entry
+      const { data, error } = await (supabase as any)
+        .from("lesson_progress")
+        .insert({
+          tenant_id: tenant.id,
+          lesson_id: lessonId,
+          student_id: user.id,
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["module-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["all-courses-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["lesson-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
+
+/**
+ * Mark a lesson as incomplete (undo completion)
+ */
+export function useMarkLessonIncomplete() {
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (lessonId: string) => {
+      if (!user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
+
+      const { error } = await (supabase as any)
+        .from("lesson_progress")
+        .delete()
+        .eq("lesson_id", lessonId)
+        .eq("student_id", user.id);
+
+      if (error) throw error;
+      return { lessonId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["module-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["all-courses-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["lesson-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
+
+/**
+ * Get lesson progress for current user
+ */
+export function useLessonProgress(lessonId: string | null | undefined) {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+
+  return useQuery({
+    queryKey: ["lesson-progress", lessonId, user?.id],
+    queryFn: async () => {
+      if (!lessonId || !user?.id) return null;
+
+      const supabase = createClient();
+
+      const { data, error } = await (supabase as any)
+        .from("lesson_progress")
+        .select("*")
+        .eq("lesson_id", lessonId)
+        .eq("student_id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+    enabled: !!lessonId && !!user?.id && !!tenant?.id,
+  });
+}
+
+/**
+ * Check if a lesson is completed
+ */
+export function useIsLessonCompleted(lessonId: string | null | undefined) {
+  const { data: progress, isLoading } = useLessonProgress(lessonId);
+  return {
+    isCompleted: !!progress?.completed_at,
+    isLoading,
+  };
 }

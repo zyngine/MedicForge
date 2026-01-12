@@ -23,7 +23,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { useMyEnrollments, type EnrollmentWithDetails } from "@/lib/hooks/use-enrollments";
+import { useMyEnrollments, useEnrollByCode, type EnrollmentWithDetails } from "@/lib/hooks/use-enrollments";
 import { formatDate } from "@/lib/utils";
 
 function getTypeBadge(type: string) {
@@ -42,14 +42,14 @@ function getTypeBadge(type: string) {
 }
 
 export default function StudentCoursesPage() {
-  const { enrollments, isLoading, error, refetch, enrollByCode } = useMyEnrollments();
+  const { data: enrollments = [], isLoading, error, refetch } = useMyEnrollments();
+  const { mutateAsync: enrollByCode, isPending: isEnrolling } = useEnrollByCode();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showEnrollment, setShowEnrollment] = React.useState(false);
   const [enrollmentCode, setEnrollmentCode] = React.useState("");
   const [enrollError, setEnrollError] = React.useState<string | null>(null);
-  const [isEnrolling, setIsEnrolling] = React.useState(false);
 
-  const filteredEnrollments = enrollments.filter((enrollment) => {
+  const filteredEnrollments = enrollments.filter((enrollment: EnrollmentWithDetails) => {
     const course = enrollment.course;
     if (!course) return false;
     return (
@@ -65,7 +65,6 @@ export default function StudentCoursesPage() {
     if (!enrollmentCode.trim()) return;
 
     setEnrollError(null);
-    setIsEnrolling(true);
 
     try {
       await enrollByCode(enrollmentCode.trim());
@@ -73,8 +72,6 @@ export default function StudentCoursesPage() {
       setShowEnrollment(false);
     } catch (err) {
       setEnrollError(err instanceof Error ? err.message : "Failed to enroll");
-    } finally {
-      setIsEnrolling(false);
     }
   };
 

@@ -65,11 +65,11 @@ export default function StudentCourseDetailPage() {
   const courseId = params.courseId as string;
 
   // Fetch real data using hooks
-  const { course, isLoading: courseLoading } = useCourse(courseId);
-  const { modules, isLoading: modulesLoading } = useModules(courseId);
-  const { assignments, isLoading: assignmentsLoading } = useAssignments({ courseId });
-  const { submissions } = useMySubmissions();
-  const { progress } = useCourseProgress(courseId);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: modules = [], isLoading: modulesLoading } = useModules(courseId);
+  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments({ courseId });
+  const { data: submissions = [] } = useMySubmissions();
+  const { data: progress } = useCourseProgress(courseId);
 
   const [expandedModule, setExpandedModule] = React.useState<string | null>(null);
 
@@ -413,7 +413,7 @@ export default function StudentCourseDetailPage() {
 
 // Separate component to load module content (lessons and assignments)
 function ModuleContent({ moduleId, courseId }: { moduleId: string; courseId: string }) {
-  const { module, isLoading } = useModule(moduleId);
+  const { data: module, isLoading } = useModule(moduleId);
 
   if (isLoading) {
     return (

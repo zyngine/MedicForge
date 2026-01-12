@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { QuizQuestion } from "@/types";
+import { useTenant } from "./use-tenant";
+import type { Database } from "@/types/database.types";
+
+type QuizQuestion = Database["public"]["Tables"]["quiz_questions"]["Row"];
 
 type QuestionType = "multiple_choice" | "true_false" | "matching" | "short_answer";
 
@@ -16,242 +19,277 @@ interface QuizQuestionForm {
   explanation?: string;
 }
 
-export function useQuizQuestions(assignmentId: string | null) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+/**
+ * Get quiz questions for an assignment
+ */
+export function useQuizQuestions(assignmentId: string | null | undefined) {
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
+  const query = useQuery({
+    queryKey: ["quiz-questions", assignmentId],
+    queryFn: async () => {
+      if (!assignmentId) return [];
 
-  const fetchQuestions = useCallback(async () => {
-    if (!assignmentId) {
-      setQuestions([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
+      const supabase = createClient();
+      const { data, error } = await supabase
         .from("quiz_questions")
         .select("*")
         .eq("assignment_id", assignmentId)
         .order("order_index", { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
       // Transform data to ensure required fields have defaults
-      const transformedQuestions: QuizQuestion[] = (data || []).map((q: any) => ({
+      return (data || []).map((q: any) => ({
         ...q,
         question_type: q.question_type ?? "multiple_choice",
         points: q.points ?? 1,
         order_index: q.order_index ?? 0,
-      }));
+      })) as QuizQuestion[];
+    },
+    enabled: !!assignmentId && !!tenant?.id,
+  });
 
-      setQuestions(transformedQuestions);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch questions"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, assignmentId]);
+  // Calculate total points
+  const totalPoints = (query.data || []).reduce((sum, q) => sum + (q.points || 1), 0);
 
-  useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+  return {
+    ...query,
+    totalPoints,
+  };
+}
 
-  const createQuestion = async (questionData: QuizQuestionForm): Promise<QuizQuestion | null> => {
-    if (!assignmentId) return null;
+/**
+ * Create a quiz question
+ */
+export function useCreateQuizQuestion() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
-    try {
-      // Get current user for tenant_id
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+  return useMutation({
+    mutationFn: async ({
+      assignmentId,
+      data,
+    }: {
+      assignmentId: string;
+      data: QuizQuestionForm;
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
+      }
 
-      // Get user's tenant_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+      const supabase = createClient();
 
-      if (userError) throw userError;
+      // Get next order index if not provided
+      let orderIndex = data.order_index;
+      if (orderIndex === undefined) {
+        const { data: existingQuestions } = await supabase
+          .from("quiz_questions")
+          .select("order_index")
+          .eq("assignment_id", assignmentId)
+          .order("order_index", { ascending: false })
+          .limit(1);
 
-      // Get next order index
-      const maxOrderIndex = questions.length > 0
-        ? Math.max(...questions.map(q => q.order_index))
-        : -1;
+        orderIndex = existingQuestions && existingQuestions.length > 0 && existingQuestions[0].order_index !== null
+          ? existingQuestions[0].order_index + 1
+          : 0;
+      }
 
-      const { data, error: createError } = await supabase
+      const { data: question, error } = await supabase
         .from("quiz_questions")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          tenant_id: tenant.id,
           assignment_id: assignmentId,
-          question_text: questionData.question_text,
-          question_type: questionData.question_type || "multiple_choice",
-          options: questionData.options || null,
-          correct_answer: questionData.correct_answer,
-          points: questionData.points || 1,
-          order_index: questionData.order_index ?? maxOrderIndex + 1,
-          explanation: questionData.explanation || null,
-        }])
+          question_text: data.question_text,
+          question_type: data.question_type || "multiple_choice",
+          options: data.options || null,
+          correct_answer: data.correct_answer,
+          points: data.points || 1,
+          order_index: orderIndex,
+          explanation: data.explanation || null,
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (error) throw error;
+      return question;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["quiz-questions", variables.assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ["assignment", variables.assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+    },
+  });
+}
 
-      await fetchQuestions();
-      return data as QuizQuestion;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create question";
-      setError(new Error(message));
-      throw err;
-    }
-  };
+/**
+ * Update a quiz question
+ */
+export function useUpdateQuizQuestion() {
+  const queryClient = useQueryClient();
 
-  const updateQuestion = async (
-    questionId: string,
-    updates: Partial<QuizQuestionForm>
-  ): Promise<QuizQuestion | null> => {
-    try {
-      const updateData: any = {};
+  return useMutation({
+    mutationFn: async ({
+      questionId,
+      data,
+    }: {
+      questionId: string;
+      data: Partial<QuizQuestionForm>;
+    }) => {
+      const supabase = createClient();
 
-      if (updates.question_text !== undefined) updateData.question_text = updates.question_text;
-      if (updates.question_type !== undefined) updateData.question_type = updates.question_type;
-      if (updates.options !== undefined) updateData.options = updates.options;
-      if (updates.correct_answer !== undefined) updateData.correct_answer = updates.correct_answer;
-      if (updates.points !== undefined) updateData.points = updates.points;
-      if (updates.order_index !== undefined) updateData.order_index = updates.order_index;
-      if (updates.explanation !== undefined) updateData.explanation = updates.explanation;
+      const updateData: Record<string, any> = {};
+      if (data.question_text !== undefined) updateData.question_text = data.question_text;
+      if (data.question_type !== undefined) updateData.question_type = data.question_type;
+      if (data.options !== undefined) updateData.options = data.options;
+      if (data.correct_answer !== undefined) updateData.correct_answer = data.correct_answer;
+      if (data.points !== undefined) updateData.points = data.points;
+      if (data.order_index !== undefined) updateData.order_index = data.order_index;
+      if (data.explanation !== undefined) updateData.explanation = data.explanation;
 
-      const { data, error: updateError } = await supabase
+      const { data: question, error } = await supabase
         .from("quiz_questions")
         .update(updateData)
         .eq("id", questionId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      return question;
+    },
+    onSuccess: (question) => {
+      queryClient.invalidateQueries({ queryKey: ["quiz-questions", question.assignment_id] });
+      queryClient.invalidateQueries({ queryKey: ["assignment", question.assignment_id] });
+    },
+  });
+}
 
-      await fetchQuestions();
-      return data as QuizQuestion;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to update question"));
-      return null;
-    }
-  };
+/**
+ * Delete a quiz question
+ */
+export function useDeleteQuizQuestion() {
+  const queryClient = useQueryClient();
 
-  const deleteQuestion = async (questionId: string): Promise<boolean> => {
-    try {
-      const { error: deleteError } = await supabase
+  return useMutation({
+    mutationFn: async (questionId: string) => {
+      const supabase = createClient();
+
+      // Get the assignment_id before deleting
+      const { data: question } = await supabase
+        .from("quiz_questions")
+        .select("assignment_id")
+        .eq("id", questionId)
+        .single();
+
+      const { error } = await supabase
         .from("quiz_questions")
         .delete()
         .eq("id", questionId);
 
-      if (deleteError) throw deleteError;
+      if (error) throw error;
+      return { questionId, assignmentId: question?.assignment_id };
+    },
+    onSuccess: (result) => {
+      if (result.assignmentId) {
+        queryClient.invalidateQueries({ queryKey: ["quiz-questions", result.assignmentId] });
+        queryClient.invalidateQueries({ queryKey: ["assignment", result.assignmentId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+    },
+  });
+}
 
-      setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to delete question"));
-      return false;
-    }
-  };
+/**
+ * Reorder quiz questions
+ */
+export function useReorderQuizQuestions() {
+  const queryClient = useQueryClient();
 
-  const reorderQuestions = async (orderedIds: string[]): Promise<boolean> => {
-    try {
+  return useMutation({
+    mutationFn: async ({
+      assignmentId,
+      orderedIds,
+    }: {
+      assignmentId: string;
+      orderedIds: string[];
+    }) => {
+      const supabase = createClient();
+
       // Update order_index for each question
-      const updates = orderedIds.map((id, index) => ({
-        id,
-        order_index: index,
-      }));
-
-      for (const update of updates) {
-        const { error: updateError } = await supabase
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
           .from("quiz_questions")
-          .update({ order_index: update.order_index })
-          .eq("id", update.id);
+          .update({ order_index: i })
+          .eq("id", orderedIds[i]);
 
-        if (updateError) throw updateError;
+        if (error) throw error;
       }
 
-      // Update local state
-      setQuestions((prev) => {
-        const questionMap = new Map(prev.map((q) => [q.id, q]));
-        return orderedIds
-          .map((id, index) => {
-            const question = questionMap.get(id);
-            return question ? { ...question, order_index: index } : null;
-          })
-          .filter((q): q is QuizQuestion => q !== null);
-      });
+      return { assignmentId, orderedIds };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["quiz-questions", result.assignmentId] });
+    },
+  });
+}
 
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to reorder questions"));
-      return false;
-    }
-  };
+/**
+ * Bulk create quiz questions
+ */
+export function useBulkCreateQuizQuestions() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
-  // Bulk create questions (useful for importing)
-  const bulkCreateQuestions = async (questionsData: QuizQuestionForm[]): Promise<QuizQuestion[]> => {
-    if (!assignmentId) return [];
+  return useMutation({
+    mutationFn: async ({
+      assignmentId,
+      questions,
+    }: {
+      assignmentId: string;
+      questions: QuizQuestionForm[];
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
+      }
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const supabase = createClient();
 
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+      // Get current max order index
+      const { data: existingQuestions } = await supabase
+        .from("quiz_questions")
+        .select("order_index")
+        .eq("assignment_id", assignmentId)
+        .order("order_index", { ascending: false })
+        .limit(1);
 
-      if (userError) throw userError;
+      const startIndex = existingQuestions && existingQuestions.length > 0 && existingQuestions[0].order_index !== null
+        ? existingQuestions[0].order_index + 1
+        : 0;
 
-      const questionsToInsert = questionsData.map((q, index) => ({
-        tenant_id: userData.tenant_id,
+      const questionsToInsert = questions.map((q, index) => ({
+        tenant_id: tenant.id,
         assignment_id: assignmentId,
         question_text: q.question_text,
         question_type: q.question_type || "multiple_choice",
         options: q.options || null,
         correct_answer: q.correct_answer,
         points: q.points || 1,
-        order_index: q.order_index ?? questions.length + index,
+        order_index: q.order_index ?? startIndex + index,
         explanation: q.explanation || null,
       }));
 
-      const { data, error: createError } = await supabase
+      const { data, error } = await supabase
         .from("quiz_questions")
         .insert(questionsToInsert)
         .select();
 
-      if (createError) throw createError;
-
-      await fetchQuestions();
-      return (data || []) as QuizQuestion[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create questions";
-      setError(new Error(message));
-      throw err;
-    }
-  };
-
-  // Calculate total points for the quiz
-  const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
-
-  return {
-    questions,
-    isLoading,
-    error,
-    totalPoints,
-    refetch: fetchQuestions,
-    createQuestion,
-    updateQuestion,
-    deleteQuestion,
-    reorderQuestions,
-    bulkCreateQuestions,
-  };
+      if (error) throw error;
+      return data as QuizQuestion[];
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["quiz-questions", variables.assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ["assignment", variables.assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+    },
+  });
 }

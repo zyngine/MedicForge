@@ -13,7 +13,7 @@ import {
   Select,
 } from "@/components/ui";
 import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
-import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import { useCreateCourse } from "@/lib/hooks/use-courses";
 import type { CourseForm } from "@/types";
 
 const courseTypes = [
@@ -26,8 +26,7 @@ const courseTypes = [
 
 export default function NewCoursePage() {
   const router = useRouter();
-  const { createCourse } = useInstructorCourses();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { mutateAsync: createCourse, isPending: isSubmitting } = useCreateCourse();
   const [error, setError] = React.useState<string | null>(null);
 
   const [formData, setFormData] = React.useState<CourseForm>({
@@ -49,17 +48,21 @@ export default function NewCoursePage() {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      const course = await createCourse(formData);
+      const course = await createCourse({
+        title: formData.title,
+        description: formData.description || null,
+        course_code: formData.courseCode || null,
+        course_type: formData.courseType as "EMR" | "EMT" | "AEMT" | "Paramedic" | "Custom",
+        start_date: formData.startDate || null,
+        end_date: formData.endDate || null,
+        max_students: formData.maxStudents || null,
+      });
       if (course) {
         router.push(`/instructor/courses/${course.id}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create course");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

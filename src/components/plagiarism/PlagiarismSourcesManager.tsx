@@ -1,0 +1,277 @@
+"use client";
+
+import { useState } from "react";
+import { Plus, FileText, Trash2, Loader2, Upload, Database } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Input,
+  Textarea,
+  Modal,
+  Alert,
+} from "@/components/ui";
+import {
+  usePlagiarismSources,
+  useAddPlagiarismSource,
+  useRemovePlagiarismSource,
+} from "@/lib/hooks/use-plagiarism";
+import { format } from "date-fns";
+
+export function PlagiarismSourcesManager() {
+  const { data: sources, isLoading } = usePlagiarismSources();
+  const { mutate: addSource, isPending: isAdding, error: addError } = useAddPlagiarismSource();
+  const { mutate: removeSource, isPending: isRemoving } = useRemovePlagiarismSource();
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const handleAdd = () => {
+    if (!title.trim() || !content.trim()) return;
+
+    addSource(
+      { title: title.trim(), content: content.trim(), sourceType: "document" },
+      {
+        onSuccess: () => {
+          setShowAddModal(false);
+          setTitle("");
+          setContent("");
+        },
+      }
+    );
+  };
+
+  const handleRemove = (sourceId: string) => {
+    setRemovingId(sourceId);
+    removeSource(sourceId, {
+      onSettled: () => setRemovingId(null),
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Only accept text files
+    if (!file.type.startsWith("text/") && !file.name.endsWith(".txt")) {
+      alert("Please upload a text file (.txt)");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      setTitle(file.name.replace(/\.[^/.]+$/, ""));
+      setContent(text);
+    } catch (err) {
+      console.error("Error reading file:", err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Plagiarism Source Database
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Documents and submissions used for plagiarism comparison
+          </p>
+        </div>
+        <Button onClick={() => setShowAddModal(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Document
+        </Button>
+      </div>
+
+      {/* Sources List */}
+      {sources?.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+            <p className="mt-4 text-muted-foreground">No sources in database</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Add documents or graded submissions will be automatically included
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => setShowAddModal(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add First Document
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {sources?.map((source) => (
+            <Card key={source.id}>
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{source.title}</p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span className="capitalize">{source.source_type}</span>
+                        <span>•</span>
+                        <span>{source.word_count?.toLocaleString()} words</span>
+                        <span>•</span>
+                        <span>Added {format(new Date(source.created_at), "MMM d, yyyy")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemove(source.id)}
+                    disabled={removingId === source.id || isRemoving}
+                  >
+                    {removingId === source.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Stats */}
+      {sources && sources.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="py-4 text-center">
+              <p className="text-2xl font-bold">{sources.length}</p>
+              <p className="text-xs text-muted-foreground">Total Sources</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4 text-center">
+              <p className="text-2xl font-bold">
+                {sources.filter((s) => s.source_type === "submission").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Submissions</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4 text-center">
+              <p className="text-2xl font-bold">
+                {sources.filter((s) => s.source_type === "document").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Documents</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Add Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setTitle("");
+          setContent("");
+        }}
+        title="Add Source Document"
+      >
+        <div className="space-y-4">
+          {addError && (
+            <Alert variant="error">
+              {addError instanceof Error ? addError.message : "Failed to add document"}
+            </Alert>
+          )}
+
+          <div className="flex items-center gap-3 p-4 border rounded-lg border-dashed">
+            <Upload className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Upload a text file</p>
+              <p className="text-xs text-muted-foreground">
+                Or paste content below
+              </p>
+            </div>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".txt,text/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <span className="text-sm text-primary hover:underline">
+                Browse
+              </span>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Document title"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Content</label>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Paste document content here..."
+              rows={10}
+            />
+            {content && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {content.split(/\s+/).filter((w) => w.length > 0).length} words
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddModal(false);
+                setTitle("");
+                setContent("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAdd}
+              disabled={!title.trim() || !content.trim() || isAdding}
+            >
+              {isAdding ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Plus className="h-4 w-4 mr-1" />
+              )}
+              Add Document
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

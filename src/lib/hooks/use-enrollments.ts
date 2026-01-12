@@ -1,108 +1,165 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { Enrollment, Course, User } from "@/types";
+import { Database } from "@/types/database.types";
+import { useTenant } from "./use-tenant";
+import { useUser } from "./use-user";
+
+type Enrollment = Database["public"]["Tables"]["enrollments"]["Row"];
+type EnrollmentInsert = Database["public"]["Tables"]["enrollments"]["Insert"];
 
 export interface EnrollmentWithDetails extends Enrollment {
-  course?: Course & {
-    instructor?: Pick<User, "id" | "full_name" | "email">;
-    modules_count?: number;
+  course?: {
+    id: string;
+    title: string;
+    description: string | null;
+    course_code: string | null;
+    course_type: string;
+    start_date: string | null;
+    end_date: string | null;
+    enrollment_code: string;
+    instructor?: {
+      id: string;
+      full_name: string;
+      email: string;
+    };
+    module_count?: number;
+    modules_count?: number; // Alias for backward compatibility
   };
-  student?: Pick<User, "id" | "full_name" | "email">;
+  student?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
 }
 
-interface UseEnrollmentsOptions {
+/**
+ * Get enrollments with optional filters
+ */
+export function useEnrollments(options?: {
   courseId?: string;
   studentId?: string;
   status?: "active" | "completed" | "dropped";
-}
+}) {
+  const { tenant } = useTenant();
 
-export function useEnrollments(options: UseEnrollmentsOptions = {}) {
-  const [enrollments, setEnrollments] = useState<EnrollmentWithDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  return useQuery({
+    queryKey: ["enrollments", tenant?.id, options],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
 
-  const supabase = createClient();
-
-  const fetchEnrollments = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+      const supabase = createClient();
       let query = supabase
         .from("enrollments")
         .select(`
           *,
           course:courses(
-            *,
-            instructor:users!courses_instructor_id_fkey(id, full_name, email),
-            modules:modules(count)
+            id,
+            title,
+            description,
+            course_code,
+            course_type,
+            start_date,
+            end_date,
+            enrollment_code,
+            instructor:users!courses_instructor_id_fkey(id, full_name, email)
           ),
           student:users!enrollments_student_id_fkey(id, full_name, email)
         `)
+        .eq("tenant_id", tenant.id)
         .order("enrolled_at", { ascending: false });
 
-      if (options.courseId) {
+      if (options?.courseId) {
         query = query.eq("course_id", options.courseId);
       }
-
-      if (options.studentId) {
+      if (options?.studentId) {
         query = query.eq("student_id", options.studentId);
       }
-
-      if (options.status) {
+      if (options?.status) {
         query = query.eq("status", options.status);
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error } = await query;
+      if (error) throw error;
 
-      if (fetchError) throw fetchError;
+      // Get module counts for courses
+      const courseIds = [...new Set(data?.map((e) => e.course_id) || [])];
+      if (courseIds.length > 0) {
+        const { data: moduleCounts } = await supabase
+          .from("modules")
+          .select("course_id")
+          .in("course_id", courseIds);
 
-      // Transform data
-      const transformedEnrollments: EnrollmentWithDetails[] = (data || []).map((enrollment: any) => ({
-        ...enrollment,
-        course: enrollment.course ? {
-          ...enrollment.course,
-          instructor: enrollment.course.instructor || undefined,
-          modules_count: enrollment.course.modules?.[0]?.count || 0,
-        } : undefined,
-        student: enrollment.student || undefined,
-      }));
+        const moduleCountMap = new Map<string, number>();
+        moduleCounts?.forEach((m) => {
+          moduleCountMap.set(m.course_id, (moduleCountMap.get(m.course_id) || 0) + 1);
+        });
 
-      setEnrollments(transformedEnrollments);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch enrollments"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, options.courseId, options.studentId, options.status]);
+        return data?.map((enrollment: any) => {
+          const moduleCount = moduleCountMap.get(enrollment.course_id) || 0;
+          return {
+            ...enrollment,
+            course: enrollment.course
+              ? {
+                  ...enrollment.course,
+                  module_count: moduleCount,
+                  modules_count: moduleCount, // Alias
+                }
+              : undefined,
+          };
+        }) as EnrollmentWithDetails[];
+      }
 
-  useEffect(() => {
-    fetchEnrollments();
-  }, [fetchEnrollments]);
+      return data as EnrollmentWithDetails[];
+    },
+    enabled: !!tenant?.id,
+  });
+}
 
-  // Enroll a student by enrollment code
-  const enrollByCode = async (enrollmentCode: string): Promise<Enrollment | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+/**
+ * Get current student's enrollments
+ */
+export function useMyEnrollments() {
+  const { user } = useUser();
 
-      // Get user's tenant_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+  return useEnrollments({
+    studentId: user?.id,
+    status: "active",
+  });
+}
 
-      if (userError) throw userError;
+/**
+ * Get enrollments for a specific course (instructor view)
+ */
+export function useCourseEnrollments(courseId: string | null | undefined) {
+  return useEnrollments({
+    courseId: courseId || undefined,
+  });
+}
+
+/**
+ * Enroll student by enrollment code
+ */
+export function useEnrollByCode() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enrollmentCode: string) => {
+      if (!tenant?.id || !user?.id) {
+        throw new Error("Not authenticated");
+      }
+
+      const supabase = createClient();
 
       // Find course by enrollment code
       const { data: course, error: courseError } = await supabase
         .from("courses")
         .select("id, max_students, title")
         .eq("enrollment_code", enrollmentCode.toUpperCase())
-        .eq("tenant_id", userData.tenant_id)
+        .eq("tenant_id", tenant.id)
         .eq("is_active", true)
         .eq("is_archived", false)
         .single();
@@ -114,20 +171,33 @@ export function useEnrollments(options: UseEnrollmentsOptions = {}) {
       // Check if already enrolled
       const { data: existingEnrollment } = await supabase
         .from("enrollments")
-        .select("id")
+        .select("id, status")
         .eq("course_id", course.id)
         .eq("student_id", user.id)
         .single();
 
       if (existingEnrollment) {
-        throw new Error("You are already enrolled in this course");
+        if (existingEnrollment.status === "active") {
+          throw new Error("You are already enrolled in this course");
+        } else if (existingEnrollment.status === "dropped") {
+          // Re-enroll
+          const { data, error } = await supabase
+            .from("enrollments")
+            .update({ status: "active" })
+            .eq("id", existingEnrollment.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return { enrollment: data, course };
+        }
       }
 
       // Check if course is full
       if (course.max_students) {
         const { count } = await supabase
           .from("enrollments")
-          .select("id", { count: "exact" })
+          .select("id", { count: "exact", head: true })
           .eq("course_id", course.id)
           .eq("status", "active");
 
@@ -139,121 +209,284 @@ export function useEnrollments(options: UseEnrollmentsOptions = {}) {
       // Create enrollment
       const { data: enrollment, error: enrollError } = await supabase
         .from("enrollments")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          tenant_id: tenant.id,
           course_id: course.id,
           student_id: user.id,
           status: "active",
           completion_percentage: 0,
-        }])
+        })
         .select()
         .single();
 
       if (enrollError) throw enrollError;
+      return { enrollment, course };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+}
 
-      await fetchEnrollments();
-      return enrollment as Enrollment;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to enroll";
-      setError(new Error(message));
-      throw err;
-    }
-  };
+/**
+ * Drop a course (student)
+ */
+export function useDropCourse() {
+  const queryClient = useQueryClient();
 
-  // Drop a course (student)
-  const dropCourse = async (enrollmentId: string): Promise<boolean> => {
-    try {
-      const { error: dropError } = await supabase
+  return useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
         .from("enrollments")
         .update({ status: "dropped" })
-        .eq("id", enrollmentId);
+        .eq("id", enrollmentId)
+        .select()
+        .single();
 
-      if (dropError) throw dropError;
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
 
-      setEnrollments((prev) =>
-        prev.map((e) =>
-          e.id === enrollmentId ? { ...e, status: "dropped" as const } : e
-        )
-      );
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to drop course"));
-      return false;
-    }
-  };
+/**
+ * Update enrollment status (instructor)
+ */
+export function useUpdateEnrollmentStatus() {
+  const queryClient = useQueryClient();
 
-  // Update enrollment status (instructor)
-  const updateEnrollmentStatus = async (
-    enrollmentId: string,
-    status: "active" | "completed" | "dropped"
-  ): Promise<boolean> => {
-    try {
-      const { error: updateError } = await supabase
+  return useMutation({
+    mutationFn: async ({
+      enrollmentId,
+      status,
+      finalGrade,
+    }: {
+      enrollmentId: string;
+      status: "active" | "completed" | "dropped";
+      finalGrade?: number;
+    }) => {
+      const supabase = createClient();
+
+      const updates: any = { status };
+      if (finalGrade !== undefined) {
+        updates.final_grade = finalGrade;
+      }
+      if (status === "completed") {
+        updates.completion_percentage = 100;
+      }
+
+      const { data, error } = await supabase
         .from("enrollments")
-        .update({ status })
-        .eq("id", enrollmentId);
+        .update(updates)
+        .eq("id", enrollmentId)
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
 
-      setEnrollments((prev) =>
-        prev.map((e) => (e.id === enrollmentId ? { ...e, status } : e))
-      );
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to update enrollment"));
-      return false;
-    }
-  };
+/**
+ * Remove student from course (instructor)
+ */
+export function useRemoveStudent() {
+  const queryClient = useQueryClient();
 
-  // Remove student from course (instructor)
-  const removeStudent = async (enrollmentId: string): Promise<boolean> => {
-    try {
-      const { error: removeError } = await supabase
+  return useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
         .from("enrollments")
         .delete()
         .eq("id", enrollmentId);
 
-      if (removeError) throw removeError;
-
-      setEnrollments((prev) => prev.filter((e) => e.id !== enrollmentId));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to remove student"));
-      return false;
-    }
-  };
-
-  return {
-    enrollments,
-    isLoading,
-    error,
-    refetch: fetchEnrollments,
-    enrollByCode,
-    dropCourse,
-    updateEnrollmentStatus,
-    removeStudent,
-  };
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
 }
 
-// Hook for current student's enrollments
-export function useMyEnrollments() {
-  const [studentId, setStudentId] = useState<string | null>(null);
-  const supabase = createClient();
+/**
+ * Manually enroll a student (instructor)
+ */
+export function useEnrollStudent() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setStudentId(data.user.id);
+  return useMutation({
+    mutationFn: async ({
+      courseId,
+      studentId,
+    }: {
+      courseId: string;
+      studentId: string;
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
       }
-    };
-    getUser();
-  }, [supabase]);
 
-  return useEnrollments({ studentId: studentId || undefined, status: "active" });
+      const supabase = createClient();
+
+      // Check if already enrolled
+      const { data: existing } = await supabase
+        .from("enrollments")
+        .select("id, status")
+        .eq("course_id", courseId)
+        .eq("student_id", studentId)
+        .single();
+
+      if (existing) {
+        if (existing.status === "active") {
+          throw new Error("Student is already enrolled");
+        }
+        // Re-activate dropped enrollment
+        const { data, error } = await supabase
+          .from("enrollments")
+          .update({ status: "active" })
+          .eq("id", existing.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+
+      // Create new enrollment
+      const { data, error } = await supabase
+        .from("enrollments")
+        .insert({
+          tenant_id: tenant.id,
+          course_id: courseId,
+          student_id: studentId,
+          status: "active",
+          completion_percentage: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
 }
 
-// Hook for getting enrollments for a specific course (instructor view)
-export function useCourseEnrollments(courseId: string | null) {
-  return useEnrollments({ courseId: courseId || undefined });
+/**
+ * Update enrollment progress
+ */
+export function useUpdateEnrollmentProgress() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      enrollmentId,
+      completionPercentage,
+    }: {
+      enrollmentId: string;
+      completionPercentage: number;
+    }) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("enrollments")
+        .update({
+          completion_percentage: Math.min(100, Math.max(0, completionPercentage)),
+        })
+        .eq("id", enrollmentId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
+
+/**
+ * Get single enrollment
+ */
+export function useEnrollment(enrollmentId: string | undefined) {
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ["enrollment", enrollmentId],
+    queryFn: async () => {
+      if (!enrollmentId || !tenant?.id) return null;
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select(`
+          *,
+          course:courses(
+            id,
+            title,
+            description,
+            course_code,
+            course_type,
+            start_date,
+            end_date,
+            enrollment_code,
+            instructor:users!courses_instructor_id_fkey(id, full_name, email)
+          ),
+          student:users!enrollments_student_id_fkey(id, full_name, email)
+        `)
+        .eq("id", enrollmentId)
+        .eq("tenant_id", tenant.id)
+        .single();
+
+      if (error) throw error;
+      return data as EnrollmentWithDetails;
+    },
+    enabled: !!enrollmentId && !!tenant?.id,
+  });
+}
+
+/**
+ * Check if current user is enrolled in a course
+ */
+export function useIsEnrolled(courseId: string | undefined) {
+  const { user } = useUser();
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ["is-enrolled", courseId, user?.id],
+    queryFn: async () => {
+      if (!courseId || !user?.id || !tenant?.id) return null;
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("id, status")
+        .eq("course_id", courseId)
+        .eq("student_id", user.id)
+        .eq("tenant_id", tenant.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+    enabled: !!courseId && !!user?.id && !!tenant?.id,
+  });
 }

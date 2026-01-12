@@ -21,6 +21,7 @@ import {
   Label,
   Textarea,
   Spinner,
+  Alert,
 } from "@/components/ui";
 import {
   Search,
@@ -34,9 +35,11 @@ import {
   MessageSquare,
   Download,
   BarChart3,
+  TrendingUp,
 } from "lucide-react";
-import { useSubmissions, usePendingSubmissions } from "@/lib/hooks/use-submissions";
+import { useSubmissions, usePendingSubmissions, useGradeSubmission, useApplyGradeCurve } from "@/lib/hooks/use-submissions";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import { applyCurve, previewCurve, type CurveMethod, type ScoreInput, type CurveResult } from "@/lib/grading";
 
 const typeOptions = [
   { value: "all", label: "All Types" },
@@ -45,12 +48,10 @@ const typeOptions = [
   { value: "skill", label: "Skill Checklist" },
 ];
 
-type CurveMethod = "none" | "bell" | "sqrt" | "linear" | "flat";
-
 const curveOptions: { value: CurveMethod; label: string; description: string }[] = [
   { value: "none", label: "No Curve", description: "Keep original scores" },
   { value: "bell", label: "Bell Curve", description: "Adjust mean to target (e.g., 80%)" },
-  { value: "sqrt", label: "Square Root", description: "sqrt(score) * 10" },
+  { value: "sqrt", label: "Square Root", description: "sqrt(score/max) * max - helps lower scores more" },
   { value: "linear", label: "Linear", description: "Highest score becomes 100%" },
   { value: "flat", label: "Flat Bonus", description: "Add fixed points to all" },
 ];
@@ -111,11 +112,18 @@ export default function GradingPage() {
   const [gradeScore, setGradeScore] = React.useState("");
   const [gradeFeedback, setGradeFeedback] = React.useState("");
   const [isGrading, setIsGrading] = React.useState(false);
+  const [selectedAssignmentForCurve, setSelectedAssignmentForCurve] = React.useState<string>("all");
+  const [curvePreview, setCurvePreview] = React.useState<CurveResult | null>(null);
+  const [isApplyingCurve, setIsApplyingCurve] = React.useState(false);
+  const [curveError, setCurveError] = React.useState<string | null>(null);
+  const [curveSuccess, setCurveSuccess] = React.useState(false);
 
   // Fetch data using hooks
-  const { submissions: pendingSubmissionsRaw, isLoading: pendingLoading, gradeSubmission, refetch: refetchPending } = usePendingSubmissions();
-  const { submissions: gradedSubmissionsRaw, isLoading: gradedLoading, refetch: refetchGraded } = useSubmissions({ status: "graded" });
-  const { courses, isLoading: coursesLoading } = useInstructorCourses();
+  const { data: pendingSubmissionsRaw = [], isLoading: pendingLoading, refetch: refetchPending } = usePendingSubmissions();
+  const { data: gradedSubmissionsRaw = [], isLoading: gradedLoading, refetch: refetchGraded } = useSubmissions({ status: "graded" });
+  const { mutateAsync: gradeSubmission } = useGradeSubmission();
+  const { mutateAsync: applyGradeCurve } = useApplyGradeCurve();
+  const { data: courses = [], isLoading: coursesLoading } = useInstructorCourses();
 
   // Transform submissions for display
   const pendingSubmissions: SubmissionDisplay[] = pendingSubmissionsRaw.map((sub) => ({
@@ -156,6 +164,105 @@ export default function GradingPage() {
     ...courses.map(c => ({ value: c.id, label: c.title }))
   ];
 
+  // Build assignment options for curve modal (from graded submissions)
+  const assignmentOptionsMap = new Map<string, { id: string; title: string; maxPoints: number }>();
+  gradedSubmissionsRaw.forEach((sub) => {
+    if (sub.assignment?.id && sub.assignment?.title) {
+      assignmentOptionsMap.set(sub.assignment.id, {
+        id: sub.assignment.id,
+        title: sub.assignment.title,
+        maxPoints: sub.assignment.points_possible || 100,
+      });
+    }
+  });
+  const assignmentOptionsForCurve = [
+    { value: "all", label: "All graded assignments" },
+    ...Array.from(assignmentOptionsMap.values()).map(a => ({
+      value: a.id,
+      label: a.title,
+    }))
+  ];
+
+  // Calculate curve preview when parameters change
+  React.useEffect(() => {
+    if (curveMethod === "none") {
+      setCurvePreview(null);
+      return;
+    }
+
+    // Get scores to curve
+    let submissionsToCurve = gradedSubmissionsRaw.filter(sub => sub.raw_score !== null);
+
+    if (selectedAssignmentForCurve !== "all") {
+      submissionsToCurve = submissionsToCurve.filter(
+        sub => sub.assignment?.id === selectedAssignmentForCurve
+      );
+    }
+
+    if (submissionsToCurve.length === 0) {
+      setCurvePreview(null);
+      return;
+    }
+
+    // Determine max points (use first assignment's max or 100)
+    const maxPoints = submissionsToCurve[0]?.assignment?.points_possible || 100;
+
+    const scoreInputs: ScoreInput[] = submissionsToCurve.map(sub => ({
+      submissionId: sub.id,
+      studentId: sub.student_id,
+      rawScore: sub.raw_score || 0,
+    }));
+
+    const preview = previewCurve(scoreInputs, {
+      method: curveMethod,
+      maxPoints,
+      targetMean: curveMethod === "bell" ? parseFloat(curveValue) || 80 : undefined,
+      bonusPoints: curveMethod === "flat" ? parseFloat(curveValue) || 5 : undefined,
+    });
+
+    setCurvePreview(preview);
+  }, [curveMethod, curveValue, selectedAssignmentForCurve, gradedSubmissionsRaw]);
+
+  // Handle applying the curve
+  const handleApplyCurve = async () => {
+    if (!curvePreview || curveMethod === "none") return;
+
+    setIsApplyingCurve(true);
+    setCurveError(null);
+    setCurveSuccess(false);
+
+    try {
+      // Get the assignment ID (or null for all)
+      const assignmentId = selectedAssignmentForCurve === "all" ? undefined : selectedAssignmentForCurve;
+
+      // Get max points
+      const maxPoints = assignmentOptionsMap.get(selectedAssignmentForCurve)?.maxPoints || 100;
+
+      await applyGradeCurve({
+        assignmentId,
+        curveMethod,
+        targetMean: curveMethod === "bell" ? parseFloat(curveValue) : undefined,
+        bonusPoints: curveMethod === "flat" ? parseFloat(curveValue) : undefined,
+        maxPoints,
+      });
+
+      setCurveSuccess(true);
+      refetchGraded();
+
+      // Close modal after short delay
+      setTimeout(() => {
+        setCurveModalOpen(false);
+        setCurveSuccess(false);
+        setCurveMethod("none");
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to apply curve:", error);
+      setCurveError(error instanceof Error ? error.message : "Failed to apply curve");
+    } finally {
+      setIsApplyingCurve(false);
+    }
+  };
+
   const filteredPending = pendingSubmissions.filter((sub) => {
     const matchesSearch =
       sub.student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -171,9 +278,10 @@ export default function GradingPage() {
     setIsGrading(true);
     try {
       const score = parseFloat(gradeScore);
-      await gradeSubmission(selectedSubmission.id, {
-        raw_score: score,
-        final_score: score,
+      await gradeSubmission({
+        submissionId: selectedSubmission.id,
+        rawScore: score,
+        finalScore: score,
         feedback: gradeFeedback ? { text: gradeFeedback } : undefined,
       });
 
@@ -509,18 +617,31 @@ export default function GradingPage() {
             Apply a curve to adjust grades for an assignment or entire course.
           </p>
 
+          {curveError && (
+            <Alert variant="error" onClose={() => setCurveError(null)}>
+              {curveError}
+            </Alert>
+          )}
+
+          {curveSuccess && (
+            <Alert variant="success">
+              Curve applied successfully! Grades have been updated.
+            </Alert>
+          )}
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Select Assignment</Label>
               <Select
-                options={[
-                  { value: "all", label: "All assignments in course" },
-                  { value: "1", label: "Module 3 Quiz - Patient Assessment" },
-                  { value: "2", label: "Module 2 Quiz - Airway Management" },
-                ]}
-                value="1"
-                onChange={() => {}}
+                options={assignmentOptionsForCurve}
+                value={selectedAssignmentForCurve}
+                onChange={setSelectedAssignmentForCurve}
               />
+              {assignmentOptionsForCurve.length === 1 && (
+                <p className="text-sm text-muted-foreground">
+                  No graded submissions found. Grade some submissions first.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -576,37 +697,67 @@ export default function GradingPage() {
           </div>
 
           {/* Preview */}
-          {curveMethod !== "none" && (
+          {curveMethod !== "none" && curvePreview && (
             <Card>
               <CardHeader className="py-3">
-                <CardTitle className="text-sm">Preview</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Preview
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Current Mean:</span>
-                    <span>72%</span>
+                    <span>{curvePreview.stats.originalMean.toFixed(1)} pts</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">New Mean:</span>
                     <span className="text-success font-medium">
-                      {curveMethod === "bell" ? `${curveValue}%` : "78%"}
+                      {curvePreview.stats.newMean.toFixed(1)} pts
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Median:</span>
+                    <span>{curvePreview.stats.originalMedian.toFixed(1)} pts</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">New Median:</span>
+                    <span className="text-success font-medium">
+                      {curvePreview.stats.newMedian.toFixed(1)} pts
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
                     <span className="text-muted-foreground">Students Affected:</span>
-                    <span>32</span>
+                    <span>{curvePreview.stats.studentsAffected} of {curvePreview.stats.totalStudents}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
+          {curveMethod !== "none" && !curvePreview && (
+            <Card>
+              <CardContent className="py-6 text-center text-muted-foreground">
+                No graded submissions to preview curve.
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setCurveModalOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setCurveModalOpen(false);
+              setCurveError(null);
+              setCurveSuccess(false);
+            }}>
               Cancel
             </Button>
-            <Button disabled={curveMethod === "none"}>
+            <Button
+              onClick={handleApplyCurve}
+              isLoading={isApplyingCurve}
+              disabled={curveMethod === "none" || !curvePreview || curveSuccess}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
               Apply Curve
             </Button>
           </div>

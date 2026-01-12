@@ -19,6 +19,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Spinner,
 } from "@/components/ui";
 import {
   Stethoscope,
@@ -37,101 +38,13 @@ import {
   Thermometer,
   CalendarPlus,
   ClipboardList,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data
-const clinicalRequirements = {
-  hoursRequired: 48,
-  hoursCompleted: 24,
-  hoursVerified: 20,
-  patientContactsRequired: 30,
-  patientContactsCompleted: 15,
-  skillCategories: [
-    { name: "Airway Management", required: 5, completed: 3, verified: 2 },
-    { name: "Patient Assessment", required: 10, completed: 8, verified: 7 },
-    { name: "Cardiac Care", required: 5, completed: 2, verified: 2 },
-    { name: "Trauma Care", required: 5, completed: 4, verified: 3 },
-    { name: "Medical Emergencies", required: 5, completed: 3, verified: 3 },
-  ],
-};
-
-const recentLogs = [
-  {
-    id: "1",
-    date: "Feb 15, 2024",
-    hours: 8,
-    site: "City Hospital ER",
-    supervisor: "Dr. Williams, MD",
-    status: "verified",
-    patientContacts: 4,
-    skills: ["Patient Assessment", "Vital Signs", "IV Access"],
-  },
-  {
-    id: "2",
-    date: "Feb 10, 2024",
-    hours: 6,
-    site: "Metro Ambulance Service",
-    supervisor: "Paramedic Johnson",
-    status: "pending",
-    patientContacts: 3,
-    skills: ["Patient Assessment", "CPR", "AED"],
-  },
-  {
-    id: "3",
-    date: "Feb 5, 2024",
-    hours: 8,
-    site: "County Hospital",
-    supervisor: "Dr. Martinez, MD",
-    status: "verified",
-    patientContacts: 5,
-    skills: ["Airway Management", "Splinting", "Wound Care"],
-  },
-  {
-    id: "4",
-    date: "Feb 1, 2024",
-    hours: 2,
-    site: "Fire Station 12",
-    supervisor: "Lt. Brown",
-    status: "rejected",
-    patientContacts: 0,
-    rejectionReason: "Missing supervisor credentials",
-    skills: [],
-  },
-];
-
-const patientContacts = [
-  {
-    id: "1",
-    date: "Feb 15, 2024",
-    age: "65",
-    gender: "Male",
-    chiefComplaint: "Chest Pain",
-    assessment: "Suspected MI",
-    interventions: ["12-lead ECG", "O2 Therapy", "IV Access"],
-    wasTeamLead: true,
-  },
-  {
-    id: "2",
-    date: "Feb 15, 2024",
-    age: "28",
-    gender: "Female",
-    chiefComplaint: "Difficulty Breathing",
-    assessment: "Asthma Exacerbation",
-    interventions: ["Nebulizer Treatment", "Vital Signs"],
-    wasTeamLead: false,
-  },
-  {
-    id: "3",
-    date: "Feb 10, 2024",
-    age: "45",
-    gender: "Male",
-    chiefComplaint: "Fall",
-    assessment: "Hip Fracture",
-    interventions: ["Splinting", "Pain Assessment", "C-Spine Precautions"],
-    wasTeamLead: true,
-  },
-];
+import { useMyClinicalLogs, useCreateClinicalLog, type ClinicalLogWithDetails } from "@/lib/hooks/use-clinical-logs";
+import { useMyPatientContacts } from "@/lib/hooks/use-patient-contacts";
+import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
+import { formatDate } from "@/lib/utils";
 
 const siteOptions = [
   { value: "hospital_er", label: "Hospital Emergency Room" },
@@ -155,11 +68,124 @@ const skillOptions = [
 ];
 
 export default function ClinicalTrackerPage() {
+  const { data: logs = [], isLoading: logsLoading, error: logsError, refetch: refetchLogs } = useMyClinicalLogs();
+  const { mutateAsync: createLog } = useCreateClinicalLog();
+  const { contacts, isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useMyPatientContacts();
+  const { data: enrollments = [] } = useMyEnrollments();
+
   const [showLogModal, setShowLogModal] = React.useState(false);
   const [showContactModal, setShowContactModal] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const hoursProgress = (clinicalRequirements.hoursCompleted / clinicalRequirements.hoursRequired) * 100;
-  const contactsProgress = (clinicalRequirements.patientContactsCompleted / clinicalRequirements.patientContactsRequired) * 100;
+  // Form state for clinical log
+  const [logForm, setLogForm] = React.useState({
+    date: "",
+    hours: "",
+    siteType: "",
+    siteName: "",
+    supervisorName: "",
+    supervisorCredentials: "",
+    skills: [] as string[],
+    notes: "",
+    courseId: "",
+  });
+
+  // Form state for patient contact
+  const [contactForm, setContactForm] = React.useState({
+    date: "",
+    patientAge: "",
+    gender: "",
+    chiefComplaint: "",
+    assessment: "",
+    interventions: [] as string[],
+    wasTeamLead: false,
+    notes: "",
+  });
+
+  const isLoading = logsLoading || contactsLoading;
+
+  // Calculate stats from real data
+  const hoursLogs = logs.filter((log) => log.log_type === "hours");
+  const totalHours = hoursLogs.reduce((sum, log) => sum + (log.hours || 0), 0);
+  const verifiedHours = hoursLogs
+    .filter((log) => log.verification_status === "verified")
+    .reduce((sum, log) => sum + (log.hours || 0), 0);
+  const pendingHours = hoursLogs
+    .filter((log) => log.verification_status === "pending")
+    .reduce((sum, log) => sum + (log.hours || 0), 0);
+
+  const patientContactCount = contacts.length;
+  const verifiedContacts = contacts.filter((c) => c.verification_status === "verified").length;
+  const teamLeadCount = contacts.filter((c) => c.was_team_lead).length;
+
+  // Requirements (these would ideally come from course settings)
+  const hoursRequired = 48;
+  const contactsRequired = 30;
+
+  const hoursProgress = (totalHours / hoursRequired) * 100;
+  const contactsProgress = (patientContactCount / contactsRequired) * 100;
+
+  const handleSubmitLog = async () => {
+    if (!logForm.courseId || !logForm.date || !logForm.hours) return;
+
+    setIsSubmitting(true);
+    try {
+      await createLog({
+        courseId: logForm.courseId,
+        logType: "hours",
+        date: logForm.date,
+        hours: parseFloat(logForm.hours),
+        siteName: logForm.siteName,
+        siteType: logForm.siteType,
+        supervisorName: logForm.supervisorName,
+        supervisorCredentials: logForm.supervisorCredentials,
+        skillsPerformed: logForm.skills,
+        notes: logForm.notes,
+      });
+      setShowLogModal(false);
+      setLogForm({
+        date: "",
+        hours: "",
+        siteType: "",
+        siteName: "",
+        supervisorName: "",
+        supervisorCredentials: "",
+        skills: [],
+        notes: "",
+        courseId: "",
+      });
+    } catch (error) {
+      console.error("Failed to submit log:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (logsError || contactsError) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
+          <h3 className="text-lg font-medium mb-2">Error Loading Clinical Data</h3>
+          <p className="text-muted-foreground mb-4">
+            {logsError?.message || contactsError?.message}
+          </p>
+          <Button onClick={() => { refetchLogs(); refetchContacts(); }}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -200,13 +226,13 @@ export default function ClinicalTrackerPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Clinical Hours</p>
                 <p className="text-2xl font-bold">
-                  {clinicalRequirements.hoursCompleted}/{clinicalRequirements.hoursRequired}
+                  {totalHours}/{hoursRequired}
                 </p>
               </div>
             </div>
-            <Progress value={hoursProgress} size="md" />
+            <Progress value={Math.min(hoursProgress, 100)} size="md" />
             <p className="text-xs text-muted-foreground mt-2">
-              {clinicalRequirements.hoursVerified} hours verified
+              {verifiedHours} hours verified, {pendingHours} pending
             </p>
           </CardContent>
         </Card>
@@ -220,13 +246,13 @@ export default function ClinicalTrackerPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Patient Contacts</p>
                 <p className="text-2xl font-bold">
-                  {clinicalRequirements.patientContactsCompleted}/{clinicalRequirements.patientContactsRequired}
+                  {patientContactCount}/{contactsRequired}
                 </p>
               </div>
             </div>
-            <Progress value={contactsProgress} size="md" variant="success" />
+            <Progress value={Math.min(contactsProgress, 100)} size="md" variant="success" />
             <p className="text-xs text-muted-foreground mt-2">
-              {Math.round(contactsProgress)}% complete
+              {verifiedContacts} verified, {teamLeadCount} as team lead
             </p>
           </CardContent>
         </Card>
@@ -238,25 +264,14 @@ export default function ClinicalTrackerPage() {
                 <Stethoscope className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Skills Verified</p>
+                <p className="text-sm text-muted-foreground">Skills Logged</p>
                 <p className="text-2xl font-bold">
-                  {clinicalRequirements.skillCategories.reduce((sum, s) => sum + s.verified, 0)}/
-                  {clinicalRequirements.skillCategories.reduce((sum, s) => sum + s.required, 0)}
+                  {hoursLogs.reduce((sum, log) => sum + (Array.isArray(log.skills_performed) ? log.skills_performed.length : 0), 0)}
                 </p>
               </div>
             </div>
-            <Progress
-              value={
-                (clinicalRequirements.skillCategories.reduce((sum, s) => sum + s.verified, 0) /
-                  clinicalRequirements.skillCategories.reduce((sum, s) => sum + s.required, 0)) *
-                100
-              }
-              size="md"
-              variant="default"
-            />
             <p className="text-xs text-muted-foreground mt-2">
-              {clinicalRequirements.skillCategories.filter((s) => s.verified >= s.required).length} of{" "}
-              {clinicalRequirements.skillCategories.length} categories complete
+              From {hoursLogs.length} clinical sessions
             </p>
           </CardContent>
         </Card>
@@ -265,9 +280,8 @@ export default function ClinicalTrackerPage() {
       {/* Main Content */}
       <Tabs defaultValue="hours">
         <TabsList>
-          <TabsTrigger value="hours">Clinical Hours</TabsTrigger>
-          <TabsTrigger value="contacts">Patient Contacts</TabsTrigger>
-          <TabsTrigger value="skills">Skills Progress</TabsTrigger>
+          <TabsTrigger value="hours">Clinical Hours ({hoursLogs.length})</TabsTrigger>
+          <TabsTrigger value="contacts">Patient Contacts ({contacts.length})</TabsTrigger>
         </TabsList>
 
         {/* Clinical Hours Tab */}
@@ -280,62 +294,76 @@ export default function ClinicalTrackerPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-muted">
-                        <Calendar className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{log.hours} hours</p>
-                          <Badge
-                            variant={
-                              log.status === "verified"
-                                ? "success"
-                                : log.status === "pending"
-                                ? "warning"
-                                : "destructive"
-                            }
-                          >
-                            {log.status}
-                          </Badge>
+              {hoursLogs.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No clinical hours logged</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start tracking your clinical experience by logging hours.
+                  </p>
+                  <Button onClick={() => setShowLogModal(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Log Clinical Hours
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {hoursLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 rounded-lg bg-muted">
+                          <Calendar className="h-5 w-5" />
                         </div>
-                        <p className="text-sm text-muted-foreground">{log.date}</p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {log.site}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {log.supervisor}
-                          </span>
-                        </div>
-                        {log.rejectionReason && (
-                          <p className="text-xs text-destructive mt-1 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            {log.rejectionReason}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{log.hours} hours</p>
+                            <Badge
+                              variant={
+                                log.verification_status === "verified"
+                                  ? "success"
+                                  : log.verification_status === "pending"
+                                  ? "warning"
+                                  : "destructive"
+                              }
+                            >
+                              {log.verification_status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {log.date ? formatDate(log.date) : "No date"}
                           </p>
-                        )}
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            {log.site_name && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {log.site_name}
+                              </span>
+                            )}
+                            {log.supervisor_name && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {log.supervisor_name}
+                                {log.supervisor_credentials && `, ${log.supervisor_credentials}`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {Array.isArray(log.skills_performed) ? log.skills_performed.length : 0} skills
+                        </p>
+                        <Button variant="ghost" size="sm" className="mt-1">
+                          View Details
+                        </Button>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{log.patientContacts} contacts</p>
-                      <p className="text-xs text-muted-foreground">
-                        {log.skills.length} skills performed
-                      </p>
-                      <Button variant="ghost" size="sm" className="mt-1">
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -350,98 +378,78 @@ export default function ClinicalTrackerPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {patientContacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <Activity className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{contact.chiefComplaint}</p>
-                            {contact.wasTeamLead && (
-                              <Badge variant="info" className="text-xs">Team Lead</Badge>
-                            )}
+              {contacts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No patient contacts logged</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Document your patient interactions during clinical rotations.
+                  </p>
+                  <Button onClick={() => setShowContactModal(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Log Patient Contact
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {contacts.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-muted">
+                            <Activity className="h-5 w-5" />
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {contact.age} y/o {contact.gender} - {contact.date}
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{contact.chief_complaint || "Patient Contact"}</p>
+                              {contact.was_team_lead && (
+                                <Badge variant="info" className="text-xs">Team Lead</Badge>
+                              )}
+                              <Badge
+                                variant={
+                                  contact.verification_status === "verified"
+                                    ? "success"
+                                    : contact.verification_status === "pending"
+                                    ? "warning"
+                                    : "destructive"
+                                }
+                              >
+                                {contact.verification_status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {contact.patient_age_range} {contact.patient_gender} - {contact.created_at ? formatDate(contact.created_at) : ""}
+                            </p>
+                          </div>
                         </div>
+                      </div>
+                      <div className="ml-12 space-y-2">
+                        {contact.primary_impression && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">Assessment</p>
+                            <p className="text-sm">{contact.primary_impression}</p>
+                          </div>
+                        )}
+                        {contact.skills_performed && contact.skills_performed.length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">Skills Performed</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {contact.skills_performed.map((skill, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="ml-12 space-y-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Assessment</p>
-                        <p className="text-sm">{contact.assessment}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Interventions</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {contact.interventions.map((intervention, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {intervention}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Skills Progress Tab */}
-        <TabsContent value="skills">
-          <Card>
-            <CardHeader>
-              <CardTitle>Skills Progress</CardTitle>
-              <CardDescription>Track your progress toward NREMT skill requirements</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {clinicalRequirements.skillCategories.map((category, index) => {
-                  const progress = (category.completed / category.required) * 100;
-                  const verifiedProgress = (category.verified / category.required) * 100;
-                  const isComplete = category.verified >= category.required;
-
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {isComplete ? (
-                            <CheckCircle className="h-4 w-4 text-success" />
-                          ) : (
-                            <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <span className="font-medium">{category.name}</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">{category.verified}</span>
-                          <span className="text-muted-foreground">/{category.required} verified</span>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Progress value={progress} size="md" className="bg-muted" />
-                        <div
-                          className="absolute top-0 left-0 h-full bg-success rounded-full transition-all"
-                          style={{ width: `${verifiedProgress}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{category.completed} performed</span>
-                        <span>{category.verified} verified</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -455,35 +463,76 @@ export default function ClinicalTrackerPage() {
         size="md"
       >
         <div className="space-y-4">
+          {enrollments.length > 0 && (
+            <div className="space-y-2">
+              <Label>Course</Label>
+              <Select
+                options={enrollments.map((e) => ({
+                  value: e.course?.id || "",
+                  label: e.course?.title || "Unknown Course",
+                }))}
+                value={logForm.courseId}
+                onChange={(value) => setLogForm({ ...logForm, courseId: value })}
+                placeholder="Select course"
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Date</Label>
-              <Input type="date" />
+              <Input
+                type="date"
+                value={logForm.date}
+                onChange={(e) => setLogForm({ ...logForm, date: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Hours</Label>
-              <Input type="number" placeholder="8" />
+              <Input
+                type="number"
+                placeholder="8"
+                value={logForm.hours}
+                onChange={(e) => setLogForm({ ...logForm, hours: e.target.value })}
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Site Type</Label>
-            <Select options={siteOptions} value="" onChange={() => {}} placeholder="Select site type" />
+            <Select
+              options={siteOptions}
+              value={logForm.siteType}
+              onChange={(value) => setLogForm({ ...logForm, siteType: value })}
+              placeholder="Select site type"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Site Name</Label>
-            <Input placeholder="e.g., City Hospital ER" />
+            <Input
+              placeholder="e.g., City Hospital ER"
+              value={logForm.siteName}
+              onChange={(e) => setLogForm({ ...logForm, siteName: e.target.value })}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Supervisor Name</Label>
-              <Input placeholder="e.g., Dr. Smith" />
+              <Input
+                placeholder="e.g., Dr. Smith"
+                value={logForm.supervisorName}
+                onChange={(e) => setLogForm({ ...logForm, supervisorName: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Credentials</Label>
-              <Input placeholder="e.g., MD, Paramedic" />
+              <Input
+                placeholder="e.g., MD, Paramedic"
+                value={logForm.supervisorCredentials}
+                onChange={(e) => setLogForm({ ...logForm, supervisorCredentials: e.target.value })}
+              />
             </div>
           </div>
 
@@ -493,7 +542,21 @@ export default function ClinicalTrackerPage() {
             <div className="grid grid-cols-2 gap-2 mt-2">
               {skillOptions.map((skill) => (
                 <label key={skill.value} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={logForm.skills.includes(skill.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setLogForm({ ...logForm, skills: [...logForm.skills, skill.value] });
+                      } else {
+                        setLogForm({
+                          ...logForm,
+                          skills: logForm.skills.filter((s) => s !== skill.value),
+                        });
+                      }
+                    }}
+                  />
                   {skill.label}
                 </label>
               ))}
@@ -502,14 +565,23 @@ export default function ClinicalTrackerPage() {
 
           <div className="space-y-2">
             <Label>Notes</Label>
-            <Textarea placeholder="Additional notes about this clinical shift..." rows={3} />
+            <Textarea
+              placeholder="Additional notes about this clinical shift..."
+              rows={3}
+              value={logForm.notes}
+              onChange={(e) => setLogForm({ ...logForm, notes: e.target.value })}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setShowLogModal(false)}>
               Cancel
             </Button>
-            <Button>
+            <Button
+              onClick={handleSubmitLog}
+              isLoading={isSubmitting}
+              disabled={!logForm.courseId || !logForm.date || !logForm.hours}
+            >
               <CheckCircle className="h-4 w-4 mr-2" />
               Submit for Verification
             </Button>
@@ -525,71 +597,18 @@ export default function ClinicalTrackerPage() {
         size="md"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input type="date" />
-            </div>
-            <div className="space-y-2">
-              <Label>Patient Age</Label>
-              <Input type="number" placeholder="45" />
-            </div>
-            <div className="space-y-2">
-              <Label>Gender</Label>
-              <Select
-                options={[
-                  { value: "male", label: "Male" },
-                  { value: "female", label: "Female" },
-                  { value: "other", label: "Other" },
-                ]}
-                value=""
-                onChange={() => {}}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Chief Complaint</Label>
-            <Input placeholder="e.g., Chest Pain, Difficulty Breathing" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Your Assessment</Label>
-            <Textarea placeholder="What did you assess this patient as having?" rows={2} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Interventions Performed</Label>
-            <p className="text-xs text-muted-foreground">Select all interventions you performed</p>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {skillOptions.map((skill) => (
-                <label key={skill.value} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="rounded" />
-                  {skill.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="rounded" />
-              <span className="text-sm font-medium">I was team lead for this patient</span>
-            </label>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Additional Notes</Label>
-            <Textarea placeholder="Any additional notes about this patient contact..." rows={2} />
-          </div>
-
+          <p className="text-muted-foreground">
+            To log a patient contact, please book a clinical shift first and document contacts from the shift details page.
+          </p>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setShowContactModal(false)}>
               Cancel
             </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Patient Contact
+            <Button asChild>
+              <Link href="/student/clinical/schedule">
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                Book a Shift
+              </Link>
             </Button>
           </div>
         </div>

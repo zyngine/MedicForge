@@ -15,3 +15,4 @@ export * from "./dropdown";
 export * from "./progress";
 export * from "./tabs";
 export * from "./logo";
+export * from "./switch";

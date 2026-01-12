@@ -10,6 +10,7 @@ import {
   Button,
   Badge,
   Progress,
+  Spinner,
 } from "@/components/ui";
 import {
   BookOpen,
@@ -18,128 +19,18 @@ import {
   Award,
   ChevronRight,
   Calendar,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
   Play,
   FileText,
   Stethoscope,
+  CheckCircle,
+  RefreshCw,
 } from "lucide-react";
-
-// Mock data
-const enrolledCourses = [
-  {
-    id: "1",
-    title: "EMT Basic - Spring 2024",
-    type: "EMT",
-    progress: 65,
-    currentModule: "Patient Assessment",
-    nextClass: "Today, 2:00 PM",
-    instructor: "Dr. Sarah Johnson",
-  },
-  {
-    id: "2",
-    title: "CPR/AED Certification",
-    type: "Certification",
-    progress: 100,
-    currentModule: "Completed",
-    nextClass: null,
-    instructor: "Dr. James Miller",
-  },
-];
-
-const upcomingAssignments = [
-  {
-    id: "1",
-    title: "Module 3 Quiz - Patient Assessment",
-    course: "EMT Basic - Spring 2024",
-    type: "quiz",
-    dueDate: "Feb 20, 11:59 PM",
-    daysLeft: 5,
-    points: 100,
-  },
-  {
-    id: "2",
-    title: "Written Assignment - Trauma Assessment",
-    course: "EMT Basic - Spring 2024",
-    type: "written",
-    dueDate: "Feb 22, 11:59 PM",
-    daysLeft: 7,
-    points: 75,
-  },
-  {
-    id: "3",
-    title: "Skill Checklist - Vital Signs",
-    course: "EMT Basic - Spring 2024",
-    type: "skill",
-    dueDate: "Feb 28, 11:59 PM",
-    daysLeft: 13,
-    points: 100,
-  },
-];
-
-const recentGrades = [
-  {
-    id: "1",
-    title: "Module 2 Quiz - Airway Management",
-    course: "EMT Basic - Spring 2024",
-    score: 92,
-    maxScore: 100,
-    gradedAt: "Feb 12",
-  },
-  {
-    id: "2",
-    title: "Written Assignment - Legal Issues",
-    course: "EMT Basic - Spring 2024",
-    score: 88,
-    maxScore: 100,
-    gradedAt: "Feb 10",
-  },
-  {
-    id: "3",
-    title: "Module 1 Quiz - Introduction to EMS",
-    course: "EMT Basic - Spring 2024",
-    score: 95,
-    maxScore: 100,
-    gradedAt: "Feb 5",
-  },
-];
-
-const clinicalProgress = {
-  hoursCompleted: 24,
-  hoursRequired: 48,
-  patientContacts: 15,
-  patientContactsRequired: 30,
-  skillsCompleted: 8,
-  skillsRequired: 15,
-};
-
-const upcomingEvents = [
-  {
-    id: "1",
-    title: "Lecture: Airway Management",
-    type: "class",
-    date: "Today",
-    time: "2:00 PM",
-    location: "Room 301",
-  },
-  {
-    id: "2",
-    title: "Lab Session: IV Skills",
-    type: "lab",
-    date: "Tomorrow",
-    time: "10:00 AM",
-    location: "Skills Lab",
-  },
-  {
-    id: "3",
-    title: "Clinical Rotation",
-    type: "clinical",
-    date: "Friday",
-    time: "7:00 AM",
-    location: "City Hospital",
-  },
-];
+import { useUser } from "@/lib/hooks/use-user";
+import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
+import { useMySubmissions } from "@/lib/hooks/use-submissions";
+import { useStudentClinicalHours } from "@/lib/hooks/use-clinical-logs";
+import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
+import { formatDate } from "@/lib/utils";
 
 function getAssignmentIcon(type: string) {
   switch (type) {
@@ -147,24 +38,85 @@ function getAssignmentIcon(type: string) {
       return <ClipboardCheck className="h-4 w-4" />;
     case "written":
       return <FileText className="h-4 w-4" />;
-    case "skill":
+    case "skill_checklist":
       return <CheckCircle className="h-4 w-4" />;
     default:
       return <FileText className="h-4 w-4" />;
   }
 }
 
+function getDaysUntil(dateString: string): number {
+  const dueDate = new Date(dateString);
+  const now = new Date();
+  const diffTime = dueDate.getTime() - now.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 export default function StudentDashboardPage() {
-  const overallGrade = Math.round(
-    recentGrades.reduce((sum, g) => sum + (g.score / g.maxScore) * 100, 0) / recentGrades.length
-  );
+  const { profile, isLoading: userLoading } = useUser();
+  const { data: enrollments = [], isLoading: enrollmentsLoading, error: enrollmentsError, refetch: refetchEnrollments } = useMyEnrollments();
+  const { data: submissions = [], isLoading: submissionsLoading } = useMySubmissions();
+  const { data: clinicalHours, isLoading: clinicalLoading } = useStudentClinicalHours(profile?.id || null, null);
+  const { bookings: upcomingShifts, isLoading: shiftsLoading } = useMyBookings();
+
+  const isLoading = userLoading || enrollmentsLoading;
+
+  // Filter for pending assignments (not submitted yet)
+  const pendingSubmissions = submissions.filter(s => s.status === "in_progress" && s.assignment);
+
+  // Filter for graded submissions
+  const gradedSubmissions = submissions
+    .filter(s => s.status === "graded" && s.final_score !== null)
+    .slice(0, 5);
+
+  // Calculate overall grade from graded submissions
+  const overallGrade = gradedSubmissions.length > 0
+    ? Math.round(
+        gradedSubmissions.reduce((sum, s) => {
+          const maxScore = s.assignment?.points_possible || 100;
+          return sum + ((s.final_score || 0) / maxScore) * 100;
+        }, 0) / gradedSubmissions.length
+      )
+    : 0;
+
+  // Get active enrollments with course data
+  const activeEnrollments = enrollments.filter(e => e.status === "active");
+
+  // Get upcoming shifts
+  const upcomingShiftsList = upcomingShifts
+    .filter(b => b.status === "booked" && b.shift)
+    .slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (enrollmentsError) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <p className="text-error mb-4">{enrollmentsError.message}</p>
+          <Button onClick={() => refetchEnrollments()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const firstName = profile?.full_name?.split(" ")[0] || "Student";
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back, Michael!</h1>
+          <h1 className="text-2xl font-bold">Welcome back, {firstName}!</h1>
           <p className="text-muted-foreground">
             Here&apos;s your learning progress for today.
           </p>
@@ -184,9 +136,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Enrolled Courses</p>
-                <p className="text-3xl font-bold mt-1">{enrolledCourses.length}</p>
+                <p className="text-3xl font-bold mt-1">{activeEnrollments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  1 in progress
+                  {activeEnrollments.filter(e => (e.completion_percentage || 0) < 100).length} in progress
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-primary/10 text-primary">
@@ -200,9 +152,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Pending Assignments</p>
-                <p className="text-3xl font-bold mt-1">{upcomingAssignments.length}</p>
+                <p className="text-3xl font-bold mt-1">{pendingSubmissions.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  1 due this week
+                  {pendingSubmissions.filter(s => s.assignment?.due_date && getDaysUntil(s.assignment.due_date) <= 7).length} due this week
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-warning/10 text-warning">
@@ -216,9 +168,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Current Grade</p>
-                <p className="text-3xl font-bold mt-1">{overallGrade}%</p>
-                <p className="text-xs text-success mt-1">
-                  +3% from last week
+                <p className="text-3xl font-bold mt-1">{overallGrade || "--"}%</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {gradedSubmissions.length} graded assignments
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-success/10 text-success">
@@ -233,10 +185,10 @@ export default function StudentDashboardPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Clinical Hours</p>
                 <p className="text-3xl font-bold mt-1">
-                  {clinicalProgress.hoursCompleted}/{clinicalProgress.hoursRequired}
+                  {clinicalLoading ? "--" : (clinicalHours?.totalHours || 0)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  50% complete
+                  hours logged
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-info/10 text-info">
@@ -265,51 +217,55 @@ export default function StudentDashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {enrolledCourses.map((course) => (
-                  <Link
-                    key={course.id}
-                    href={`/student/courses/${course.id}`}
-                    className="block p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <BookOpen className="h-5 w-5 text-primary" />
+              {activeEnrollments.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground mb-4">No courses yet</p>
+                  <Button asChild>
+                    <Link href="/student/courses">Browse Courses</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeEnrollments.slice(0, 3).map((enrollment) => (
+                    <Link
+                      key={enrollment.id}
+                      href={`/student/courses/${enrollment.course_id}`}
+                      className="block p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <BookOpen className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{enrollment.course?.title || "Course"}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {enrollment.course?.course_type || "Course"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{course.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {course.instructor}
-                          </p>
+                        <Badge variant={enrollment.completion_percentage === 100 ? "success" : "secondary"}>
+                          {enrollment.course?.course_type || "Course"}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {enrollment.completion_percentage === 100 ? "Completed" : "In Progress"}
+                          </span>
+                          <span className="font-medium">{Math.round(enrollment.completion_percentage || 0)}%</span>
                         </div>
+                        <Progress
+                          value={enrollment.completion_percentage || 0}
+                          size="sm"
+                          variant={enrollment.completion_percentage === 100 ? "success" : "default"}
+                        />
                       </div>
-                      <Badge variant={course.progress === 100 ? "success" : "secondary"}>
-                        {course.type}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          {course.progress === 100 ? "Completed" : `Current: ${course.currentModule}`}
-                        </span>
-                        <span className="font-medium">{course.progress}%</span>
-                      </div>
-                      <Progress
-                        value={course.progress}
-                        size="sm"
-                        variant={course.progress === 100 ? "success" : "default"}
-                      />
-                    </div>
-                    {course.nextClass && (
-                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Next class: {course.nextClass}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -327,80 +283,110 @@ export default function StudentDashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {upcomingAssignments.map((assignment) => (
-                  <Link
-                    key={assignment.id}
-                    href={`/student/assignments/${assignment.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        assignment.type === "quiz" ? "bg-primary/10 text-primary" :
-                        assignment.type === "written" ? "bg-info/10 text-info" :
-                        "bg-success/10 text-success"
-                      }`}>
-                        {getAssignmentIcon(assignment.type)}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{assignment.title}</p>
-                        <p className="text-xs text-muted-foreground">{assignment.course}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-medium ${
-                        assignment.daysLeft <= 3 ? "text-destructive" :
-                        assignment.daysLeft <= 7 ? "text-warning" :
-                        ""
-                      }`}>
-                        {assignment.daysLeft <= 1 ? "Due tomorrow!" :
-                         assignment.daysLeft <= 3 ? `${assignment.daysLeft} days left` :
-                         assignment.dueDate}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{assignment.points} pts</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              {submissionsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Spinner />
+                </div>
+              ) : pendingSubmissions.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-10 w-10 mx-auto text-success mb-3" />
+                  <p className="text-muted-foreground">All caught up!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingSubmissions.slice(0, 5).map((submission) => {
+                    const daysLeft = submission.assignment?.due_date
+                      ? getDaysUntil(submission.assignment.due_date)
+                      : null;
+
+                    return (
+                      <Link
+                        key={submission.id}
+                        href={`/student/assignments/${submission.assignment_id}`}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            submission.assignment?.type === "quiz" ? "bg-primary/10 text-primary" :
+                            submission.assignment?.type === "written" ? "bg-info/10 text-info" :
+                            "bg-success/10 text-success"
+                          }`}>
+                            {getAssignmentIcon(submission.assignment?.type || "quiz")}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{submission.assignment?.title || "Assignment"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {submission.assignment?.points_possible || 0} pts
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {daysLeft !== null && (
+                            <p className={`text-sm font-medium ${
+                              daysLeft <= 1 ? "text-error" :
+                              daysLeft <= 3 ? "text-warning" :
+                              ""
+                            }`}>
+                              {daysLeft <= 0 ? "Overdue!" :
+                               daysLeft === 1 ? "Due tomorrow!" :
+                               daysLeft <= 7 ? `${daysLeft} days left` :
+                               formatDate(submission.assignment?.due_date || "")}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Schedule */}
+          {/* Upcoming Shifts */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Today&apos;s Schedule</CardTitle>
+              <CardTitle className="text-base">Upcoming Shifts</CardTitle>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/student/calendar">
+                <Link href="/student/clinical/my-shifts">
                   <Calendar className="h-4 w-4" />
                 </Link>
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="flex items-start gap-3">
-                    <div className={`p-1.5 rounded ${
-                      event.type === "class" ? "bg-primary/10 text-primary" :
-                      event.type === "lab" ? "bg-success/10 text-success" :
-                      "bg-info/10 text-info"
-                    }`}>
-                      {event.type === "class" ? <BookOpen className="h-3 w-3" /> :
-                       event.type === "lab" ? <CheckCircle className="h-3 w-3" /> :
-                       <Stethoscope className="h-3 w-3" />}
+              {shiftsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Spinner size="sm" />
+                </div>
+              ) : upcomingShiftsList.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-3">No upcoming shifts</p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/student/clinical/schedule">Book Shift</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingShiftsList.map((booking) => (
+                    <div key={booking.id} className="flex items-start gap-3">
+                      <div className="p-1.5 rounded bg-info/10 text-info">
+                        <Stethoscope className="h-3 w-3" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{booking.shift?.site?.name || "Clinical Site"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {booking.shift?.shift_date ? formatDate(booking.shift.shift_date) : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {booking.shift?.start_time} - {booking.shift?.end_time}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.date} at {event.time}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{event.location}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -415,23 +401,38 @@ export default function StudentDashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentGrades.map((grade) => (
-                  <div key={grade.id} className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{grade.title}</p>
-                      <p className="text-xs text-muted-foreground">{grade.gradedAt}</p>
-                    </div>
-                    <Badge variant={
-                      grade.score / grade.maxScore >= 0.9 ? "success" :
-                      grade.score / grade.maxScore >= 0.7 ? "warning" :
-                      "destructive"
-                    }>
-                      {grade.score}/{grade.maxScore}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+              {gradedSubmissions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No grades yet
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {gradedSubmissions.map((submission) => {
+                    const maxScore = submission.assignment?.points_possible || 100;
+                    const percentage = ((submission.final_score || 0) / maxScore) * 100;
+
+                    return (
+                      <div key={submission.id} className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {submission.assignment?.title || "Assignment"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {submission.graded_at ? formatDate(submission.graded_at) : ""}
+                          </p>
+                        </div>
+                        <Badge variant={
+                          percentage >= 90 ? "success" :
+                          percentage >= 70 ? "warning" :
+                          "destructive"
+                        }>
+                          {submission.final_score}/{maxScore}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -444,47 +445,43 @@ export default function StudentDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Clinical Hours</span>
-                  <span className="font-medium">
-                    {clinicalProgress.hoursCompleted}/{clinicalProgress.hoursRequired}
-                  </span>
+              {clinicalLoading ? (
+                <div className="flex justify-center py-4">
+                  <Spinner size="sm" />
                 </div>
-                <Progress
-                  value={(clinicalProgress.hoursCompleted / clinicalProgress.hoursRequired) * 100}
-                  size="sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Patient Contacts</span>
-                  <span className="font-medium">
-                    {clinicalProgress.patientContacts}/{clinicalProgress.patientContactsRequired}
-                  </span>
-                </div>
-                <Progress
-                  value={(clinicalProgress.patientContacts / clinicalProgress.patientContactsRequired) * 100}
-                  size="sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Skills Verified</span>
-                  <span className="font-medium">
-                    {clinicalProgress.skillsCompleted}/{clinicalProgress.skillsRequired}
-                  </span>
-                </div>
-                <Progress
-                  value={(clinicalProgress.skillsCompleted / clinicalProgress.skillsRequired) * 100}
-                  size="sm"
-                />
-              </div>
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link href="/student/clinical">
-                  Log Clinical Hours
-                </Link>
-              </Button>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Clinical Hours</span>
+                      <span className="font-medium">
+                        {clinicalHours?.totalHours || 0} hrs
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.min(((clinicalHours?.totalHours || 0) / 48) * 100, 100)}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Patient Contacts</span>
+                      <span className="font-medium">
+                        {clinicalHours?.patientContacts || 0}
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.min(((clinicalHours?.patientContacts || 0) / 30) * 100, 100)}
+                      size="sm"
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link href="/student/clinical">
+                      Log Clinical Hours
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

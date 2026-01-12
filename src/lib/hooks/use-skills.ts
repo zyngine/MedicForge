@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { SkillCategory, Skill, SkillAttempt, User } from "@/types";
+import { useTenant } from "./use-tenant";
+import { useUser } from "./use-user";
+import type { Database } from "@/types/database.types";
+
+type SkillCategory = Database["public"]["Tables"]["skill_categories"]["Row"];
+type Skill = Database["public"]["Tables"]["skills"]["Row"];
+type SkillAttempt = Database["public"]["Tables"]["skill_attempts"]["Row"];
 
 export interface SkillWithCategory extends Skill {
   category?: SkillCategory;
@@ -10,16 +16,26 @@ export interface SkillWithCategory extends Skill {
 
 export interface SkillAttemptWithDetails extends SkillAttempt {
   skill?: Skill;
-  student?: Pick<User, "id" | "full_name" | "email">;
-  evaluator?: Pick<User, "id" | "full_name" | "email">;
+  student?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+  evaluator?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
 }
 
 interface SkillCategoryWithSkills extends SkillCategory {
   skills?: Skill[];
   skills_count?: number;
+  skill_count?: number; // Alias for backward compatibility
 }
 
 type AttemptStatus = "passed" | "failed" | "needs_practice";
+type SkillCourseType = "EMR" | "EMT" | "AEMT" | "Paramedic";
 
 interface SkillAttemptForm {
   skillId: string;
@@ -31,20 +47,36 @@ interface SkillAttemptForm {
   feedback?: string;
 }
 
-type SkillCourseType = "EMR" | "EMT" | "AEMT" | "Paramedic";
+export interface SkillProgress {
+  categories: {
+    categoryId: string;
+    categoryName: string;
+    requiredCount: number;
+    passedCount: number;
+    isComplete: boolean;
+    skills: {
+      skillId: string;
+      skillName: string;
+      attempts: number;
+      passed: boolean;
+      lastAttemptDate?: string;
+    }[];
+  }[];
+  totalRequired: number;
+  totalPassed: number;
+  overallProgress: number;
+}
 
-// Hook for skill categories
+/**
+ * Get skill categories with optional course type filter
+ */
 export function useSkillCategories(courseType?: SkillCourseType) {
-  const [categories, setCategories] = useState<SkillCategoryWithSkills[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  return useQuery({
+    queryKey: ["skill-categories", tenant?.id, courseType],
+    queryFn: async () => {
+      const supabase = createClient();
 
       let query = supabase
         .from("skill_categories")
@@ -59,186 +91,337 @@ export function useSkillCategories(courseType?: SkillCourseType) {
         query = query.eq("course_type", courseType);
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error } = await query;
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      const transformedCategories: SkillCategoryWithSkills[] = (data || []).map((cat: any) => ({
-        ...cat,
-        skills_count: cat.skills?.[0]?.count || 0,
-      }));
+      return (data || []).map((cat: any) => {
+        const count = cat.skills?.[0]?.count || 0;
+        return {
+          ...cat,
+          skills_count: count,
+          skill_count: count,
+        };
+      }) as SkillCategoryWithSkills[];
+    },
+    enabled: !!tenant?.id,
+  });
+}
 
-      setCategories(transformedCategories);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch skill categories"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, courseType]);
+/**
+ * Get a single skill category with its skills
+ */
+export function useSkillCategory(categoryId: string | null | undefined) {
+  const { tenant } = useTenant();
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  return useQuery({
+    queryKey: ["skill-category", categoryId],
+    queryFn: async () => {
+      if (!categoryId) return null;
 
-  const createCategory = async (categoryData: {
-    name: string;
-    courseType: SkillCourseType;
-    description?: string;
-    requiredCount?: number;
-  }): Promise<SkillCategory | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("skill_categories")
+        .select(`
+          *,
+          skills:skills(*)
+        `)
+        .eq("id", categoryId)
         .single();
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      const { data, error: createError } = await supabase
+      const count = data.skills?.length || 0;
+      return {
+        ...data,
+        skills_count: count,
+        skill_count: count,
+      } as SkillCategoryWithSkills;
+    },
+    enabled: !!categoryId && !!tenant?.id,
+  });
+}
+
+/**
+ * Create a skill category
+ */
+export function useCreateSkillCategory() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      name: string;
+      courseType: SkillCourseType;
+      description?: string;
+      requiredCount?: number;
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
+      }
+
+      const supabase = createClient();
+
+      const { data: category, error } = await supabase
         .from("skill_categories")
-        .insert([{
-          tenant_id: userData.tenant_id,
-          name: categoryData.name,
-          course_type: categoryData.courseType,
-          description: categoryData.description || null,
-          required_count: categoryData.requiredCount || 1,
+        .insert({
+          tenant_id: tenant.id,
+          name: data.name,
+          course_type: data.courseType,
+          description: data.description || null,
+          required_count: data.requiredCount || 1,
           is_active: true,
-        }])
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
-
-      await fetchCategories();
-      return data as SkillCategory;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create category";
-      setError(new Error(message));
-      throw err;
-    }
-  };
-
-  return {
-    categories,
-    isLoading,
-    error,
-    refetch: fetchCategories,
-    createCategory,
-  };
+      if (error) throw error;
+      return category;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skill-categories"] });
+    },
+  });
 }
 
-// Hook for skills in a category
-export function useSkills(categoryId: string | null) {
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+/**
+ * Update a skill category
+ */
+export function useUpdateSkillCategory() {
+  const queryClient = useQueryClient();
 
-  const supabase = createClient();
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      data,
+    }: {
+      categoryId: string;
+      data: {
+        name?: string;
+        description?: string;
+        requiredCount?: number;
+        isActive?: boolean;
+      };
+    }) => {
+      const supabase = createClient();
 
-  const fetchSkills = useCallback(async () => {
-    if (!categoryId) {
-      setSkills([]);
-      setIsLoading(false);
-      return;
-    }
+      const updateData: Record<string, any> = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.requiredCount !== undefined) updateData.required_count = data.requiredCount;
+      if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
-    try {
-      setIsLoading(true);
-      setError(null);
+      const { data: category, error } = await supabase
+        .from("skill_categories")
+        .update(updateData)
+        .eq("id", categoryId)
+        .select()
+        .single();
 
-      const { data, error: fetchError } = await supabase
+      if (error) throw error;
+      return category;
+    },
+    onSuccess: (category) => {
+      queryClient.invalidateQueries({ queryKey: ["skill-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["skill-category", category.id] });
+    },
+  });
+}
+
+/**
+ * Get skills for a category
+ */
+export function useSkills(categoryId: string | null | undefined) {
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ["skills", categoryId],
+    queryFn: async () => {
+      if (!categoryId) return [];
+
+      const supabase = createClient();
+      const { data, error } = await supabase
         .from("skills")
         .select("*")
         .eq("category_id", categoryId)
         .order("name", { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
+      return data as Skill[];
+    },
+    enabled: !!categoryId && !!tenant?.id,
+  });
+}
 
-      setSkills(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch skills"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, categoryId]);
+/**
+ * Get a single skill
+ */
+export function useSkill(skillId: string | null | undefined) {
+  const { tenant } = useTenant();
 
-  useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
+  return useQuery({
+    queryKey: ["skill", skillId],
+    queryFn: async () => {
+      if (!skillId) return null;
 
-  const createSkill = async (skillData: {
-    name: string;
-    description?: string;
-    steps?: { step: string; required: boolean }[];
-    passingCriteria?: string;
-  }): Promise<Skill | null> => {
-    if (!categoryId) return null;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("skills")
+        .select(`
+          *,
+          category:skill_categories(*)
+        `)
+        .eq("id", skillId)
         .single();
 
-      if (userError) throw userError;
+      if (error) throw error;
+      return data as SkillWithCategory;
+    },
+    enabled: !!skillId && !!tenant?.id,
+  });
+}
 
-      const { data, error: createError } = await supabase
+/**
+ * Create a skill
+ */
+export function useCreateSkill() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      data,
+    }: {
+      categoryId: string;
+      data: {
+        name: string;
+        description?: string;
+        steps?: { step: string; required: boolean }[];
+        passingCriteria?: string;
+      };
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No tenant");
+      }
+
+      const supabase = createClient();
+
+      const { data: skill, error } = await supabase
         .from("skills")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          tenant_id: tenant.id,
           category_id: categoryId,
-          name: skillData.name,
-          description: skillData.description || null,
-          steps: skillData.steps || null,
-          passing_criteria: skillData.passingCriteria || null,
-        }])
+          name: data.name,
+          description: data.description || null,
+          steps: data.steps || null,
+          passing_criteria: data.passingCriteria || null,
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
-
-      await fetchSkills();
-      return data as Skill;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create skill";
-      setError(new Error(message));
-      throw err;
-    }
-  };
-
-  return {
-    skills,
-    isLoading,
-    error,
-    refetch: fetchSkills,
-    createSkill,
-  };
+      if (error) throw error;
+      return skill;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["skills", variables.categoryId] });
+      queryClient.invalidateQueries({ queryKey: ["skill-categories"] });
+    },
+  });
 }
 
-// Hook for skill attempts (student progress)
+/**
+ * Update a skill
+ */
+export function useUpdateSkill() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      skillId,
+      data,
+    }: {
+      skillId: string;
+      data: {
+        name?: string;
+        description?: string;
+        steps?: { step: string; required: boolean }[];
+        passingCriteria?: string;
+      };
+    }) => {
+      const supabase = createClient();
+
+      const updateData: Record<string, any> = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.steps !== undefined) updateData.steps = data.steps;
+      if (data.passingCriteria !== undefined) updateData.passing_criteria = data.passingCriteria;
+
+      const { data: skill, error } = await supabase
+        .from("skills")
+        .update(updateData)
+        .eq("id", skillId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return skill;
+    },
+    onSuccess: (skill) => {
+      queryClient.invalidateQueries({ queryKey: ["skills", skill.category_id] });
+      queryClient.invalidateQueries({ queryKey: ["skill", skill.id] });
+    },
+  });
+}
+
+/**
+ * Delete a skill
+ */
+export function useDeleteSkill() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (skillId: string) => {
+      const supabase = createClient();
+
+      // Get category_id before deleting
+      const { data: skill } = await supabase
+        .from("skills")
+        .select("category_id")
+        .eq("id", skillId)
+        .single();
+
+      const { error } = await supabase
+        .from("skills")
+        .delete()
+        .eq("id", skillId);
+
+      if (error) throw error;
+      return { skillId, categoryId: skill?.category_id };
+    },
+    onSuccess: (result) => {
+      if (result.categoryId) {
+        queryClient.invalidateQueries({ queryKey: ["skills", result.categoryId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["skill-categories"] });
+    },
+  });
+}
+
+/**
+ * Get skill attempts with optional filters
+ */
 export function useSkillAttempts(options: {
   studentId?: string;
   courseId?: string;
   skillId?: string;
 } = {}) {
-  const [attempts, setAttempts] = useState<SkillAttemptWithDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
-
-  const fetchAttempts = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  return useQuery({
+    queryKey: ["skill-attempts", tenant?.id, options],
+    queryFn: async () => {
+      const supabase = createClient();
 
       let query = supabase
         .from("skill_attempts")
@@ -262,41 +445,36 @@ export function useSkillAttempts(options: {
         query = query.eq("skill_id", options.skillId);
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error } = await query;
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      const transformedAttempts: SkillAttemptWithDetails[] = (data || []).map((attempt: any) => ({
+      return (data || []).map((attempt: any) => ({
         ...attempt,
         skill: attempt.skill || undefined,
         student: attempt.student || undefined,
         evaluator: attempt.evaluator || undefined,
-      }));
+      })) as SkillAttemptWithDetails[];
+    },
+    enabled: !!tenant?.id,
+  });
+}
 
-      setAttempts(transformedAttempts);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch skill attempts"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, options.studentId, options.courseId, options.skillId]);
+/**
+ * Record a skill attempt
+ */
+export function useRecordSkillAttempt() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchAttempts();
-  }, [fetchAttempts]);
+  return useMutation({
+    mutationFn: async (attemptData: SkillAttemptForm) => {
+      if (!tenant?.id || !user?.id) {
+        throw new Error("Not authenticated");
+      }
 
-  const recordAttempt = async (attemptData: SkillAttemptForm): Promise<SkillAttempt | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-
-      if (userError) throw userError;
+      const supabase = createClient();
 
       // Get current attempt number
       const { data: existingAttempts } = await supabase
@@ -309,10 +487,10 @@ export function useSkillAttempts(options: {
 
       const maxAttempt = existingAttempts?.[0]?.attempt_number || 0;
 
-      const { data, error: createError } = await supabase
+      const { data, error } = await supabase
         .from("skill_attempts")
-        .insert([{
-          tenant_id: userData.tenant_id,
+        .insert({
+          tenant_id: tenant.id,
           skill_id: attemptData.skillId,
           student_id: attemptData.studentId,
           course_id: attemptData.courseId,
@@ -323,66 +501,32 @@ export function useSkillAttempts(options: {
           notes: attemptData.notes || null,
           feedback: attemptData.feedback || null,
           evaluated_at: new Date().toISOString(),
-        }])
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
-
-      await fetchAttempts();
+      if (error) throw error;
       return data as SkillAttempt;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to record skill attempt";
-      setError(new Error(message));
-      throw err;
-    }
-  };
-
-  return {
-    attempts,
-    isLoading,
-    error,
-    refetch: fetchAttempts,
-    recordAttempt,
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skill-attempts"] });
+      queryClient.invalidateQueries({ queryKey: ["student-skill-progress"] });
+    },
+  });
 }
 
-// Hook for getting a student's skill completion status
-export function useStudentSkillProgress(studentId: string | null, courseId: string | null) {
-  const [progress, setProgress] = useState<{
-    categories: {
-      categoryId: string;
-      categoryName: string;
-      requiredCount: number;
-      passedCount: number;
-      isComplete: boolean;
-      skills: {
-        skillId: string;
-        skillName: string;
-        attempts: number;
-        passed: boolean;
-        lastAttemptDate?: string;
-      }[];
-    }[];
-    totalRequired: number;
-    totalPassed: number;
-    overallProgress: number;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+/**
+ * Get student's skill progress for a course
+ */
+export function useStudentSkillProgress(studentId: string | null | undefined, courseId: string | null | undefined) {
+  const { tenant } = useTenant();
 
-  const supabase = createClient();
+  return useQuery({
+    queryKey: ["student-skill-progress", studentId, courseId],
+    queryFn: async (): Promise<SkillProgress | null> => {
+      if (!studentId || !courseId) return null;
 
-  const fetchProgress = useCallback(async () => {
-    if (!studentId || !courseId) {
-      setProgress(null);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
+      const supabase = createClient();
 
       // Get course type
       const { data: course, error: courseError } = await supabase
@@ -401,7 +545,7 @@ export function useStudentSkillProgress(studentId: string | null, courseId: stri
           *,
           skills:skills(*)
         `)
-        .eq("course_type", course.course_type as "EMR" | "EMT" | "AEMT" | "Paramedic")
+        .eq("course_type", course.course_type)
         .eq("is_active", true);
 
       if (catError) throw catError;
@@ -470,43 +614,34 @@ export function useStudentSkillProgress(studentId: string | null, courseId: stri
         ? Math.round((totalPassed / totalRequired) * 100)
         : 0;
 
-      setProgress({
+      return {
         categories: categoriesProgress,
         totalRequired,
         totalPassed,
         overallProgress,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch skill progress"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [studentId, courseId, supabase]);
-
-  useEffect(() => {
-    fetchProgress();
-  }, [fetchProgress]);
-
-  return { progress, isLoading, error, refetch: fetchProgress };
+      };
+    },
+    enabled: !!studentId && !!courseId && !!tenant?.id,
+  });
 }
 
-// Hook for current user's skill attempts
-export function useMySkillAttempts(courseId: string | null) {
-  const [studentId, setStudentId] = useState<string | null>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setStudentId(data.user.id);
-      }
-    };
-    getUser();
-  }, [supabase]);
+/**
+ * Get current user's skill attempts for a course
+ */
+export function useMySkillAttempts(courseId: string | null | undefined) {
+  const { user } = useUser();
 
   return useSkillAttempts({
-    studentId: studentId || undefined,
+    studentId: user?.id,
     courseId: courseId || undefined,
   });
+}
+
+/**
+ * Get current user's skill progress for a course
+ */
+export function useMySkillProgress(courseId: string | null | undefined) {
+  const { user } = useUser();
+
+  return useStudentSkillProgress(user?.id, courseId);
 }

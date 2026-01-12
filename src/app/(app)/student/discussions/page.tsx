@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import {
   Card,
-  CardHeader,
   CardContent,
-  CardTitle,
   Button,
   Badge,
   Input,
@@ -21,110 +18,19 @@ import {
   Lock,
   MessageCircle,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
-interface Thread {
-  id: string;
-  title: string;
-  content: string;
-  is_pinned: boolean | null;
-  is_locked: boolean | null;
-  created_at: string | null;
-  author: {
-    id: string;
-    full_name: string;
-    avatar_url: string | null;
-  };
-  course: {
-    id: string;
-    title: string;
-  };
-  _count: {
-    posts: number;
-  };
-}
+import { useMyDiscussionThreads } from "@/lib/hooks/use-discussions";
 
 export default function DiscussionsPage() {
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: threads = [], isLoading, error } = useMyDiscussionThreads();
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchThreads();
-  }, []);
-
-  const fetchThreads = async () => {
-    const supabase = createClient();
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      // Get user's enrolled courses
-      const { data: enrollments } = await supabase
-        .from("enrollments")
-        .select("course_id")
-        .eq("student_id", user.id);
-
-      const courseIds = enrollments?.map((e) => e.course_id) || [];
-
-      if (courseIds.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Fetch threads from enrolled courses
-      const { data: threadsData } = await supabase
-        .from("discussion_threads")
-        .select(`
-          id,
-          title,
-          content,
-          is_pinned,
-          is_locked,
-          created_at,
-          author:users!discussion_threads_author_id_fkey(id, full_name, avatar_url),
-          course:courses!discussion_threads_course_id_fkey(id, title)
-        `)
-        .in("course_id", courseIds)
-        .order("is_pinned", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (threadsData) {
-        // Get post counts for each thread
-        const threadsWithCounts = await Promise.all(
-          threadsData.map(async (thread) => {
-            const { count } = await supabase
-              .from("discussion_posts")
-              .select("id", { count: "exact", head: true })
-              .eq("thread_id", thread.id);
-
-            return {
-              ...thread,
-              author: thread.author as unknown as Thread["author"],
-              course: thread.course as unknown as Thread["course"],
-              _count: { posts: count || 0 },
-            };
-          })
-        );
-
-        setThreads(threadsWithCounts);
-      }
-    } catch (error) {
-      console.error("Error fetching threads:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const filteredThreads = threads.filter(
     (thread) =>
       thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      thread.content.toLowerCase().includes(searchQuery.toLowerCase())
+      (thread.content && thread.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (isLoading) {
@@ -132,6 +38,18 @@ export default function DiscussionsPage() {
       <div className="flex items-center justify-center h-64">
         <Spinner size="lg" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <AlertCircle className="h-12 w-12 text-error mx-auto mb-4" />
+          <h3 className="font-semibold mb-2">Error Loading Discussions</h3>
+          <p className="text-muted-foreground">{error.message}</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -212,15 +130,21 @@ export default function DiscussionsPage() {
                         <span>{thread.author?.full_name || "Unknown"}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {thread.created_at ? formatDistanceToNow(new Date(thread.created_at), { addSuffix: true }) : "Unknown"}
+                          {thread.created_at
+                            ? formatDistanceToNow(new Date(thread.created_at), {
+                                addSuffix: true,
+                              })
+                            : "Unknown"}
                         </span>
                         <span className="flex items-center gap-1">
                           <MessageCircle className="h-3 w-3" />
-                          {thread._count.posts} replies
+                          {thread.posts_count || 0} replies
                         </span>
-                        <Badge variant="outline" className="text-xs">
-                          {thread.course?.title}
-                        </Badge>
+                        {thread.course && (
+                          <Badge variant="outline" className="text-xs">
+                            {thread.course.title}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -30,7 +30,7 @@ import {
   GraduationCap,
   RefreshCw,
 } from "lucide-react";
-import { useInstructorCourses, type CourseWithDetails } from "@/lib/hooks/use-courses";
+import { useInstructorCourses, useArchiveCourse, useDeleteCourse, type CourseWithDetails } from "@/lib/hooks/use-courses";
 import { formatDate } from "@/lib/utils";
 
 const courseTypes = [
@@ -94,12 +94,14 @@ function getTypeBadge(type: string) {
 }
 
 export default function InstructorCoursesPage() {
-  const { courses, isLoading, error, refetch, archiveCourse, deleteCourse } = useInstructorCourses();
+  const { data: courses = [], isLoading, error, refetch } = useInstructorCourses();
+  const { mutateAsync: archiveCourse } = useArchiveCourse();
+  const { mutateAsync: deleteCourse } = useDeleteCourse();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
 
-  const filteredCourses = courses.filter((course) => {
+  const filteredCourses = courses.filter((course: CourseWithDetails) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (course.description || "").toLowerCase().includes(searchQuery.toLowerCase());
