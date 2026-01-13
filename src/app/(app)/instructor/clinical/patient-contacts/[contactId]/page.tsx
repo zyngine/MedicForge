@@ -31,79 +31,11 @@ import {
   FileText,
   AlertCircle,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
-import type { ClinicalPatientContactWithDetails } from "@/types";
 import { PATIENT_AGE_LABELS } from "@/types";
-import { format, addDays } from "date-fns";
-
-// Mock data
-const mockContact: ClinicalPatientContactWithDetails = {
-  id: "pc1",
-  tenant_id: "t1",
-  booking_id: "b1",
-  student_id: "student1",
-  course_id: "course1",
-  patient_age_range: "adult",
-  patient_gender: "Male",
-  call_type: "911",
-  call_nature: "Emergency",
-  dispatch_complaint: "Chest Pain",
-  chief_complaint: "Chest pain radiating to left arm",
-  primary_impression: "Acute Coronary Syndrome",
-  secondary_impression: "Hypertension",
-  level_of_consciousness: "Alert",
-  mental_status: "Oriented x4",
-  vitals: [
-    {
-      time: "14:30",
-      bp_systolic: 158,
-      bp_diastolic: 92,
-      pulse: 102,
-      respiratory_rate: 20,
-      spo2: 96,
-      temperature: 98.6,
-      gcs: 15,
-      pain_scale: 7,
-    },
-    {
-      time: "14:45",
-      bp_systolic: 142,
-      bp_diastolic: 86,
-      pulse: 92,
-      respiratory_rate: 18,
-      spo2: 98,
-      temperature: 98.6,
-      gcs: 15,
-      pain_scale: 4,
-    },
-  ],
-  skills_performed: ["12-Lead ECG", "IV Access", "Oxygen Administration", "Cardiac Monitoring"],
-  medications_given: [
-    { medication: "Aspirin", dose: "324mg", route: "PO", time: "14:35" },
-    { medication: "Nitroglycerin", dose: "0.4mg", route: "SL", time: "14:40" },
-  ],
-  procedures: ["12-Lead ECG", "Peripheral IV", "Nasal Cannula O2"],
-  disposition: "Transported",
-  transport_destination: "Memorial Hospital",
-  transport_mode: "ALS",
-  was_team_lead: true,
-  role_description:
-    "Team Lead - Assessed patient, performed 12-lead, established IV access, administered medications per protocol",
-  narrative:
-    "Responded to 65 y/o male with chest pain. Patient stated pain began approximately 30 minutes ago while at rest. Pain described as crushing, 7/10 intensity, radiating to left arm with associated diaphoresis. Patient has history of HTN, DM, hyperlipidemia. Takes Lisinopril, Metformin, and Atorvastatin daily. Initial vitals showed elevated BP and HR. 12-lead showed ST elevation in leads V1-V4 concerning for anterior STEMI. Established 18g IV access in left AC. Administered ASA 324mg PO and NTG 0.4mg SL with improvement of pain from 7/10 to 4/10. Repeat vitals showed improved BP and HR. Transmitted 12-lead to receiving hospital and gave report. Transported emergent to Memorial Hospital cardiac cath lab.",
-  preceptor_feedback: null,
-  preceptor_signature: null,
-  verification_status: "pending",
-  verified_by: null,
-  verified_at: null,
-  created_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-  updated_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-  student: {
-    id: "student1",
-    full_name: "John Smith",
-    email: "john.smith@student.edu",
-  },
-};
+import { usePatientContact, usePatientContacts } from "@/lib/hooks/use-patient-contacts";
+import { format } from "date-fns";
 
 const STATUS_CONFIG = {
   pending: {
@@ -133,23 +65,16 @@ export default function PatientContactDetailPage() {
   const params = useParams();
   const contactId = params.contactId as string;
 
-  const [contact, setContact] = useState<ClinicalPatientContactWithDetails>(mockContact);
+  const { contact, isLoading, error } = usePatientContact(contactId);
+  const { verifyContact, rejectContact } = usePatientContacts();
+
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const statusConfig = STATUS_CONFIG[contact.verification_status as keyof typeof STATUS_CONFIG];
 
   const handleVerify = async () => {
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setContact({
-        ...contact,
-        verification_status: "verified",
-        preceptor_feedback: feedback || null,
-        verified_by: "instructor1",
-        verified_at: new Date().toISOString(),
-      });
+      await verifyContact(contactId, feedback || undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -162,18 +87,65 @@ export default function PatientContactDetailPage() {
     }
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setContact({
-        ...contact,
-        verification_status: "rejected",
-        preceptor_feedback: feedback,
-        verified_by: "instructor1",
-        verified_at: new Date().toISOString(),
-      });
+      await rejectContact(contactId, feedback);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/instructor/clinical/patient-contacts"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Patient Contacts
+        </Link>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Patient Contact</h3>
+            <p className="text-muted-foreground">{error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!contact) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/instructor/clinical/patient-contacts"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Patient Contacts
+        </Link>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Patient Contact Not Found</h3>
+            <p className="text-muted-foreground">
+              The requested patient contact could not be found.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const statusConfig = STATUS_CONFIG[contact.verification_status as keyof typeof STATUS_CONFIG];
 
   return (
     <div className="space-y-6">

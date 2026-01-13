@@ -25,116 +25,11 @@ import {
   User,
   Stethoscope,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
-import type { ClinicalPatientContact } from "@/types";
 import { PATIENT_AGE_LABELS } from "@/types";
-import { format, addDays } from "date-fns";
-
-// Mock data
-const mockContacts: ClinicalPatientContact[] = [
-  {
-    id: "pc1",
-    tenant_id: "t1",
-    booking_id: "b1",
-    student_id: "student1",
-    course_id: "course1",
-    patient_age_range: "adult",
-    patient_gender: "Male",
-    call_type: "911",
-    call_nature: "Emergency",
-    dispatch_complaint: "Chest Pain",
-    chief_complaint: "Chest pain radiating to left arm",
-    primary_impression: "Acute Coronary Syndrome",
-    secondary_impression: "Hypertension",
-    level_of_consciousness: "Alert",
-    mental_status: "Oriented x4",
-    vitals: [],
-    skills_performed: ["12-Lead ECG", "IV Access", "Oxygen Administration"],
-    medications_given: [],
-    procedures: [],
-    disposition: "Transported",
-    transport_destination: "Memorial Hospital",
-    transport_mode: "ALS",
-    was_team_lead: true,
-    role_description: "Team Lead",
-    narrative: "Responded to 65 y/o male with chest pain...",
-    preceptor_feedback: null,
-    preceptor_signature: null,
-    verification_status: "verified",
-    verified_by: "instructor1",
-    verified_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    created_at: format(addDays(new Date(), -2), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    updated_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-  },
-  {
-    id: "pc2",
-    tenant_id: "t1",
-    booking_id: "b2",
-    student_id: "student1",
-    course_id: "course1",
-    patient_age_range: "adolescent",
-    patient_gender: "Female",
-    call_type: "911",
-    call_nature: "Emergency",
-    dispatch_complaint: "MVA",
-    chief_complaint: "Neck pain following MVA",
-    primary_impression: "Cervical Spine Injury",
-    secondary_impression: null,
-    level_of_consciousness: "Alert",
-    mental_status: "Oriented x4",
-    vitals: [],
-    skills_performed: ["Spinal Immobilization", "Primary Assessment"],
-    medications_given: [],
-    procedures: [],
-    disposition: "Transported",
-    transport_destination: "County General",
-    transport_mode: "BLS",
-    was_team_lead: false,
-    role_description: "Team Member",
-    narrative: "Responded to MVA with 17 y/o female driver...",
-    preceptor_feedback: null,
-    preceptor_signature: null,
-    verification_status: "pending",
-    verified_by: null,
-    verified_at: null,
-    created_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    updated_at: format(addDays(new Date(), -1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-  },
-  {
-    id: "pc3",
-    tenant_id: "t1",
-    booking_id: "b3",
-    student_id: "student1",
-    course_id: "course1",
-    patient_age_range: "geriatric",
-    patient_gender: "Female",
-    call_type: "911",
-    call_nature: "Emergency",
-    dispatch_complaint: "Difficulty Breathing",
-    chief_complaint: "Shortness of breath",
-    primary_impression: "COPD Exacerbation",
-    secondary_impression: null,
-    level_of_consciousness: "Alert",
-    mental_status: "Oriented x4",
-    vitals: [],
-    skills_performed: ["Nebulizer Treatment", "Oxygen Administration"],
-    medications_given: [],
-    procedures: [],
-    disposition: "Transported",
-    transport_destination: "Memorial Hospital",
-    transport_mode: "ALS",
-    was_team_lead: true,
-    role_description: "Team Lead",
-    narrative: "Responded to 78 y/o female with difficulty breathing...",
-    preceptor_feedback: "Good work on this call. Documentation is thorough.",
-    preceptor_signature: "Mike Thompson",
-    verification_status: "verified",
-    verified_by: "instructor1",
-    verified_at: format(addDays(new Date(), -3), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    created_at: format(addDays(new Date(), -4), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    updated_at: format(addDays(new Date(), -3), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-  },
-];
+import { useMyPatientContacts } from "@/lib/hooks/use-patient-contacts";
+import { format } from "date-fns";
 
 type StatusFilter = "all" | "pending" | "verified" | "rejected";
 
@@ -163,7 +58,7 @@ const STATUS_CONFIG = {
 };
 
 export default function StudentPatientContactsPage() {
-  const [contacts] = useState<ClinicalPatientContact[]>(mockContacts);
+  const { contacts, isLoading, error } = useMyPatientContacts();
   const [activeTab, setActiveTab] = useState<StatusFilter>("all");
 
   const filteredContacts = contacts.filter((contact) => {
@@ -176,6 +71,35 @@ export default function StudentPatientContactsPage() {
     verified: contacts.filter((c) => c.verification_status === "verified").length,
     teamLead: contacts.filter((c) => c.was_team_lead).length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/student/clinical"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Clinical Tracker
+        </Link>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Patient Contacts</h3>
+            <p className="text-muted-foreground">{error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

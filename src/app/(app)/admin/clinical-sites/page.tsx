@@ -1,78 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Button, Card, CardContent, Spinner, Modal } from "@/components/ui";
+import { Button, Card, CardContent, Spinner, Modal, Alert } from "@/components/ui";
 import { SiteCard, SiteForm } from "@/components/clinical";
 import { Plus, Building2, AlertCircle } from "lucide-react";
+import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
 import type { ClinicalSite, ClinicalSiteForm } from "@/types";
 
-// Mock data for demonstration - will be replaced with real API calls
-const mockSites: ClinicalSite[] = [
-  {
-    id: "1",
-    tenant_id: "t1",
-    name: "Memorial Hospital",
-    site_type: "hospital",
-    address: "123 Medical Center Dr",
-    city: "Springfield",
-    state: "IL",
-    zip: "62701",
-    phone: "(555) 123-4567",
-    contact_name: "Dr. Sarah Johnson",
-    contact_email: "sjohnson@memorial.org",
-    preceptors: [
-      { name: "Mike Thompson", credentials: "Paramedic", phone: "(555) 111-2222" },
-      { name: "Lisa Chen", credentials: "RN", phone: "(555) 333-4444" },
-    ],
-    notes: "Main ED entrance - check in at EMS desk",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    tenant_id: "t1",
-    name: "County Fire & Rescue",
-    site_type: "fire_department",
-    address: "456 Station Road",
-    city: "Springfield",
-    state: "IL",
-    zip: "62702",
-    phone: "(555) 987-6543",
-    contact_name: "Chief Williams",
-    contact_email: "chief@countyfire.gov",
-    preceptors: [
-      { name: "John Davis", credentials: "Captain/Paramedic", phone: "(555) 555-5555" },
-    ],
-    notes: "Station 4 - 24 hour shifts available",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    tenant_id: "t1",
-    name: "Metro Ambulance Service",
-    site_type: "ambulance_service",
-    address: "789 Response Way",
-    city: "Springfield",
-    state: "IL",
-    zip: "62703",
-    phone: "(555) 456-7890",
-    contact_name: "Operations Manager",
-    contact_email: "ops@metroambulance.com",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export default function ClinicalSitesPage() {
-  const [sites, setSites] = useState<ClinicalSite[]>(mockSites);
-  const [isLoading, setIsLoading] = useState(false);
+  const { sites, isLoading, error, createSite, updateSite, deleteSite } = useClinicalSites();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingSite, setEditingSite] = useState<ClinicalSite | null>(null);
   const [deletingSite, setDeletingSite] = useState<ClinicalSite | null>(null);
@@ -81,26 +17,10 @@ export default function ClinicalSitesPage() {
   const handleAddSite = async (data: ClinicalSiteForm) => {
     setIsSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      const newSite: ClinicalSite = {
-        id: Date.now().toString(),
-        tenant_id: "t1",
-        ...data,
-        address: data.address || null,
-        city: data.city || null,
-        state: data.state || null,
-        zip: data.zip || null,
-        phone: data.phone || null,
-        contact_name: data.contact_name || null,
-        contact_email: data.contact_email || null,
-        preceptors: data.preceptors || [],
-        notes: data.notes || null,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setSites([...sites, newSite]);
-      setShowAddModal(false);
+      const result = await createSite(data);
+      if (result) {
+        setShowAddModal(false);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -110,27 +30,10 @@ export default function ClinicalSitesPage() {
     if (!editingSite) return;
     setIsSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      const updatedSites = sites.map((site) =>
-        site.id === editingSite.id
-          ? {
-              ...site,
-              ...data,
-              address: data.address || null,
-              city: data.city || null,
-              state: data.state || null,
-              zip: data.zip || null,
-              phone: data.phone || null,
-              contact_name: data.contact_name || null,
-              contact_email: data.contact_email || null,
-              preceptors: data.preceptors || [],
-              notes: data.notes || null,
-              updated_at: new Date().toISOString(),
-            }
-          : site
-      );
-      setSites(updatedSites);
-      setEditingSite(null);
+      const result = await updateSite(editingSite.id, data);
+      if (result) {
+        setEditingSite(null);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -140,9 +43,10 @@ export default function ClinicalSitesPage() {
     if (!deletingSite) return;
     setIsSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      setSites(sites.filter((site) => site.id !== deletingSite.id));
-      setDeletingSite(null);
+      const success = await deleteSite(deletingSite.id);
+      if (success) {
+        setDeletingSite(null);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -153,6 +57,14 @@ export default function ClinicalSitesPage() {
       <div className="flex items-center justify-center py-20">
         <Spinner size="lg" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="error" title="Error loading clinical sites">
+        {error.message}
+      </Alert>
     );
   }
 

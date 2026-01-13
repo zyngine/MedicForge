@@ -3,86 +3,50 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Spinner, Alert } from "@/components/ui";
 import { ShiftForm } from "@/components/clinical";
 import { ArrowLeft } from "lucide-react";
-import type { ClinicalShiftForm, ClinicalSite } from "@/types";
-
-// Mock sites data
-const mockSites: ClinicalSite[] = [
-  {
-    id: "1",
-    tenant_id: "t1",
-    name: "Memorial Hospital",
-    site_type: "hospital",
-    address: "123 Medical Center Dr",
-    city: "Springfield",
-    state: "IL",
-    zip: "62701",
-    phone: "(555) 123-4567",
-    contact_name: "Dr. Sarah Johnson",
-    contact_email: "sjohnson@memorial.org",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    tenant_id: "t1",
-    name: "County Fire & Rescue",
-    site_type: "fire_department",
-    address: "456 Station Road",
-    city: "Springfield",
-    state: "IL",
-    zip: "62702",
-    phone: "(555) 987-6543",
-    contact_name: "Chief Williams",
-    contact_email: "chief@countyfire.gov",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    tenant_id: "t1",
-    name: "Metro Ambulance",
-    site_type: "ambulance_service",
-    address: "789 Commerce Blvd",
-    city: "Springfield",
-    state: "IL",
-    zip: "62703",
-    phone: "(555) 456-7890",
-    contact_name: "Operations Manager",
-    contact_email: "ops@metroambulance.com",
-    preceptors: [],
-    notes: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
+import { useClinicalShifts } from "@/lib/hooks/use-clinical-shifts";
+import { useCourses } from "@/lib/hooks/use-courses";
+import type { ClinicalShiftForm } from "@/types";
 
 export default function NewShiftPage() {
   const router = useRouter();
+  const { sites, isLoading: sitesLoading, error: sitesError } = useClinicalSites();
+  const { createShift } = useClinicalShifts();
+  const { data: courses = [] } = useCourses();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (data: ClinicalShiftForm) => {
     setIsSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      console.log("Creating shift:", data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/instructor/clinical/shifts");
+      const result = await createShift(data);
+      if (result) {
+        router.push("/instructor/clinical/shifts");
+      }
     } catch (error) {
       console.error("Failed to create shift:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (sitesLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (sitesError) {
+    return (
+      <Alert variant="error" title="Error loading sites">
+        {sitesError.message}
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -111,7 +75,8 @@ export default function NewShiftPage() {
         </CardHeader>
         <CardContent>
           <ShiftForm
-            sites={mockSites}
+            sites={sites}
+            courses={courses}
             onSubmit={handleSubmit}
             onCancel={() => router.push("/instructor/clinical/shifts")}
             isLoading={isSubmitting}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -25,104 +24,11 @@ import {
   XCircle,
   AlertCircle,
   FileText,
+  Loader2,
 } from "lucide-react";
-import type { ClinicalShiftWithDetails, ShiftBookingWithDetails, ClinicalSite } from "@/types";
-import { format, addDays, parseISO } from "date-fns";
-
-// Mock data
-const mockSite: ClinicalSite = {
-  id: "1",
-  tenant_id: "t1",
-  name: "Memorial Hospital",
-  site_type: "hospital",
-  address: "123 Medical Center Dr",
-  city: "Springfield",
-  state: "IL",
-  zip: "62701",
-  phone: "(555) 123-4567",
-  contact_name: "Dr. Sarah Johnson",
-  contact_email: "sjohnson@memorial.org",
-  preceptors: [
-    { name: "Dr. Sarah Johnson", credentials: "MD, FACEP", phone: "(555) 123-4568" },
-    { name: "Mike Thompson", credentials: "Paramedic", phone: "(555) 123-4569" },
-  ],
-  notes: null,
-  is_active: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const mockShift: ClinicalShiftWithDetails = {
-  id: "s1",
-  tenant_id: "t1",
-  site_id: "1",
-  course_id: null,
-  title: "Day Shift - 12 Hours",
-  shift_date: format(addDays(new Date(), 2), "yyyy-MM-dd"),
-  start_time: "07:00",
-  end_time: "19:00",
-  capacity: 2,
-  notes: "Report to EMS station at 0645. Park in lot C.",
-  created_by: "admin1",
-  is_active: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  site: mockSite,
-  bookings_count: 2,
-  available_slots: 0,
-  is_available: false,
-};
-
-const mockBookings: ShiftBookingWithDetails[] = [
-  {
-    id: "b1",
-    tenant_id: "t1",
-    shift_id: "s1",
-    student_id: "student1",
-    status: "booked",
-    booked_at: new Date().toISOString(),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: mockShift,
-    student: {
-      id: "student1",
-      full_name: "John Smith",
-      email: "john.smith@student.edu",
-    },
-  },
-  {
-    id: "b2",
-    tenant_id: "t1",
-    shift_id: "s1",
-    student_id: "student2",
-    status: "booked",
-    booked_at: new Date().toISOString(),
-    cancelled_at: null,
-    cancellation_reason: null,
-    check_in_time: null,
-    check_out_time: null,
-    hours_completed: null,
-    preceptor_name: null,
-    preceptor_signature: null,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    shift: mockShift,
-    student: {
-      id: "student2",
-      full_name: "Jane Doe",
-      email: "jane.doe@student.edu",
-    },
-  },
-];
+import { useClinicalShift } from "@/lib/hooks/use-clinical-shifts";
+import { useShiftBookings } from "@/lib/hooks/use-shift-bookings";
+import { format, parseISO } from "date-fns";
 
 const STATUS_CONFIG = {
   booked: { label: "Booked", variant: "default" as const, icon: Calendar },
@@ -135,38 +41,81 @@ export default function ShiftDetailPage() {
   const params = useParams();
   const shiftId = params.shiftId as string;
 
-  const [shift] = useState<ClinicalShiftWithDetails>(mockShift);
-  const [bookings, setBookings] = useState<ShiftBookingWithDetails[]>(mockBookings);
+  const { shift, isLoading: shiftLoading, error: shiftError } = useClinicalShift(shiftId);
+  const {
+    bookings,
+    isLoading: bookingsLoading,
+    error: bookingsError,
+    updateBookingStatus,
+    cancelBooking,
+  } = useShiftBookings({ shiftId });
 
-  const handleMarkCompleted = (bookingId: string) => {
-    setBookings(
-      bookings.map((b) =>
-        b.id === bookingId ? { ...b, status: "completed" as const } : b
-      )
-    );
+  const handleMarkCompleted = async (bookingId: string) => {
+    await updateBookingStatus(bookingId, "completed");
   };
 
-  const handleMarkNoShow = (bookingId: string) => {
-    setBookings(
-      bookings.map((b) =>
-        b.id === bookingId ? { ...b, status: "no_show" as const } : b
-      )
-    );
+  const handleMarkNoShow = async (bookingId: string) => {
+    await updateBookingStatus(bookingId, "no_show");
   };
 
-  const handleCancelBooking = (bookingId: string) => {
-    setBookings(
-      bookings.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              status: "cancelled" as const,
-              cancelled_at: new Date().toISOString(),
-            }
-          : b
-      )
-    );
+  const handleCancelBooking = async (bookingId: string) => {
+    await cancelBooking(bookingId, "Cancelled by instructor");
   };
+
+  const isLoading = shiftLoading || bookingsLoading;
+  const error = shiftError || bookingsError;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/instructor/clinical/shifts"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Shifts
+        </Link>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Shift</h3>
+            <p className="text-muted-foreground">{error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!shift) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/instructor/clinical/shifts"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Shifts
+        </Link>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Shift Not Found</h3>
+            <p className="text-muted-foreground">
+              The requested shift could not be found.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
