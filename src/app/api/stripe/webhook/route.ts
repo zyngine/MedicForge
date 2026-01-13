@@ -10,6 +10,15 @@ const supabase = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface ThinEvent {
+  id: string;
+  object: string;
+  type: string;
+  livemode: boolean;
+  created: string;
+  related_object?: { id: string; type: string; url: string };
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -33,40 +42,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(session);
-        break;
-      }
+    const stripe = getStripeClient();
+    const eventType = event.type as string;
 
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdate(subscription);
-        break;
-      }
+    // Handle V2 ping events
+    if (eventType === "v2.core.event_destination.ping") {
+      return NextResponse.json({ received: true, message: "pong" });
+    }
 
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(subscription);
-        break;
-      }
-
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaymentSucceeded(invoice);
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaymentFailed(invoice);
-        break;
-      }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+    // Handle thin events (V1 and V2 prefixed)
+    if (eventType.startsWith("v1.") || eventType.startsWith("v2.")) {
+      const thinEvent = event as unknown as ThinEvent;
+      await handleThinEvent(stripe, thinEvent);
+    } else {
+      // Handle legacy V1 snapshot events
+      await handleSnapshotEvent(event);
     }
 
     return NextResponse.json({ received: true });
@@ -76,6 +66,92 @@ export async function POST(request: NextRequest) {
       { error: "Webhook handler failed" },
       { status: 500 }
     );
+  }
+}
+
+async function handleThinEvent(stripe: Stripe, thinEvent: ThinEvent) {
+  switch (thinEvent.type) {
+    case "v1.checkout.session.completed": {
+      const session = await stripe.checkout.sessions.retrieve(
+        thinEvent.related_object!.id
+      );
+      await handleCheckoutCompleted(session);
+      break;
+    }
+
+    case "v1.customer.subscription.created":
+    case "v1.customer.subscription.updated": {
+      const subscription = await stripe.subscriptions.retrieve(
+        thinEvent.related_object!.id
+      );
+      await handleSubscriptionUpdate(subscription);
+      break;
+    }
+
+    case "v1.customer.subscription.deleted": {
+      const subscription = await stripe.subscriptions.retrieve(
+        thinEvent.related_object!.id
+      );
+      await handleSubscriptionDeleted(subscription);
+      break;
+    }
+
+    case "v1.invoice.payment_succeeded": {
+      const invoice = await stripe.invoices.retrieve(
+        thinEvent.related_object!.id
+      );
+      await handleInvoicePaymentSucceeded(invoice);
+      break;
+    }
+
+    case "v1.invoice.payment_failed": {
+      const invoice = await stripe.invoices.retrieve(
+        thinEvent.related_object!.id
+      );
+      await handleInvoicePaymentFailed(invoice);
+      break;
+    }
+
+    default:
+      console.log(`Unhandled thin event type: ${thinEvent.type}`);
+  }
+}
+
+async function handleSnapshotEvent(event: Stripe.Event) {
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      await handleCheckoutCompleted(session);
+      break;
+    }
+
+    case "customer.subscription.created":
+    case "customer.subscription.updated": {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionUpdate(subscription);
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionDeleted(subscription);
+      break;
+    }
+
+    case "invoice.payment_succeeded": {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handleInvoicePaymentSucceeded(invoice);
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handleInvoicePaymentFailed(invoice);
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
   }
 }
 
