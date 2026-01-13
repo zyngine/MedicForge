@@ -173,8 +173,8 @@ y += 10;
 
 const tiers = [
   { name: "Free", price: "$0/mo", desc: "1 instructor, 25 students, 2 courses" },
-  { name: "Pro", price: "$99/mo", desc: "5 instructors, 100 students, unlimited courses" },
-  { name: "Institution", price: "$299/mo", desc: "Unlimited instructors, 500 students" },
+  { name: "Pro", price: "$149/mo", desc: "5 instructors, 100 students, unlimited courses" },
+  { name: "Institution", price: "$399/mo", desc: "Unlimited instructors, 500 students" },
   { name: "Enterprise", price: "Custom", desc: "Unlimited everything, dedicated support" },
 ];
 

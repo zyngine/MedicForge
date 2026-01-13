@@ -96,7 +96,7 @@ const pricingTiers = [
   },
   {
     name: "Professional",
-    price: "$99",
+    price: "$149",
     period: "/month",
     description: "For growing training programs",
     features: [
@@ -114,7 +114,7 @@ const pricingTiers = [
   },
   {
     name: "Institution",
-    price: "$299",
+    price: "$399",
     period: "/month",
     description: "For colleges and large academies",
     features: [

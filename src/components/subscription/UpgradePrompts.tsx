@@ -109,11 +109,11 @@ export function UpgradeModal({
     type === "instructor" ? "instructors" : type === "student" ? "students" : "courses";
 
   const nextTier = {
-    free: { name: "Professional", price: "$99/month" },
-    pro: { name: "Institution", price: "$299/month" },
+    free: { name: "Professional", price: "$149/month" },
+    pro: { name: "Institution", price: "$399/month" },
     institution: { name: "Enterprise", price: "Custom" },
     enterprise: { name: "Enterprise", price: "Custom" },
-  }[currentTier] || { name: "Professional", price: "$99/month" };
+  }[currentTier] || { name: "Professional", price: "$149/month" };
 
   const benefits = {
     free: [
