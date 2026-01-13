@@ -27,11 +27,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No signature" }, { status: 400 });
   }
 
-  let event: Stripe.Event;
+  const stripe = getStripeClient();
+
+  // Parse the body to check event type before signature verification
+  let parsedBody: ThinEvent;
+  try {
+    parsedBody = JSON.parse(body);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // V2 thin events have v1. or v2. prefixed types
+  const isThinEvent = parsedBody.type?.startsWith("v1.") || parsedBody.type?.startsWith("v2.");
 
   try {
-    const stripe = getStripeClient();
-    event = stripe.webhooks.constructEvent(
+    // Verify signature using Stripe's method
+    stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -42,23 +53,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const stripe = getStripeClient();
-    const eventType = event.type as string;
-
     // Handle V2 ping events
-    if (eventType === "v2.core.event_destination.ping") {
+    if (parsedBody.type === "v2.core.event_destination.ping") {
       return NextResponse.json({ received: true, message: "pong" });
     }
 
-    // Handle thin events (V1 and V2 prefixed)
-    if (eventType.startsWith("v1.") || eventType.startsWith("v2.")) {
-      const thinEvent = event as unknown as ThinEvent;
-      await handleThinEvent(stripe, thinEvent);
-    } else {
-      // Handle legacy V1 snapshot events
-      await handleSnapshotEvent(event);
+    // Handle thin events (V2 webhooks)
+    if (isThinEvent) {
+      await handleThinEvent(stripe, parsedBody);
+      return NextResponse.json({ received: true });
     }
 
+    // Handle V1 snapshot events - re-parse as Stripe.Event
+    const event = JSON.parse(body) as Stripe.Event;
+    await handleSnapshotEvent(event);
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook handler error:", error);
