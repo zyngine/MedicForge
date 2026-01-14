@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+
+// Singleton supabase client
+const supabase = createClient();
 
 export interface Tenant {
   id: string;
@@ -59,8 +62,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  const supabase = createClient();
+  const mountedRef = useRef(true);
 
   const fetchTenant = async () => {
     try {
@@ -88,8 +90,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
       if (!tenantId) {
         // No tenant cookie and no logged-in user = main marketing site
-        setTenant(null);
-        setIsLoading(false);
+        if (mountedRef.current) {
+          setTenant(null);
+          setIsLoading(false);
+        }
         return;
       }
 
@@ -98,6 +102,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         .select("*")
         .eq("id", tenantId)
         .single();
+
+      if (!mountedRef.current) return;
 
       if (fetchError) {
         console.error("Error fetching tenant:", fetchError);
@@ -122,14 +128,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error("Tenant fetch error:", err);
-      setError(err instanceof Error ? err : new Error("Unknown error"));
+      // Ignore AbortErrors - these are expected when component unmounts or navigation occurs
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      if (mountedRef.current) {
+        console.error("Tenant fetch error:", err);
+        setError(err instanceof Error ? err : new Error("Unknown error"));
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchTenant();
 
     // Listen for auth state changes to re-fetch tenant when user logs in/out
@@ -142,6 +157,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
   }, []);
