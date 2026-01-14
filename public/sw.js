@@ -219,8 +219,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: body || '',
-    icon: icon || '/icons/icon-192x192.png',
-    badge: badge || '/icons/icon-72x72.png',
+    icon: icon || '/logo-icon.svg',
+    badge: badge || '/logo-icon.svg',
     tag: tag || 'medicforge-notification',
     data: { url: url || '/' },
     vibrate: [100, 50, 100],
