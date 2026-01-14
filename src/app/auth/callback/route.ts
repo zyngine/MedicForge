@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -11,8 +12,11 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
+      // Use admin client to bypass RLS for database operations
+      const adminClient = createAdminClient();
+
       // Check if user profile exists, if not create it
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = await adminClient
         .from("users")
         .select("id, role, tenant_id")
         .eq("id", data.user.id)
@@ -34,7 +38,7 @@ export async function GET(request: Request) {
             .substring(0, 50) + "-" + Date.now().toString(36);
 
           // Create tenant
-          const { data: tenant, error: tenantError } = await supabase
+          const { data: tenant, error: tenantError } = await adminClient
             .from("tenants")
             .insert({
               name: organizationName,
@@ -49,7 +53,7 @@ export async function GET(request: Request) {
           }
 
           // Create user as admin
-          const { error: userError } = await supabase.from("users").insert({
+          const { error: userError } = await adminClient.from("users").insert({
             id: data.user.id,
             tenant_id: tenant.id,
             email: data.user.email!,
@@ -69,7 +73,7 @@ export async function GET(request: Request) {
           const enrollmentCode = metadata?.enrollment_code;
 
           if (enrollmentCode) {
-            const { data: course, error: courseError } = await supabase
+            const { data: course, error: courseError } = await adminClient
               .from("courses")
               .select("id, tenant_id")
               .eq("enrollment_code", enrollmentCode)
@@ -80,7 +84,7 @@ export async function GET(request: Request) {
             }
 
             // Create user as student in that tenant
-            const { error: userError } = await supabase.from("users").insert({
+            const { error: userError } = await adminClient.from("users").insert({
               id: data.user.id,
               tenant_id: course.tenant_id,
               email: data.user.email!,
@@ -94,7 +98,7 @@ export async function GET(request: Request) {
             }
 
             // Enroll in course
-            await supabase.from("enrollments").insert({
+            await adminClient.from("enrollments").insert({
               tenant_id: course.tenant_id,
               course_id: course.id,
               student_id: data.user.id,
