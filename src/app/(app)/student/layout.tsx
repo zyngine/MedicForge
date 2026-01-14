@@ -14,6 +14,11 @@ import {
   MessageSquare,
   Settings,
   Stethoscope,
+  Target,
+  FileCheck,
+  Briefcase,
+  GraduationCap,
+  Brain,
 } from "lucide-react";
 
 const studentNavigation = [
@@ -31,7 +36,6 @@ const studentNavigation = [
     title: "Assignments",
     href: "/student/assignments",
     icon: <ClipboardList className="h-5 w-5" />,
-    badge: 3,
   },
   {
     title: "Clinical Tracker",
@@ -42,6 +46,31 @@ const studentNavigation = [
     title: "Grades",
     href: "/student/grades",
     icon: <Award className="h-5 w-5" />,
+  },
+  {
+    title: "NREMT Readiness",
+    href: "/student/nremt-readiness",
+    icon: <Brain className="h-5 w-5" />,
+  },
+  {
+    title: "Skill Sheets",
+    href: "/student/skill-sheets",
+    icon: <FileCheck className="h-5 w-5" />,
+  },
+  {
+    title: "Competencies",
+    href: "/student/competencies",
+    icon: <Target className="h-5 w-5" />,
+  },
+  {
+    title: "Portfolio",
+    href: "/student/portfolio",
+    icon: <Briefcase className="h-5 w-5" />,
+  },
+  {
+    title: "Certificates",
+    href: "/student/certificates",
+    icon: <GraduationCap className="h-5 w-5" />,
   },
   {
     title: "Calendar",

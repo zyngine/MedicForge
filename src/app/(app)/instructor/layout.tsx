@@ -14,6 +14,12 @@ import {
   Calendar,
   Settings,
   Stethoscope,
+  Database,
+  FileCheck,
+  Target,
+  GraduationCap,
+  Shield,
+  PieChart,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -34,9 +40,39 @@ const instructorNavigation = [
     badge: 12,
   },
   {
+    title: "Gradebook",
+    href: "/instructor/gradebook",
+    icon: <GraduationCap className="h-5 w-5" />,
+  },
+  {
     title: "Students",
     href: "/instructor/students",
     icon: <Users className="h-5 w-5" />,
+  },
+  {
+    title: "Question Bank",
+    href: "/instructor/question-bank",
+    icon: <Database className="h-5 w-5" />,
+  },
+  {
+    title: "Rubrics",
+    href: "/instructor/rubrics",
+    icon: <FileCheck className="h-5 w-5" />,
+  },
+  {
+    title: "Outcomes",
+    href: "/instructor/outcomes",
+    icon: <Target className="h-5 w-5" />,
+  },
+  {
+    title: "Plagiarism",
+    href: "/instructor/plagiarism",
+    icon: <Shield className="h-5 w-5" />,
+  },
+  {
+    title: "Analytics",
+    href: "/instructor/analytics",
+    icon: <PieChart className="h-5 w-5" />,
   },
   {
     title: "Reports",
