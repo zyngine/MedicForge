@@ -6,7 +6,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
 import { Button, Input, Label, Checkbox, Alert, Spinner } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, GraduationCap, Stethoscope } from "lucide-react";
+
+const DEMO_ACCOUNTS = {
+  instructor: {
+    email: "demo.instructor@medicforge.com",
+    password: "DemoPass123!",
+  },
+  student: {
+    email: "demo.student@medicforge.com",
+    password: "DemoPass123!",
+  },
+};
 
 function LoginFormContent() {
   const router = useRouter();
@@ -18,7 +29,39 @@ function LoginFormContent() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [rememberMe, setRememberMe] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [demoLoading, setDemoLoading] = React.useState<"instructor" | "student" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+
+  const handleDemoLogin = async (role: "instructor" | "student") => {
+    setDemoLoading(role);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const account = DEMO_ACCOUNTS[role];
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: account.email,
+        password: account.password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (role === "instructor") {
+        router.push("/instructor/dashboard");
+      } else {
+        router.push("/student/dashboard");
+      }
+      router.refresh();
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setDemoLoading(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,14 +192,45 @@ function LoginFormContent() {
         <Link href="/register">Create an account</Link>
       </Button>
 
-      <div className="text-center">
-        <Link
-          href="/demo"
-          className="text-sm text-muted-foreground hover:text-primary hover:underline"
-        >
-          Or try our demo accounts
-        </Link>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or try a demo
+          </span>
+        </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex items-center justify-center gap-2"
+          onClick={() => handleDemoLogin("instructor")}
+          isLoading={demoLoading === "instructor"}
+          disabled={isLoading || demoLoading !== null}
+        >
+          <GraduationCap className="h-4 w-4 text-blue-600" />
+          <span>Instructor</span>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex items-center justify-center gap-2"
+          onClick={() => handleDemoLogin("student")}
+          isLoading={demoLoading === "student"}
+          disabled={isLoading || demoLoading !== null}
+        >
+          <Stethoscope className="h-4 w-4 text-green-600" />
+          <span>Student</span>
+        </Button>
+      </div>
+
+      <p className="text-xs text-center text-muted-foreground">
+        Demo accounts are reset periodically
+      </p>
     </form>
   );
 }
