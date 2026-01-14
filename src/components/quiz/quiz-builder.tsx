@@ -25,7 +25,9 @@ import {
   Copy,
   Save,
   HelpCircle,
+  Database,
 } from "lucide-react";
+import { QuestionBankBrowser } from "./question-bank-browser";
 
 export type QuestionType = "multiple_choice" | "true_false" | "matching" | "short_answer";
 
@@ -55,6 +57,27 @@ const generateId = () => `q_${Date.now()}_${Math.random().toString(36).substr(2,
 
 export function QuizBuilder({ questions, onChange, readOnly = false }: QuizBuilderProps) {
   const [expandedQuestions, setExpandedQuestions] = React.useState<Set<string>>(new Set());
+  const [showQuestionBank, setShowQuestionBank] = React.useState(false);
+
+  // Get IDs of questions already imported from question bank
+  const importedQuestionIds = questions
+    .filter((q) => q.id.startsWith("bank_") || q.id.startsWith("imported_"))
+    .map((q) => {
+      // Extract original question ID from the imported ID format
+      const match = q.id.match(/^(?:bank_|imported_)([^_]+)/);
+      return match ? match[1] : null;
+    })
+    .filter(Boolean) as string[];
+
+  const handleImportQuestions = (importedQuestions: QuizQuestion[]) => {
+    onChange([...questions, ...importedQuestions]);
+    // Expand newly imported questions
+    setExpandedQuestions((prev) => {
+      const next = new Set(prev);
+      importedQuestions.forEach((q) => next.add(q.id));
+      return next;
+    });
+  };
 
   const toggleExpanded = (id: string) => {
     setExpandedQuestions((prev) => {
@@ -135,6 +158,11 @@ export function QuizBuilder({ questions, onChange, readOnly = false }: QuizBuild
         </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
+            <Button variant="default" size="sm" onClick={() => setShowQuestionBank(true)}>
+              <Database className="h-4 w-4 mr-1" />
+              Import from Bank
+            </Button>
+            <div className="h-6 w-px bg-border" />
             <Button variant="outline" size="sm" onClick={() => addQuestion("multiple_choice")}>
               <Plus className="h-4 w-4 mr-1" />
               Multiple Choice
@@ -151,6 +179,14 @@ export function QuizBuilder({ questions, onChange, readOnly = false }: QuizBuild
         )}
       </div>
 
+      {/* Question Bank Browser Modal */}
+      <QuestionBankBrowser
+        open={showQuestionBank}
+        onClose={() => setShowQuestionBank(false)}
+        onSelectQuestions={handleImportQuestions}
+        excludeQuestionIds={importedQuestionIds}
+      />
+
       {/* Questions List */}
       {questions.length === 0 ? (
         <Card>
@@ -158,13 +194,20 @@ export function QuizBuilder({ questions, onChange, readOnly = false }: QuizBuild
             <HelpCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No questions yet</h3>
             <p className="text-muted-foreground mb-4">
-              Add questions to build your quiz
+              Import from the question bank or create custom questions
             </p>
             {!readOnly && (
-              <Button onClick={() => addQuestion("multiple_choice")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Question
-              </Button>
+              <div className="flex flex-col items-center gap-3">
+                <Button onClick={() => setShowQuestionBank(true)}>
+                  <Database className="h-4 w-4 mr-2" />
+                  Import from Question Bank
+                </Button>
+                <span className="text-sm text-muted-foreground">or</span>
+                <Button variant="outline" onClick={() => addQuestion("multiple_choice")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Custom Question
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

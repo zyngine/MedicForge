@@ -473,3 +473,34 @@ export function useAssignmentQuestions(assignmentId: string) {
     reorderQuestions,
   };
 }
+
+/**
+ * Convert a question bank item to quiz builder format
+ */
+export function convertToQuizQuestion(question: QuestionBankItem) {
+  const options = question.options?.map((opt) => opt.text) || [];
+  const correctIndex = question.options?.findIndex((opt) => opt.isCorrect) ?? 0;
+
+  let correctAnswer: number | string = correctIndex;
+  if (question.question_type === "short_answer") {
+    const answer = question.correct_answer as { text?: string; id?: string };
+    correctAnswer = answer?.text || "";
+  } else if (question.question_type === "true_false") {
+    // For true/false, check if correct answer is "True" (index 0) or "False" (index 1)
+    const answer = question.correct_answer as { id?: string; text?: string };
+    correctAnswer = answer?.id === "A" || answer?.text?.toLowerCase() === "true" ? 0 : 1;
+  }
+
+  return {
+    id: `bank_${question.id}_${Date.now()}`,
+    question_text: question.question_text,
+    question_type: question.question_type === "true_false" ? "true_false" as const :
+                   question.question_type === "short_answer" ? "short_answer" as const :
+                   "multiple_choice" as const,
+    options: question.question_type === "true_false" ? ["True", "False"] : options,
+    correct_answer: correctAnswer,
+    points: question.points || 1,
+    explanation: question.explanation || "",
+    source_question_id: question.id,
+  };
+}
