@@ -192,8 +192,11 @@ export function useCreateCourse() {
         enrollment_code?: string;
       }
     ) => {
-      if (!tenant?.id || !user?.id) {
-        throw new Error("Not authenticated");
+      if (!user?.id) {
+        throw new Error("Not logged in. Please sign in again.");
+      }
+      if (!tenant?.id) {
+        throw new Error("No organization found. Your account may not be set up correctly. Please contact support or try logging in again.");
       }
 
       const supabase = createClient();
