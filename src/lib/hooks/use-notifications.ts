@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+
+// Singleton supabase client
+const supabase = createClient();
 
 export interface Notification {
   id: string;
@@ -25,8 +28,7 @@ interface UseNotificationsReturn {
 export function useNotifications(): UseNotificationsReturn {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = createClient();
+  const mountedRef = useRef(true);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -34,7 +36,7 @@ export function useNotifications(): UseNotificationsReturn {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user || !mountedRef.current) return;
 
       const { data, error } = await supabase
         .from("notifications")
@@ -43,6 +45,8 @@ export function useNotifications(): UseNotificationsReturn {
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (!mountedRef.current) return;
+
       if (error) {
         console.error("Error fetching notifications:", error);
         return;
@@ -50,13 +54,20 @@ export function useNotifications(): UseNotificationsReturn {
 
       setNotifications(data || []);
     } catch (err) {
+      // Ignore AbortErrors - expected during navigation/unmount
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
       console.error("Error fetching notifications:", err);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchNotifications();
 
     // Subscribe to real-time notifications
@@ -70,15 +81,18 @@ export function useNotifications(): UseNotificationsReturn {
           table: "notifications",
         },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev]);
+          if (mountedRef.current) {
+            setNotifications((prev) => [payload.new as Notification, ...prev]);
+          }
         }
       )
       .subscribe();
 
     return () => {
+      mountedRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, [fetchNotifications, supabase]);
+  }, [fetchNotifications]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase
@@ -86,7 +100,7 @@ export function useNotifications(): UseNotificationsReturn {
       .update({ is_read: true })
       .eq("id", id);
 
-    if (!error) {
+    if (!error && mountedRef.current) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
@@ -106,7 +120,7 @@ export function useNotifications(): UseNotificationsReturn {
       .eq("user_id", user.id)
       .eq("is_read", false);
 
-    if (!error) {
+    if (!error && mountedRef.current) {
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     }
   };
@@ -129,8 +143,6 @@ export async function createNotification(
   tenantId: string,
   notification: Omit<Notification, "id" | "is_read" | "created_at">
 ) {
-  const supabase = createClient();
-
   const { error } = await supabase.from("notifications").insert({
     user_id: userId,
     tenant_id: tenantId,

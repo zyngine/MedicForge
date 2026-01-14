@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'medicforge-v3';
+const CACHE_NAME = 'medicforge-v4';
 const OFFLINE_URL = '/offline';
 const DATA_CACHE_NAME = 'medicforge-data-v1';
 
@@ -97,6 +97,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip all external requests (non same-origin)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Determine strategy based on URL
   const strategy = getStrategy(url.pathname);
 
@@ -127,6 +132,18 @@ function getStrategy(pathname) {
   return 'networkFirst';
 }
 
+// Safe clone helper - only clone if response can be cloned
+function safeClone(response) {
+  try {
+    if (response && response.status === 200 && !response.bodyUsed) {
+      return response.clone();
+    }
+  } catch (e) {
+    // Ignore clone errors
+  }
+  return null;
+}
+
 // Cache first strategy
 async function cacheFirst(request) {
   const cached = await caches.match(request);
@@ -136,13 +153,13 @@ async function cacheFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    const clone = safeClone(response);
+    if (clone) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, clone);
     }
     return response;
   } catch (error) {
-    console.log('[SW] Cache first failed:', error);
     return new Response('Offline', { status: 503 });
   }
 }
@@ -151,17 +168,13 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, response.clone());
-      } catch (e) {
-        // Ignore clone errors
-      }
+    const clone = safeClone(response);
+    if (clone) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, clone);
     }
     return response;
   } catch (error) {
-    console.log('[SW] Network first falling back to cache');
     const cached = await caches.match(request);
     if (cached) {
       return cached;
@@ -185,13 +198,10 @@ async function staleWhileRevalidate(request) {
 
   const fetchPromise = fetch(request)
     .then(async (response) => {
-      if (response.ok) {
-        try {
-          const cache = await caches.open(CACHE_NAME);
-          await cache.put(request, response.clone());
-        } catch (e) {
-          // Ignore clone errors
-        }
+      const clone = safeClone(response);
+      if (clone) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, clone);
       }
       return response;
     })
@@ -535,4 +545,4 @@ self.addEventListener('periodicsync', (event) => {
   }
 });
 
-console.log('[SW] Service worker loaded - v3');
+console.log('[SW] Service worker loaded - v4');
