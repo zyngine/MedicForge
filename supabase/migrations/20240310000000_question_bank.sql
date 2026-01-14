@@ -54,7 +54,7 @@ CREATE TABLE question_bank (
     discrimination_index DECIMAL(5,4), -- Item Response Theory metric
 
     -- References
-    references JSONB, -- [{title, url, page}]
+    "references" JSONB, -- [{title, url, page}]
     tags TEXT[], -- Flexible tagging
 
     created_by UUID REFERENCES users(id),
