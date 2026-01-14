@@ -64,10 +64,30 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const fetchTenant = async () => {
     try {
-      const tenantId = getTenantIdFromCookie();
+      let tenantId = getTenantIdFromCookie();
+
+      // If no tenant cookie, try to get tenant from logged-in user's profile
+      if (!tenantId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Fetch user's tenant_id from their profile
+          const { data: userProfile } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
+
+          if (userProfile?.tenant_id) {
+            tenantId = userProfile.tenant_id;
+            // Set the cookie for future requests (client-side only)
+            document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax`;
+            document.cookie = `tenant_slug=user-tenant; path=/; samesite=lax`;
+          }
+        }
+      }
 
       if (!tenantId) {
-        // No tenant cookie = main marketing site
+        // No tenant cookie and no logged-in user = main marketing site
         setTenant(null);
         setIsLoading(false);
         return;
@@ -96,6 +116,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           subscription_status: data.subscription_status as Tenant["subscription_status"],
           trial_ends_at: data.trial_ends_at,
         });
+        // Also set the tenant_slug cookie with actual slug
+        if (typeof document !== "undefined") {
+          document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax`;
+        }
       }
     } catch (err) {
       console.error("Tenant fetch error:", err);
