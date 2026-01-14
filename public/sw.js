@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'medicforge-v2';
+const CACHE_NAME = 'medicforge-v3';
 const OFFLINE_URL = '/offline';
 const DATA_CACHE_NAME = 'medicforge-data-v1';
 
@@ -87,6 +87,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip Supabase auth/API requests - don't intercept these
+  if (url.hostname.includes('supabase')) {
+    return;
+  }
+
+  // Skip auth-related paths
+  if (url.pathname.includes('/auth/') || url.pathname.includes('/rest/')) {
+    return;
+  }
+
   // Determine strategy based on URL
   const strategy = getStrategy(url.pathname);
 
@@ -142,8 +152,12 @@ async function networkFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+      } catch (e) {
+        // Ignore clone errors
+      }
     }
     return response;
   } catch (error) {
@@ -170,10 +184,14 @@ async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
 
   const fetchPromise = fetch(request)
-    .then((response) => {
+    .then(async (response) => {
       if (response.ok) {
-        const cache = caches.open(CACHE_NAME);
-        cache.then((c) => c.put(request, response.clone()));
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        } catch (e) {
+          // Ignore clone errors
+        }
       }
       return response;
     })
@@ -517,4 +535,4 @@ self.addEventListener('periodicsync', (event) => {
   }
 });
 
-console.log('[SW] Service worker loaded - v2');
+console.log('[SW] Service worker loaded - v3');
