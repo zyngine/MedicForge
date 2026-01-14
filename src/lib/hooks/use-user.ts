@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
@@ -16,13 +16,15 @@ interface UseUserReturn {
   refreshProfile: () => Promise<void>;
 }
 
+// Create a singleton supabase client
+const supabase = createClient();
+
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  const supabase = createClient();
+  const loadingRef = useRef(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -34,7 +36,6 @@ export function useUser(): UseUserReturn {
 
       if (error) {
         console.error("Error fetching profile:", error);
-        // Don't block on profile errors - user can still be authenticated
         return null;
       }
 
@@ -43,7 +44,7 @@ export function useUser(): UseUserReturn {
       console.error("Profile fetch failed:", err);
       return null;
     }
-  }, [supabase]);
+  }, []);
 
   const refreshProfile = async () => {
     if (user) {
@@ -54,6 +55,7 @@ export function useUser(): UseUserReturn {
 
   useEffect(() => {
     let isMounted = true;
+    loadingRef.current = true;
 
     const getUser = async () => {
       try {
@@ -66,6 +68,7 @@ export function useUser(): UseUserReturn {
 
         if (authError) {
           console.error("Auth error:", authError);
+          loadingRef.current = false;
           setIsLoading(false);
           return;
         }
@@ -85,18 +88,20 @@ export function useUser(): UseUserReturn {
         }
       } finally {
         if (isMounted) {
+          loadingRef.current = false;
           setIsLoading(false);
         }
       }
     };
 
-    // Set a timeout to prevent infinite loading
+    // Set a timeout to prevent infinite loading - use ref to check current state
     const timeout = setTimeout(() => {
-      if (isMounted && isLoading) {
+      if (isMounted && loadingRef.current) {
         console.warn("User fetch timeout - stopping loading state");
+        loadingRef.current = false;
         setIsLoading(false);
       }
-    }, 5000);
+    }, 10000);
 
     getUser();
 
@@ -117,6 +122,7 @@ export function useUser(): UseUserReturn {
         setProfile(null);
       }
 
+      loadingRef.current = false;
       setIsLoading(false);
     });
 
@@ -125,7 +131,7 @@ export function useUser(): UseUserReturn {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [fetchProfile, supabase]);
+  }, [fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
