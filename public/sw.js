@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'medicforge-v1';
+const CACHE_NAME = 'medicforge-v2';
 const OFFLINE_URL = '/offline';
+const DATA_CACHE_NAME = 'medicforge-data-v1';
 
 // Resources to cache immediately on install
 const PRECACHE_RESOURCES = [
@@ -10,6 +11,14 @@ const PRECACHE_RESOURCES = [
   '/manifest.json',
   '/logo-icon.svg',
   '/logo.svg',
+];
+
+// API endpoints to cache for offline access
+const CACHEABLE_API_ROUTES = [
+  '/api/courses',
+  '/api/enrollments',
+  '/api/skill-sheets',
+  '/api/question-bank',
 ];
 
 // Cache strategies
@@ -226,16 +235,6 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle background sync for offline form submissions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-submissions') {
-    event.waitUntil(syncSubmissions());
-  }
-  if (event.tag === 'sync-clinical-logs') {
-    event.waitUntil(syncClinicalLogs());
-  }
-});
-
 // Sync queued submissions when back online
 async function syncSubmissions() {
   try {
@@ -288,10 +287,102 @@ async function syncClinicalLogs() {
   }
 }
 
-// Simple IndexedDB wrapper for offline queue
+// Message handling for communication with main thread
+self.addEventListener('message', (event) => {
+  const { type, payload } = event.data || {};
+
+  switch (type) {
+    case 'CACHE_DATA':
+      cacheOfflineData(payload.key, payload.data);
+      break;
+    case 'GET_CACHED_DATA':
+      getCachedData(payload.key).then((data) => {
+        event.ports[0].postMessage({ type: 'CACHED_DATA', data });
+      });
+      break;
+    case 'QUEUE_SYNC':
+      queueForSync(payload.store, payload.data);
+      break;
+    case 'GET_PENDING_COUNT':
+      getPendingCount().then((count) => {
+        event.ports[0].postMessage({ type: 'PENDING_COUNT', count });
+      });
+      break;
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+  }
+});
+
+// Cache data for offline access
+async function cacheOfflineData(key, data) {
+  try {
+    const cache = await caches.open(DATA_CACHE_NAME);
+    const response = new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    await cache.put(`/offline-data/${key}`, response);
+    console.log('[SW] Cached data for key:', key);
+  } catch (error) {
+    console.error('[SW] Failed to cache data:', error);
+  }
+}
+
+// Get cached data
+async function getCachedData(key) {
+  try {
+    const cache = await caches.open(DATA_CACHE_NAME);
+    const response = await cache.match(`/offline-data/${key}`);
+    if (response) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('[SW] Failed to get cached data:', error);
+  }
+  return null;
+}
+
+// Queue data for sync when back online
+async function queueForSync(store, data) {
+  try {
+    const db = await openDB();
+    await db.add(store, { data, timestamp: Date.now() });
+    console.log('[SW] Queued for sync:', store);
+
+    // Register sync if available
+    if ('sync' in self.registration) {
+      await self.registration.sync.register(`sync-${store}`);
+    }
+  } catch (error) {
+    console.error('[SW] Failed to queue for sync:', error);
+  }
+}
+
+// Get count of pending items
+async function getPendingCount() {
+  try {
+    const db = await openDB();
+    const submissions = await db.getAll('pending-submissions');
+    const logs = await db.getAll('pending-clinical-logs');
+    const skillAttempts = await db.getAll('pending-skill-attempts');
+    const patientContacts = await db.getAll('pending-patient-contacts');
+    return {
+      submissions: submissions.length,
+      clinicalLogs: logs.length,
+      skillAttempts: skillAttempts.length,
+      patientContacts: patientContacts.length,
+      total: submissions.length + logs.length + skillAttempts.length + patientContacts.length,
+    };
+  } catch (error) {
+    console.error('[SW] Failed to get pending count:', error);
+    return { total: 0 };
+  }
+}
+
+// Enhanced IndexedDB wrapper
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('medicforge-offline', 1);
+    const request = indexedDB.open('medicforge-offline', 2);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
@@ -303,25 +394,127 @@ function openDB() {
           req.onsuccess = () => res(req.result);
           req.onerror = () => rej(req.error);
         }),
+        add: (store, data) => new Promise((res, rej) => {
+          const tx = db.transaction(store, 'readwrite');
+          const req = tx.objectStore(store).add(data);
+          req.onsuccess = () => res(req.result);
+          req.onerror = () => rej(req.error);
+        }),
         delete: (store, key) => new Promise((res, rej) => {
           const tx = db.transaction(store, 'readwrite');
           const req = tx.objectStore(store).delete(key);
           req.onsuccess = () => res();
           req.onerror = () => rej(req.error);
         }),
+        clear: (store) => new Promise((res, rej) => {
+          const tx = db.transaction(store, 'readwrite');
+          const req = tx.objectStore(store).clear();
+          req.onsuccess = () => res();
+          req.onerror = () => rej(req.error);
+        }),
       });
     };
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains('pending-submissions')) {
-        db.createObjectStore('pending-submissions', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!db.objectStoreNames.contains('pending-clinical-logs')) {
-        db.createObjectStore('pending-clinical-logs', { keyPath: 'id', autoIncrement: true });
-      }
+      const stores = [
+        'pending-submissions',
+        'pending-clinical-logs',
+        'pending-skill-attempts',
+        'pending-patient-contacts',
+        'offline-courses',
+        'offline-questions',
+      ];
+
+      stores.forEach((storeName) => {
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+        }
+      });
     };
   });
 }
 
-console.log('[SW] Service worker loaded');
+// Sync skill attempts
+async function syncSkillAttempts() {
+  try {
+    const db = await openDB();
+    const attempts = await db.getAll('pending-skill-attempts');
+
+    for (const attempt of attempts) {
+      try {
+        const response = await fetch('/api/skill-sheet-attempts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(attempt.data),
+        });
+
+        if (response.ok) {
+          await db.delete('pending-skill-attempts', attempt.id);
+        }
+      } catch (error) {
+        console.log('[SW] Failed to sync skill attempt:', error);
+      }
+    }
+  } catch (error) {
+    console.log('[SW] Sync skill attempts failed:', error);
+  }
+}
+
+// Sync patient contacts
+async function syncPatientContacts() {
+  try {
+    const db = await openDB();
+    const contacts = await db.getAll('pending-patient-contacts');
+
+    for (const contact of contacts) {
+      try {
+        const response = await fetch('/api/patient-contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contact.data),
+        });
+
+        if (response.ok) {
+          await db.delete('pending-patient-contacts', contact.id);
+        }
+      } catch (error) {
+        console.log('[SW] Failed to sync patient contact:', error);
+      }
+    }
+  } catch (error) {
+    console.log('[SW] Sync patient contacts failed:', error);
+  }
+}
+
+// Handle additional sync tags
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-submissions') {
+    event.waitUntil(syncSubmissions());
+  }
+  if (event.tag === 'sync-clinical-logs') {
+    event.waitUntil(syncClinicalLogs());
+  }
+  if (event.tag === 'sync-pending-skill-attempts') {
+    event.waitUntil(syncSkillAttempts());
+  }
+  if (event.tag === 'sync-pending-patient-contacts') {
+    event.waitUntil(syncPatientContacts());
+  }
+});
+
+// Periodic background sync for PWA
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'sync-all-pending') {
+    event.waitUntil(
+      Promise.all([
+        syncSubmissions(),
+        syncClinicalLogs(),
+        syncSkillAttempts(),
+        syncPatientContacts(),
+      ])
+    );
+  }
+});
+
+console.log('[SW] Service worker loaded - v2');
