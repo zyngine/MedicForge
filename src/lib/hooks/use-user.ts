@@ -134,9 +134,21 @@ export function useUser(): UseUserReturn {
   }, [fetchProfile]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Ignore AbortErrors and other errors during sign out
+      console.error("Sign out error:", err);
+    } finally {
+      // Always clear user state, even if the API call failed
+      setUser(null);
+      setProfile(null);
+      // Clear tenant cookies
+      if (typeof document !== "undefined") {
+        document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+    }
   };
 
   return {
