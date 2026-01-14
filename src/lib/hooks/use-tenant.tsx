@@ -131,6 +131,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchTenant();
+
+    // Listen for auth state changes to re-fetch tenant when user logs in/out
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        fetchTenant();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const refreshTenant = async () => {
