@@ -152,7 +152,7 @@ export function Dropdown({ trigger, children, align = "left", className }: Dropd
             className
           )}
         >
-          <div className="p-1" onClick={() => setIsOpen(false)}>
+          <div className="p-1">
             {children}
           </div>
         </div>
