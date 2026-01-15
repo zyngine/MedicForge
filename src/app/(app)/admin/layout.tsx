@@ -13,6 +13,8 @@ import {
   Building2,
   BarChart3,
   Stethoscope,
+  ClipboardList,
+  Database,
 } from "lucide-react";
 
 const adminNavigation = [
@@ -35,6 +37,16 @@ const adminNavigation = [
     title: "Clinical Sites",
     href: "/admin/clinical-sites",
     icon: <Stethoscope className="h-5 w-5" />,
+  },
+  {
+    title: "Exams & Templates",
+    href: "/instructor/exams",
+    icon: <ClipboardList className="h-5 w-5" />,
+  },
+  {
+    title: "Question Bank",
+    href: "/instructor/question-bank",
+    icon: <Database className="h-5 w-5" />,
   },
   {
     title: "Billing",
