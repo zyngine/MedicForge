@@ -20,6 +20,7 @@ import {
   Building2,
   Crown,
   ExternalLink,
+  Calendar,
 } from "lucide-react";
 
 interface Tenant {
@@ -36,7 +37,8 @@ const PRICING_TIERS = [
   {
     id: "free",
     name: "Starter",
-    price: 0,
+    monthlyPrice: 0,
+    yearlyPrice: 0,
     description: "For small programs getting started",
     features: [
       "1 instructor",
@@ -50,7 +52,8 @@ const PRICING_TIERS = [
   {
     id: "pro",
     name: "Professional",
-    price: 99,
+    monthlyPrice: 149,
+    yearlyPrice: 1490, // ~$124/month - 2 months free
     description: "For growing training programs",
     features: [
       "Up to 5 instructors",
@@ -67,7 +70,8 @@ const PRICING_TIERS = [
   {
     id: "institution",
     name: "Institution",
-    price: 299,
+    monthlyPrice: 399,
+    yearlyPrice: 3990, // ~$332/month - 2 months free
     description: "For colleges and large academies",
     features: [
       "Unlimited instructors",
@@ -82,6 +86,8 @@ const PRICING_TIERS = [
   },
 ];
 
+type BillingInterval = "monthly" | "yearly";
+
 export default function BillingPage() {
   const searchParams = useSearchParams();
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -89,6 +95,7 @@ export default function BillingPage() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("yearly"); // Default to yearly for colleges
 
   useEffect(() => {
     // Check for success/cancel from Stripe redirect
@@ -144,7 +151,7 @@ export default function BillingPage() {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, tenantId: tenant.id }),
+        body: JSON.stringify({ tier, tenantId: tenant.id, interval: billingInterval }),
       });
 
       const data = await response.json();
@@ -286,9 +293,46 @@ export default function BillingPage() {
 
       {/* Pricing Tiers */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">
-          {currentTier === "free" ? "Upgrade Your Plan" : "Available Plans"}
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">
+            {currentTier === "free" ? "Upgrade Your Plan" : "Available Plans"}
+          </h2>
+
+          {/* Billing Interval Toggle */}
+          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+            <button
+              onClick={() => setBillingInterval("monthly")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                billingInterval === "monthly"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval("yearly")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                billingInterval === "yearly"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Yearly
+              <Badge variant="success" className="text-xs">Save 17%</Badge>
+            </button>
+          </div>
+        </div>
+
+        {billingInterval === "yearly" && (
+          <Alert variant="info" className="mb-6">
+            <Calendar className="h-4 w-4" />
+            <span>
+              <strong>Annual billing</strong> - Pay once per year and save 2 months. Perfect for academic institutions with annual budgets.
+            </span>
+          </Alert>
+        )}
+
         <div className="grid md:grid-cols-3 gap-6">
           {PRICING_TIERS.map((tier) => {
             const isCurrent = tier.id === currentTier;
@@ -322,14 +366,32 @@ export default function BillingPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold">{tier.name}</h3>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold">
-                          ${tier.price}
-                        </span>
-                        {tier.price > 0 && (
-                          <span className="text-muted-foreground">/month</span>
-                        )}
-                      </div>
+                      {billingInterval === "monthly" ? (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold">
+                            ${tier.monthlyPrice}
+                          </span>
+                          {tier.monthlyPrice > 0 && (
+                            <span className="text-muted-foreground">/month</span>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold">
+                              ${tier.yearlyPrice.toLocaleString()}
+                            </span>
+                            {tier.yearlyPrice > 0 && (
+                              <span className="text-muted-foreground">/year</span>
+                            )}
+                          </div>
+                          {tier.yearlyPrice > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              ${Math.round(tier.yearlyPrice / 12)}/month equivalent
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

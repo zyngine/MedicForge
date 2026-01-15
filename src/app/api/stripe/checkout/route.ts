@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStripeClient, PRICE_IDS, PriceTier } from "@/lib/stripe/server";
+import { getStripeClient, PRICE_IDS, PriceTier, BillingInterval, getPriceId } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -14,10 +14,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { tier, tenantId } = body as { tier: PriceTier; tenantId: string };
+    const { tier, tenantId, interval = "monthly" } = body as {
+      tier: PriceTier;
+      tenantId: string;
+      interval?: BillingInterval;
+    };
 
     if (!tier || !PRICE_IDS[tier]) {
       return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
+    }
+
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 });
     }
 
     if (!tenantId) {
@@ -68,6 +76,9 @@ export async function POST(request: NextRequest) {
         .eq("id", tenantId);
     }
 
+    // Get the correct price ID based on tier and interval
+    const priceId = getPriceId(tier, interval);
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -75,7 +86,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: PRICE_IDS[tier],
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -84,13 +95,17 @@ export async function POST(request: NextRequest) {
       metadata: {
         tenant_id: tenantId,
         tier,
+        interval,
       },
       subscription_data: {
         metadata: {
           tenant_id: tenantId,
           tier,
+          interval,
         },
       },
+      // Allow promotion codes for yearly discounts
+      allow_promotion_codes: true,
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
