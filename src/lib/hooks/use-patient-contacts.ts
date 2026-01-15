@@ -49,7 +49,7 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
         .from("clinical_patient_contacts")
         .select(`
           *,
-          student:users(id, full_name, email),
+          student:users!clinical_patient_contacts_student_id_fkey(id, full_name, email),
           booking:clinical_shift_bookings(
             *,
             shift:clinical_shifts(
@@ -283,7 +283,7 @@ export function usePatientContact(contactId: string | null) {
           .from("clinical_patient_contacts")
           .select(`
             *,
-            student:users(id, full_name, email),
+            student:users!clinical_patient_contacts_student_id_fkey(id, full_name, email),
             booking:clinical_shift_bookings(
               *,
               shift:clinical_shifts(

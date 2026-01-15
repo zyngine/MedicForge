@@ -19,3 +19,4 @@ export * from "./switch";
 export * from "./toast";
 export * from "./skeleton";
 export * from "./theme-toggle";
+export * from "./filter-select";

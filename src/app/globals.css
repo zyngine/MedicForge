@@ -201,3 +201,20 @@ body {
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Fix native select dropdown styling */
+select {
+  color-scheme: light dark;
+}
+
+select option {
+  background-color: white;
+  color: #1A202C;
+}
+
+@media (prefers-color-scheme: dark) {
+  select option {
+    background-color: #2D3748;
+    color: #F7FAFC;
+  }
+}

@@ -30,19 +30,15 @@ export function usePlatformAdmin(): UsePlatformAdminReturn {
         setUser(user);
 
         if (user) {
-          // Check if user is in platform_admins table
-          const { data: adminData, error: adminError } = await supabase
-            .from("platform_admins")
-            .select("id, role")
-            .eq("user_id", user.id)
-            .single();
+          // Use RPC function to check admin status (bypasses RLS)
+          const { data: isAdmin, error: adminError } = await supabase
+            .rpc("is_platform_admin");
 
-          if (adminError && adminError.code !== "PGRST116") {
-            // PGRST116 = no rows found, which is fine
+          if (adminError) {
             console.error("Error checking admin status:", adminError);
           }
 
-          setIsPlatformAdmin(!!adminData);
+          setIsPlatformAdmin(!!isAdmin);
         }
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to check admin status"));
@@ -60,13 +56,8 @@ export function usePlatformAdmin(): UsePlatformAdminReturn {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const { data: adminData } = await supabase
-          .from("platform_admins")
-          .select("id, role")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setIsPlatformAdmin(!!adminData);
+        const { data: isAdmin } = await supabase.rpc("is_platform_admin");
+        setIsPlatformAdmin(!!isAdmin);
       } else {
         setIsPlatformAdmin(false);
       }

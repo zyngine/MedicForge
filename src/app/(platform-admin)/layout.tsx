@@ -13,6 +13,7 @@ import {
   Users,
   Settings,
   Shield,
+  Database,
 } from "lucide-react";
 
 const platformAdminNavigation = [
@@ -25,6 +26,11 @@ const platformAdminNavigation = [
     title: "Institutions",
     href: "/platform-admin/tenants",
     icon: <Building2 className="h-5 w-5" />,
+  },
+  {
+    title: "Question Bank",
+    href: "/platform-admin/question-bank",
+    icon: <Database className="h-5 w-5" />,
   },
   {
     title: "Subscriptions",

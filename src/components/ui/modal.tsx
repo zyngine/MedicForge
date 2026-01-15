@@ -62,13 +62,13 @@ export function Modal({
       {/* Modal */}
       <div
         className={cn(
-          "relative z-50 w-full mx-4 bg-background rounded-lg shadow-lg animate-slide-up",
+          "relative z-50 w-full mx-4 bg-background rounded-lg shadow-lg animate-slide-up flex flex-col max-h-[90vh]",
           sizeClasses[size]
         )}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
             <div>
               {title && <h2 className="text-lg font-semibold">{title}</h2>}
               {description && (
@@ -84,7 +84,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   GraduationCap,
   Shield,
   PieChart,
+  FileText,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -83,6 +84,11 @@ const instructorNavigation = [
     title: "Clinical",
     href: "/instructor/clinical",
     icon: <Stethoscope className="h-5 w-5" />,
+  },
+  {
+    title: "Patient Contacts",
+    href: "/instructor/clinical/patient-contacts",
+    icon: <FileText className="h-5 w-5" />,
   },
   {
     title: "Calendar",

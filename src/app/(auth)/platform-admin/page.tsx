@@ -40,14 +40,11 @@ export default function PlatformAdminLoginPage() {
         return;
       }
 
-      // Check if user is a platform admin
-      const { data: adminData, error: adminError } = await supabase
-        .from("platform_admins")
-        .select("id, role")
-        .eq("user_id", data.user.id)
-        .single();
+      // Check if user is a platform admin using RPC function (bypasses RLS)
+      const { data: isAdmin, error: adminError } = await supabase
+        .rpc("is_platform_admin");
 
-      if (adminError || !adminData) {
+      if (adminError || !isAdmin) {
         // Sign out if not an admin
         await supabase.auth.signOut();
         setError("Access denied. This login is for platform administrators only.");

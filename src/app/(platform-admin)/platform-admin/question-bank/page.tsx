@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Badge,
   Input,
   Spinner,
@@ -27,26 +25,45 @@ import {
   Trash2,
   Edit,
   Eye,
+  Database,
 } from "lucide-react";
-import {
-  useQuestionBank,
-  useQuestionBankCategories,
-  type QuestionBankItem,
-  type QuestionBankFilters,
-  type CertificationLevel,
-  type QuestionDifficulty,
-} from "@/lib/hooks/use-question-bank";
-import { QuestionEditor } from "@/components/question-bank/question-editor";
-import { QuestionImporter } from "@/components/question-bank/question-importer";
 
-const difficultyColors: Record<QuestionDifficulty, string> = {
+interface QuestionBankItem {
+  id: string;
+  question_text: string;
+  question_type: string;
+  options: Array<{ id: string; text: string; isCorrect: boolean }> | null;
+  correct_answer: unknown;
+  explanation: string | null;
+  certification_level: string;
+  difficulty: string;
+  tags: string[] | null;
+  points: number;
+  time_estimate_seconds: number;
+  times_used: number;
+  times_correct: number;
+  avg_time_seconds: number | null;
+  is_validated: boolean;
+  tenant_id: string | null;
+  created_at: string;
+}
+
+interface QuestionFilters {
+  search?: string;
+  certificationLevel?: string;
+  difficulty?: string;
+  isValidated?: string;
+  isGlobal?: string;
+}
+
+const difficultyColors: Record<string, string> = {
   easy: "bg-green-100 text-green-800",
   medium: "bg-yellow-100 text-yellow-800",
   hard: "bg-orange-100 text-orange-800",
   expert: "bg-red-100 text-red-800",
 };
 
-const certificationColors: Record<CertificationLevel, string> = {
+const certificationColors: Record<string, string> = {
   EMR: "bg-gray-100 text-gray-800",
   EMT: "bg-blue-100 text-blue-800",
   AEMT: "bg-purple-100 text-purple-800",
@@ -54,45 +71,160 @@ const certificationColors: Record<CertificationLevel, string> = {
   All: "bg-slate-100 text-slate-800",
 };
 
-export default function QuestionBankPage() {
-  const [filters, setFilters] = useState<QuestionBankFilters>({});
+export default function PlatformQuestionBankPage() {
+  const [questions, setQuestions] = useState<QuestionBankItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<QuestionFilters>({});
   const [showFilters, setShowFilters] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
-  const [showImporter, setShowImporter] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<QuestionBankItem | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionBankItem | null>(null);
 
-  const { questions, total, isLoading, error, createQuestion, updateQuestion, deleteQuestion, validateQuestion, refetch } =
-    useQuestionBank(filters);
-  const { categories } = useQuestionBankCategories();
+  useEffect(() => {
+    fetchQuestions();
+  }, [filters]);
+
+  const fetchQuestions = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query = (supabase as any)
+        .from("question_bank")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (filters.search) {
+        query = query.ilike("question_text", `%${filters.search}%`);
+      }
+
+      if (filters.certificationLevel) {
+        query = query.eq("certification_level", filters.certificationLevel);
+      }
+
+      if (filters.difficulty) {
+        query = query.eq("difficulty", filters.difficulty);
+      }
+
+      if (filters.isValidated === "true") {
+        query = query.eq("is_validated", true);
+      } else if (filters.isValidated === "false") {
+        query = query.eq("is_validated", false);
+      }
+
+      if (filters.isGlobal === "true") {
+        query = query.is("tenant_id", null);
+      } else if (filters.isGlobal === "false") {
+        query = query.not("tenant_id", "is", null);
+      }
+
+      const { data, error: fetchError, count } = await query;
+
+      if (fetchError) throw fetchError;
+
+      setQuestions(data || []);
+      setTotal(count || 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch questions");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters((prev) => ({ ...prev, search: e.target.value }));
   };
 
-  const handleFilterChange = (key: keyof QuestionBankFilters, value: string | undefined) => {
+  const handleFilterChange = (key: keyof QuestionFilters, value: string | undefined) => {
     setFilters((prev) => ({ ...prev, [key]: value || undefined }));
   };
 
-  const handleDelete = async (question: QuestionBankItem) => {
-    if (confirm(`Delete question "${question.question_text.substring(0, 50)}..."?`)) {
-      await deleteQuestion(question.id);
+  const handleMakeGlobal = async (question: QuestionBankItem) => {
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("question_bank")
+      .update({ tenant_id: null })
+      .eq("id", question.id);
+
+    if (!error) {
+      fetchQuestions();
     }
   };
 
-  if (isLoading) {
+  const handleValidate = async (question: QuestionBankItem) => {
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("question_bank")
+      .update({ is_validated: true })
+      .eq("id", question.id);
+
+    if (!error) {
+      fetchQuestions();
+    }
+  };
+
+  const handleDelete = async (question: QuestionBankItem) => {
+    if (!confirm(`Delete question "${question.question_text.substring(0, 50)}..."?`)) {
+      return;
+    }
+
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("question_bank")
+      .delete()
+      .eq("id", question.id);
+
+    if (!error) {
+      fetchQuestions();
+    }
+  };
+
+  const handleMakeAllGlobal = async () => {
+    if (!confirm("Make all questions global (visible to all tenants)?")) {
+      return;
+    }
+
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("question_bank")
+      .update({ tenant_id: null })
+      .not("tenant_id", "is", null);
+
+    if (!error) {
+      fetchQuestions();
+    }
+  };
+
+  const handleValidateAll = async () => {
+    if (!confirm("Validate all pending questions?")) {
+      return;
+    }
+
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("question_bank")
+      .update({ is_validated: true })
+      .eq("is_validated", false);
+
+    if (!error) {
+      fetchQuestions();
+    }
+  };
+
+  if (isLoading && questions.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner size="lg" />
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="error" title="Error loading question bank">
-        {error.message}
-      </Alert>
     );
   }
 
@@ -101,22 +233,28 @@ export default function QuestionBankPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Question Bank</h1>
+          <h1 className="text-2xl font-bold">Global Question Bank</h1>
           <p className="text-muted-foreground">
-            {total} validated questions for assessments
+            {total.toLocaleString()} questions across all tenants
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImporter(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import
+          <Button variant="outline" onClick={handleMakeAllGlobal}>
+            <Database className="h-4 w-4 mr-2" />
+            Make All Global
           </Button>
-          <Button onClick={() => setShowEditor(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Question
+          <Button variant="outline" onClick={handleValidateAll}>
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Validate All
           </Button>
         </div>
       </div>
+
+      {error && (
+        <Alert variant="error" title="Error">
+          {error}
+        </Alert>
+      )}
 
       {/* Search & Filters */}
       <Card>
@@ -137,9 +275,9 @@ export default function QuestionBankPage() {
             >
               <Filter className="h-4 w-4 mr-2" />
               Filters
-              {Object.keys(filters).filter((k) => k !== "search" && filters[k as keyof QuestionBankFilters]).length > 0 && (
+              {Object.keys(filters).filter((k) => k !== "search" && filters[k as keyof QuestionFilters]).length > 0 && (
                 <Badge className="ml-2" variant="secondary">
-                  {Object.keys(filters).filter((k) => k !== "search" && filters[k as keyof QuestionBankFilters]).length}
+                  {Object.keys(filters).filter((k) => k !== "search" && filters[k as keyof QuestionFilters]).length}
                 </Badge>
               )}
             </Button>
@@ -147,18 +285,6 @@ export default function QuestionBankPage() {
 
           {showFilters && (
             <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Category</label>
-                <FilterSelect
-                  value={filters.categoryId || ""}
-                  onChange={(value) => handleFilterChange("categoryId", value)}
-                  placeholder="All Categories"
-                  options={[
-                    { value: "", label: "All Categories" },
-                    ...categories.map((cat) => ({ value: cat.id, label: cat.name }))
-                  ]}
-                />
-              </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Certification</label>
                 <FilterSelect
@@ -192,13 +318,26 @@ export default function QuestionBankPage() {
               <div>
                 <label className="text-sm font-medium mb-1 block">Status</label>
                 <FilterSelect
-                  value={filters.isValidated === undefined ? "" : filters.isValidated ? "true" : "false"}
-                  onChange={(value) => handleFilterChange("isValidated", value === "" ? undefined : value)}
+                  value={filters.isValidated || ""}
+                  onChange={(value) => handleFilterChange("isValidated", value)}
                   placeholder="All"
                   options={[
                     { value: "", label: "All" },
                     { value: "true", label: "Validated" },
                     { value: "false", label: "Pending Review" },
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Scope</label>
+                <FilterSelect
+                  value={filters.isGlobal || ""}
+                  onChange={(value) => handleFilterChange("isGlobal", value)}
+                  placeholder="All"
+                  options={[
+                    { value: "", label: "All" },
+                    { value: "true", label: "Global" },
+                    { value: "false", label: "Tenant-Specific" },
                   ]}
                 />
               </div>
@@ -214,15 +353,11 @@ export default function QuestionBankPage() {
             <div className="text-center">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Questions Found</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground">
                 {Object.keys(filters).length > 0
                   ? "Try adjusting your filters"
-                  : "Start building your question bank"}
+                  : "No questions in the bank yet"}
               </p>
-              <Button onClick={() => setShowEditor(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Question
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -233,11 +368,11 @@ export default function QuestionBankPage() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className={certificationColors[question.certification_level]}>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <Badge className={certificationColors[question.certification_level] || "bg-gray-100"}>
                         {question.certification_level}
                       </Badge>
-                      <Badge className={difficultyColors[question.difficulty]}>
+                      <Badge className={difficultyColors[question.difficulty] || "bg-gray-100"}>
                         {question.difficulty}
                       </Badge>
                       {question.is_validated ? (
@@ -248,8 +383,13 @@ export default function QuestionBankPage() {
                       ) : (
                         <Badge variant="secondary">Pending Review</Badge>
                       )}
-                      {question.category && (
-                        <Badge variant="outline">{question.category.name}</Badge>
+                      {question.tenant_id === null ? (
+                        <Badge variant="outline" className="border-blue-500 text-blue-600">
+                          <Database className="h-3 w-3 mr-1" />
+                          Global
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Tenant-Specific</Badge>
                       )}
                     </div>
                     <p className="font-medium line-clamp-2">{question.question_text}</p>
@@ -278,21 +418,21 @@ export default function QuestionBankPage() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingQuestion(question);
-                        setShowEditor(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {question.tenant_id !== null && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMakeGlobal(question)}
+                        title="Make global"
+                      >
+                        <Database className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    )}
                     {!question.is_validated && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => validateQuestion(question.id)}
+                        onClick={() => handleValidate(question)}
                         title="Validate question"
                       >
                         <CheckCircle className="h-4 w-4 text-green-600" />
@@ -313,52 +453,6 @@ export default function QuestionBankPage() {
         </div>
       )}
 
-      {/* Question Editor Modal */}
-      <Modal
-        isOpen={showEditor}
-        onClose={() => {
-          setShowEditor(false);
-          setEditingQuestion(null);
-        }}
-        title={editingQuestion ? "Edit Question" : "Add Question"}
-        size="xl"
-      >
-        <QuestionEditor
-          question={editingQuestion}
-          categories={categories}
-          onSave={async (data) => {
-            if (editingQuestion) {
-              await updateQuestion(editingQuestion.id, data);
-            } else {
-              await createQuestion(data);
-            }
-            setShowEditor(false);
-            setEditingQuestion(null);
-          }}
-          onCancel={() => {
-            setShowEditor(false);
-            setEditingQuestion(null);
-          }}
-        />
-      </Modal>
-
-      {/* Question Importer Modal */}
-      <Modal
-        isOpen={showImporter}
-        onClose={() => setShowImporter(false)}
-        title="Import Questions"
-        size="lg"
-      >
-        <QuestionImporter
-          categories={categories}
-          onImport={async () => {
-            setShowImporter(false);
-            refetch();
-          }}
-          onCancel={() => setShowImporter(false)}
-        />
-      </Modal>
-
       {/* Question Preview Modal */}
       <Modal
         isOpen={!!selectedQuestion}
@@ -369,14 +463,16 @@ export default function QuestionBankPage() {
         {selectedQuestion && (
           <div className="space-y-4">
             <div className="flex gap-2 flex-wrap">
-              <Badge className={certificationColors[selectedQuestion.certification_level]}>
+              <Badge className={certificationColors[selectedQuestion.certification_level] || "bg-gray-100"}>
                 {selectedQuestion.certification_level}
               </Badge>
-              <Badge className={difficultyColors[selectedQuestion.difficulty]}>
+              <Badge className={difficultyColors[selectedQuestion.difficulty] || "bg-gray-100"}>
                 {selectedQuestion.difficulty}
               </Badge>
-              {selectedQuestion.category && (
-                <Badge variant="outline">{selectedQuestion.category.name}</Badge>
+              {selectedQuestion.tenant_id === null ? (
+                <Badge variant="outline" className="border-blue-500 text-blue-600">Global</Badge>
+              ) : (
+                <Badge variant="outline">Tenant-Specific</Badge>
               )}
             </div>
 

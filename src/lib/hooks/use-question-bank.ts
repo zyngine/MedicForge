@@ -293,25 +293,47 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     }
   };
 
-  const importQuestions = async (questions: CreateQuestionInput[]): Promise<number> => {
+  const importQuestions = async (questionsToImport: CreateQuestionInput[]): Promise<number> => {
     try {
-      const questionsWithMeta = questions.map((q) => ({
+      // Ensure profile is loaded before importing
+      if (!profile?.tenant_id || !profile?.id) {
+        console.error("Import failed: User profile not loaded", { profile });
+        toast.error("Please wait for your profile to load and try again");
+        return 0;
+      }
+
+      if (questionsToImport.length === 0) {
+        toast.error("No questions to import");
+        return 0;
+      }
+
+      const questionsWithMeta = questionsToImport.map((q) => ({
         ...q,
-        tenant_id: profile?.tenant_id,
-        created_by: profile?.id,
+        tenant_id: profile.tenant_id,
+        created_by: profile.id,
+        // Ensure correct_answer is valid JSONB (required field)
+        correct_answer: q.correct_answer ?? { answerId: "a" },
       }));
+
+      console.log("Importing questions:", questionsWithMeta.length);
 
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
         .insert(questionsWithMeta)
         .select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Question bank insert error:", insertError);
+        throw insertError;
+      }
+
       toast.success(`${data?.length || 0} questions imported`);
       fetchQuestions();
       return data?.length || 0;
     } catch (err) {
-      toast.error("Failed to import questions");
+      console.error("Import questions failed:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Failed to import questions: ${errorMessage}`);
       return 0;
     }
   };

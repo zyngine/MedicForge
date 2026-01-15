@@ -1,4 +1,6 @@
-"use client";
+const fs = require('fs');
+
+const content = `"use client";
 
 import * as React from "react";
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
@@ -93,8 +95,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           if (userProfile?.tenant_id) {
             tenantId = userProfile.tenant_id;
             // Set the cookie for future requests (client-side only)
-            document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax`;
-            document.cookie = `tenant_slug=user-tenant; path=/; samesite=lax`;
+            document.cookie = \`tenant_id=\${encodeURIComponent(tenantId)}; path=/; samesite=lax\`;
+            document.cookie = \`tenant_slug=user-tenant; path=/; samesite=lax\`;
           }
         }
       }
@@ -135,7 +137,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         });
         // Also set the tenant_slug cookie with actual slug
         if (typeof document !== "undefined") {
-          document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax`;
+          document.cookie = \`tenant_slug=\${encodeURIComponent(data.slug)}; path=/; samesite=lax\`;
         }
       }
     } catch (err) {
@@ -261,3 +263,7 @@ export function useTenantBranding() {
     isWhiteLabeled: !!tenant?.logo_url,
   };
 }
+`;
+
+fs.writeFileSync('src/lib/hooks/use-tenant.tsx', content);
+console.log('File updated');

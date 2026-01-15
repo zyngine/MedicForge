@@ -170,9 +170,19 @@ export async function updateSession(request: NextRequest) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // User is logged in, redirect to dashboard
+        // User is logged in, check their role to redirect to correct dashboard
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
         const url = request.nextUrl.clone();
-        url.pathname = "/student/dashboard";
+        if (profile?.role === "student") {
+          url.pathname = "/student/dashboard";
+        } else {
+          url.pathname = "/instructor/dashboard";
+        }
         return NextResponse.redirect(url);
       }
     } catch {
