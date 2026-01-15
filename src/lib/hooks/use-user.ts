@@ -59,6 +59,19 @@ export function useUser(): UseUserReturn {
 
     const getUser = async () => {
       try {
+        // First check if we have a session (fast, from cookies)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (sessionError || !session) {
+          // No session, user is not logged in
+          loadingRef.current = false;
+          setIsLoading(false);
+          return;
+        }
+
+        // We have a session, now verify with getUser (validates JWT with server)
         const {
           data: { user },
           error: authError,
@@ -67,7 +80,25 @@ export function useUser(): UseUserReturn {
         if (!isMounted) return;
 
         if (authError) {
-          console.error("Auth error:", authError);
+          // Token might be expired, try to refresh
+          console.log("Auth error, attempting refresh:", authError.message);
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.user) {
+            console.error("Session refresh failed:", refreshError);
+            loadingRef.current = false;
+            setIsLoading(false);
+            return;
+          }
+
+          // Refresh succeeded, use the new user data
+          setUser(refreshData.user);
+          if (refreshData.user) {
+            const profileData = await fetchProfile(refreshData.user.id);
+            if (isMounted) {
+              setProfile(profileData);
+            }
+          }
           loadingRef.current = false;
           setIsLoading(false);
           return;
@@ -94,14 +125,15 @@ export function useUser(): UseUserReturn {
       }
     };
 
-    // Set a timeout to prevent infinite loading - use ref to check current state
+    // Set a timeout to prevent infinite loading - increased to 15 seconds
+    // to allow for session refresh which can take longer
     const timeout = setTimeout(() => {
       if (isMounted && loadingRef.current) {
         console.warn("User fetch timeout - stopping loading state");
         loadingRef.current = false;
         setIsLoading(false);
       }
-    }, 10000);
+    }, 15000);
 
     getUser();
 
@@ -110,6 +142,17 @@ export function useUser(): UseUserReturn {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
+
+      // Handle different auth events
+      if (event === "TOKEN_REFRESHED") {
+        console.log("Session token refreshed");
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        setProfile(null);
+        loadingRef.current = false;
+        setIsLoading(false);
+        return;
+      }
 
       setUser(session?.user ?? null);
 
@@ -132,6 +175,27 @@ export function useUser(): UseUserReturn {
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
+
+  // Separate effect for visibility change - refresh session when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible" && user) {
+        try {
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.log("Background refresh failed, session may have expired");
+          }
+        } catch (err) {
+          console.error("Visibility refresh error:", err);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
 
   const signOut = async () => {
     try {

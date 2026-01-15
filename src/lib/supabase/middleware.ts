@@ -194,12 +194,31 @@ export async function updateSession(request: NextRequest) {
   // Protected routes - require login
   if (isProtectedRoute || isPlatformAdminRoute) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        url.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(url);
+      // First, try to refresh the session - this handles expired access tokens
+      // getUser() will automatically use refresh token if access token is expired
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        // Check if we have a session that might need refreshing
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          // No session at all, redirect to login
+          const url = request.nextUrl.clone();
+          url.pathname = "/login";
+          url.searchParams.set("redirect", pathname);
+          return NextResponse.redirect(url);
+        }
+
+        // We have a session but getUser failed - try to refresh explicitly
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          // Refresh failed, session is truly expired
+          const url = request.nextUrl.clone();
+          url.pathname = "/login";
+          url.searchParams.set("redirect", pathname);
+          return NextResponse.redirect(url);
+        }
       }
     } catch {
       // If auth check fails, redirect to login
