@@ -81,11 +81,14 @@ export function useSkillSheetTemplates(filters?: SkillSheetFilters) {
   const [templates, setTemplates] = useState<SkillSheetTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const supabase = createClient();
+
+  // Serialize filters to use as stable dependency
+  const filterKey = JSON.stringify(filters || {});
 
   const fetchTemplates = useCallback(async () => {
     try {
       setIsLoading(true);
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("skill_sheet_templates")
@@ -114,7 +117,8 @@ export function useSkillSheetTemplates(filters?: SkillSheetFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase, filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
 
   useEffect(() => {
     fetchTemplates();
@@ -133,7 +137,6 @@ export function useSkillSheetTemplate(templateId: string) {
   const [template, setTemplate] = useState<SkillSheetTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     if (!templateId) return;
@@ -141,6 +144,7 @@ export function useSkillSheetTemplate(templateId: string) {
     const fetchTemplate = async () => {
       try {
         setIsLoading(true);
+        const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error: fetchError } = await (supabase as any)
           .from("skill_sheet_templates")
@@ -158,7 +162,7 @@ export function useSkillSheetTemplate(templateId: string) {
     };
 
     fetchTemplate();
-  }, [templateId, supabase]);
+  }, [templateId]);
 
   return { template, isLoading, error };
 }
@@ -174,11 +178,14 @@ export function useSkillSheetAttempts(options?: {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { profile } = useUser();
-  const supabase = createClient();
+
+  // Serialize options to use as stable dependency
+  const optionsKey = JSON.stringify(options || {});
 
   const fetchAttempts = useCallback(async () => {
     try {
       setIsLoading(true);
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("skill_sheet_attempts")
@@ -211,7 +218,8 @@ export function useSkillSheetAttempts(options?: {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase, options]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionsKey]);
 
   useEffect(() => {
     fetchAttempts();
@@ -220,6 +228,7 @@ export function useSkillSheetAttempts(options?: {
   // Start a new attempt
   const startAttempt = async (templateId: string, courseId?: string): Promise<SkillSheetAttempt | null> => {
     try {
+      const supabase = createClient();
       // Get current attempt count
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { count } = await (supabase as any)
@@ -267,6 +276,7 @@ export function useSkillSheetAttempts(options?: {
     }
   ): Promise<boolean> => {
     try {
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("skill_sheet_attempts")
@@ -287,6 +297,7 @@ export function useSkillSheetAttempts(options?: {
   // Submit attempt for evaluation
   const submitAttempt = async (attemptId: string): Promise<boolean> => {
     try {
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("skill_sheet_attempts")
@@ -325,6 +336,7 @@ export function useSkillSheetAttempts(options?: {
     }
   ): Promise<boolean> => {
     try {
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("skill_sheet_attempts")
@@ -369,7 +381,6 @@ export function useStudentSkillProgress(studentId?: string) {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useUser();
-  const supabase = createClient();
 
   const effectiveStudentId = studentId || profile?.id;
 
@@ -379,6 +390,7 @@ export function useStudentSkillProgress(studentId?: string) {
     const fetchProgress = async () => {
       try {
         setIsLoading(true);
+        const supabase = createClient();
 
         // Get all templates
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -435,7 +447,7 @@ export function useStudentSkillProgress(studentId?: string) {
     };
 
     fetchProgress();
-  }, [effectiveStudentId, supabase]);
+  }, [effectiveStudentId]);
 
   return { progress, isLoading };
 }
@@ -444,11 +456,11 @@ export function useStudentSkillProgress(studentId?: string) {
 export function useSkillCategories() {
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data } = await (supabase as any)
           .from("skill_sheet_templates")
@@ -467,7 +479,7 @@ export function useSkillCategories() {
     };
 
     fetchCategories();
-  }, [supabase]);
+  }, []);
 
   return { categories, isLoading };
 }
