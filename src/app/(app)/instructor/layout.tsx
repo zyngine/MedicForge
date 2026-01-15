@@ -21,6 +21,8 @@ import {
   Shield,
   PieChart,
   FileText,
+  Brain,
+  ClipboardCheck,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -54,6 +56,16 @@ const instructorNavigation = [
     title: "Question Bank",
     href: "/instructor/question-bank",
     icon: <Database className="h-5 w-5" />,
+  },
+  {
+    title: "Exams & CAT",
+    href: "/instructor/exams",
+    icon: <Brain className="h-5 w-5" />,
+  },
+  {
+    title: "Skill Sheets",
+    href: "/instructor/skill-sheets",
+    icon: <ClipboardCheck className="h-5 w-5" />,
   },
   {
     title: "Rubrics",

@@ -63,12 +63,12 @@ export function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-card border-r transition-transform lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-card border-r transition-transform lg:translate-x-0 flex flex-col",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 border-b">
+        <div className="flex items-center justify-between h-16 px-4 border-b shrink-0">
           <Link href="/" className="flex items-center gap-2">
             {isWhiteLabeled ? (
               <Image
@@ -98,14 +98,14 @@ export function DashboardLayout({
         </div>
 
         {/* Portal indicator */}
-        <div className="px-4 py-3 border-b">
+        <div className="px-4 py-3 border-b shrink-0">
           <Badge variant="secondary" className="w-full justify-center">
             {portalName}
           </Badge>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {/* Navigation - scrollable */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 min-h-0">
           <ul className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -138,7 +138,7 @@ export function DashboardLayout({
         </nav>
 
         {/* Help section */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t shrink-0">
           <Link
             href="/help"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
