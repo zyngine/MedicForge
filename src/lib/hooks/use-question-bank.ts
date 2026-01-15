@@ -92,11 +92,11 @@ export function useQuestionBankCategories() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { profile } = useUser();
-  const supabase = createClient();
 
   const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: fetchError } = await (supabase as any)
         .from("question_bank_categories")
@@ -111,7 +111,7 @@ export function useQuestionBankCategories() {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
@@ -119,6 +119,7 @@ export function useQuestionBankCategories() {
 
   const createCategory = async (input: Partial<QuestionBankCategory>) => {
     try {
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank_categories")
@@ -154,11 +155,14 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { profile } = useUser();
-  const supabase = createClient();
+
+  // Serialize filters to stable string for dependency
+  const filterKey = JSON.stringify(filters || {});
 
   const fetchQuestions = useCallback(async () => {
     try {
       setIsLoading(true);
+      const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("question_bank")
@@ -197,7 +201,8 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase, filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
 
   useEffect(() => {
     fetchQuestions();
@@ -205,6 +210,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
 
   const createQuestion = async (input: CreateQuestionInput): Promise<QuestionBankItem | null> => {
     try {
+      const supabase = createClient();
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
         .insert({
@@ -228,6 +234,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
 
   const updateQuestion = async (id: string, input: Partial<CreateQuestionInput>): Promise<QuestionBankItem | null> => {
     try {
+      const supabase = createClient();
       const { data, error: updateError } = await (supabase as any)
         .from("question_bank")
         .update({
@@ -250,6 +257,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
 
   const deleteQuestion = async (id: string): Promise<boolean> => {
     try {
+      const supabase = createClient();
       const { error: deleteError } = await (supabase as any)
         .from("question_bank")
         .update({ is_active: false })
@@ -268,6 +276,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
 
   const validateQuestion = async (id: string): Promise<boolean> => {
     try {
+      const supabase = createClient();
       const { error: updateError } = await (supabase as any)
         .from("question_bank")
         .update({
@@ -317,6 +326,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
 
       console.log("Importing questions:", questionsWithMeta.length);
 
+      const supabase = createClient();
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
         .insert(questionsWithMeta)
@@ -360,7 +370,6 @@ export function useQuestionStats(questionId?: string) {
     difficultyRating: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     if (!questionId) return;
@@ -368,6 +377,7 @@ export function useQuestionStats(questionId?: string) {
     const fetchStats = async () => {
       setIsLoading(true);
       try {
+        const supabase = createClient();
         const { data, error } = await (supabase as any)
           .from("question_bank")
           .select("times_used, times_correct, avg_time_seconds, difficulty")
@@ -392,7 +402,7 @@ export function useQuestionStats(questionId?: string) {
     };
 
     fetchStats();
-  }, [questionId, supabase]);
+  }, [questionId]);
 
   return { stats, isLoading };
 }
@@ -401,11 +411,11 @@ export function useQuestionStats(questionId?: string) {
 export function useAssignmentQuestions(assignmentId: string) {
   const [assignedQuestions, setAssignedQuestions] = useState<QuestionBankItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   const fetchAssignedQuestions = useCallback(async () => {
     try {
       setIsLoading(true);
+      const supabase = createClient();
       const { data, error } = await (supabase as any)
         .from("assignment_questions")
         .select("*, question:question_bank(*, category:question_bank_categories(*))")
@@ -420,7 +430,7 @@ export function useAssignmentQuestions(assignmentId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [assignmentId, supabase]);
+  }, [assignmentId]);
 
   useEffect(() => {
     if (assignmentId) {
@@ -430,6 +440,7 @@ export function useAssignmentQuestions(assignmentId: string) {
 
   const addQuestion = async (questionId: string, orderIndex?: number): Promise<boolean> => {
     try {
+      const supabase = createClient();
       const { error } = await (supabase as any).from("assignment_questions").insert({
         assignment_id: assignmentId,
         question_id: questionId,
@@ -448,6 +459,7 @@ export function useAssignmentQuestions(assignmentId: string) {
 
   const removeQuestion = async (questionId: string): Promise<boolean> => {
     try {
+      const supabase = createClient();
       const { error } = await (supabase as any)
         .from("assignment_questions")
         .delete()
@@ -466,6 +478,7 @@ export function useAssignmentQuestions(assignmentId: string) {
 
   const reorderQuestions = async (questionIds: string[]): Promise<boolean> => {
     try {
+      const supabase = createClient();
       const updates = questionIds.map((id, index) => ({
         assignment_id: assignmentId,
         question_id: id,
