@@ -17,8 +17,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing Supabase credentials');
-  console.error('URL:', supabaseUrl ? 'found' : 'missing');
-  console.error('Key:', supabaseServiceKey ? 'found' : 'missing');
   process.exit(1);
 }
 
@@ -43,10 +41,9 @@ function parseCSV(content) {
     const questionText = row.question || row.question_text || row.text;
     if (!questionText) continue;
 
-    // Parse options
     const options = [];
     ['a', 'b', 'c', 'd', 'e', 'f'].forEach(letter => {
-      const optionText = row[`option_${letter}`] || row[`option${letter}`] || row[letter];
+      const optionText = row['option_' + letter] || row['option' + letter] || row[letter];
       if (optionText) {
         const correctAnswer = (row.correct_answer || row.correct || row.answer || '').toUpperCase();
         options.push({
@@ -61,7 +58,7 @@ function parseCSV(content) {
       question_text: questionText,
       question_type: options.length > 0 ? 'multiple_choice' : 'short_answer',
       options: options.length > 0 ? options : null,
-      correct_answer: options.length > 0 
+      correct_answer: options.length > 0
         ? { answerId: (row.correct_answer || row.correct || row.answer || 'a').toLowerCase() }
         : { text: row.correct_answer || row.correct || row.answer || '' },
       explanation: row.rationale || row.explanation || null,
@@ -70,7 +67,6 @@ function parseCSV(content) {
       tags: row.category ? [row.category, row.subcategory].filter(Boolean) : null,
     });
   }
-
   return questions;
 }
 
@@ -94,10 +90,32 @@ function parseCSVLine(line) {
   return result;
 }
 
+async function fetchExistingQuestions() {
+  console.log('Fetching existing questions to check for duplicates...');
+  const existingTexts = new Set();
+  let offset = 0;
+  const batchSize = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('question_bank')
+      .select('question_text')
+      .range(offset, offset + batchSize - 1);
+
+    if (error || !data || data.length === 0) break;
+    data.forEach(q => existingTexts.add(q.question_text));
+    offset += batchSize;
+    if (data.length < batchSize) break;
+  }
+
+  console.log('Found ' + existingTexts.size + ' existing questions');
+  return existingTexts;
+}
+
 async function main() {
   console.log('Starting batch import...');
+  const existingTexts = await fetchExistingQuestions();
 
-  // Get first instructor to use as creator
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('id, tenant_id')
@@ -110,14 +128,14 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Using tenant_id: ${user.tenant_id}, created_by: ${user.id}`);
+  console.log('Using tenant_id: ' + user.tenant_id + ', created_by: ' + user.id);
 
   const importDir = path.join(__dirname, '..', 'question-imports');
   const files = fs.readdirSync(importDir).filter(f => f.endsWith('.csv'));
-
-  console.log(`Found ${files.length} CSV files to import`);
+  console.log('Found ' + files.length + ' CSV files to import');
 
   let totalImported = 0;
+  let totalSkipped = 0;
   let totalErrors = 0;
 
   for (const file of files) {
@@ -126,41 +144,53 @@ async function main() {
     const questions = parseCSV(content);
 
     if (questions.length === 0) {
-      console.log(`  Skipping ${file} - no valid questions`);
+      console.log('  Skipping ' + file + ' - no valid questions');
       continue;
     }
 
-    // Add tenant and creator info
-    const questionsWithMeta = questions.map(q => ({
+    const newQuestions = questions.filter(q => !existingTexts.has(q.question_text));
+    const skipped = questions.length - newQuestions.length;
+    totalSkipped += skipped;
+
+    if (newQuestions.length === 0) {
+      console.log('  Skipping ' + file + ' - all ' + questions.length + ' questions already exist');
+      continue;
+    }
+
+    const questionsWithMeta = newQuestions.map(q => ({
       ...q,
       tenant_id: user.tenant_id,
       created_by: user.id,
     }));
 
-    // Insert in batches of 100
     const batchSize = 100;
+    let fileImported = 0;
     for (let i = 0; i < questionsWithMeta.length; i += batchSize) {
       const batch = questionsWithMeta.slice(i, i + batchSize);
-      
+
       const { data, error } = await supabase
         .from('question_bank')
         .insert(batch)
         .select('id');
 
       if (error) {
-        console.error(`  Error importing batch from ${file}:`, error.message);
+        console.error('  Error importing batch from ' + file + ':', error.message);
         totalErrors += batch.length;
       } else {
         totalImported += data.length;
+        fileImported += data.length;
+        batch.forEach(q => existingTexts.add(q.question_text));
       }
     }
 
-    console.log(`  Imported ${questions.length} questions from ${file}`);
+    const skipMsg = skipped > 0 ? ' (' + skipped + ' duplicates skipped)' : '';
+    console.log('  Imported ' + fileImported + ' new questions from ' + file + skipMsg);
   }
 
   console.log('\n=== Import Complete ===');
-  console.log(`Total imported: ${totalImported}`);
-  console.log(`Total errors: ${totalErrors}`);
+  console.log('Total imported: ' + totalImported);
+  console.log('Total skipped (duplicates): ' + totalSkipped);
+  console.log('Total errors: ' + totalErrors);
 }
 
 main().catch(console.error);
