@@ -273,7 +273,7 @@ export default function InstructorCoursesPage() {
                       <BookOpen className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      {getTypeBadge(course.course_type)}
+                      {getTypeBadge(course.course_type || 'Custom')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

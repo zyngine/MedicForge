@@ -130,6 +130,7 @@ export function useExamTemplates() {
   const [templates, setTemplates] = useState<ExamTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { profile } = useUser();
   const supabase = createClient();
 
   const fetchTemplates = useCallback(async () => {
@@ -155,7 +156,82 @@ export function useExamTemplates() {
     fetchTemplates();
   }, [fetchTemplates]);
 
-  return { templates, isLoading, error, refetch: fetchTemplates };
+  const createTemplate = async (
+    input: Omit<ExamTemplate, "id" | "created_at" | "updated_at">
+  ): Promise<ExamTemplate | null> => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: createError } = await (supabase as any)
+        .from("standardized_exam_templates")
+        .insert({
+          ...input,
+          tenant_id: input.tenant_id || profile?.tenant_id || null,
+        })
+        .select("*")
+        .single();
+
+      if (createError) throw createError;
+      setTemplates((prev) => [...prev, data]);
+      toast.success("Template created successfully");
+      return data;
+    } catch (err) {
+      console.error("Failed to create template:", err);
+      toast.error("Failed to create template");
+      return null;
+    }
+  };
+
+  const updateTemplate = async (
+    id: string,
+    input: Partial<ExamTemplate>
+  ): Promise<boolean> => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
+        .from("standardized_exam_templates")
+        .update({ ...input, updated_at: new Date().toISOString() })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+      await fetchTemplates();
+      toast.success("Template updated");
+      return true;
+    } catch (err) {
+      console.error("Failed to update template:", err);
+      toast.error("Failed to update template");
+      return false;
+    }
+  };
+
+  const deleteTemplate = async (id: string): Promise<boolean> => {
+    try {
+      // Soft delete by setting is_active to false
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: deleteError } = await (supabase as any)
+        .from("standardized_exam_templates")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", id);
+
+      if (deleteError) throw deleteError;
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Template deleted");
+      return true;
+    } catch (err) {
+      console.error("Failed to delete template:", err);
+      toast.error("Failed to delete template");
+      return false;
+    }
+  };
+
+  return {
+    templates,
+    isLoading,
+    error,
+    refetch: fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+  };
 }
 
 export function useExamTemplate(templateId: string | undefined) {

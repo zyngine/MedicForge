@@ -47,10 +47,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
-import { useModules, useCreateModule } from "@/lib/hooks/use-modules";
+import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/lib/hooks/use-modules";
+import { useLessons, useCreateLesson, useUpdateLesson, useDeleteLesson } from "@/lib/hooks/use-lessons";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
+import { ModuleForm } from "@/components/course/module-form";
+import { LessonEditor } from "@/components/course/lesson-editor";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -65,11 +68,160 @@ function getStatusBadge(status: string) {
   }
 }
 
-function getModuleIcon(isPublished: boolean) {
+function getModuleIcon(isPublished: boolean | null) {
   if (isPublished) {
     return <CheckCircle className="h-5 w-5 text-success" />;
   }
   return <Circle className="h-5 w-5 text-muted-foreground" />;
+}
+
+function getLessonIcon(contentType: string | null) {
+  switch (contentType) {
+    case "video":
+      return <Video className="h-4 w-4 text-primary" />;
+    case "document":
+      return <FileText className="h-4 w-4 text-info" />;
+    case "embed":
+      return <Play className="h-4 w-4 text-success" />;
+    default:
+      return <File className="h-4 w-4 text-muted-foreground" />;
+  }
+}
+
+interface ModuleCardProps {
+  module: any;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddLesson: () => void;
+  onEditLesson: (lesson: any) => void;
+  onDeleteLesson: (lessonId: string) => void;
+}
+
+function ModuleCard({
+  module,
+  isExpanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onAddLesson,
+  onEditLesson,
+  onDeleteLesson,
+}: ModuleCardProps) {
+  const { data: lessons = [], isLoading: lessonsLoading } = useLessons(isExpanded ? module.id : "");
+
+  return (
+    <div className="rounded-lg border">
+      {/* Module Header */}
+      <div
+        className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+        onClick={onToggleExpand}
+      >
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-medium">
+          {(module.order_index ?? 0) + 1}
+        </div>
+        {getModuleIcon(module.is_published)}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-medium">{module.title}</h4>
+            {module.is_published ? (
+              <Badge variant="success">Published</Badge>
+            ) : (
+              <Badge variant="secondary">Draft</Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{module.description || "No description"}</p>
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <File className="h-3 w-3" />
+              {module.lessons_count || 0} lessons
+            </span>
+            <span className="flex items-center gap-1">
+              <ClipboardCheck className="h-3 w-3" />
+              {module.assignments_count || 0} assignments
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" onClick={onEdit}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <ChevronRight className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+        </div>
+      </div>
+
+      {/* Lessons Section (Expanded) */}
+      {isExpanded && (
+        <div className="border-t bg-muted/20 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-medium">Lessons</h5>
+            <Button variant="outline" size="sm" onClick={onAddLesson}>
+              <Plus className="h-3 w-3 mr-1" />
+              Add Lesson
+            </Button>
+          </div>
+
+          {lessonsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : lessons.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No lessons yet. Add your first lesson to this module.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {lessons.map((lesson: any) => (
+                <div
+                  key={lesson.id}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-background border"
+                >
+                  <div className="flex items-center justify-center w-6 h-6 rounded bg-muted text-xs">
+                    {(lesson.order_index ?? 0) + 1}
+                  </div>
+                  {getLessonIcon(lesson.content_type)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium truncate">{lesson.title}</span>
+                      {!lesson.is_published && (
+                        <Badge variant="secondary" className="text-xs">Draft</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{lesson.content_type || "text"}</span>
+                      {lesson.duration_minutes && (
+                        <>
+                          <span>•</span>
+                          <span>{lesson.duration_minutes} min</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => onEditLesson(lesson)}>
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteLesson(lesson.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CourseDetailPage() {
@@ -86,6 +238,23 @@ export default function CourseDetailPage() {
     includeUnpublished: true
   });
   const { data: submissions = [] } = useSubmissions({});
+
+  // Module mutations
+  const { mutateAsync: updateModule } = useUpdateModule();
+  const { mutateAsync: deleteModule } = useDeleteModule();
+
+  // Lesson mutations - will be used when a module is expanded
+  const { mutateAsync: createLesson } = useCreateLesson();
+  const { mutateAsync: updateLesson } = useUpdateLesson();
+  const { mutateAsync: deleteLesson } = useDeleteLesson();
+
+  // Modal state
+  const [isModuleFormOpen, setIsModuleFormOpen] = React.useState(false);
+  const [editingModule, setEditingModule] = React.useState<typeof modules[0] | null>(null);
+  const [isLessonEditorOpen, setIsLessonEditorOpen] = React.useState(false);
+  const [editingLesson, setEditingLesson] = React.useState<any>(null);
+  const [selectedModuleId, setSelectedModuleId] = React.useState<string | null>(null);
+  const [expandedModuleId, setExpandedModuleId] = React.useState<string | null>(null);
 
   const isLoading = courseLoading || modulesLoading || enrollmentsLoading || assignmentsLoading;
 
@@ -124,6 +293,111 @@ export default function CourseDetailPage() {
       </div>
     );
   }
+
+  // Module handlers
+  const handleAddModule = () => {
+    setEditingModule(null);
+    setIsModuleFormOpen(true);
+  };
+
+  const handleEditModule = (module: typeof modules[0]) => {
+    setEditingModule(module);
+    setIsModuleFormOpen(true);
+  };
+
+  const handleModuleSubmit = async (data: {
+    title: string;
+    description: string;
+    unlock_date: string;
+    is_published: boolean;
+  }) => {
+    if (editingModule) {
+      await updateModule({
+        moduleId: editingModule.id,
+        data: {
+          title: data.title,
+          description: data.description,
+          unlock_date: data.unlock_date || undefined,
+          is_published: data.is_published,
+        },
+      });
+    } else {
+      await createModule({
+        courseId,
+        data: {
+          title: data.title,
+          description: data.description,
+          unlock_date: data.unlock_date || undefined,
+          is_published: data.is_published,
+        },
+      });
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    if (confirm("Are you sure you want to delete this module? All lessons will also be deleted.")) {
+      await deleteModule(moduleId);
+    }
+  };
+
+  // Lesson handlers
+  const handleAddLesson = (moduleId: string) => {
+    setSelectedModuleId(moduleId);
+    setEditingLesson(null);
+    setIsLessonEditorOpen(true);
+  };
+
+  const handleEditLesson = (lesson: any, moduleId: string) => {
+    setSelectedModuleId(moduleId);
+    setEditingLesson(lesson);
+    setIsLessonEditorOpen(true);
+  };
+
+  const handleLessonSubmit = async (data: {
+    title: string;
+    content_type: "video" | "document" | "text" | "embed";
+    content: string;
+    video_url: string;
+    document_url: string;
+    duration_minutes: number | null;
+    is_published: boolean;
+  }) => {
+    if (!selectedModuleId) return;
+
+    if (editingLesson) {
+      await updateLesson({
+        lessonId: editingLesson.id,
+        data: {
+          title: data.title,
+          content_type: data.content_type,
+          content: data.content || undefined,
+          video_url: data.video_url || undefined,
+          document_url: data.document_url || undefined,
+          duration_minutes: data.duration_minutes ?? undefined,
+          is_published: data.is_published,
+        },
+      });
+    } else {
+      await createLesson({
+        moduleId: selectedModuleId,
+        data: {
+          title: data.title,
+          content_type: data.content_type,
+          content: data.content || undefined,
+          video_url: data.video_url || undefined,
+          document_url: data.document_url || undefined,
+          duration_minutes: data.duration_minutes ?? undefined,
+          is_published: data.is_published,
+        },
+      });
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (confirm("Are you sure you want to delete this lesson?")) {
+      await deleteLesson(lessonId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -429,10 +703,7 @@ export default function CourseDetailPage() {
                 <CardTitle>Course Modules</CardTitle>
                 <CardDescription>Manage course content and structure</CardDescription>
               </div>
-              <Button onClick={() => {
-                const title = prompt("Enter module title:");
-                if (title) createModule({ courseId, data: { title } });
-              }}>
+              <Button onClick={handleAddModule}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Module
               </Button>
@@ -442,48 +713,25 @@ export default function CourseDetailPage() {
                 <div className="text-center py-12 text-muted-foreground">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No modules yet. Add your first module to structure your course.</p>
+                  <Button variant="outline" className="mt-4" onClick={handleAddModule}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Module
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {modules.map((module) => (
-                    <div
+                    <ModuleCard
                       key={module.id}
-                      className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-medium">
-                        {module.order_index + 1}
-                      </div>
-                      {getModuleIcon(module.is_published)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{module.title}</h4>
-                          {module.is_published ? (
-                            <Badge variant="success">Published</Badge>
-                          ) : (
-                            <Badge variant="secondary">Draft</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{module.description || "No description"}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <File className="h-3 w-3" />
-                            {module.lessons_count || 0} lessons
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <ClipboardCheck className="h-3 w-3" />
-                            {module.assignments_count || 0} assignments
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                      module={module}
+                      isExpanded={expandedModuleId === module.id}
+                      onToggleExpand={() => setExpandedModuleId(expandedModuleId === module.id ? null : module.id)}
+                      onEdit={() => handleEditModule(module)}
+                      onDelete={() => handleDeleteModule(module.id)}
+                      onAddLesson={() => handleAddLesson(module.id)}
+                      onEditLesson={(lesson) => handleEditLesson(lesson, module.id)}
+                      onDeleteLesson={handleDeleteLesson}
+                    />
                   ))}
                 </div>
               )}
@@ -537,7 +785,7 @@ export default function CourseDetailPage() {
                           <h4 className="font-medium">{assignment.title}</h4>
                           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                             <Badge variant="secondary" className="text-xs">
-                              {assignment.type.charAt(0).toUpperCase() + assignment.type.slice(1)}
+                              {(assignment.type || 'quiz').charAt(0).toUpperCase() + (assignment.type || 'quiz').slice(1)}
                             </Badge>
                             <span>
                               {assignment.due_date ? `Due: ${format(new Date(assignment.due_date), "MMM d, yyyy")}` : "No due date"}
@@ -682,6 +930,44 @@ export default function CourseDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Module Form Modal */}
+      <ModuleForm
+        isOpen={isModuleFormOpen}
+        onClose={() => {
+          setIsModuleFormOpen(false);
+          setEditingModule(null);
+        }}
+        onSubmit={handleModuleSubmit}
+        initialData={editingModule ? {
+          title: editingModule.title,
+          description: editingModule.description || "",
+          unlock_date: editingModule.unlock_date || "",
+          is_published: editingModule.is_published || false,
+        } : undefined}
+        isEditing={!!editingModule}
+      />
+
+      {/* Lesson Editor Modal */}
+      <LessonEditor
+        isOpen={isLessonEditorOpen}
+        onClose={() => {
+          setIsLessonEditorOpen(false);
+          setEditingLesson(null);
+          setSelectedModuleId(null);
+        }}
+        onSubmit={handleLessonSubmit}
+        initialData={editingLesson ? {
+          title: editingLesson.title,
+          content_type: editingLesson.content_type || "text",
+          content: editingLesson.content || "",
+          video_url: editingLesson.video_url || "",
+          document_url: editingLesson.document_url || "",
+          duration_minutes: editingLesson.duration_minutes || null,
+          is_published: editingLesson.is_published || false,
+        } : undefined}
+        isEditing={!!editingLesson}
+      />
     </div>
   );
 }

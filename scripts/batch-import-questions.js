@@ -22,7 +22,17 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-function parseCSV(content) {
+// Detect certification level from filename
+function getCertificationFromFilename(filename) {
+  const upper = filename.toUpperCase();
+  if (upper.includes('_EMR_') || upper.startsWith('EMR_')) return 'EMR';
+  if (upper.includes('_AEMT_') || upper.startsWith('AEMT_')) return 'AEMT';
+  if (upper.includes('_PARAMEDIC_') || upper.startsWith('PARAMEDIC_')) return 'Paramedic';
+  if (upper.includes('_EMT_') || upper.startsWith('EMT_')) return 'EMT';
+  return 'EMT'; // default
+}
+
+function parseCSV(content, certificationLevel = 'EMT') {
   const lines = content.split('\n').map(line => line.trim()).filter(Boolean);
   if (lines.length < 2) return [];
 
@@ -38,7 +48,18 @@ function parseCSV(content) {
       row[h] = values[idx]?.replace(/^"|"$/g, '') || '';
     });
 
-    const questionText = row.question || row.question_text || row.text;
+    // Handle vocabulary format: term + definition becomes the question
+    let questionText = row.question || row.question_text || row.text || row.statement;
+
+    // For vocab files, create question from term and definition
+    if (!questionText && row.term) {
+      if (row.definition) {
+        questionText = `Which of the following best describes "${row.term}"? (${row.definition})`;
+      } else {
+        questionText = `What is the definition of "${row.term}"?`;
+      }
+    }
+
     if (!questionText) continue;
 
     const options = [];
@@ -62,7 +83,7 @@ function parseCSV(content) {
         ? { answerId: (row.correct_answer || row.correct || row.answer || 'a').toLowerCase() }
         : { text: row.correct_answer || row.correct || row.answer || '' },
       explanation: row.rationale || row.explanation || null,
-      certification_level: row.certification || row.certification_level || 'EMT',
+      certification_level: row.certification || row.certification_level || certificationLevel,
       difficulty: row.difficulty || 'medium',
       tags: row.category ? [row.category, row.subcategory].filter(Boolean) : null,
     });
@@ -141,7 +162,8 @@ async function main() {
   for (const file of files) {
     const filePath = path.join(importDir, file);
     const content = fs.readFileSync(filePath, 'utf8');
-    const questions = parseCSV(content);
+    const certLevel = getCertificationFromFilename(file);
+    const questions = parseCSV(content, certLevel);
 
     if (questions.length === 0) {
       console.log('  Skipping ' + file + ' - no valid questions');

@@ -237,9 +237,9 @@ export default function StudentCoursesPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{enrollment.completion_percentage}%</span>
+                          <span className="font-medium">{enrollment.completion_percentage ?? 0}%</span>
                         </div>
-                        <Progress value={enrollment.completion_percentage} size="sm" />
+                        <Progress value={enrollment.completion_percentage ?? 0} size="sm" />
                         {course.modules_count !== undefined && (
                           <p className="text-xs text-muted-foreground">
                             {course.modules_count} modules in this course

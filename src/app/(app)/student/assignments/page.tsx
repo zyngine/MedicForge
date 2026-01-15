@@ -224,7 +224,7 @@ export default function StudentAssignmentsPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
                           <div className="p-2 rounded-lg bg-muted">
-                            {getTypeIcon(assignment.type)}
+                            {getTypeIcon(assignment.type || 'quiz')}
                           </div>
                           <div>
                             <h3 className="font-medium">{assignment.title}</h3>

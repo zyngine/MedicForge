@@ -274,7 +274,7 @@ export default function StudentCourseDetailPage() {
                           setExpandedModule(expandedModule === module.id ? null : module.id)
                         }
                       >
-                        {getStatusIcon(module.is_published)}
+                        {getStatusIcon(module.is_published ?? false)}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium">{module.title}</h4>
@@ -350,8 +350,8 @@ export default function StudentCourseDetailPage() {
                         <div className="text-right">
                           {submission?.final_score !== null && submission?.final_score !== undefined ? (
                             <Badge variant={
-                              (submission.final_score / assignment.points_possible) >= 0.9 ? "success" :
-                              (submission.final_score / assignment.points_possible) >= 0.7 ? "warning" :
+                              (submission.final_score / (assignment.points_possible || 1)) >= 0.9 ? "success" :
+                              (submission.final_score / (assignment.points_possible || 1)) >= 0.7 ? "warning" :
                               "destructive"
                             }>
                               {submission.final_score}/{assignment.points_possible}
@@ -429,7 +429,7 @@ export default function StudentCourseDetailPage() {
                   {gradedSubmissions.map((submission) => {
                     const assignment = assignments.find(a => a.id === submission.assignment_id);
                     if (!assignment) return null;
-                    const percentage = Math.round((submission.final_score! / assignment.points_possible) * 100);
+                    const percentage = Math.round((submission.final_score! / (assignment.points_possible || 1)) * 100);
                     return (
                       <div
                         key={submission.id}

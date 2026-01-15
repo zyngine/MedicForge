@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   Card,
@@ -7,6 +8,9 @@ import {
   CardContent,
   CardTitle,
   CardDescription,
+  Button,
+  Alert,
+  Spinner,
 } from "@/components/ui";
 import {
   Globe,
@@ -15,7 +19,14 @@ import {
   Shield,
   Palette,
   ChevronRight,
+  Key,
+  Copy,
+  RefreshCw,
+  Check,
 } from "lucide-react";
+import { useTenant } from "@/lib/hooks/use-tenant";
+import { createClient } from "@/lib/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const settingsItems = [
   {
@@ -50,7 +61,54 @@ const settingsItems = [
   },
 ];
 
+// Generate a unique 8-character agency code
+function generateAgencyCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export default function SettingsPage() {
+  const { tenant, isLoading: tenantLoading, refetch: refetchTenant } = useTenant();
+  const queryClient = useQueryClient();
+  const [copied, setCopied] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const regenerateMutation = useMutation({
+    mutationFn: async () => {
+      if (!tenant?.id) throw new Error("No tenant");
+      
+      const supabase = createClient();
+      const newCode = generateAgencyCode();
+      
+      const { error } = await (supabase as any)
+        .from("tenants")
+        .update({ agency_code: newCode })
+        .eq("id", tenant.id);
+      
+      if (error) throw error;
+      return newCode;
+    },
+    onSuccess: () => {
+      refetchTenant();
+      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to regenerate code");
+    },
+  });
+
+  const handleCopy = async () => {
+    if (tenant?.agency_code) {
+      await navigator.clipboard.writeText(tenant.agency_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -59,6 +117,83 @@ export default function SettingsPage() {
           Manage your organization settings
         </p>
       </div>
+
+      {error && (
+        <Alert variant="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Agency Code Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            Instructor Agency Code
+          </CardTitle>
+          <CardDescription>
+            Share this code with instructors to allow them to join your organization
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {tenantLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Spinner size="sm" />
+            </div>
+          ) : tenant?.agency_code ? (
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="font-mono text-2xl tracking-wider bg-muted px-4 py-3 rounded-lg text-center">
+                  {tenant.agency_code}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={copied}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => regenerateMutation.mutate()}
+                  disabled={regenerateMutation.isPending}
+                >
+                  {regenerateMutation.isPending ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Regenerate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-muted-foreground text-center py-4">
+              No agency code available. Please contact support.
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground mt-3">
+            When instructors register, they can use this code to automatically join your organization.
+            Regenerating the code will invalidate the old one.
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4">
         {settingsItems.map((item) => (

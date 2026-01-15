@@ -2,16 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
-// Generate a unique 8-character agency code
-function generateAgencyCode(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -47,16 +37,12 @@ export async function GET(request: Request) {
             .replace(/^-|-$/g, "")
             .substring(0, 50) + "-" + Date.now().toString(36);
 
-          // Generate unique agency code for instructors to join
-          const agencyCode = generateAgencyCode();
-
           // Create tenant
           const { data: tenant, error: tenantError } = await adminClient
             .from("tenants")
             .insert({
               name: organizationName,
               slug: slug,
-              agency_code: agencyCode,
             })
             .select()
             .single();
@@ -82,38 +68,6 @@ export async function GET(request: Request) {
 
           // Redirect to admin dashboard
           return NextResponse.redirect(`${origin}/instructor/dashboard`);
-        } else if (registrationType === "instructor") {
-          // Find tenant by agency code and join as instructor
-          const agencyCode = metadata?.agency_code;
-
-          if (agencyCode) {
-            const { data: tenant, error: tenantError } = await adminClient
-              .from("tenants")
-              .select("id")
-              .eq("agency_code", agencyCode.toUpperCase())
-              .single();
-
-            if (tenantError || !tenant) {
-              return NextResponse.redirect(`${origin}/login?error=Invalid agency code`);
-            }
-
-            // Create user as instructor in that tenant
-            const { error: userError } = await adminClient.from("users").insert({
-              id: data.user.id,
-              tenant_id: tenant.id,
-              email: data.user.email!,
-              full_name: fullName,
-              role: "instructor",
-            });
-
-            if (userError) {
-              console.error("Error creating user:", userError);
-              return NextResponse.redirect(`${origin}/login?error=Failed to create user profile`);
-            }
-
-            // Redirect to instructor dashboard
-            return NextResponse.redirect(`${origin}/instructor/dashboard`);
-          }
         } else if (registrationType === "student") {
           // Find course by enrollment code and join
           const enrollmentCode = metadata?.enrollment_code;

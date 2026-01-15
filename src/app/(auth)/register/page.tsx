@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
 import { Button, Input, Label, Select, Alert, Checkbox } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Lock, User, Building, Eye, EyeOff, Key } from "lucide-react";
+import { Mail, Lock, User, Building, Eye, EyeOff, Key, GraduationCap } from "lucide-react";
 
-type RegistrationType = "organization" | "student";
+type RegistrationType = "organization" | "instructor" | "student";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [organizationName, setOrganizationName] = React.useState("");
+  const [agencyCode, setAgencyCode] = React.useState("");
   const [enrollmentCode, setEnrollmentCode] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [acceptTerms, setAcceptTerms] = React.useState(false);
@@ -62,6 +63,7 @@ export default function RegisterPage() {
             full_name: fullName,
             registration_type: registrationType,
             organization_name: registrationType === "organization" ? organizationName : undefined,
+            agency_code: registrationType === "instructor" ? agencyCode : undefined,
             enrollment_code: registrationType === "student" ? enrollmentCode : undefined,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -118,7 +120,7 @@ export default function RegisterPage() {
         {/* Registration Type */}
         <div className="space-y-2">
           <Label>I want to</Label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setRegistrationType("organization")}
@@ -129,8 +131,17 @@ export default function RegisterPage() {
               }`}
             >
               <Building className="h-6 w-6 mx-auto mb-2" />
-              <div className="font-medium">Create Organization</div>
-              <div className="text-xs text-muted-foreground">For instructors & admins</div>
+              <div className="font-medium text-sm">Create Org</div>
+              <div className="text-xs text-muted-foreground">New organization</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRegistrationType("instructor")}
+              className={`p-3 rounded-lg border text-center transition-colors ${registrationType === "instructor" ? "border-primary bg-primary/5" : "border-input hover:border-primary/50"}`}
+            >
+              <GraduationCap className="h-5 w-5 mx-auto mb-1" />
+              <div className="font-medium text-sm">Instructor</div>
+              <div className="text-xs text-muted-foreground">Agency code</div>
             </button>
             <button
               type="button"
@@ -142,8 +153,8 @@ export default function RegisterPage() {
               }`}
             >
               <User className="h-6 w-6 mx-auto mb-2" />
-              <div className="font-medium">Join as Student</div>
-              <div className="text-xs text-muted-foreground">With enrollment code</div>
+              <div className="font-medium text-sm">Student</div>
+              <div className="text-xs text-muted-foreground">Enrollment code</div>
             </button>
           </div>
         </div>
@@ -178,7 +189,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        {registrationType === "organization" ? (
+        {registrationType === "organization" && (
           <div className="space-y-2">
             <Label htmlFor="organizationName" required>Organization name</Label>
             <Input
@@ -192,7 +203,30 @@ export default function RegisterPage() {
               disabled={isLoading}
             />
           </div>
-        ) : (
+        )}
+
+        {registrationType === "instructor" && (
+          <div className="space-y-2">
+            <Label htmlFor="agencyCode" required>Agency code</Label>
+            <Input
+              id="agencyCode"
+              type="text"
+              value={agencyCode}
+              onChange={(e) => setAgencyCode(e.target.value.toUpperCase())}
+              placeholder="ABCD1234"
+              leftIcon={<Key className="h-4 w-4" />}
+              required
+              disabled={isLoading}
+              maxLength={10}
+              className="uppercase"
+            />
+            <p className="text-xs text-muted-foreground">
+              Get this code from your organization administrator
+            </p>
+          </div>
+        )}
+
+        {registrationType === "student" && (
           <div className="space-y-2">
             <Label htmlFor="enrollmentCode" required>Enrollment code</Label>
             <Input
@@ -280,7 +314,7 @@ export default function RegisterPage() {
         />
 
         <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-          {registrationType === "organization" ? "Create organization" : "Join course"}
+          {registrationType === "organization" ? "Create organization" : registrationType === "instructor" ? "Join as instructor" : "Join course"}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">

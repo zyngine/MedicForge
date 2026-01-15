@@ -125,11 +125,43 @@ export default function InstructorExamsPage() {
             Create and manage NREMT-style exams including adaptive (CAT) testing.
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Exam
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/instructor/exams/templates">
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Link>
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)} disabled={templates.length === 0}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Exam
+          </Button>
+        </div>
       </div>
+
+      {/* No Templates Warning */}
+      {templates.length === 0 && (
+        <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-900 dark:text-amber-100">No exam templates available</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  You need to create at least one exam template before you can create exams.
+                  Templates define the structure, rules, and question configuration for exams.
+                </p>
+                <Button variant="outline" size="sm" className="mt-3" asChild>
+                  <Link href="/instructor/exams/templates">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Template
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Exam Templates Overview */}
       <div className="grid md:grid-cols-4 gap-4">

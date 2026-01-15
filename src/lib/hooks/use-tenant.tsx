@@ -18,6 +18,7 @@ export interface Tenant {
   subscription_tier: "free" | "pro" | "institution" | "enterprise";
   subscription_status: "active" | "canceled" | "past_due" | "trialing";
   trial_ends_at: string | null;
+  agency_code: string | null;
 }
 
 interface TenantContextType {
@@ -26,6 +27,7 @@ interface TenantContextType {
   error: Error | null;
   isMainSite: boolean;
   refreshTenant: () => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -70,10 +72,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
       // If no tenant cookie, try to get tenant from logged-in user's profile
       if (!tenantId) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await (supabase as any).auth.getUser();
         if (user) {
           // Check if user is a platform admin (they won't have a tenant)
-          const { data: isPlatformAdmin } = await supabase.rpc("is_platform_admin");
+          const { data: isPlatformAdmin } = await (supabase as any).rpc("is_platform_admin");
           if (isPlatformAdmin) {
             // Platform admins don't have tenants, skip tenant lookup
             if (mountedRef.current) {
@@ -84,7 +86,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           }
 
           // Fetch user's tenant_id from their profile
-          const { data: userProfile } = await supabase
+          const { data: userProfile } = await (supabase as any)
             .from("users")
             .select("tenant_id")
             .eq("id", user.id)
@@ -93,7 +95,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           if (userProfile?.tenant_id) {
             tenantId = userProfile.tenant_id;
             // Set the cookie for future requests (client-side only)
-            document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax`;
+            document.cookie = `tenant_id=${encodeURIComponent(tenantId!)}; path=/; samesite=lax`;
             document.cookie = `tenant_slug=user-tenant; path=/; samesite=lax`;
           }
         }
@@ -108,7 +110,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await (supabase as any)
         .from("tenants")
         .select("*")
         .eq("id", tenantId)
@@ -132,6 +134,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           subscription_tier: data.subscription_tier as Tenant["subscription_tier"],
           subscription_status: data.subscription_status as Tenant["subscription_status"],
           trial_ends_at: data.trial_ends_at,
+          agency_code: data.agency_code || null,
         });
         // Also set the tenant_slug cookie with actual slug
         if (typeof document !== "undefined") {
@@ -188,6 +191,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         error,
         isMainSite,
         refreshTenant,
+        refetch: refreshTenant,
       }}
     >
       {children}
