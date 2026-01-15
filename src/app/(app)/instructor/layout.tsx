@@ -23,6 +23,8 @@ import {
   FileText,
   Brain,
   ClipboardCheck,
+  CreditCard,
+  Building2,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -111,6 +113,16 @@ const instructorNavigation = [
     title: "Settings",
     href: "/instructor/settings",
     icon: <Settings className="h-5 w-5" />,
+  },
+  {
+    title: "Billing",
+    href: "/admin/billing",
+    icon: <CreditCard className="h-5 w-5" />,
+  },
+  {
+    title: "Admin Portal",
+    href: "/admin/dashboard",
+    icon: <Building2 className="h-5 w-5" />,
   },
 ];
 
