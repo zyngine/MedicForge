@@ -21,6 +21,11 @@ export async function GET(request: Request) {
   console.log("[Auth Callback] Code present:", !!code);
   console.log("[Auth Callback] Origin:", origin);
 
+  // Log all cookies to debug PKCE issue
+  const cookieHeader = request.headers.get("cookie");
+  console.log("[Auth Callback] Cookie header:", cookieHeader);
+  console.log("[Auth Callback] Has PKCE cookie:", cookieHeader?.includes("code_verifier") || cookieHeader?.includes("pkce"));
+
   try {
     if (!code) {
       console.error("[Auth Callback] No code provided");
