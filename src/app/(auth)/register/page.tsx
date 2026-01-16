@@ -54,18 +54,20 @@ export default function RegisterPage() {
     try {
       const supabase = createClient();
 
+      const metadata = {
+        full_name: fullName,
+        registration_type: registrationType,
+        organization_name: registrationType === "organization" ? organizationName : undefined,
+        agency_code: registrationType === "instructor" ? agencyCode : undefined,
+        enrollment_code: registrationType === "student" ? enrollmentCode : undefined,
+      };
+
       // Sign up the user
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-            registration_type: registrationType,
-            organization_name: registrationType === "organization" ? organizationName : undefined,
-            agency_code: registrationType === "instructor" ? agencyCode : undefined,
-            enrollment_code: registrationType === "student" ? enrollmentCode : undefined,
-          },
+          data: metadata,
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
@@ -75,7 +77,36 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccess(true);
+      // Check if we have a session (email confirmation is disabled)
+      if (data.session && data.user) {
+        // User is logged in immediately - set up their profile
+        const response = await fetch("/api/auth/setup-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.user.id,
+            email: data.user.email,
+            metadata: data.user.user_metadata,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.error || "Failed to set up account");
+          return;
+        }
+
+        // Redirect based on role
+        if (result.role === "student") {
+          router.push("/student/dashboard");
+        } else {
+          router.push("/instructor/dashboard");
+        }
+      } else {
+        // Email confirmation is required - show success message
+        setSuccess(true);
+      }
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
