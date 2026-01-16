@@ -122,7 +122,7 @@ export async function GET(request: Request) {
             const { data: course, error: courseError } = await adminClient
               .from("courses")
               .select("id, tenant_id")
-              .eq("enrollment_code", enrollmentCode)
+              .ilike("enrollment_code", enrollmentCode.toUpperCase())
               .single();
 
             if (courseError || !course) {
