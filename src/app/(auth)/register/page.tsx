@@ -80,13 +80,14 @@ export default function RegisterPage() {
       // Check if we have a session (email confirmation is disabled)
       if (data.session && data.user) {
         // User is logged in immediately - set up their profile
+        // Pass metadata directly since user_metadata might not be immediately available
         const response = await fetch("/api/auth/setup-user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: data.user.id,
             email: data.user.email,
-            metadata: data.user.user_metadata,
+            metadata: metadata, // Use our local metadata directly
           }),
         });
 

@@ -177,13 +177,17 @@ export async function updateSession(request: NextRequest) {
           .eq("id", user.id)
           .single();
 
-        const url = request.nextUrl.clone();
-        if (profile?.role === "student") {
-          url.pathname = "/student/dashboard";
-        } else {
-          url.pathname = "/instructor/dashboard";
+        // Only redirect if we have a profile with a role
+        if (profile?.role) {
+          const url = request.nextUrl.clone();
+          if (profile.role === "student") {
+            url.pathname = "/student/dashboard";
+          } else {
+            url.pathname = "/instructor/dashboard";
+          }
+          return NextResponse.redirect(url);
         }
-        return NextResponse.redirect(url);
+        // No profile yet - let them through (they might be in the middle of setup)
       }
     } catch {
       // If auth check fails, just let them through to the auth page
