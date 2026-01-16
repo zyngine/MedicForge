@@ -25,6 +25,7 @@ import {
   ClipboardCheck,
   CreditCard,
   Building2,
+  MessageCircle,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -53,6 +54,11 @@ const instructorNavigation = [
     title: "Students",
     href: "/instructor/students",
     icon: <Users className="h-5 w-5" />,
+  },
+  {
+    title: "Messages",
+    href: "/instructor/messages",
+    icon: <MessageCircle className="h-5 w-5" />,
   },
   {
     title: "Question Bank",

@@ -12,6 +12,7 @@ import {
   Award,
   Calendar,
   MessageSquare,
+  MessageCircle,
   Settings,
   Stethoscope,
   Target,
@@ -81,6 +82,11 @@ const studentNavigation = [
     title: "Discussions",
     href: "/student/discussions",
     icon: <MessageSquare className="h-5 w-5" />,
+  },
+  {
+    title: "Messages",
+    href: "/student/messages",
+    icon: <MessageCircle className="h-5 w-5" />,
   },
   {
     title: "Settings",
