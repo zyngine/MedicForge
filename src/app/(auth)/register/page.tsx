@@ -79,33 +79,47 @@ export default function RegisterPage() {
 
       // Check if we have a session (email confirmation is disabled)
       if (data.session && data.user) {
+        console.log("[Register] Session created, setting up user profile...");
+        console.log("[Register] User ID:", data.user.id);
+        console.log("[Register] Metadata being sent:", metadata);
+
         // User is logged in immediately - set up their profile
         // Pass metadata directly since user_metadata might not be immediately available
-        const response = await fetch("/api/auth/setup-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: data.user.id,
-            email: data.user.email,
-            metadata: metadata, // Use our local metadata directly
-          }),
-        });
+        try {
+          const response = await fetch("/api/auth/setup-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: data.user.id,
+              email: data.user.email,
+              metadata: metadata, // Use our local metadata directly
+            }),
+          });
 
-        const result = await response.json();
+          console.log("[Register] Setup API response status:", response.status);
+          const result = await response.json();
+          console.log("[Register] Setup API result:", result);
 
-        if (!response.ok) {
-          setError(result.error || "Failed to set up account");
-          return;
-        }
+          if (!response.ok) {
+            setError(result.error || "Failed to set up account");
+            return;
+          }
 
-        // Redirect based on role
-        if (result.role === "student") {
-          router.push("/student/dashboard");
-        } else {
-          router.push("/instructor/dashboard");
+          console.log("[Register] Redirecting to dashboard, role:", result.role);
+
+          // Redirect based on role
+          if (result.role === "student") {
+            router.push("/student/dashboard");
+          } else {
+            router.push("/instructor/dashboard");
+          }
+        } catch (fetchError) {
+          console.error("[Register] Fetch error:", fetchError);
+          setError("Failed to connect to server. Please try again.");
         }
       } else {
         // Email confirmation is required - show success message
+        console.log("[Register] No immediate session, showing email confirmation message");
         setSuccess(true);
       }
     } catch {
