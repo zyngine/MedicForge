@@ -17,20 +17,39 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
+  console.log("[Auth Callback] ========== START ==========");
+  console.log("[Auth Callback] Timestamp:", new Date().toISOString());
+  console.log("[Auth Callback] Code present:", !!code);
+
   if (code) {
     const supabase = await createClient();
+    console.log("[Auth Callback] Exchanging code for session...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    console.log("[Auth Callback] Session exchange result:", { hasData: !!data, hasUser: !!data?.user, error: error?.message });
 
     if (!error && data.user) {
+      console.log("[Auth Callback] User authenticated:", {
+        id: data.user.id,
+        email: data.user.email,
+        raw_user_metadata: data.user.user_metadata,
+        app_metadata: data.user.app_metadata,
+      });
+
       // Use admin client to bypass RLS for database operations
       const adminClient = createAdminClient();
 
       // Check if user profile exists, if not create it
-      const { data: existingUser } = await adminClient
+      const { data: existingUser, error: existingUserError } = await adminClient
         .from("users")
         .select("id, role, tenant_id")
         .eq("id", data.user.id)
         .single();
+
+      console.log("[Auth Callback] Existing user check:", {
+        found: !!existingUser,
+        existingUser,
+        error: existingUserError?.message
+      });
 
       if (!existingUser) {
         // Get user metadata from signup
