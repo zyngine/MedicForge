@@ -14,28 +14,59 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       const code = searchParams.get("code");
+      const token_hash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
       const errorParam = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
 
-      console.log("[Auth Callback Client] Starting...", { code: !!code, errorParam });
+      console.log("[Auth Callback Client] Starting...", {
+        code: !!code,
+        token_hash: !!token_hash,
+        type,
+        errorParam,
+        allParams: Object.fromEntries(searchParams.entries())
+      });
 
       if (errorParam) {
         setError(errorDescription || errorParam);
         return;
       }
 
-      if (!code) {
-        setError("No authentication code provided");
-        return;
-      }
-
       try {
         const supabase = createClient();
+        let data;
+        let exchangeError;
 
-        setStatus("Exchanging code for session...");
-        console.log("[Auth Callback Client] Exchanging code for session");
+        // Handle different auth flows
+        if (token_hash && type) {
+          // Token hash flow (email verification, password reset)
+          setStatus("Verifying email...");
+          console.log("[Auth Callback Client] Using verifyOtp with token_hash");
 
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          const result = await supabase.auth.verifyOtp({
+            token_hash,
+            type: type as 'signup' | 'email' | 'recovery' | 'invite' | 'magiclink',
+          });
+          data = result.data;
+          exchangeError = result.error;
+        } else if (code) {
+          // PKCE code flow
+          setStatus("Exchanging code for session...");
+          console.log("[Auth Callback Client] Exchanging code for session");
+
+          const result = await supabase.auth.exchangeCodeForSession(code);
+          data = result.data;
+          exchangeError = result.error;
+        } else {
+          // Check if session already exists (might have been set by hash fragment)
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            data = { user: sessionData.session.user, session: sessionData.session };
+          } else {
+            setError("No authentication code or token provided");
+            return;
+          }
+        }
 
         if (exchangeError) {
           console.error("[Auth Callback Client] Exchange error:", exchangeError);
