@@ -147,7 +147,7 @@ export default function InstructorMessagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium truncate">{user.full_name}</p>
-                        {getRoleBadge(user.role)}
+                        {getRoleBadge(user.role || "student")}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {user.email}
