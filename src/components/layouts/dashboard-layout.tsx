@@ -140,7 +140,7 @@ export function DashboardLayout({
         {/* Help section */}
         <div className="p-4 border-t shrink-0">
           <Link
-            href="/help"
+            href="/support"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <HelpCircle className="h-4 w-4" />
