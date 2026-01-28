@@ -47,7 +47,7 @@ const pricingTiers = [
       "Advanced analytics",
     ],
     limitations: [],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/register?plan=professional",
     highlighted: true,
   },
@@ -95,7 +95,7 @@ const agencyTiers = [
       "No medical director portal",
       "No digital signatures",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/register?plan=agency-starter",
     highlighted: false,
   },
@@ -116,7 +116,7 @@ const agencyTiers = [
       "Full audit trail",
     ],
     limitations: [],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/register?plan=agency-pro",
     highlighted: true,
   },
@@ -147,12 +147,12 @@ const faqs = [
   {
     question: "Can I try MedicForge before committing?",
     answer:
-      "Yes! All paid plans come with a 14-day free trial. No credit card required to start. You can also use our free Starter plan indefinitely.",
+      "Yes! We offer a free Starter plan for training programs that you can use indefinitely. You can also try our interactive demo to explore all features before signing up.",
   },
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept all major credit cards (Visa, Mastercard, American Express) and can arrange invoicing for Institution plans.",
+      "We accept all major credit cards (Visa, Mastercard, American Express) and can arrange invoicing for Institution and Enterprise plans.",
   },
   {
     question: "Can I change plans later?",
@@ -190,7 +190,7 @@ export default function PricingPage() {
               Simple, Transparent Pricing
             </h1>
             <p className="text-xl text-muted-foreground">
-              Start free and scale as your program grows. No hidden fees, no surprises.
+              Simple plans that scale with your program. No hidden fees, no surprises.
             </p>
           </div>
         </div>

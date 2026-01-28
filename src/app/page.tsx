@@ -139,7 +139,7 @@ const pricingTiers = [
       "Email support",
       "Custom subdomain",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     highlighted: true,
   },
   {
@@ -184,7 +184,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="xl" asChild>
                 <Link href="/register">
-                  Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="xl" variant="outline" asChild>
@@ -194,7 +194,7 @@ export default function HomePage() {
               </Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              No credit card required. 14-day free trial.
+              Free Starter plan available. No credit card required.
             </p>
           </div>
         </div>
@@ -435,7 +435,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="xl" variant="secondary" asChild>
               <Link href="/register">
-                Start Your Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+                Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="xl" variant="outline" className="border-white text-white hover:bg-white/10" asChild>
