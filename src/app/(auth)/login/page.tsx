@@ -38,6 +38,10 @@ function LoginFormContent() {
 
     try {
       const supabase = createClient();
+
+      // Sign out any existing session first
+      await supabase.auth.signOut({ scope: 'local' });
+
       const account = DEMO_ACCOUNTS[role];
 
       const { error } = await supabase.auth.signInWithPassword({
@@ -50,12 +54,12 @@ function LoginFormContent() {
         return;
       }
 
+      // Use hard redirect to ensure clean state
       if (role === "instructor") {
-        router.push("/instructor/dashboard");
+        window.location.href = "/instructor/dashboard";
       } else {
-        router.push("/student/dashboard");
+        window.location.href = "/student/dashboard";
       }
-      router.refresh();
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -70,6 +74,10 @@ function LoginFormContent() {
 
     try {
       const supabase = createClient();
+
+      // Sign out any existing session first to prevent stale session issues
+      await supabase.auth.signOut({ scope: 'local' });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -88,16 +96,14 @@ function LoginFormContent() {
           .eq("id", data.user.id)
           .single();
 
-        // Redirect based on user role
+        // Redirect based on user role - use hard redirect for clean state
         if (profile?.role === "student") {
-          router.push("/student/dashboard");
+          window.location.href = "/student/dashboard";
         } else {
-          router.push("/instructor/dashboard");
+          window.location.href = "/instructor/dashboard";
         }
-        router.refresh();
       } else {
-        router.push(redirect);
-        router.refresh();
+        window.location.href = redirect;
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

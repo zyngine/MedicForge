@@ -153,21 +153,27 @@ export async function updateSession(request: NextRequest) {
                            pathname.startsWith("/instructor") ||
                            pathname.startsWith("/student");
 
-  // For auth routes, only check user if cookies suggest they might be logged in
+  // For auth routes, allow users to access them freely
+  // They might want to switch accounts or log in as a different user
   if (isAuthRoute) {
-    // Quick check: if no auth cookies exist, user is definitely not logged in
-    // Skip the network call entirely for faster page loads
+    // Platform admin login page - always allow
+    if (pathname === "/platform-admin" || pathname.startsWith("/platform-admin/login")) {
+      return supabaseResponse;
+    }
+
+    // For login/register/demo pages, allow users through
+    // The login page will handle signing out stale sessions before new login
+    // This prevents the bug where users get redirected to demo instructor page
+    if (pathname === "/login" || pathname === "/register" || pathname === "/demo") {
+      return supabaseResponse;
+    }
+
+    // For other auth routes (like forgot-password), check if logged in
     const hasAuthCookies = request.cookies.getAll().some(
       cookie => cookie.name.includes("supabase") || cookie.name.includes("sb-")
     );
 
     if (!hasAuthCookies) {
-      // No auth cookies = not logged in, allow through immediately
-      return supabaseResponse;
-    }
-
-    // Platform admin login page - don't redirect, let them log in fresh
-    if (pathname === "/platform-admin" || pathname.startsWith("/platform-admin/login")) {
       return supabaseResponse;
     }
 

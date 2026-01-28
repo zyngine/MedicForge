@@ -33,6 +33,10 @@ export default function DemoLoginPage() {
 
     try {
       const supabase = createClient();
+
+      // Sign out any existing session first to prevent stale session issues
+      await supabase.auth.signOut({ scope: 'local' });
+
       const account = DEMO_ACCOUNTS[role];
 
       const { error } = await supabase.auth.signInWithPassword({
@@ -45,13 +49,12 @@ export default function DemoLoginPage() {
         return;
       }
 
-      // Redirect based on role
+      // Use hard redirect to ensure clean state
       if (role === "instructor") {
-        router.push("/instructor/dashboard");
+        window.location.href = "/instructor/dashboard";
       } else {
-        router.push("/student/dashboard");
+        window.location.href = "/student/dashboard";
       }
-      router.refresh();
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
