@@ -1,17 +1,36 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
-import { Button, Input, Label, Select, Alert, Checkbox } from "@/components/ui";
+import { Button, Input, Label, Select, Alert, Checkbox, Spinner } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, User, Building, Eye, EyeOff, Key, GraduationCap } from "lucide-react";
+
+const PAID_PLANS = ["professional", "institution", "agency-starter", "agency-pro", "agency-enterprise"];
 
 type RegistrationType = "organization" | "instructor" | "student";
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <AuthLayout title="Create your account" description="Loading...">
+        <div className="flex justify-center py-8">
+          <Spinner size="lg" />
+        </div>
+      </AuthLayout>
+    }>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planFromUrl = searchParams.get("plan");
 
   const [registrationType, setRegistrationType] = React.useState<RegistrationType>("organization");
   const [fullName, setFullName] = React.useState("");
@@ -105,10 +124,12 @@ export default function RegisterPage() {
             return;
           }
 
-          console.log("[Register] Redirecting to dashboard, role:", result.role);
+          console.log("[Register] Redirecting, role:", result.role, "plan:", planFromUrl);
 
-          // Redirect based on role
-          if (result.role === "student") {
+          // If a paid plan was selected, redirect to checkout
+          if (planFromUrl && PAID_PLANS.includes(planFromUrl)) {
+            router.push(`/admin/billing?plan=${planFromUrl}`);
+          } else if (result.role === "student") {
             router.push("/student/dashboard");
           } else {
             router.push("/instructor/dashboard");
@@ -156,10 +177,18 @@ export default function RegisterPage() {
     );
   }
 
+  // Determine description based on plan
+  const getDescription = () => {
+    if (planFromUrl && PAID_PLANS.includes(planFromUrl)) {
+      return "Create your account to continue to checkout";
+    }
+    return "Get started with MedicForge";
+  };
+
   return (
     <AuthLayout
       title="Create your account"
-      description="Start your 14-day free trial"
+      description={getDescription()}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
