@@ -74,7 +74,6 @@ export default function ClinicalTrackerPage() {
   const { data: enrollments = [] } = useMyEnrollments();
 
   const [showLogModal, setShowLogModal] = React.useState(false);
-  const [showContactModal, setShowContactModal] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Form state for clinical log
@@ -204,9 +203,11 @@ export default function ClinicalTrackerPage() {
               Book Shift
             </Link>
           </Button>
-          <Button variant="outline" onClick={() => setShowContactModal(true)}>
-            <Users className="h-4 w-4 mr-2" />
-            Log Patient Contact
+          <Button variant="outline" asChild>
+            <Link href="/student/clinical/patient-contacts/new">
+              <Users className="h-4 w-4 mr-2" />
+              Log Patient Contact
+            </Link>
           </Button>
           <Button onClick={() => setShowLogModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -385,9 +386,11 @@ export default function ClinicalTrackerPage() {
                   <p className="text-muted-foreground mb-4">
                     Document your patient interactions during clinical rotations.
                   </p>
-                  <Button onClick={() => setShowContactModal(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Log Patient Contact
+                  <Button asChild>
+                    <Link href="/student/clinical/patient-contacts/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Log Patient Contact
+                    </Link>
                   </Button>
                 </div>
               ) : (
@@ -589,30 +592,6 @@ export default function ClinicalTrackerPage() {
         </div>
       </Modal>
 
-      {/* Log Patient Contact Modal */}
-      <Modal
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-        title="Log Patient Contact"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-muted-foreground">
-            To log a patient contact, please book a clinical shift first and document contacts from the shift details page.
-          </p>
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setShowContactModal(false)}>
-              Cancel
-            </Button>
-            <Button asChild>
-              <Link href="/student/clinical/schedule">
-                <CalendarPlus className="h-4 w-4 mr-2" />
-                Book a Shift
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

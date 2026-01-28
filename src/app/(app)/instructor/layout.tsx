@@ -26,6 +26,7 @@ import {
   CreditCard,
   Building2,
   MessageCircle,
+  Video,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -38,6 +39,11 @@ const instructorNavigation = [
     title: "My Courses",
     href: "/instructor/courses",
     icon: <BookOpen className="h-5 w-5" />,
+  },
+  {
+    title: "Video Sessions",
+    href: "/instructor/video-sessions",
+    icon: <Video className="h-5 w-5" />,
   },
   {
     title: "Grading",
@@ -142,7 +148,8 @@ export default function InstructorLayout({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/login");
+    // Use hard redirect to ensure full page reload and clear all cached state
+    window.location.href = "/login";
   };
 
   if (isLoading) {

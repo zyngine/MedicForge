@@ -199,18 +199,32 @@ export function useUser(): UseUserReturn {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clear local state first
+      setUser(null);
+      setProfile(null);
+
+      // Sign out from Supabase (clears auth cookies)
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (err) {
       // Ignore AbortErrors and other errors during sign out
       console.error("Sign out error:", err);
     } finally {
-      // Always clear user state, even if the API call failed
-      setUser(null);
-      setProfile(null);
-      // Clear tenant cookies
+      // Clear all auth-related cookies manually as fallback
       if (typeof document !== "undefined") {
+        // Clear tenant cookies
         document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        // Clear any Supabase auth cookies that might remain
+        const cookies = document.cookie.split(";");
+        for (const cookie of cookies) {
+          const cookieName = cookie.split("=")[0].trim();
+          if (cookieName.includes("supabase") || cookieName.includes("sb-")) {
+            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+            // Also try with domain variations
+            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${window.location.hostname}`;
+          }
+        }
       }
     }
   };

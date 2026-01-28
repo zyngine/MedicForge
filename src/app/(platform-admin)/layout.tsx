@@ -69,7 +69,8 @@ export default function PlatformAdminLayout({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/login");
+    // Use hard redirect to ensure full page reload and clear all cached state
+    window.location.href = "/login";
   };
 
   useEffect(() => {

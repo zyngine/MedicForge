@@ -94,7 +94,7 @@ const STEPS = [
 ];
 
 interface PatientContactFormProps {
-  bookingId: string;
+  bookingId: string | null;
   onSubmit: (data: PatientContactFormData) => Promise<void>;
   onCancel: () => void;
 }

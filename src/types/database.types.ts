@@ -550,10 +550,11 @@ export type Database = {
       }
       clinical_patient_contacts: {
         Row: {
-          booking_id: string
+          booking_id: string | null
           call_nature: string | null
           call_type: string | null
           chief_complaint: string | null
+          contact_date: string | null
           course_id: string | null
           created_at: string | null
           dispatch_complaint: string | null
@@ -575,8 +576,12 @@ export type Database = {
           procedures: Json | null
           role_description: string | null
           secondary_impression: string | null
+          site_name: string | null
+          site_type: string | null
           skills_performed: Json | null
           student_id: string
+          supervisor_credentials: string | null
+          supervisor_name: string | null
           tenant_id: string
           transport_destination: string | null
           transport_mode: string | null
@@ -590,10 +595,11 @@ export type Database = {
           was_team_lead: boolean | null
         }
         Insert: {
-          booking_id: string
+          booking_id?: string | null
           call_nature?: string | null
           call_type?: string | null
           chief_complaint?: string | null
+          contact_date?: string | null
           course_id?: string | null
           created_at?: string | null
           dispatch_complaint?: string | null
@@ -615,8 +621,12 @@ export type Database = {
           procedures?: Json | null
           role_description?: string | null
           secondary_impression?: string | null
+          site_name?: string | null
+          site_type?: string | null
           skills_performed?: Json | null
           student_id: string
+          supervisor_credentials?: string | null
+          supervisor_name?: string | null
           tenant_id: string
           transport_destination?: string | null
           transport_mode?: string | null
@@ -630,10 +640,11 @@ export type Database = {
           was_team_lead?: boolean | null
         }
         Update: {
-          booking_id?: string
+          booking_id?: string | null
           call_nature?: string | null
           call_type?: string | null
           chief_complaint?: string | null
+          contact_date?: string | null
           course_id?: string | null
           created_at?: string | null
           dispatch_complaint?: string | null
@@ -655,8 +666,12 @@ export type Database = {
           procedures?: Json | null
           role_description?: string | null
           secondary_impression?: string | null
+          site_name?: string | null
+          site_type?: string | null
           skills_performed?: Json | null
           student_id?: string
+          supervisor_credentials?: string | null
+          supervisor_name?: string | null
           tenant_id?: string
           transport_destination?: string | null
           transport_mode?: string | null
@@ -3396,6 +3411,239 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_session_attendance: {
+        Row: {
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          join_count: number | null
+          joined_at: string | null
+          left_at: string | null
+          session_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          join_count?: number | null
+          joined_at?: string | null
+          left_at?: string | null
+          session_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          join_count?: number | null
+          joined_at?: string | null
+          left_at?: string | null
+          session_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_session_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "video_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_session_attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_session_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_sessions: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          attendee_count: number | null
+          course_id: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_recording_available: boolean | null
+          is_recurring: boolean | null
+          join_url: string | null
+          manual_link: string | null
+          password: string | null
+          recording_password: string | null
+          recording_url: string | null
+          recurrence_rule: string | null
+          scheduled_end: string
+          scheduled_start: string
+          session_type: string
+          start_url: string | null
+          status: string | null
+          tenant_id: string
+          timezone: string | null
+          title: string
+          updated_at: string | null
+          video_platform: string | null
+          zoom_meeting_id: string | null
+          zoom_meeting_uuid: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          attendee_count?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_recording_available?: boolean | null
+          is_recurring?: boolean | null
+          join_url?: string | null
+          manual_link?: string | null
+          password?: string | null
+          recording_password?: string | null
+          recording_url?: string | null
+          recurrence_rule?: string | null
+          scheduled_end: string
+          scheduled_start: string
+          session_type?: string
+          start_url?: string | null
+          status?: string | null
+          tenant_id: string
+          timezone?: string | null
+          title: string
+          updated_at?: string | null
+          video_platform?: string | null
+          zoom_meeting_id?: string | null
+          zoom_meeting_uuid?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          attendee_count?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_recording_available?: boolean | null
+          is_recurring?: boolean | null
+          join_url?: string | null
+          manual_link?: string | null
+          password?: string | null
+          recording_password?: string | null
+          recording_url?: string | null
+          recurrence_rule?: string | null
+          scheduled_end?: string
+          scheduled_start?: string
+          session_type?: string
+          start_url?: string | null
+          status?: string | null
+          tenant_id?: string
+          timezone?: string | null
+          title?: string
+          updated_at?: string | null
+          video_platform?: string | null
+          zoom_meeting_id?: string | null
+          zoom_meeting_uuid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zoom_connections: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          refresh_token: string
+          scopes: string[] | null
+          tenant_id: string
+          token_expires_at: string
+          updated_at: string | null
+          user_id: string
+          zoom_email: string | null
+          zoom_user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          refresh_token: string
+          scopes?: string[] | null
+          tenant_id: string
+          token_expires_at: string
+          updated_at?: string | null
+          user_id: string
+          zoom_email?: string | null
+          zoom_user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          refresh_token?: string
+          scopes?: string[] | null
+          tenant_id?: string
+          token_expires_at?: string
+          updated_at?: string | null
+          user_id?: string
+          zoom_email?: string | null
+          zoom_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zoom_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zoom_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

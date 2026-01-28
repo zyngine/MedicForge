@@ -143,6 +143,11 @@ export default function RegisterPage() {
             We&apos;ve sent a confirmation email to <strong>{email}</strong>.
             Click the link in the email to verify your account.
           </p>
+          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+            <p className="text-sm text-warning-foreground">
+              <strong>Important:</strong> Please open the verification link on the same device/browser you used to register.
+            </p>
+          </div>
           <Button variant="outline" onClick={() => router.push("/login")}>
             Back to login
           </Button>

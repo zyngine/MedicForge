@@ -51,9 +51,8 @@ export default function PlatformAdminLoginPage() {
         return;
       }
 
-      // Redirect to admin dashboard
-      router.push("/platform-admin/dashboard");
-      router.refresh();
+      // Redirect to admin dashboard using hard redirect for clean state
+      window.location.href = "/platform-admin/dashboard";
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {

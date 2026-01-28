@@ -20,6 +20,7 @@ import {
   Briefcase,
   GraduationCap,
   Brain,
+  Video,
 } from "lucide-react";
 
 const studentNavigation = [
@@ -32,6 +33,11 @@ const studentNavigation = [
     title: "My Courses",
     href: "/student/courses",
     icon: <BookOpen className="h-5 w-5" />,
+  },
+  {
+    title: "Video Sessions",
+    href: "/student/video-sessions",
+    icon: <Video className="h-5 w-5" />,
   },
   {
     title: "Assignments",
@@ -105,7 +111,8 @@ export default function StudentLayout({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/login");
+    // Use hard redirect to ensure full page reload and clear all cached state
+    window.location.href = "/login";
   };
 
   if (isLoading) {

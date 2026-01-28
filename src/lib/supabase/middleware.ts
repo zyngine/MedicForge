@@ -166,11 +166,26 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
+    // Platform admin login page - don't redirect, let them log in fresh
+    if (pathname === "/platform-admin" || pathname.startsWith("/platform-admin/login")) {
+      return supabaseResponse;
+    }
+
     // Has cookies, need to verify if actually logged in
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // User is logged in, check their role to redirect to correct dashboard
+        // First check if user is a platform admin using RPC function (bypasses RLS)
+        const { data: isPlatformAdmin } = await supabase.rpc("is_platform_admin");
+
+        if (isPlatformAdmin) {
+          // User is a platform admin - redirect to platform admin dashboard
+          const url = request.nextUrl.clone();
+          url.pathname = "/platform-admin/dashboard";
+          return NextResponse.redirect(url);
+        }
+
+        // Not a platform admin, check their role in users table
         const { data: profile } = await supabase
           .from("users")
           .select("role")

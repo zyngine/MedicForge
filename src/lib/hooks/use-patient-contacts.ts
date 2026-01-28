@@ -97,8 +97,17 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
   }, [fetchContacts]);
 
   // Create a new patient contact
+  // booking_id is now optional - contacts can be logged independently
   const createContact = async (
-    contactData: PatientContactForm & { booking_id: string; course_id?: string }
+    contactData: PatientContactForm & {
+      booking_id?: string | null;
+      course_id?: string;
+      contact_date?: string;
+      site_name?: string;
+      site_type?: string;
+      supervisor_name?: string;
+      supervisor_credentials?: string;
+    }
   ): Promise<ClinicalPatientContactWithDetails | null> => {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -115,18 +124,17 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
 
       const { data, error: createError } = await supabase
         .from("clinical_patient_contacts")
-        .insert([
-          {
-            ...contactData,
-            vitals: contactData.vitals as any,
-            skills_performed: contactData.skills_performed as any,
-            medications_given: contactData.medications_given as any,
-            procedures: contactData.procedures as any,
-            tenant_id: userProfile.tenant_id,
-            student_id: userData.user.id,
-            verification_status: "pending",
-          },
-        ])
+        .insert({
+          ...contactData,
+          booking_id: contactData.booking_id || null, // Allow null booking_id
+          vitals: contactData.vitals as any,
+          skills_performed: contactData.skills_performed as any,
+          medications_given: contactData.medications_given as any,
+          procedures: contactData.procedures as any,
+          tenant_id: userProfile.tenant_id,
+          student_id: userData.user.id,
+          verification_status: "pending",
+        } as any)
         .select()
         .single();
 
