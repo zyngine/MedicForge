@@ -1,9 +1,18 @@
 -- Make patient contacts not require a shift booking
 -- This allows students to log patient contacts independently
 
--- Make booking_id nullable
-ALTER TABLE clinical_patient_contacts
-    ALTER COLUMN booking_id DROP NOT NULL;
+-- Make booking_id nullable (idempotent - only run if still NOT NULL)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'clinical_patient_contacts'
+        AND column_name = 'booking_id'
+        AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE clinical_patient_contacts ALTER COLUMN booking_id DROP NOT NULL;
+    END IF;
+END $$;
 
 -- Add optional fields for manual entry (when no booking is linked)
 ALTER TABLE clinical_patient_contacts

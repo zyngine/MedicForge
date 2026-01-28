@@ -21,9 +21,10 @@ import {
 
 interface NavItem {
   title: string;
-  href: string;
+  href?: string;
   icon: React.ReactNode;
   badge?: string | number;
+  children?: NavItem[];
 }
 
 interface DashboardLayoutProps {
@@ -37,6 +38,104 @@ interface DashboardLayoutProps {
   navigation: NavItem[];
   portalName: string;
   onSignOut?: () => void;
+}
+
+function NavItemRenderer({ item, pathname }: { item: NavItem; pathname: string }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  // Check if this item or any child is active
+  const isActive = item.href
+    ? (pathname === item.href || pathname.startsWith(item.href + "/"))
+    : false;
+  const hasActiveChild = item.children?.some(
+    (child) => child.href && (pathname === child.href || pathname.startsWith(child.href + "/"))
+  );
+
+  // Auto-expand if a child is active
+  React.useEffect(() => {
+    if (hasActiveChild) {
+      setIsExpanded(true);
+    }
+  }, [hasActiveChild]);
+
+  // Regular nav item with href
+  if (item.href && !item.children) {
+    return (
+      <li>
+        <Link
+          href={item.href}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+            isActive
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          {item.icon}
+          <span className="flex-1">{item.title}</span>
+          {item.badge && (
+            <Badge
+              variant={isActive ? "secondary" : "default"}
+              className="ml-auto"
+            >
+              {item.badge}
+            </Badge>
+          )}
+        </Link>
+      </li>
+    );
+  }
+
+  // Nav item with children (collapsible section)
+  if (item.children) {
+    return (
+      <li>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+            hasActiveChild
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          {item.icon}
+          <span className="flex-1 text-left">{item.title}</span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 transition-transform",
+              isExpanded && "rotate-180"
+            )}
+          />
+        </button>
+        {isExpanded && (
+          <ul className="mt-1 ml-4 space-y-1 border-l pl-3">
+            {item.children.map((child) => {
+              const childActive = child.href && (pathname === child.href || pathname.startsWith(child.href + "/"));
+              return (
+                <li key={child.title}>
+                  <Link
+                    href={child.href || "#"}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                      childActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    {child.icon}
+                    <span>{child.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </li>
+    );
+  }
+
+  return null;
 }
 
 export function DashboardLayout({
@@ -107,33 +206,9 @@ export function DashboardLayout({
         {/* Navigation - scrollable */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 min-h-0">
           <ul className="space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {item.icon}
-                    <span className="flex-1">{item.title}</span>
-                    {item.badge && (
-                      <Badge
-                        variant={isActive ? "secondary" : "default"}
-                        className="ml-auto"
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
+            {navigation.map((item) => (
+              <NavItemRenderer key={item.title} item={item} pathname={pathname} />
+            ))}
           </ul>
         </nav>
 

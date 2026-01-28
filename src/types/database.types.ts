@@ -132,6 +132,204 @@ export type Database = {
           },
         ]
       }
+      agency_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          performed_by: string | null
+          performed_by_name: string | null
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_employees: {
+        Row: {
+          certification_expiration: string | null
+          certification_level: Database["public"]["Enums"]["certification_level"]
+          created_at: string | null
+          department: string | null
+          email: string | null
+          employee_number: string | null
+          first_name: string
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          last_name: string
+          national_registry_number: string | null
+          phone: string | null
+          position: string | null
+          state_certification_number: string | null
+          supervisor_id: string | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          certification_expiration?: string | null
+          certification_level?: Database["public"]["Enums"]["certification_level"]
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          employee_number?: string | null
+          first_name: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          national_registry_number?: string | null
+          phone?: string | null
+          position?: string | null
+          state_certification_number?: string | null
+          supervisor_id?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          certification_expiration?: string | null
+          certification_level?: Database["public"]["Enums"]["certification_level"]
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          employee_number?: string | null
+          first_name?: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          national_registry_number?: string | null
+          phone?: string | null
+          position?: string | null
+          state_certification_number?: string | null
+          supervisor_id?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_employees_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "agency_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_employees_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_settings: {
+        Row: {
+          agency_license_number: string | null
+          agency_logo_url: string | null
+          annual_cycle_month: number | null
+          county: string | null
+          created_at: string | null
+          id: string
+          require_supervisor_review: boolean | null
+          state_code: string | null
+          tenant_id: string
+          updated_at: string | null
+          verification_reminder_days: number | null
+        }
+        Insert: {
+          agency_license_number?: string | null
+          agency_logo_url?: string | null
+          annual_cycle_month?: number | null
+          county?: string | null
+          created_at?: string | null
+          id?: string
+          require_supervisor_review?: boolean | null
+          state_code?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          verification_reminder_days?: number | null
+        }
+        Update: {
+          agency_license_number?: string | null
+          agency_logo_url?: string | null
+          annual_cycle_month?: number | null
+          county?: string | null
+          created_at?: string | null
+          id?: string
+          require_supervisor_review?: boolean | null
+          state_code?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          verification_reminder_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           author_id: string
@@ -965,6 +1163,103 @@ export type Database = {
           },
         ]
       }
+      competency_verifications: {
+        Row: {
+          competency_id: string | null
+          created_at: string | null
+          cycle_id: string | null
+          employee_id: string | null
+          id: string
+          is_batch_verification: boolean | null
+          md_assignment_id: string | null
+          notes: string | null
+          signature_data: string | null
+          signature_ip: string | null
+          signature_timestamp: string | null
+          tenant_id: string
+          verification_method: string | null
+          verified_at: string | null
+          verified_by: string
+        }
+        Insert: {
+          competency_id?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          employee_id?: string | null
+          id?: string
+          is_batch_verification?: boolean | null
+          md_assignment_id?: string | null
+          notes?: string | null
+          signature_data?: string | null
+          signature_ip?: string | null
+          signature_timestamp?: string | null
+          tenant_id: string
+          verification_method?: string | null
+          verified_at?: string | null
+          verified_by: string
+        }
+        Update: {
+          competency_id?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          employee_id?: string | null
+          id?: string
+          is_batch_verification?: boolean | null
+          md_assignment_id?: string | null
+          notes?: string | null
+          signature_data?: string | null
+          signature_ip?: string | null
+          signature_timestamp?: string | null
+          tenant_id?: string
+          verification_method?: string | null
+          verified_at?: string | null
+          verified_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competency_verifications_competency_id_fkey"
+            columns: ["competency_id"]
+            isOneToOne: false
+            referencedRelation: "employee_competencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_verifications_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "verification_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_verifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "agency_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_verifications_md_assignment_id_fkey"
+            columns: ["md_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "medical_director_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_verifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_verifications_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           course_code: string | null
@@ -1169,6 +1464,106 @@ export type Database = {
           },
           {
             foreignKeyName: "discussion_threads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_competencies: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          cycle_id: string
+          document_urls: string[] | null
+          employee_id: string
+          id: string
+          notes: string | null
+          skill_id: string
+          status: Database["public"]["Enums"]["competency_status"] | null
+          supervisor_approved: boolean | null
+          supervisor_id: string | null
+          supervisor_notes: string | null
+          supervisor_reviewed_at: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          cycle_id: string
+          document_urls?: string[] | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          skill_id: string
+          status?: Database["public"]["Enums"]["competency_status"] | null
+          supervisor_approved?: boolean | null
+          supervisor_id?: string | null
+          supervisor_notes?: string | null
+          supervisor_reviewed_at?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          cycle_id?: string
+          document_urls?: string[] | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          skill_id?: string
+          status?: Database["public"]["Enums"]["competency_status"] | null
+          supervisor_approved?: boolean | null
+          supervisor_id?: string | null
+          supervisor_notes?: string | null
+          supervisor_reviewed_at?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_competencies_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_competencies_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "verification_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_competencies_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "agency_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_competencies_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skill_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_competencies_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "agency_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_competencies_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1626,6 +2021,69 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_director_assignments: {
+        Row: {
+          assigned_at: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          md_credentials: string | null
+          md_email: string | null
+          md_license_number: string | null
+          md_name: string
+          md_phone: string | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          md_credentials?: string | null
+          md_email?: string | null
+          md_license_number?: string | null
+          md_name: string
+          md_phone?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          md_credentials?: string | null
+          md_email?: string | null
+          md_license_number?: string | null
+          md_name?: string
+          md_phone?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_director_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_director_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2621,6 +3079,74 @@ export type Database = {
           },
         ]
       }
+      skill_library: {
+        Row: {
+          category: string
+          certification_levels:
+            | Database["public"]["Enums"]["certification_level"][]
+            | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          is_system_default: boolean | null
+          name: string
+          requires_annual_verification: boolean | null
+          skill_code: string | null
+          state_code: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          certification_levels?:
+            | Database["public"]["Enums"]["certification_level"][]
+            | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          is_system_default?: boolean | null
+          name: string
+          requires_annual_verification?: boolean | null
+          skill_code?: string | null
+          state_code?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          certification_levels?:
+            | Database["public"]["Enums"]["certification_level"][]
+            | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          is_system_default?: boolean | null
+          name?: string
+          requires_annual_verification?: boolean | null
+          skill_code?: string | null
+          state_code?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_library_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_sheet_attempts: {
         Row: {
           attempt_date: string | null
@@ -3277,6 +3803,7 @@ export type Database = {
           subscription_tier:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type: string | null
           trial_ends_at: string | null
           updated_at: string | null
         }
@@ -3298,6 +3825,7 @@ export type Database = {
           subscription_tier?:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -3319,6 +3847,7 @@ export type Database = {
           subscription_tier?:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -3408,6 +3937,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_cycles: {
+        Row: {
+          created_at: string | null
+          cycle_type: Database["public"]["Enums"]["verification_cycle_type"]
+          end_date: string
+          id: string
+          is_active: boolean | null
+          is_locked: boolean | null
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          cycle_type: Database["public"]["Enums"]["verification_cycle_type"]
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          is_locked?: boolean | null
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          cycle_type?: Database["public"]["Enums"]["verification_cycle_type"]
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          is_locked?: boolean | null
+          name?: string
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_cycles_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3816,6 +4395,10 @@ export type Database = {
           total_documents: number
         }[]
       }
+      get_employee_cycle_completion: {
+        Args: { p_cycle_id: string; p_employee_id: string }
+        Returns: number
+      }
       get_expiring_accreditation_documents: {
         Args: { p_days_ahead?: number; p_tenant_id: string }
         Returns: {
@@ -3870,6 +4453,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      is_medical_director: { Args: { tenant_uuid: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       record_signature_verification: {
         Args: {
@@ -3948,6 +4532,13 @@ export type Database = {
         | "analyze"
         | "evaluate"
         | "create"
+      competency_status:
+        | "not_started"
+        | "in_progress"
+        | "pending_review"
+        | "verified"
+        | "expired"
+        | "failed"
       content_type: "video" | "document" | "text" | "embed"
       course_type: "EMR" | "EMT" | "AEMT" | "Paramedic" | "Custom"
       enrollment_status: "active" | "completed" | "dropped"
@@ -3983,6 +4574,7 @@ export type Database = {
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
       subscription_tier: "free" | "pro" | "institution" | "enterprise"
       user_role: "admin" | "instructor" | "student"
+      verification_cycle_type: "initial" | "annual" | "remedial"
       verification_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
@@ -4158,6 +4750,14 @@ export const Constants = {
         "evaluate",
         "create",
       ],
+      competency_status: [
+        "not_started",
+        "in_progress",
+        "pending_review",
+        "verified",
+        "expired",
+        "failed",
+      ],
       content_type: ["video", "document", "text", "embed"],
       course_type: ["EMR", "EMT", "AEMT", "Paramedic", "Custom"],
       enrollment_status: ["active", "completed", "dropped"],
@@ -4196,6 +4796,7 @@ export const Constants = {
       subscription_status: ["active", "canceled", "past_due", "trialing"],
       subscription_tier: ["free", "pro", "institution", "enterprise"],
       user_role: ["admin", "instructor", "student"],
+      verification_cycle_type: ["initial", "annual", "remedial"],
       verification_status: ["pending", "verified", "rejected"],
     },
   },
