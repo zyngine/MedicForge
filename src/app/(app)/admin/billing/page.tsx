@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -21,6 +21,8 @@ import {
   Crown,
   ExternalLink,
   Calendar,
+  Users,
+  Shield,
 } from "lucide-react";
 
 interface Tenant {
@@ -33,7 +35,7 @@ interface Tenant {
   stripe_subscription_id: string | null;
 }
 
-const PRICING_TIERS = [
+const LMS_TIERS = [
   {
     id: "free",
     name: "Starter",
@@ -50,7 +52,7 @@ const PRICING_TIERS = [
     icon: <Zap className="h-6 w-6" />,
   },
   {
-    id: "pro",
+    id: "professional",
     name: "Professional",
     monthlyPrice: 149,
     yearlyPrice: 1490, // ~$124/month - 2 months free
@@ -86,16 +88,93 @@ const PRICING_TIERS = [
   },
 ];
 
+const AGENCY_TIERS = [
+  {
+    id: "agency-starter",
+    name: "Agency Starter",
+    monthlyPrice: 99,
+    yearlyPrice: 990,
+    description: "For small EMS agencies",
+    features: [
+      "Up to 25 employees",
+      "PA state competency library",
+      "Annual verification cycles",
+      "Employee certification tracking",
+      "Expiration alerts",
+      "Basic reporting",
+    ],
+    icon: <Users className="h-6 w-6" />,
+  },
+  {
+    id: "agency-pro",
+    name: "Agency Pro",
+    monthlyPrice: 249,
+    yearlyPrice: 2490,
+    description: "Full agency compliance management",
+    features: [
+      "Up to 100 employees",
+      "Everything in Agency Starter",
+      "Medical director portal",
+      "Digital signature verification",
+      "Custom skill library",
+      "Advanced analytics",
+    ],
+    icon: <Shield className="h-6 w-6" />,
+    popular: true,
+  },
+  {
+    id: "agency-enterprise",
+    name: "Agency Enterprise",
+    monthlyPrice: 499,
+    yearlyPrice: 4990,
+    description: "For large agencies and systems",
+    features: [
+      "Unlimited employees",
+      "Everything in Agency Pro",
+      "Multiple locations",
+      "API access",
+      "SSO integration",
+      "Dedicated account manager",
+    ],
+    icon: <Crown className="h-6 w-6" />,
+  },
+];
+
+// Map URL plan params to tier IDs
+const PLAN_MAPPING: Record<string, string> = {
+  "professional": "professional",
+  "institution": "institution",
+  "agency-starter": "agency-starter",
+  "agency-pro": "agency-pro",
+  "agency-enterprise": "agency-enterprise",
+};
+
 type BillingInterval = "monthly" | "yearly";
+type PlanCategory = "lms" | "agency";
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <BillingContent />
+    </Suspense>
+  );
+}
+
+function BillingContent() {
   const searchParams = useSearchParams();
+  const planFromUrl = searchParams.get("plan");
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [billingInterval, setBillingInterval] = useState<BillingInterval>("yearly"); // Default to yearly for colleges
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("yearly");
+  const [planCategory, setPlanCategory] = useState<PlanCategory>("lms");
+  const hasTriggeredCheckout = useRef(false);
 
   useEffect(() => {
     // Check for success/cancel from Stripe redirect
@@ -105,8 +184,13 @@ export default function BillingPage() {
       setError("Checkout was canceled.");
     }
 
+    // If plan from URL is an agency plan, switch to agency category
+    if (planFromUrl && planFromUrl.startsWith("agency-")) {
+      setPlanCategory("agency");
+    }
+
     fetchTenant();
-  }, [searchParams]);
+  }, [searchParams, planFromUrl]);
 
   const fetchTenant = async () => {
     const supabase = createClient();
@@ -134,6 +218,15 @@ export default function BillingPage() {
         .single();
 
       setTenant(tenantData);
+
+      // Auto-trigger checkout if plan parameter is present and valid
+      if (planFromUrl && PLAN_MAPPING[planFromUrl] && !hasTriggeredCheckout.current && tenantData) {
+        hasTriggeredCheckout.current = true;
+        // Small delay to ensure UI is rendered
+        setTimeout(() => {
+          handleSubscribe(PLAN_MAPPING[planFromUrl]);
+        }, 500);
+      }
     } catch (err) {
       console.error("Error fetching tenant:", err);
     } finally {
@@ -293,34 +386,60 @@ export default function BillingPage() {
 
       {/* Pricing Tiers */}
       <div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-xl font-semibold">
-            {currentTier === "free" ? "Upgrade Your Plan" : "Available Plans"}
+            {currentTier === "free" ? "Choose Your Plan" : "Available Plans"}
           </h2>
 
-          {/* Billing Interval Toggle */}
-          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
-            <button
-              onClick={() => setBillingInterval("monthly")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingInterval === "monthly"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingInterval("yearly")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                billingInterval === "yearly"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Yearly
-              <Badge variant="success" className="text-xs">Save 17%</Badge>
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Plan Category Toggle */}
+            <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+              <button
+                onClick={() => setPlanCategory("lms")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  planCategory === "lms"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Training Programs
+              </button>
+              <button
+                onClick={() => setPlanCategory("agency")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  planCategory === "agency"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                EMS Agencies
+              </button>
+            </div>
+
+            {/* Billing Interval Toggle */}
+            <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+              <button
+                onClick={() => setBillingInterval("monthly")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  billingInterval === "monthly"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingInterval("yearly")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  billingInterval === "yearly"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Yearly
+                <Badge variant="success" className="text-xs">Save 17%</Badge>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -333,13 +452,19 @@ export default function BillingPage() {
           </Alert>
         )}
 
+        {planFromUrl && PLAN_MAPPING[planFromUrl] && (
+          <Alert variant="info" className="mb-6">
+            <CheckCircle className="h-4 w-4" />
+            <span>
+              Redirecting you to checkout for the <strong>{planFromUrl.replace("-", " ")}</strong> plan...
+            </span>
+          </Alert>
+        )}
+
         <div className="grid md:grid-cols-3 gap-6">
-          {PRICING_TIERS.map((tier) => {
+          {(planCategory === "lms" ? LMS_TIERS : AGENCY_TIERS).map((tier) => {
             const isCurrent = tier.id === currentTier;
-            const canUpgrade =
-              tier.id !== "free" &&
-              (currentTier === "free" ||
-                (currentTier === "pro" && tier.id === "institution"));
+            const canUpgrade = tier.id !== "free" && tier.id !== currentTier;
 
             return (
               <Card
@@ -423,7 +548,7 @@ export default function BillingPage() {
                       onClick={() => handleSubscribe(tier.id)}
                       isLoading={isProcessing === tier.id}
                     >
-                      {currentTier === "free" ? "Start Free Trial" : "Upgrade"}
+                      {currentTier === "free" ? "Subscribe Now" : "Upgrade"}
                     </Button>
                   ) : (
                     <Button className="w-full" variant="outline" disabled>
