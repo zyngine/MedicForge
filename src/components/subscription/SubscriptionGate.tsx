@@ -144,11 +144,11 @@ function SubscriptionBlockedScreen({
             <Lock className="h-8 w-8 text-error" />
           </div>
           <CardTitle className="text-2xl">
-            {reason === "expired" ? "Trial Period Ended" : "Subscription Canceled"}
+            {reason === "expired" ? "Subscription Expired" : "Subscription Canceled"}
           </CardTitle>
           <CardDescription>
             {reason === "expired"
-              ? "Your 14-day free trial has ended. Upgrade to continue using MedicForge."
+              ? "Your subscription has expired. Upgrade to continue using MedicForge."
               : "Your subscription has been canceled. Reactivate to regain access."}
           </CardDescription>
         </CardHeader>
