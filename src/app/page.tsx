@@ -13,6 +13,9 @@ import {
   ArrowRight,
   Star,
   Play,
+  Building2,
+  UserCog,
+  CalendarClock,
 } from "lucide-react";
 
 const features = [
@@ -51,6 +54,33 @@ const features = [
     title: "Mobile-Ready PWA",
     description:
       "Access courses anywhere. Offline support for reviewing materials without internet connection.",
+  },
+];
+
+const agencyFeatures = [
+  {
+    icon: <Building2 className="h-6 w-6" />,
+    title: "Employee Roster Management",
+    description:
+      "Track all agency employees, certifications, and expiration dates with automated alerts.",
+  },
+  {
+    icon: <UserCog className="h-6 w-6" />,
+    title: "Medical Director Portal",
+    description:
+      "Digital signature verification and oversight for competency sign-offs.",
+  },
+  {
+    icon: <CalendarClock className="h-6 w-6" />,
+    title: "Verification Cycles",
+    description:
+      "Create annual or remedial verification periods with progress tracking for each employee.",
+  },
+  {
+    icon: <ClipboardCheck className="h-6 w-6" />,
+    title: "State Compliance",
+    description:
+      "PA state competency library with full audit trail for regulatory compliance.",
   },
 ];
 
@@ -263,8 +293,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Agency Portal Section */}
       <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="relative order-2 lg:order-1">
+              <div className="aspect-video bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Building2 className="h-24 w-24 text-primary/50" />
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
+              <Badge variant="secondary" className="mb-4">For EMS Agencies</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                Agency Competency Management
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Keep your agency compliant with state requirements. Track employee competencies,
+                manage verification cycles, and maintain full audit trails.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {agencyFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{feature.title}</h4>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8">
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/pricing#agency">View Agency Plans</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">Testimonials</Badge>

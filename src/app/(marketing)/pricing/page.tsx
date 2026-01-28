@@ -76,6 +76,73 @@ const pricingTiers = [
   },
 ];
 
+const agencyTiers = [
+  {
+    name: "Agency Starter",
+    price: "$99",
+    period: "/month",
+    description: "For small EMS agencies",
+    features: [
+      "Up to 25 employees",
+      "PA state competency library",
+      "Annual verification cycles",
+      "Employee certification tracking",
+      "Expiration alerts",
+      "Basic reporting",
+      "Email support",
+    ],
+    limitations: [
+      "No medical director portal",
+      "No digital signatures",
+    ],
+    cta: "Start Free Trial",
+    href: "/register?plan=agency-starter",
+    highlighted: false,
+  },
+  {
+    name: "Agency Pro",
+    price: "$249",
+    period: "/month",
+    description: "Full agency compliance management",
+    features: [
+      "Up to 100 employees",
+      "Everything in Agency Starter",
+      "Medical director portal",
+      "Digital signature verification",
+      "Custom skill library",
+      "Remedial training cycles",
+      "Advanced analytics",
+      "Priority support",
+      "Full audit trail",
+    ],
+    limitations: [],
+    cta: "Start Free Trial",
+    href: "/register?plan=agency-pro",
+    highlighted: true,
+  },
+  {
+    name: "Agency Enterprise",
+    price: "$499",
+    period: "/month",
+    description: "For large agencies and systems",
+    features: [
+      "Unlimited employees",
+      "Everything in Agency Pro",
+      "Multiple locations",
+      "API access",
+      "Custom integrations",
+      "SSO integration",
+      "White-label option",
+      "Dedicated account manager",
+      "Custom domain",
+    ],
+    limitations: [],
+    cta: "Contact Sales",
+    href: "/contact?plan=agency-enterprise",
+    highlighted: false,
+  },
+];
+
 const faqs = [
   {
     question: "Can I try MedicForge before committing?",
@@ -129,11 +196,96 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* LMS Pricing Cards */}
       <section className="py-12">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Badge variant="secondary" className="mb-4">
+              For Training Programs
+            </Badge>
+            <h2 className="text-2xl font-bold">Learning Management System</h2>
+            <p className="text-muted-foreground mt-2">
+              For EMS schools, academies, and training programs
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {pricingTiers.map((tier, index) => (
+              <Card
+                key={index}
+                className={`relative ${
+                  tier.highlighted ? "border-primary shadow-lg scale-105" : ""
+                }`}
+              >
+                {tier.highlighted && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge>Most Popular</Badge>
+                  </div>
+                )}
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl font-semibold mb-2">{tier.name}</h3>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-4xl font-bold">{tier.price}</span>
+                      {tier.period && (
+                        <span className="text-muted-foreground">{tier.period}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {tier.description}
+                    </p>
+                  </div>
+
+                  <ul className="space-y-3 mb-6">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {tier.limitations.length > 0 && (
+                    <ul className="space-y-2 mb-6 pt-4 border-t">
+                      {tier.limitations.map((limitation, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-muted-foreground"
+                        >
+                          <span className="shrink-0">—</span>
+                          {limitation}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    variant={tier.highlighted ? "default" : "outline"}
+                    asChild
+                  >
+                    <Link href={tier.href}>{tier.cta}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Agency Portal Pricing Cards */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Badge variant="secondary" className="mb-4">
+              For EMS Agencies
+            </Badge>
+            <h2 className="text-2xl font-bold">Agency Portal</h2>
+            <p className="text-muted-foreground mt-2">
+              Employee competency management and compliance tracking
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {agencyTiers.map((tier, index) => (
               <Card
                 key={index}
                 className={`relative ${

@@ -16,6 +16,12 @@ import {
   Zap,
   Globe,
   CheckCircle,
+  Building2,
+  UserCog,
+  BookOpen,
+  CalendarClock,
+  Stethoscope,
+  FileSignature,
 } from "lucide-react";
 
 const featureCategories = [
@@ -136,6 +142,36 @@ const featureCategories = [
         title: "Announcements",
         description:
           "Broadcast important updates to all students or specific courses. Pin critical announcements.",
+      },
+    ],
+  },
+  {
+    title: "Agency Portal",
+    description: "Manage EMS agency employee competencies and compliance",
+    features: [
+      {
+        icon: <Building2 className="h-6 w-6" />,
+        title: "Employee Roster Management",
+        description:
+          "Track all agency employees, certifications, and expiration dates. Get alerts before certifications expire.",
+      },
+      {
+        icon: <BookOpen className="h-6 w-6" />,
+        title: "Skills Library",
+        description:
+          "Manage PA state-required competencies. Organize by category with certification level requirements.",
+      },
+      {
+        icon: <CalendarClock className="h-6 w-6" />,
+        title: "Verification Cycles",
+        description:
+          "Create annual or remedial verification periods. Track employee progress through each cycle.",
+      },
+      {
+        icon: <Stethoscope className="h-6 w-6" />,
+        title: "Medical Director Oversight",
+        description:
+          "Assign medical directors with digital signature capabilities. Full audit trail for compliance.",
       },
     ],
   },
