@@ -31,15 +31,22 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planFromUrl = searchParams.get("plan");
+  const typeFromUrl = searchParams.get("type") as RegistrationType | null;
+  const agencyCodeFromUrl = searchParams.get("agency_code");
+  const enrollmentCodeFromUrl = searchParams.get("enrollment_code");
 
-  const [registrationType, setRegistrationType] = React.useState<RegistrationType>("organization");
+  const [registrationType, setRegistrationType] = React.useState<RegistrationType>(
+    typeFromUrl && ["organization", "instructor", "student"].includes(typeFromUrl)
+      ? typeFromUrl
+      : "organization"
+  );
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [organizationName, setOrganizationName] = React.useState("");
-  const [agencyCode, setAgencyCode] = React.useState("");
-  const [enrollmentCode, setEnrollmentCode] = React.useState("");
+  const [agencyCode, setAgencyCode] = React.useState(agencyCodeFromUrl || "");
+  const [enrollmentCode, setEnrollmentCode] = React.useState(enrollmentCodeFromUrl || "");
   const [showPassword, setShowPassword] = React.useState(false);
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);

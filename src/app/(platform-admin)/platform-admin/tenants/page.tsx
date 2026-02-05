@@ -11,6 +11,8 @@ import {
   Button,
   Input,
   Spinner,
+  Select,
+  Alert,
 } from "@/components/ui";
 import {
   Building2,
@@ -20,6 +22,9 @@ import {
   Users,
   BookOpen,
   Calendar,
+  X,
+  CreditCard,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -31,6 +36,8 @@ interface Tenant {
   subscription_tier: string | null;
   subscription_status: string | null;
   trial_ends_at: string | null;
+  payment_method?: string | null;
+  subscription_notes?: string | null;
   created_at: string | null;
   _count?: {
     users: number;
@@ -38,10 +45,43 @@ interface Tenant {
   };
 }
 
+const SUBSCRIPTION_TIERS = [
+  { value: "free", label: "Free (Starter)" },
+  { value: "professional", label: "Professional - $149/mo" },
+  { value: "institution", label: "Institution - $399/mo" },
+  { value: "agency-starter", label: "Agency Starter - $99/mo" },
+  { value: "agency-pro", label: "Agency Pro - $249/mo" },
+  { value: "agency-enterprise", label: "Agency Enterprise - $499/mo" },
+];
+
+const SUBSCRIPTION_STATUSES = [
+  { value: "active", label: "Active" },
+  { value: "trialing", label: "Trialing" },
+  { value: "past_due", label: "Past Due" },
+  { value: "canceled", label: "Canceled" },
+];
+
+const PAYMENT_METHODS = [
+  { value: "stripe", label: "Credit Card (Stripe)" },
+  { value: "invoice", label: "Invoice / Check" },
+  { value: "ach", label: "ACH Bank Transfer" },
+  { value: "free", label: "Free Tier (No Payment)" },
+];
+
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Edit form state
+  const [editTier, setEditTier] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editPaymentMethod, setEditPaymentMethod] = useState("");
+  const [editNotes, setEditNotes] = useState("");
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -90,6 +130,71 @@ export default function TenantsPage() {
 
     fetchTenants();
   }, []);
+
+  const openEditModal = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setEditTier(tenant.subscription_tier || "free");
+    setEditStatus(tenant.subscription_status || "active");
+    setEditPaymentMethod(tenant.payment_method || "stripe");
+    setEditNotes(tenant.subscription_notes || "");
+    setSaveError(null);
+    setSaveSuccess(false);
+  };
+
+  const closeEditModal = () => {
+    setEditingTenant(null);
+    setSaveError(null);
+    setSaveSuccess(false);
+  };
+
+  const handleSaveSubscription = async () => {
+    if (!editingTenant) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase
+        .from("tenants")
+        .update({
+          subscription_tier: editTier as string,
+          subscription_status: editStatus as string,
+          payment_method: editPaymentMethod,
+          subscription_notes: editNotes,
+          // Clear trial_ends_at if activating a paid subscription
+          trial_ends_at: editStatus === "active" && editTier !== "free" ? null : editingTenant.trial_ends_at,
+        } as Record<string, unknown>)
+        .eq("id", editingTenant.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setTenants(tenants.map(t =>
+        t.id === editingTenant.id
+          ? {
+              ...t,
+              subscription_tier: editTier,
+              subscription_status: editStatus,
+              payment_method: editPaymentMethod,
+              subscription_notes: editNotes,
+            }
+          : t
+      ));
+
+      setSaveSuccess(true);
+      setTimeout(() => {
+        closeEditModal();
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      setSaveError("Failed to update subscription. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const filteredTenants = tenants.filter(
     (tenant) =>
@@ -204,11 +309,15 @@ export default function TenantsPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" title="View tenant">
                       <ExternalLink className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditModal(tenant)}
+                    >
+                      Edit Subscription
                     </Button>
                   </div>
                 </div>
@@ -237,6 +346,105 @@ export default function TenantsPage() {
           </Card>
         )}
       </div>
+
+      {/* Edit Subscription Modal */}
+      {editingTenant && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Edit Subscription</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {editingTenant.name}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={closeEditModal}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {saveError && (
+                <Alert variant="error">{saveError}</Alert>
+              )}
+              {saveSuccess && (
+                <Alert variant="success">Subscription updated successfully!</Alert>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subscription Tier</label>
+                <Select
+                  value={editTier}
+                  onChange={(value) => setEditTier(value)}
+                  options={SUBSCRIPTION_TIERS}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select
+                  value={editStatus}
+                  onChange={(value) => setEditStatus(value)}
+                  options={SUBSCRIPTION_STATUSES}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set to "Active" to grant full access immediately
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Method</label>
+                <Select
+                  value={editPaymentMethod}
+                  onChange={(value) => setEditPaymentMethod(value)}
+                  options={PAYMENT_METHODS}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use "Invoice / Check" for customers not paying via Stripe
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notes (Internal)</label>
+                <Input
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="e.g., Invoice #1234, paid via check, annual prepay"
+                />
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  {editPaymentMethod === "stripe" ? (
+                    <CreditCard className="h-4 w-4" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  <span className="font-medium">Summary</span>
+                </div>
+                <p>
+                  Setting <strong>{editingTenant.name}</strong> to{" "}
+                  <strong>{SUBSCRIPTION_TIERS.find(t => t.value === editTier)?.label}</strong>{" "}
+                  with status <strong>{editStatus}</strong>.
+                </p>
+                {editPaymentMethod !== "stripe" && (
+                  <p className="text-warning mt-1">
+                    This customer is NOT on Stripe auto-billing. Remember to send invoices manually.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={closeEditModal}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveSubscription} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

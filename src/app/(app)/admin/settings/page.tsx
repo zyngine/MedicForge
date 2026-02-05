@@ -74,7 +74,7 @@ function generateAgencyCode(): string {
 export default function SettingsPage() {
   const { tenant, isLoading: tenantLoading, refetch: refetchTenant } = useTenant();
   const queryClient = useQueryClient();
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = React.useState<"code" | "link" | false>(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const regenerateMutation = useMutation({
@@ -101,10 +101,20 @@ export default function SettingsPage() {
     },
   });
 
-  const handleCopy = async () => {
+  const handleCopyCode = async () => {
     if (tenant?.agency_code) {
       await navigator.clipboard.writeText(tenant.agency_code);
-      setCopied(true);
+      setCopied("code");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (tenant?.agency_code) {
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://medicforge.com";
+      const inviteLink = `${baseUrl}/register?type=instructor&agency_code=${tenant.agency_code}`;
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied("link");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -141,46 +151,78 @@ export default function SettingsPage() {
               <Spinner size="sm" />
             </div>
           ) : tenant?.agency_code ? (
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="font-mono text-2xl tracking-wider bg-muted px-4 py-3 rounded-lg text-center">
-                  {tenant.agency_code}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="font-mono text-2xl tracking-wider bg-muted px-4 py-3 rounded-lg text-center">
+                    {tenant.agency_code}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyCode}
+                    disabled={!!copied}
+                  >
+                    {copied === "code" ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Code
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => regenerateMutation.mutate()}
+                    disabled={regenerateMutation.isPending}
+                  >
+                    {regenerateMutation.isPending ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Regenerate
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopy}
-                  disabled={copied}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => regenerateMutation.mutate()}
-                  disabled={regenerateMutation.isPending}
-                >
-                  {regenerateMutation.isPending ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Regenerate
-                    </>
-                  )}
-                </Button>
+
+              {/* Invite Link */}
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm">Instructor Invite Link</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Share this link with instructors - they can register with one click
+                    </p>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleCopyLink}
+                    disabled={!!copied}
+                  >
+                    {copied === "link" ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Invite Link
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
@@ -189,8 +231,8 @@ export default function SettingsPage() {
             </div>
           )}
           <p className="text-sm text-muted-foreground mt-3">
-            When instructors register, they can use this code to automatically join your organization.
-            Regenerating the code will invalidate the old one.
+            Instructors can either enter the code manually during registration, or use the invite link which pre-fills everything.
+            Regenerating the code will invalidate the old one and any existing invite links.
           </p>
         </CardContent>
       </Card>
