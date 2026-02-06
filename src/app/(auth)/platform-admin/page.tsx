@@ -131,12 +131,20 @@ export default function PlatformAdminLoginPage() {
           Sign in as Admin
         </Button>
 
-        <p className="text-xs text-center text-muted-foreground">
-          Regular users should{" "}
-          <a href="/login" className="text-primary hover:underline">
-            sign in here
+        <div className="text-center space-y-2">
+          <a
+            href="/forgot-password"
+            className="text-sm text-primary hover:underline"
+          >
+            Forgot password?
           </a>
-        </p>
+          <p className="text-xs text-muted-foreground">
+            Regular users should{" "}
+            <a href="/login" className="text-primary hover:underline">
+              sign in here
+            </a>
+          </p>
+        </div>
       </form>
     </AuthLayout>
   );
