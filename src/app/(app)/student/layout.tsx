@@ -21,6 +21,7 @@ import {
   GraduationCap,
   Brain,
   Video,
+  UserCheck,
 } from "lucide-react";
 
 const studentNavigation = [
@@ -53,6 +54,11 @@ const studentNavigation = [
     title: "Grades",
     href: "/student/grades",
     icon: <Award className="h-5 w-5" />,
+  },
+  {
+    title: "Attendance",
+    href: "/student/attendance",
+    icon: <UserCheck className="h-5 w-5" />,
   },
   {
     title: "NREMT Readiness",

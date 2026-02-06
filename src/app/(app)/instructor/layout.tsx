@@ -27,6 +27,7 @@ import {
   Building2,
   MessageCircle,
   Video,
+  UserCheck,
 } from "lucide-react";
 
 const instructorNavigation = [
@@ -80,6 +81,11 @@ const instructorNavigation = [
     title: "Skill Sheets",
     href: "/instructor/skill-sheets",
     icon: <ClipboardCheck className="h-5 w-5" />,
+  },
+  {
+    title: "Attendance",
+    href: "/instructor/attendance",
+    icon: <UserCheck className="h-5 w-5" />,
   },
   {
     title: "Rubrics",
