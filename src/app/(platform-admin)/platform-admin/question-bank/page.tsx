@@ -155,10 +155,20 @@ export default function PlatformQuestionBankPage() {
   };
 
   const handleValidate = async (question: QuestionBankItem) => {
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("question_bank").update({ is_validated: true }).eq("id", question.id);
-    if (!error) fetchQuestions();
+    try {
+      const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("question_bank").update({
+        is_validated: true,
+        reviewed_at: new Date().toISOString(),
+      }).eq("id", question.id);
+      if (error) throw error;
+      toast.success("Question validated");
+      fetchQuestions();
+    } catch (err) {
+      console.error("Validate error:", err);
+      toast.error("Failed to validate question");
+    }
   };
 
   const handleDelete = async (question: QuestionBankItem) => {
@@ -179,10 +189,20 @@ export default function PlatformQuestionBankPage() {
 
   const handleValidateAll = async () => {
     if (!confirm("Validate all pending questions?")) return;
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("question_bank").update({ is_validated: true }).eq("is_validated", false);
-    if (!error) fetchLevelCounts();
+    try {
+      const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("question_bank").update({
+        is_validated: true,
+        reviewed_at: new Date().toISOString(),
+      }).eq("is_validated", false);
+      if (error) throw error;
+      toast.success("All questions validated");
+      fetchLevelCounts();
+    } catch (err) {
+      console.error("Validate all error:", err);
+      toast.error("Failed to validate questions");
+    }
   };
 
   const handleCreateQuestion = async (data: any) => {
