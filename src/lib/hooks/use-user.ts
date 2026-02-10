@@ -16,15 +16,16 @@ interface UseUserReturn {
   refreshProfile: () => Promise<void>;
 }
 
-// Create a singleton supabase client
-const supabase = createClient();
-
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const loadingRef = useRef(true);
+  const initRef = useRef(false);
+
+  // Create client inside hook to avoid SSR issues
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -44,7 +45,7 @@ export function useUser(): UseUserReturn {
       console.error("Profile fetch failed:", err);
       return null;
     }
-  }, []);
+  }, [supabase]);
 
   const refreshProfile = async () => {
     if (user) {
@@ -54,88 +55,60 @@ export function useUser(): UseUserReturn {
   };
 
   useEffect(() => {
-    let isMounted = true;
-    loadingRef.current = true;
+    // Prevent double initialization in strict mode
+    if (initRef.current) return;
+    initRef.current = true;
 
-    const getUser = async () => {
+    let isMounted = true;
+
+    const initAuth = async () => {
       try {
-        // First check if we have a session (fast, from cookies)
+        // Get session from cookies (synchronous, fast)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (!isMounted) return;
 
-        if (sessionError || !session) {
+        if (sessionError) {
+          console.error("Session error:", sessionError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!session) {
           // No session, user is not logged in
-          loadingRef.current = false;
           setIsLoading(false);
           return;
         }
 
-        // We have a session, now verify with getUser (validates JWT with server)
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+        // We have a session - set user immediately from session
+        setUser(session.user);
 
-        if (!isMounted) return;
-
-        if (authError) {
-          // Token might be expired, try to refresh
-          console.log("Auth error, attempting refresh:", authError.message);
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-
-          if (refreshError || !refreshData.user) {
-            console.error("Session refresh failed:", refreshError);
-            loadingRef.current = false;
-            setIsLoading(false);
-            return;
-          }
-
-          // Refresh succeeded, use the new user data
-          setUser(refreshData.user);
-          if (refreshData.user) {
-            const profileData = await fetchProfile(refreshData.user.id);
-            if (isMounted) {
-              setProfile(profileData);
-            }
-          }
-          loadingRef.current = false;
-          setIsLoading(false);
-          return;
-        }
-
-        setUser(user);
-
-        if (user) {
-          const profileData = await fetchProfile(user.id);
+        // Fetch profile
+        if (session.user) {
+          const profileData = await fetchProfile(session.user.id);
           if (isMounted) {
             setProfile(profileData);
           }
         }
+
+        setIsLoading(false);
       } catch (err) {
-        console.error("getUser failed:", err);
+        console.error("Auth init failed:", err);
         if (isMounted) {
-          setError(err instanceof Error ? err : new Error("Failed to get user"));
-        }
-      } finally {
-        if (isMounted) {
-          loadingRef.current = false;
+          setError(err instanceof Error ? err : new Error("Failed to initialize auth"));
           setIsLoading(false);
         }
       }
     };
 
-    // Set a timeout to prevent infinite loading - increased to 15 seconds
-    // to allow for session refresh which can take longer
+    // Set a shorter timeout (5 seconds) to prevent long loading states
     const timeout = setTimeout(() => {
-      if (isMounted && loadingRef.current) {
-        console.warn("User fetch timeout - stopping loading state");
-        loadingRef.current = false;
+      if (isMounted) {
         setIsLoading(false);
       }
-    }, 15000);
+    }, 5000);
 
-    getUser();
+    initAuth();
 
     // Listen for auth changes
     const {
@@ -143,30 +116,27 @@ export function useUser(): UseUserReturn {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      // Handle different auth events
-      if (event === "TOKEN_REFRESHED") {
-        console.log("Session token refreshed");
-      } else if (event === "SIGNED_OUT") {
+      if (event === "SIGNED_OUT") {
         setUser(null);
         setProfile(null);
-        loadingRef.current = false;
         setIsLoading(false);
         return;
       }
 
-      setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
-        if (isMounted) {
-          setProfile(profileData);
+        if (session?.user) {
+          const profileData = await fetchProfile(session.user.id);
+          if (isMounted) {
+            setProfile(profileData);
+          }
+        } else {
+          setProfile(null);
         }
-      } else {
-        setProfile(null);
-      }
 
-      loadingRef.current = false;
-      setIsLoading(false);
+        setIsLoading(false);
+      }
     });
 
     return () => {
@@ -174,19 +144,16 @@ export function useUser(): UseUserReturn {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, supabase]);
 
-  // Separate effect for visibility change - refresh session when tab becomes visible
+  // Refresh session when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible" && user) {
         try {
-          const { error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.log("Background refresh failed, session may have expired");
-          }
+          await supabase.auth.refreshSession();
         } catch (err) {
-          console.error("Visibility refresh error:", err);
+          // Silently ignore refresh errors
         }
       }
     };
@@ -195,7 +162,7 @@ export function useUser(): UseUserReturn {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user]);
+  }, [user, supabase]);
 
   const signOut = async () => {
     try {
@@ -203,25 +170,21 @@ export function useUser(): UseUserReturn {
       setUser(null);
       setProfile(null);
 
-      // Sign out from Supabase (clears auth cookies)
+      // Sign out from Supabase
       await supabase.auth.signOut({ scope: 'local' });
     } catch (err) {
-      // Ignore AbortErrors and other errors during sign out
       console.error("Sign out error:", err);
     } finally {
       // Clear all auth-related cookies manually as fallback
       if (typeof document !== "undefined") {
-        // Clear tenant cookies
         document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
-        // Clear any Supabase auth cookies that might remain
         const cookies = document.cookie.split(";");
         for (const cookie of cookies) {
           const cookieName = cookie.split("=")[0].trim();
           if (cookieName.includes("supabase") || cookieName.includes("sb-")) {
             document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-            // Also try with domain variations
             document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${window.location.hostname}`;
           }
         }
