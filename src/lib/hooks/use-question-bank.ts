@@ -211,13 +211,28 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const createQuestion = async (input: CreateQuestionInput): Promise<QuestionBankItem | null> => {
     try {
       const supabase = createClient();
+      // Only include valid columns for the question_bank table
+      const insertData: Record<string, unknown> = {
+        question_text: input.question_text,
+        question_type: input.question_type,
+        options: input.options || null,
+        correct_answer: input.correct_answer,
+        explanation: input.explanation || null,
+        certification_level: input.certification_level || "EMT",
+        difficulty: input.difficulty || "medium",
+        points: input.points || 1,
+        time_estimate_seconds: input.time_estimate_seconds || 60,
+        source: input.source || null,
+        tags: input.tags || null,
+        references: input.references || null,
+        category_id: input.category_id || null,
+        tenant_id: profile?.tenant_id,
+        created_by: profile?.id,
+      };
+
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
-        .insert({
-          ...input,
-          tenant_id: profile?.tenant_id,
-          created_by: profile?.id,
-        })
+        .insert(insertData)
         .select("*, category:question_bank_categories(*)")
         .single();
 
@@ -227,6 +242,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       toast.success("Question created");
       return data;
     } catch (err) {
+      console.error("Create question error:", err);
       toast.error("Failed to create question");
       return null;
     }
@@ -235,12 +251,29 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const updateQuestion = async (id: string, input: Partial<CreateQuestionInput>): Promise<QuestionBankItem | null> => {
     try {
       const supabase = createClient();
+      // Only include valid columns for the question_bank table
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only add fields that are valid database columns
+      if (input.question_text !== undefined) updateData.question_text = input.question_text;
+      if (input.question_type !== undefined) updateData.question_type = input.question_type;
+      if (input.options !== undefined) updateData.options = input.options;
+      if (input.correct_answer !== undefined) updateData.correct_answer = input.correct_answer;
+      if (input.explanation !== undefined) updateData.explanation = input.explanation || null;
+      if (input.certification_level !== undefined) updateData.certification_level = input.certification_level;
+      if (input.difficulty !== undefined) updateData.difficulty = input.difficulty;
+      if (input.points !== undefined) updateData.points = input.points;
+      if (input.time_estimate_seconds !== undefined) updateData.time_estimate_seconds = input.time_estimate_seconds;
+      if (input.source !== undefined) updateData.source = input.source || null;
+      if (input.tags !== undefined) updateData.tags = input.tags;
+      if (input.category_id !== undefined) updateData.category_id = input.category_id || null;
+      if (input.references !== undefined) updateData.references = input.references;
+
       const { data, error: updateError } = await (supabase as any)
         .from("question_bank")
-        .update({
-          ...input,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", id)
         .select("*, category:question_bank_categories(*)")
         .single();
@@ -250,6 +283,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       toast.success("Question updated");
       return data;
     } catch (err) {
+      console.error("Update question error:", err);
       toast.error("Failed to update question");
       return null;
     }
