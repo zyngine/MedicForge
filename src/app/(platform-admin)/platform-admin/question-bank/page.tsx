@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import {
   Button,
   Card,
@@ -185,30 +186,67 @@ export default function PlatformQuestionBankPage() {
   };
 
   const handleCreateQuestion = async (data: any) => {
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("question_bank").insert({
-      ...data,
-      tenant_id: null, // Global question
-      is_validated: false,
-    });
-    if (!error) {
+    try {
+      const supabase = createClient();
+      // Only include valid columns for the question_bank table
+      const insertData = {
+        question_text: data.question_text,
+        question_type: data.question_type,
+        options: data.options,
+        correct_answer: data.correct_answer,
+        explanation: data.explanation || null,
+        certification_level: data.certification_level || selectedLevel || "EMT",
+        difficulty: data.difficulty || "medium",
+        points: data.points || 1,
+        time_estimate_seconds: data.time_estimate_seconds || 60,
+        source: data.source || null,
+        tags: data.tags || null,
+        tenant_id: null, // Global question
+        is_validated: false,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("question_bank").insert(insertData);
+      if (error) throw error;
+      toast.success("Question created");
       setShowEditor(false);
       setEditingQuestion(null);
       if (selectedLevel) fetchQuestions();
       else fetchLevelCounts();
+    } catch (err) {
+      console.error("Create question error:", err);
+      toast.error("Failed to create question");
     }
   };
 
   const handleUpdateQuestion = async (data: any) => {
     if (!editingQuestion) return;
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("question_bank").update(data).eq("id", editingQuestion.id);
-    if (!error) {
+    try {
+      const supabase = createClient();
+      // Only include valid columns for the question_bank table
+      const updateData = {
+        question_text: data.question_text,
+        question_type: data.question_type,
+        options: data.options,
+        correct_answer: data.correct_answer,
+        explanation: data.explanation || null,
+        certification_level: data.certification_level,
+        difficulty: data.difficulty,
+        points: data.points,
+        time_estimate_seconds: data.time_estimate_seconds,
+        source: data.source || null,
+        tags: data.tags || null,
+        updated_at: new Date().toISOString(),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("question_bank").update(updateData).eq("id", editingQuestion.id);
+      if (error) throw error;
+      toast.success("Question updated");
       setShowEditor(false);
       setEditingQuestion(null);
       fetchQuestions();
+    } catch (err) {
+      console.error("Update question error:", err);
+      toast.error("Failed to update question");
     }
   };
 
