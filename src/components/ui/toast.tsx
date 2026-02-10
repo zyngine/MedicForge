@@ -1,10 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster, toast } from "sonner";
 
 export { toast };
 
 export function Toaster() {
+  // Delay showing toasts until after hydration to prevent flash of errors
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Wait for page to fully load before showing toasts
+    const timer = setTimeout(() => setIsReady(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isReady) {
+    return null;
+  }
+
   return (
     <SonnerToaster
       position="top-right"
