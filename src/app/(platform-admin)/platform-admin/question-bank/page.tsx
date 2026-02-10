@@ -22,11 +22,14 @@ import {
   BookOpen,
   Trash2,
   Eye,
+  Edit,
   Database,
   FolderOpen,
   ArrowLeft,
   GraduationCap,
+  Plus,
 } from "lucide-react";
+import { QuestionEditor } from "@/components/question-bank/question-editor";
 
 interface QuestionBankItem {
   id: string;
@@ -86,6 +89,8 @@ export default function PlatformQuestionBankPage() {
   const [filters, setFilters] = useState<QuestionFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionBankItem | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<QuestionBankItem | null>(null);
 
   useEffect(() => { fetchLevelCounts(); }, []);
   useEffect(() => { if (selectedLevel) { fetchQuestions(); fetchCategories(); } }, [selectedLevel, filters]);
@@ -179,6 +184,34 @@ export default function PlatformQuestionBankPage() {
     if (!error) fetchLevelCounts();
   };
 
+  const handleCreateQuestion = async (data: any) => {
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("question_bank").insert({
+      ...data,
+      tenant_id: null, // Global question
+      is_validated: false,
+    });
+    if (!error) {
+      setShowEditor(false);
+      setEditingQuestion(null);
+      if (selectedLevel) fetchQuestions();
+      else fetchLevelCounts();
+    }
+  };
+
+  const handleUpdateQuestion = async (data: any) => {
+    if (!editingQuestion) return;
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("question_bank").update(data).eq("id", editingQuestion.id);
+    if (!error) {
+      setShowEditor(false);
+      setEditingQuestion(null);
+      fetchQuestions();
+    }
+  };
+
   const totalQuestions = Object.values(levelCounts).reduce((a, b) => a + b, 0);
 
   // FOLDER VIEW
@@ -258,6 +291,9 @@ export default function PlatformQuestionBankPage() {
             <p className="text-muted-foreground">{total.toLocaleString()} questions in this level</p>
           </div>
         </div>
+        <Button onClick={() => setShowEditor(true)}>
+          <Plus className="h-4 w-4 mr-2" />Add Question
+        </Button>
       </div>
       {error && <Alert variant="error" title="Error">{error}</Alert>}
       <Card>
@@ -310,6 +346,7 @@ export default function PlatformQuestionBankPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setSelectedQuestion(question)}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setEditingQuestion(question); setShowEditor(true); }} title="Edit question"><Edit className="h-4 w-4" /></Button>
                     {question.tenant_id !== null && <Button variant="ghost" size="sm" onClick={() => handleMakeGlobal(question)} title="Make global"><Database className="h-4 w-4 text-blue-600" /></Button>}
                     {!question.is_validated && <Button variant="ghost" size="sm" onClick={() => handleValidate(question)} title="Validate"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
                     <Button variant="ghost" size="sm" onClick={() => handleDelete(question)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
@@ -345,8 +382,39 @@ export default function PlatformQuestionBankPage() {
               <div><p className="text-muted-foreground">Success Rate</p><p className="font-medium">{selectedQuestion.times_used > 0 ? `${Math.round((selectedQuestion.times_correct / selectedQuestion.times_used) * 100)}%` : "N/A"}</p></div>
               <div><p className="text-muted-foreground">Avg. Time</p><p className="font-medium">{selectedQuestion.avg_time_seconds ? `${Math.round(selectedQuestion.avg_time_seconds)}s` : "N/A"}</p></div>
             </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => { setSelectedQuestion(null); setEditingQuestion(selectedQuestion); setShowEditor(true); }}>
+                <Edit className="h-4 w-4 mr-2" />Edit Question
+              </Button>
+            </div>
           </div>
         )}
+      </Modal>
+
+      {/* Question Editor Modal */}
+      <Modal
+        isOpen={showEditor}
+        onClose={() => { setShowEditor(false); setEditingQuestion(null); }}
+        title={editingQuestion ? "Edit Question" : "Add Question"}
+        size="xl"
+      >
+        <QuestionEditor
+          question={editingQuestion ? {
+            ...editingQuestion,
+            category_id: undefined,
+            category: undefined,
+            source: undefined,
+          } as any : null}
+          categories={[]}
+          onSave={async (data) => {
+            if (editingQuestion) {
+              await handleUpdateQuestion(data);
+            } else {
+              await handleCreateQuestion(data);
+            }
+          }}
+          onCancel={() => { setShowEditor(false); setEditingQuestion(null); }}
+        />
       </Modal>
     </div>
   );
