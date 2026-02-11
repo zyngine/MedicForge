@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   BookOpen,
   ClipboardList,
+  ClipboardCheck,
   Award,
   Calendar,
   MessageSquare,
@@ -39,6 +40,11 @@ const studentNavigation = [
     title: "Video Sessions",
     href: "/student/video-sessions",
     icon: <Video className="h-5 w-5" />,
+  },
+  {
+    title: "Practice Exams",
+    href: "/student/exams",
+    icon: <ClipboardCheck className="h-5 w-5" />,
   },
   {
     title: "Assignments",
