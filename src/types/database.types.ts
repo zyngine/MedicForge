@@ -1329,6 +1329,64 @@ export type Database = {
           },
         ]
       }
+      course_instructors: {
+        Row: {
+          id: string
+          course_id: string
+          instructor_id: string
+          role: "lead" | "coordinator" | "instructor" | "assistant" | "grader"
+          can_edit: boolean
+          can_grade: boolean
+          can_manage_students: boolean
+          added_by: string | null
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          instructor_id: string
+          role?: "lead" | "coordinator" | "instructor" | "assistant" | "grader"
+          can_edit?: boolean
+          can_grade?: boolean
+          can_manage_students?: boolean
+          added_by?: string | null
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          instructor_id?: string
+          role?: "lead" | "coordinator" | "instructor" | "assistant" | "grader"
+          can_edit?: boolean
+          can_grade?: boolean
+          can_manage_students?: boolean
+          added_by?: string | null
+          added_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_instructors_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_instructors_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_instructors_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_posts: {
         Row: {
           author_id: string

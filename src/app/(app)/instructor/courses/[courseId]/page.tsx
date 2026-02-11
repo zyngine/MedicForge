@@ -54,6 +54,7 @@ import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { ModuleForm } from "@/components/course/module-form";
 import { LessonEditor } from "@/components/course/lesson-editor";
+import { CourseInstructorsManager } from "@/components/courses/course-instructors-manager";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -484,6 +485,7 @@ export default function CourseDetailPage() {
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="grades">Grades</TabsTrigger>
+          <TabsTrigger value="instructors">Instructors</TabsTrigger>
           <TabsTrigger value="competencies">Competencies</TabsTrigger>
         </TabsList>
 
@@ -905,6 +907,11 @@ export default function CourseDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Instructors Tab */}
+        <TabsContent value="instructors">
+          <CourseInstructorsManager courseId={courseId} />
         </TabsContent>
 
         {/* Competencies Tab */}

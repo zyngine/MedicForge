@@ -118,14 +118,82 @@ export function useCourses(options?: {
 }
 
 /**
- * Get courses for the current instructor
+ * Get courses for the current instructor (from junction table)
  */
 export function useInstructorCourses() {
+  const { tenant } = useTenant();
   const { user } = useUser();
 
-  return useCourses({
-    instructorId: user?.id,
-    isArchived: false,
+  return useQuery({
+    queryKey: ["instructor-courses", tenant?.id, user?.id],
+    queryFn: async () => {
+      if (!tenant?.id || !user?.id) return [];
+
+      const supabase = createClient();
+
+      // First get course IDs from junction table
+      const { data: courseInstructors, error: ciError } = await (supabase as any)
+        .from("course_instructors")
+        .select("course_id, role, can_edit, can_grade, can_manage_students")
+        .eq("instructor_id", user.id);
+
+      if (ciError) {
+        console.error("Error fetching course instructors:", ciError);
+        // Fallback to old method if junction table doesn't exist yet
+        const { data, error } = await supabase
+          .from("courses")
+          .select(`*, instructor:users!courses_instructor_id_fkey(id, full_name, email)`)
+          .eq("tenant_id", tenant.id)
+          .eq("instructor_id", user.id)
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return data as CourseWithDetails[];
+      }
+
+      if (!courseInstructors || courseInstructors.length === 0) {
+        // Also check legacy instructor_id field
+        const { data, error } = await supabase
+          .from("courses")
+          .select(`*, instructor:users!courses_instructor_id_fkey(id, full_name, email)`)
+          .eq("tenant_id", tenant.id)
+          .eq("instructor_id", user.id)
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return data as CourseWithDetails[];
+      }
+
+      const courseIds = courseInstructors.map((ci: any) => ci.course_id);
+
+      // Now get the actual courses
+      const { data: courses, error } = await supabase
+        .from("courses")
+        .select(`*, instructor:users!courses_instructor_id_fkey(id, full_name, email)`)
+        .eq("tenant_id", tenant.id)
+        .in("id", courseIds)
+        .eq("is_archived", false)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Add role/permissions info to each course
+      return (courses || []).map((course) => {
+        const ci = courseInstructors.find((c: any) => c.course_id === course.id);
+        return {
+          ...course,
+          my_role: ci?.role,
+          my_permissions: {
+            can_edit: ci?.can_edit ?? true,
+            can_grade: ci?.can_grade ?? true,
+            can_manage_students: ci?.can_manage_students ?? false,
+          },
+        } as CourseWithDetails;
+      });
+    },
+    enabled: !!tenant?.id && !!user?.id,
   });
 }
 
