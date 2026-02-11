@@ -148,7 +148,7 @@ export default function StudentLessonPage() {
                 ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
                 : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
             }`}>
-              {getLessonIcon(lesson.content_type)}
+              {getLessonIcon(lesson.content_type || "text")}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -236,10 +236,10 @@ export default function StudentLessonPage() {
             <div className="prose prose-sm dark:prose-invert max-w-none">
               {typeof lesson.content === "string" ? (
                 <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
-              ) : lesson.content.html ? (
-                <div dangerouslySetInnerHTML={{ __html: lesson.content.html }} />
-              ) : lesson.content.text ? (
-                <p className="whitespace-pre-wrap">{lesson.content.text}</p>
+              ) : typeof lesson.content === "object" && lesson.content !== null && "html" in lesson.content ? (
+                <div dangerouslySetInnerHTML={{ __html: String((lesson.content as { html: string }).html) }} />
+              ) : typeof lesson.content === "object" && lesson.content !== null && "text" in lesson.content ? (
+                <p className="whitespace-pre-wrap">{String((lesson.content as { text: string }).text)}</p>
               ) : (
                 <p className="text-muted-foreground">No content available.</p>
               )}
@@ -316,7 +316,7 @@ export default function StudentLessonPage() {
                     {index + 1}.
                   </span>
                   <div className="p-1.5 rounded bg-muted">
-                    {getLessonIcon(l.content_type)}
+                    {getLessonIcon(l.content_type || "text")}
                   </div>
                   <span className={`flex-1 text-sm ${l.id === lessonId ? "font-medium" : ""}`}>
                     {l.title}
