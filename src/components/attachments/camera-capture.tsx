@@ -5,6 +5,7 @@ import { Button, Card } from "@/components/ui";
 import { Camera, X, RotateCcw, Check, Upload, Image, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/use-user";
+import { useStorageQuota } from "@/lib/hooks/use-storage-quota";
 import { toast } from "sonner";
 
 interface CameraCaptureProps {
@@ -218,6 +219,7 @@ export function ImageUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useUser();
   const supabase = createClient();
+  const { canUpload } = useStorageQuota();
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,6 +228,13 @@ export function ImageUpload({
     // Check file size
     if (file.size > maxSize * 1024 * 1024) {
       toast.error(`File too large. Maximum size is ${maxSize}MB.`);
+      return;
+    }
+
+    // Check storage quota
+    const quotaCheck = await canUpload(file.size);
+    if (!quotaCheck.allowed) {
+      toast.error(quotaCheck.message || "Storage quota exceeded");
       return;
     }
 
@@ -266,7 +275,7 @@ export function ImageUpload({
     } finally {
       setIsUploading(false);
     }
-  }, [profile?.tenant_id, maxSize, storageFolder, documentId, supabase, onUpload]);
+  }, [profile?.tenant_id, maxSize, storageFolder, documentId, supabase, onUpload, canUpload]);
 
   return (
     <div>

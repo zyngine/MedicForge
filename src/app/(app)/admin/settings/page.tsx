@@ -23,6 +23,8 @@ import {
   Copy,
   RefreshCw,
   Check,
+  HardDrive,
+  KeyRound,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
@@ -58,6 +60,18 @@ const settingsItems = [
     description: "Customize colors and branding for your portal",
     href: "/admin/settings/appearance",
     icon: Palette,
+  },
+  {
+    title: "Storage",
+    description: "Monitor storage usage and manage quota",
+    href: "/admin/settings/storage",
+    icon: HardDrive,
+  },
+  {
+    title: "Single Sign-On",
+    description: "Configure SAML, OIDC, and social login providers",
+    href: "/admin/settings/sso",
+    icon: KeyRound,
   },
 ];
 

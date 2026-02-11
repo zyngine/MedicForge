@@ -19,6 +19,7 @@ export interface Tenant {
   subscription_status: "active" | "canceled" | "past_due" | "trialing";
   trial_ends_at: string | null;
   agency_code: string | null;
+  white_label_enabled: boolean;
 }
 
 interface TenantContextType {
@@ -135,6 +136,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           subscription_status: data.subscription_status as Tenant["subscription_status"],
           trial_ends_at: data.trial_ends_at,
           agency_code: data.agency_code || null,
+          white_label_enabled: data.white_label_enabled || false,
         });
         // Also set the tenant_slug cookie with actual slug
         if (typeof document !== "undefined") {
@@ -263,5 +265,6 @@ export function useTenantBranding() {
     primaryColor: tenant?.primary_color || "#C53030",
     tenantName: tenant?.name || "MedicForge",
     isWhiteLabeled: !!tenant?.logo_url,
+    hideVendorBranding: tenant?.white_label_enabled || false,
   };
 }

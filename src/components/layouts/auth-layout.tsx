@@ -11,7 +11,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, description }: AuthLayoutProps) {
-  const { logoUrl, tenantName, isWhiteLabeled } = useTenantBranding();
+  const { logoUrl, tenantName, isWhiteLabeled, hideVendorBranding } = useTenantBranding();
 
   return (
     <div className="min-h-screen flex">
@@ -70,9 +70,11 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
             </div>
           </div>
 
-          <div className="text-sm text-white/60">
-            &copy; {new Date().getFullYear()} MedicForge. All rights reserved.
-          </div>
+          {!hideVendorBranding && (
+            <div className="text-sm text-white/60">
+              &copy; {new Date().getFullYear()} MedicForge. All rights reserved.
+            </div>
+          )}
         </div>
       </div>
 
