@@ -7,6 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 // Singleton supabase client
 const supabase = createClient();
 
+// Module-level cache for tenant state to persist across navigations
+let cachedTenant: Tenant | null = null;
+let tenantInitialized = false;
+
 export interface Tenant {
   id: string;
   name: string;
@@ -62,12 +66,20 @@ function getTenantIdFromCookie(): string | null {
 }
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize from cache to prevent loading flash on navigation
+  const [tenant, setTenant] = useState<Tenant | null>(cachedTenant);
+  const [isLoading, setIsLoading] = useState(!tenantInitialized);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
 
   const fetchTenant = async () => {
+    // If already initialized and cached, skip fetch
+    if (tenantInitialized && cachedTenant !== undefined) {
+      setTenant(cachedTenant);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       let tenantId = getTenantIdFromCookie();
 
@@ -80,6 +92,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           if (isPlatformAdmin) {
             // Platform admins don't have tenants, skip tenant lookup
             if (mountedRef.current) {
+              cachedTenant = null;
+              tenantInitialized = true;
               setTenant(null);
               setIsLoading(false);
             }
@@ -105,6 +119,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (!tenantId) {
         // No tenant cookie and no logged-in user = main marketing site
         if (mountedRef.current) {
+          cachedTenant = null;
+          tenantInitialized = true;
           setTenant(null);
           setIsLoading(false);
         }
@@ -122,9 +138,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (fetchError) {
         console.error("Error fetching tenant:", fetchError);
         setError(new Error("Failed to load tenant"));
+        cachedTenant = null;
+        tenantInitialized = true;
         setTenant(null);
       } else {
-        setTenant({
+        const tenantData: Tenant = {
           id: data.id,
           name: data.name,
           slug: data.slug,
@@ -137,7 +155,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           trial_ends_at: data.trial_ends_at,
           agency_code: data.agency_code || null,
           white_label_enabled: data.white_label_enabled || false,
-        });
+        };
+        cachedTenant = tenantData;
+        tenantInitialized = true;
+        setTenant(tenantData);
         // Also set the tenant_slug cookie with actual slug
         if (typeof document !== "undefined") {
           document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax`;
@@ -151,6 +172,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (mountedRef.current) {
         console.error("Tenant fetch error:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
+        tenantInitialized = true;
       }
     } finally {
       if (mountedRef.current) {
@@ -167,7 +189,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+      if (event === "SIGNED_OUT") {
+        // Clear cache on sign out
+        cachedTenant = null;
+        tenantInitialized = false;
+        setTenant(null);
+        setIsLoading(false);
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        // Re-fetch tenant on sign in
+        tenantInitialized = false; // Force re-fetch
         fetchTenant();
       }
     });

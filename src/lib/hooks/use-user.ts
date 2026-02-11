@@ -19,10 +19,17 @@ interface UseUserReturn {
 // Use singleton client
 const supabase = createClient();
 
+// Module-level cache for auth state to persist across navigations
+let cachedUser: User | null = null;
+let cachedProfile: UserProfile | null = null;
+let authInitialized = false;
+
 export function useUser(): UseUserReturn {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize from cache to prevent loading flash on navigation
+  const [user, setUser] = useState<User | null>(cachedUser);
+  const [profile, setProfile] = useState<UserProfile | null>(cachedProfile);
+  // Only show loading if we haven't initialized auth yet
+  const [isLoading, setIsLoading] = useState(!authInitialized);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -54,12 +61,20 @@ export function useUser(): UseUserReturn {
 
   useEffect(() => {
     let isMounted = true;
-    let authInitialized = false;
+    let effectInitialized = false;
 
     const initAuth = async () => {
       // Prevent double initialization within same effect cycle
-      if (authInitialized) return;
-      authInitialized = true;
+      if (effectInitialized) return;
+      effectInitialized = true;
+
+      // If we've already initialized and have cached state, skip re-fetching
+      if (authInitialized && cachedUser !== null) {
+        setUser(cachedUser);
+        setProfile(cachedProfile);
+        setIsLoading(false);
+        return;
+      }
 
       try {
         // Get session from cookies (synchronous, fast)
@@ -69,34 +84,42 @@ export function useUser(): UseUserReturn {
 
         if (sessionError) {
           console.error("Session error:", sessionError.message);
+          authInitialized = true;
           setIsLoading(false);
           return;
         }
 
         if (!session) {
           // No session, user is not logged in
+          authInitialized = true;
+          cachedUser = null;
+          cachedProfile = null;
           setIsLoading(false);
           return;
         }
 
         // We have a session - set user immediately from session
+        cachedUser = session.user;
         setUser(session.user);
 
         // Fetch profile
         if (session.user) {
           const profileData = await fetchProfile(session.user.id);
           if (isMounted) {
+            cachedProfile = profileData;
             setProfile(profileData);
           }
         }
 
         if (isMounted) {
+          authInitialized = true;
           setIsLoading(false);
         }
       } catch (err) {
         console.error("Auth init failed:", err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error("Failed to initialize auth"));
+          authInitialized = true;
           setIsLoading(false);
         }
       }
@@ -104,8 +127,9 @@ export function useUser(): UseUserReturn {
 
     // Set a shorter timeout (5 seconds) to prevent long loading states
     const timeout = setTimeout(() => {
-      if (isMounted && isLoading) {
+      if (isMounted && !authInitialized) {
         console.warn("Auth initialization timed out");
+        authInitialized = true;
         setIsLoading(false);
       }
     }, 5000);
@@ -119,6 +143,8 @@ export function useUser(): UseUserReturn {
       if (!isMounted) return;
 
       if (event === "SIGNED_OUT") {
+        cachedUser = null;
+        cachedProfile = null;
         setUser(null);
         setProfile(null);
         setIsLoading(false);
@@ -126,14 +152,17 @@ export function useUser(): UseUserReturn {
       }
 
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        cachedUser = session?.user ?? null;
         setUser(session?.user ?? null);
 
         if (session?.user) {
           const profileData = await fetchProfile(session.user.id);
           if (isMounted) {
+            cachedProfile = profileData;
             setProfile(profileData);
           }
         } else {
+          cachedProfile = null;
           setProfile(null);
         }
 
@@ -168,7 +197,10 @@ export function useUser(): UseUserReturn {
 
   const signOut = async () => {
     try {
-      // Clear local state first
+      // Clear cached and local state first
+      cachedUser = null;
+      cachedProfile = null;
+      authInitialized = false;
       setUser(null);
       setProfile(null);
 
