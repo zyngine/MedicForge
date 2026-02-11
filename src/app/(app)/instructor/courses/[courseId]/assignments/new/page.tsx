@@ -26,8 +26,9 @@ import {
   Save,
   Eye,
   Plus,
+  Library,
 } from "lucide-react";
-import { QuizBuilder, useQuizBuilderState, type QuizQuestion } from "@/components/quiz/quiz-builder";
+import { QuizBuilder, useQuizBuilderState, type QuizQuestion, QuizTemplateBrowser, SaveQuizTemplateModal } from "@/components/quiz";
 import { useModules } from "@/lib/hooks/use-modules";
 import { useCreateAssignment } from "@/lib/hooks/use-assignments";
 import { useBulkCreateQuizQuestions } from "@/lib/hooks/use-quiz-questions";
@@ -63,9 +64,34 @@ export default function NewAssignmentPage() {
   const [showCorrectAnswers, setShowCorrectAnswers] = React.useState(true);
   const [publishImmediately, setPublishImmediately] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [showTemplateBrowser, setShowTemplateBrowser] = React.useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = React.useState(false);
 
   // Quiz builder state
   const { questions, setQuestions, totalPoints } = useQuizBuilderState([]);
+
+  // Handle template selection
+  const handleTemplateSelect = (template: {
+    name: string;
+    description: string | null;
+    time_limit_minutes: number | null;
+    max_attempts: number;
+    shuffle_questions: boolean;
+    shuffle_options: boolean;
+    show_correct_answers: boolean;
+    passing_score: number;
+    questions: QuizQuestion[];
+    total_points: number;
+  }) => {
+    // Populate form with template data
+    setTitle(template.name);
+    setDescription(template.description || "");
+    setTimeLimit(template.time_limit_minutes?.toString() || "");
+    setAttempts(template.max_attempts >= 999 ? "unlimited" : template.max_attempts.toString());
+    setShuffleQuestions(template.shuffle_questions);
+    setShowCorrectAnswers(template.show_correct_answers);
+    setQuestions(template.questions);
+  };
 
   // Module options for select
   const moduleOptions = modules.map((m) => ({
@@ -282,10 +308,34 @@ export default function NewAssignmentPage() {
           {assignmentType === "quiz" && (
             <Card>
               <CardHeader>
-                <CardTitle>Questions</CardTitle>
-                <CardDescription>
-                  Build your quiz by adding questions below
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Questions</CardTitle>
+                    <CardDescription>
+                      Build your quiz by adding questions below
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTemplateBrowser(true)}
+                    >
+                      <Library className="h-4 w-4 mr-2" />
+                      Use Template
+                    </Button>
+                    {questions.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSaveTemplate(true)}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save as Template
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <QuizBuilder
@@ -450,6 +500,27 @@ export default function NewAssignmentPage() {
           </Card>
         </div>
       </div>
+
+      {/* Quiz Template Browser Modal */}
+      <QuizTemplateBrowser
+        isOpen={showTemplateBrowser}
+        onClose={() => setShowTemplateBrowser(false)}
+        onSelect={handleTemplateSelect}
+      />
+
+      {/* Save as Template Modal */}
+      <SaveQuizTemplateModal
+        isOpen={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        questions={questions}
+        quizSettings={{
+          time_limit_minutes: timeLimit ? parseInt(timeLimit) : undefined,
+          max_attempts: attempts === "unlimited" ? 999 : parseInt(attempts),
+          shuffle_questions: shuffleQuestions,
+          show_correct_answers: showCorrectAnswers,
+        }}
+        defaultName={title}
+      />
     </div>
   );
 }

@@ -1387,6 +1387,86 @@ export type Database = {
           },
         ]
       }
+      quiz_templates: {
+        Row: {
+          id: string
+          tenant_id: string
+          created_by: string
+          name: string
+          description: string | null
+          time_limit_minutes: number | null
+          max_attempts: number
+          shuffle_questions: boolean
+          shuffle_options: boolean
+          show_correct_answers: boolean
+          passing_score: number
+          questions: Json
+          total_points: number
+          question_count: number
+          tags: string[]
+          certification_level: string | null
+          is_active: boolean
+          times_used: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          created_by: string
+          name: string
+          description?: string | null
+          time_limit_minutes?: number | null
+          max_attempts?: number
+          shuffle_questions?: boolean
+          shuffle_options?: boolean
+          show_correct_answers?: boolean
+          passing_score?: number
+          questions?: Json
+          tags?: string[]
+          certification_level?: string | null
+          is_active?: boolean
+          times_used?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          created_by?: string
+          name?: string
+          description?: string | null
+          time_limit_minutes?: number | null
+          max_attempts?: number
+          shuffle_questions?: boolean
+          shuffle_options?: boolean
+          show_correct_answers?: boolean
+          passing_score?: number
+          questions?: Json
+          tags?: string[]
+          certification_level?: string | null
+          is_active?: boolean
+          times_used?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_posts: {
         Row: {
           author_id: string
