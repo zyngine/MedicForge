@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
@@ -16,16 +16,14 @@ interface UseUserReturn {
   refreshProfile: () => Promise<void>;
 }
 
+// Use singleton client
+const supabase = createClient();
+
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const initRef = useRef(false);
-
-  // Create client inside hook to avoid SSR issues
-  const supabaseRef = useRef(createClient());
-  const supabase = supabaseRef.current;
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -45,7 +43,7 @@ export function useUser(): UseUserReturn {
       console.error("Profile fetch failed:", err);
       return null;
     }
-  }, [supabase]);
+  }, []);
 
   const refreshProfile = async () => {
     if (user) {
@@ -55,13 +53,14 @@ export function useUser(): UseUserReturn {
   };
 
   useEffect(() => {
-    // Prevent double initialization in strict mode
-    if (initRef.current) return;
-    initRef.current = true;
-
     let isMounted = true;
+    let authInitialized = false;
 
     const initAuth = async () => {
+      // Prevent double initialization within same effect cycle
+      if (authInitialized) return;
+      authInitialized = true;
+
       try {
         // Get session from cookies (synchronous, fast)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -91,7 +90,9 @@ export function useUser(): UseUserReturn {
           }
         }
 
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Auth init failed:", err);
         if (isMounted) {
@@ -103,7 +104,8 @@ export function useUser(): UseUserReturn {
 
     // Set a shorter timeout (5 seconds) to prevent long loading states
     const timeout = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && isLoading) {
+        console.warn("Auth initialization timed out");
         setIsLoading(false);
       }
     }, 5000);
@@ -144,7 +146,7 @@ export function useUser(): UseUserReturn {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [fetchProfile, supabase]);
+  }, [fetchProfile]);
 
   // Refresh session when tab becomes visible
   useEffect(() => {
@@ -162,7 +164,7 @@ export function useUser(): UseUserReturn {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user, supabase]);
+  }, [user]);
 
   const signOut = async () => {
     try {
