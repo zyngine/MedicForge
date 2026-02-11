@@ -102,12 +102,22 @@ export function useUser(): UseUserReturn {
         cachedUser = session.user;
         setUser(session.user);
 
-        // Fetch profile
+        // Fetch profile with timeout to prevent hanging
         if (session.user) {
-          const profileData = await fetchProfile(session.user.id);
-          if (isMounted) {
-            cachedProfile = profileData;
-            setProfile(profileData);
+          try {
+            const profilePromise = fetchProfile(session.user.id);
+            const timeoutPromise = new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), 3000)
+            );
+
+            const profileData = await Promise.race([profilePromise, timeoutPromise]);
+            if (isMounted) {
+              cachedProfile = profileData;
+              setProfile(profileData);
+            }
+          } catch (profileErr) {
+            console.error("Profile fetch failed, continuing without profile:", profileErr);
+            // Don't block - user can still proceed, profile will be null
           }
         }
 
@@ -128,9 +138,24 @@ export function useUser(): UseUserReturn {
     // Set a shorter timeout (5 seconds) to prevent long loading states
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
-        console.warn("Auth initialization timed out");
+        console.warn("Auth initialization timed out - clearing stale state");
         authInitialized = true;
+        cachedUser = null;
+        cachedProfile = null;
+        setUser(null);
+        setProfile(null);
         setIsLoading(false);
+
+        // Clear potentially corrupted auth cookies
+        if (typeof document !== "undefined") {
+          const cookies = document.cookie.split(";");
+          for (const cookie of cookies) {
+            const cookieName = cookie.split("=")[0].trim();
+            if (cookieName.includes("supabase") || cookieName.includes("sb-")) {
+              document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+            }
+          }
+        }
       }
     }, 5000);
 

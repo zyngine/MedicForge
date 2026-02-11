@@ -71,6 +71,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(!tenantInitialized);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchTenant = async () => {
     // If already initialized and cached, skip fetch
@@ -183,6 +184,22 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true;
+
+    // Set a timeout to prevent infinite loading
+    timeoutRef.current = setTimeout(() => {
+      if (mountedRef.current && !tenantInitialized) {
+        console.warn("Tenant fetch timed out after 5 seconds");
+        tenantInitialized = true;
+        setIsLoading(false);
+        // Clear any potentially stale auth state that might be causing the hang
+        if (!cachedTenant) {
+          // If we couldn't get tenant, clear auth cookies to allow fresh login
+          document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+      }
+    }, 5000);
+
     fetchTenant();
 
     // Listen for auth state changes to re-fetch tenant when user logs in/out
@@ -204,6 +221,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       subscription.unsubscribe();
     };
   }, []);
