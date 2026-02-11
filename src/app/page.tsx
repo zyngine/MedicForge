@@ -12,7 +12,6 @@ import {
   CheckCircle,
   ArrowRight,
   Star,
-  Play,
   Building2,
   UserCog,
   CalendarClock,
@@ -188,8 +187,8 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button size="xl" variant="outline" asChild>
-                <Link href="/demo">
-                  <Play className="mr-2 h-5 w-5" /> Try Demo
+                <Link href="/login">
+                  Sign In
                 </Link>
               </Button>
             </div>
