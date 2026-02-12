@@ -58,7 +58,12 @@ export default function AppearanceSettingsPage() {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !tenant) return;
+    if (!file || !tenant) {
+      console.log("[Logo Upload] No file or tenant", { file: !!file, tenant: !!tenant });
+      return;
+    }
+
+    console.log("[Logo Upload] Starting upload:", { fileName: file.name, fileSize: file.size, fileType: file.type });
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
@@ -80,20 +85,33 @@ export default function AppearanceSettingsPage() {
       const fileExt = file.name.split(".").pop();
       const fileName = `${tenant.id}/logo.${fileExt}`;
 
+      console.log("[Logo Upload] Uploading to:", fileName);
+
       // Upload to storage
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("assets")
         .upload(fileName, file, {
           upsert: true,
           contentType: file.type,
         });
 
+      console.log("[Logo Upload] Upload result:", { data: uploadData, error: uploadError });
+
       if (uploadError) {
         // If bucket doesn't exist, try creating it or use a URL input fallback
-        if (uploadError.message.includes("Bucket not found")) {
+        if (uploadError.message.includes("Bucket not found") || uploadError.message.includes("bucket")) {
           setError(
-            "Storage not configured. Please enter a logo URL directly or contact support."
+            "Storage bucket 'assets' not found. Please create it in Supabase Storage or enter a logo URL directly."
           );
+          setIsUploading(false);
+          return;
+        }
+        // Handle RLS/permission errors
+        if (uploadError.message.includes("security") || uploadError.message.includes("policy") || uploadError.message.includes("permission")) {
+          setError(
+            `Storage permission error: ${uploadError.message}. Please check storage policies.`
+          );
+          setIsUploading(false);
           return;
         }
         throw uploadError;
@@ -104,11 +122,14 @@ export default function AppearanceSettingsPage() {
         data: { publicUrl },
       } = supabase.storage.from("assets").getPublicUrl(fileName);
 
+      console.log("[Logo Upload] Public URL:", publicUrl);
+
       setLogoUrl(publicUrl);
       toast.success("Logo uploaded successfully");
-    } catch (err) {
-      console.error("Logo upload error:", err);
-      setError("Failed to upload logo. Please try again.");
+    } catch (err: any) {
+      console.error("[Logo Upload] Error:", err);
+      const errorMessage = err?.message || err?.error?.message || "Unknown error";
+      setError(`Failed to upload logo: ${errorMessage}`);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
