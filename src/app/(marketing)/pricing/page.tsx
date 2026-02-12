@@ -147,7 +147,7 @@ const faqs = [
   {
     question: "Can I try MedicForge before committing?",
     answer:
-      "Yes! We offer a free Starter plan for training programs that you can use indefinitely. You can also try our interactive demo to explore all features before signing up.",
+      "Yes! We offer a free Starter plan for training programs that you can use indefinitely. Start with the free plan to explore all core features.",
   },
   {
     question: "What payment methods do you accept?",

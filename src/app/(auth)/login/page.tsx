@@ -28,9 +28,7 @@ function LoginFormContent() {
     try {
       const supabase = createClient();
 
-      // Sign out any existing session first to prevent stale session issues
-      await supabase.auth.signOut({ scope: 'local' });
-
+      // signInWithPassword automatically replaces any existing session
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
