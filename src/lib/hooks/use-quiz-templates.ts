@@ -159,6 +159,15 @@ export function useCreateQuizTemplate() {
       }
 
       const supabase: any = createClient();
+
+      // Log for debugging
+      console.log("Creating quiz template:", {
+        tenant_id: profile.tenant_id,
+        created_by: user.id,
+        name: input.name,
+        questionCount: input.questions?.length,
+      });
+
       const { data, error } = await supabase
         .from("quiz_templates")
         .insert({
@@ -172,14 +181,17 @@ export function useCreateQuizTemplate() {
           shuffle_options: input.shuffle_options || false,
           show_correct_answers: input.show_correct_answers ?? true,
           passing_score: input.passing_score || 70,
-          questions: JSON.stringify(input.questions),
+          questions: input.questions, // JSONB - pass directly, not stringified
           tags: input.tags || [],
           certification_level: input.certification_level || null,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error creating template:", error);
+        throw error;
+      }
       return data as QuizTemplate;
     },
     onSuccess: () => {
@@ -201,15 +213,10 @@ export function useUpdateQuizTemplate() {
     }: Partial<QuizTemplate> & { id: string }) => {
       const supabase: any = createClient();
 
-      // Convert questions to JSON string if present
-      const dbUpdates: any = { ...updates };
-      if (updates.questions) {
-        dbUpdates.questions = JSON.stringify(updates.questions);
-      }
-
+      // JSONB columns accept objects directly, no need to stringify
       const { data, error } = await supabase
         .from("quiz_templates")
-        .update(dbUpdates)
+        .update(updates)
         .eq("id", id)
         .select()
         .single();
@@ -369,7 +376,7 @@ export function useSaveAsQuizTemplate() {
           shuffle_options: assignment.shuffle_options || false,
           show_correct_answers: assignment.show_correct_answers ?? true,
           passing_score: assignment.passing_score || 70,
-          questions: JSON.stringify(templateQuestions),
+          questions: templateQuestions, // JSONB - pass directly, not stringified
           tags: tags || [],
           certification_level: certification_level || null,
         })
