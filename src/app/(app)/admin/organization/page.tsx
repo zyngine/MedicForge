@@ -19,7 +19,12 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export default function OrganizationPage() {
-  const { tenant, isLoading: tenantLoading, refetch } = useTenant();
+  const { tenant, isLoading: tenantLoading, error: tenantError, refetch } = useTenant();
+
+  // Debug logging
+  console.log("[Organization] tenant:", tenant?.id, tenant?.name);
+  console.log("[Organization] tenantLoading:", tenantLoading);
+  console.log("[Organization] tenantError:", tenantError);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +56,11 @@ export default function OrganizationPage() {
   }, [tenant]);
 
   const handleSave = async () => {
-    if (!tenant || !name.trim()) {
+    if (!tenant) {
+      setError("Unable to load organization. Please try refreshing the page or contact support.");
+      return;
+    }
+    if (!name.trim()) {
       setError("Organization name is required");
       return;
     }
@@ -98,6 +107,27 @@ export default function OrganizationPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!tenant) {
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <div>
+          <h1 className="text-2xl font-bold">Organization</h1>
+          <p className="text-muted-foreground">
+            Manage your organization&apos;s profile and contact information
+          </p>
+        </div>
+        <Alert variant="error">
+          Unable to load organization data. This may happen if your account setup is incomplete.
+          Please try logging out and back in, or contact support at admin@medicforge.com.
+          {tenantError && <div className="mt-2 text-xs">Error: {tenantError.message}</div>}
+        </Alert>
+        <Button onClick={() => refetch()}>
+          Retry Loading
+        </Button>
       </div>
     );
   }
