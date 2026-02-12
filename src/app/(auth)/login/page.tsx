@@ -47,9 +47,37 @@ function LoginFormContent() {
           .eq("id", data.user.id)
           .single();
 
+        let role = profile?.role;
+
+        // If no profile exists, call setup-user to create one
+        // This handles users who verified email but callback failed
+        if (!profile) {
+          console.log("[Login] No profile found, calling setup-user...");
+          try {
+            const setupResponse = await fetch("/api/auth/setup-user", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: data.user.id,
+                email: data.user.email,
+                metadata: data.user.user_metadata,
+              }),
+            });
+            const setupResult = await setupResponse.json();
+            console.log("[Login] Setup result:", setupResult);
+            if (setupResponse.ok && setupResult.role) {
+              role = setupResult.role;
+            }
+          } catch (setupError) {
+            console.error("[Login] Setup error:", setupError);
+          }
+        }
+
         // Redirect based on user role - use hard redirect for clean state
-        if (profile?.role === "student") {
+        if (role === "student") {
           window.location.href = "/student/dashboard";
+        } else if (role === "admin") {
+          window.location.href = "/admin/dashboard";
         } else {
           window.location.href = "/instructor/dashboard";
         }
