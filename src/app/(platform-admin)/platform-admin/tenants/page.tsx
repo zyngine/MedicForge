@@ -154,22 +154,27 @@ export default function TenantsPage() {
     setSaveError(null);
     setSaveSuccess(false);
 
-    const supabase = createClient();
-
     try {
-      const { error } = await supabase
-        .from("tenants")
-        .update({
-          subscription_tier: editTier as string,
-          subscription_status: editStatus as string,
+      // Use the platform admin API which bypasses RLS
+      const response = await fetch("/api/platform-admin/tenants", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: editingTenant.id,
+          subscription_tier: editTier,
+          subscription_status: editStatus,
           payment_method: editPaymentMethod,
           subscription_notes: editNotes,
           // Clear trial_ends_at if activating a paid subscription
           trial_ends_at: editStatus === "active" && editTier !== "free" ? null : editingTenant.trial_ends_at,
-        } as Record<string, unknown>)
-        .eq("id", editingTenant.id);
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update subscription");
+      }
 
       // Update local state
       setTenants(tenants.map(t =>
@@ -188,9 +193,9 @@ export default function TenantsPage() {
       setTimeout(() => {
         closeEditModal();
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating subscription:", error);
-      setSaveError("Failed to update subscription. Please try again.");
+      setSaveError(error.message || "Failed to update subscription. Please try again.");
     } finally {
       setIsSaving(false);
     }
