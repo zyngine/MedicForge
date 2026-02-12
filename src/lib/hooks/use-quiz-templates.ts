@@ -133,8 +133,7 @@ export function useQuizTemplate(templateId: string | null | undefined) {
  * Create a new quiz template
  */
 export function useCreateQuizTemplate() {
-  const { tenant } = useTenant();
-  const { user } = useUser();
+  const { user, profile } = useUser();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -151,15 +150,19 @@ export function useCreateQuizTemplate() {
       tags?: string[];
       certification_level?: string;
     }) => {
-      if (!tenant?.id || !user?.id) {
-        throw new Error("Not authenticated");
+      if (!user?.id || !profile?.tenant_id) {
+        throw new Error("Not authenticated or missing tenant");
+      }
+
+      if (profile.role !== "instructor" && profile.role !== "admin") {
+        throw new Error("Only instructors and admins can create quiz templates");
       }
 
       const supabase: any = createClient();
       const { data, error } = await supabase
         .from("quiz_templates")
         .insert({
-          tenant_id: tenant.id,
+          tenant_id: profile.tenant_id,
           created_by: user.id,
           name: input.name,
           description: input.description || null,
@@ -293,8 +296,7 @@ export function useCloneQuizTemplate() {
  * Save an existing assignment's quiz as a template
  */
 export function useSaveAsQuizTemplate() {
-  const { tenant } = useTenant();
-  const { user } = useUser();
+  const { user, profile } = useUser();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -311,8 +313,12 @@ export function useSaveAsQuizTemplate() {
       tags?: string[];
       certification_level?: string;
     }) => {
-      if (!tenant?.id || !user?.id) {
-        throw new Error("Not authenticated");
+      if (!user?.id || !profile?.tenant_id) {
+        throw new Error("Not authenticated or missing tenant");
+      }
+
+      if (profile.role !== "instructor" && profile.role !== "admin") {
+        throw new Error("Only instructors and admins can create quiz templates");
       }
 
       const supabase: any = createClient();
@@ -353,7 +359,7 @@ export function useSaveAsQuizTemplate() {
       const { data: template, error: templateError } = await supabase
         .from("quiz_templates")
         .insert({
-          tenant_id: tenant.id,
+          tenant_id: profile.tenant_id,
           created_by: user.id,
           name,
           description: description || assignment.description,
