@@ -20,6 +20,7 @@ import {
   BookOpen,
   CalendarClock,
   UserCog,
+  GraduationCap,
 } from "lucide-react";
 
 const adminNavigation = [
@@ -99,6 +100,11 @@ const adminNavigation = [
     title: "Settings",
     href: "/admin/settings",
     icon: <Settings className="h-5 w-5" />,
+  },
+  {
+    title: "Instructor Portal",
+    href: "/instructor/dashboard",
+    icon: <GraduationCap className="h-5 w-5" />,
   },
 ];
 
