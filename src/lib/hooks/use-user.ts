@@ -230,7 +230,7 @@ export function useUser(): UseUserReturn {
       setProfile(null);
 
       // Sign out from Supabase
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut({ scope: 'global' });
     } catch (err) {
       console.error("Sign out error:", err);
     } finally {
