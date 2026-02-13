@@ -215,6 +215,15 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Block protected app routes on the main marketing domain
+  // These routes should only be accessible via tenant subdomains
+  if (isMainDomain && isProtectedRoute) {
+    // Redirect to the marketing home page or login
+    const url = request.nextUrl.clone()
+    url.pathname = "/"
+    return NextResponse.redirect(url)
+  }
+
   // Protected routes - require login
   if (isProtectedRoute || isPlatformAdminRoute) {
     try {
