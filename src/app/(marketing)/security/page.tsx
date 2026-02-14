@@ -127,7 +127,7 @@ export default function SecurityPage() {
                 <h3 className="text-xl font-semibold mb-3">Report a Vulnerability</h3>
                 <p className="text-muted-foreground">
                   If you discover a security vulnerability, please report it to
-                  admin@medicforge.com. We appreciate responsible disclosure and will
+                  admin@medicforge.net. We appreciate responsible disclosure and will
                   work with you to address any issues.
                 </p>
               </div>

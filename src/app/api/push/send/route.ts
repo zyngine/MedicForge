@@ -8,7 +8,7 @@ const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(
-    "mailto:support@medicforge.com",
+    "mailto:support@medicforge.net",
     vapidPublicKey,
     vapidPrivateKey
   );

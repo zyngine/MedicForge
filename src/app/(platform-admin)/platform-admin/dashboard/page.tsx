@@ -252,7 +252,7 @@ export default function PlatformAdminDashboard() {
                   <div>
                     <p className="font-medium">{tenant.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {tenant.slug}.medicforge.com
+                      {tenant.slug}.medicforge.net
                     </p>
                   </div>
                 </div>

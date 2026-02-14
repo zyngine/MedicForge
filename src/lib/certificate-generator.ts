@@ -125,7 +125,7 @@ function getDefaultTemplate(): string {
           <div class="verification-section">
             <p class="cert-number">Certificate #: {{certificate_number}}</p>
             {{#if show_verification_code}}<p class="verify-code">Verification: {{verification_code}}</p>{{/if}}
-            <p class="verify-url">Verify at: medicforge.com/verify</p>
+            <p class="verify-url">Verify at: medicforge.net/verify</p>
           </div>
         </div>
       </div>

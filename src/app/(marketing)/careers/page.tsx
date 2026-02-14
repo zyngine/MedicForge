@@ -70,7 +70,7 @@ export default function CareersPage() {
                 tell us how you&apos;d like to contribute.
               </p>
               <Button asChild>
-                <Link href="mailto:admin@medicforge.com">Get in Touch</Link>
+                <Link href="mailto:admin@medicforge.net">Get in Touch</Link>
               </Button>
             </CardContent>
           </Card>

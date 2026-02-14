@@ -36,7 +36,7 @@ function generateICalEvent(event: CalendarEvent): string {
 
   const lines = [
     "BEGIN:VEVENT",
-    `UID:${event.id}@medicforge.com`,
+    `UID:${event.id}@medicforge.net`,
     `DTSTAMP:${formatDate(new Date())}`,
     event.allDay
       ? `DTSTART;VALUE=DATE:${formatDate(event.start, true)}`

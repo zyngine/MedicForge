@@ -10,8 +10,8 @@ const contactMethods = [
     icon: <Mail className="h-6 w-6" />,
     title: "Email Us",
     description: "Send us an email anytime",
-    contact: "admin@medicforge.com",
-    href: "mailto:admin@medicforge.com",
+    contact: "admin@medicforge.net",
+    href: "mailto:admin@medicforge.net",
   },
   {
     icon: <MessageSquare className="h-6 w-6" />,

@@ -158,10 +158,10 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
                 Where First Responders Are Forged. The modern LMS for EMS education.
               </p>
               <a
-                href="mailto:admin@medicforge.com"
+                href="mailto:admin@medicforge.net"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                admin@medicforge.com
+                admin@medicforge.net
               </a>
             </div>
 

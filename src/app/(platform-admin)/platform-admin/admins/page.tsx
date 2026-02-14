@@ -254,7 +254,7 @@ export default function PlatformAdminsPage() {
               type="email"
               value={newAdminEmail}
               onChange={(e) => setNewAdminEmail(e.target.value)}
-              placeholder="admin@medicforge.com"
+              placeholder="admin@medicforge.net"
               required
             />
           </div>

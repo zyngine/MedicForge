@@ -122,7 +122,7 @@ export default function OrganizationPage() {
         </div>
         <Alert variant="error">
           Unable to load organization data. This may happen if your account setup is incomplete.
-          Please try logging out and back in, or contact support at admin@medicforge.com.
+          Please try logging out and back in, or contact support at admin@medicforge.net.
           {tenantError && <div className="mt-2 text-xs">Error: {tenantError.message}</div>}
         </Alert>
         <Button onClick={() => refetch()}>
@@ -178,7 +178,7 @@ export default function OrganizationPage() {
               className="bg-muted"
             />
             <p className="text-xs text-muted-foreground">
-              Your portal URL: {slug}.medicforge.com (contact support to change)
+              Your portal URL: {slug}.medicforge.net (contact support to change)
             </p>
           </div>
 

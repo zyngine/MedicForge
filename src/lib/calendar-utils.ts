@@ -45,7 +45,7 @@ export function generateICS(events: CalendarEvent[], calendarName = "MedicForge"
  * Generate a single VEVENT block
  */
 function generateVEvent(event: CalendarEvent): string[] {
-  const uid = `${event.id}@medicforge.com`;
+  const uid = `${event.id}@medicforge.net`;
   const dtstamp = formatICSDate(new Date());
 
   const lines: string[] = [

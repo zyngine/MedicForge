@@ -224,7 +224,7 @@ export default function SubscriptionsPage() {
                   <div>
                     <p className="font-medium">{sub.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {sub.slug}.medicforge.com
+                      {sub.slug}.medicforge.net
                     </p>
                   </div>
                 </div>

@@ -30,7 +30,7 @@ export default function SettingsPage() {
   // Platform settings state
   const [settings, setSettings] = useState({
     platformName: "MedicForge",
-    supportEmail: "support@medicforge.com",
+    supportEmail: "support@medicforge.net",
     defaultTrialDays: "14",
     maxStudentsPerTrial: "25",
     enableSignups: true,
@@ -219,7 +219,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="font-medium">From Address</p>
-                <p className="text-muted-foreground">noreply@medicforge.com</p>
+                <p className="text-muted-foreground">noreply@medicforge.net</p>
               </div>
             </div>
           </div>

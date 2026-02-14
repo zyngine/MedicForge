@@ -285,7 +285,7 @@ export default function TenantsPage() {
                   <div>
                     <h3 className="font-semibold text-lg">{tenant.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {tenant.custom_domain || `${tenant.slug}.medicforge.com`}
+                      {tenant.custom_domain || `${tenant.slug}.medicforge.net`}
                     </p>
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">

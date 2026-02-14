@@ -9,7 +9,7 @@ const supportOptions = [
     title: "Email Support",
     description: "Get help via email. We typically respond within 24 hours.",
     action: "Send Email",
-    href: "mailto:admin@medicforge.com",
+    href: "mailto:admin@medicforge.net",
   },
   {
     icon: <BookOpen className="h-8 w-8" />,

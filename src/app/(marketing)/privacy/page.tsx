@@ -98,7 +98,7 @@ export default function PrivacyPage() {
                 If you have questions about this Privacy Policy, please contact us at:
               </p>
               <p className="text-muted-foreground">
-                Email: admin@medicforge.com
+                Email: admin@medicforge.net
               </p>
             </div>
           </div>

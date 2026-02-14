@@ -118,7 +118,7 @@ export default function ZoomIntegrationPage() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Need help?</p>
-                  <p>Contact our support team at <a href="mailto:admin@medicforge.com" className="text-primary hover:underline">admin@medicforge.com</a></p>
+                  <p>Contact our support team at <a href="mailto:admin@medicforge.net" className="text-primary hover:underline">admin@medicforge.net</a></p>
                 </div>
               </div>
             </div>

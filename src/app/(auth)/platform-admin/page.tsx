@@ -88,7 +88,7 @@ export default function PlatformAdminLoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@medicforge.com"
+            placeholder="admin@medicforge.net"
             leftIcon={<Mail className="h-4 w-4" />}
             required
             autoComplete="email"

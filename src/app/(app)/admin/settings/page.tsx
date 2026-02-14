@@ -125,7 +125,7 @@ export default function SettingsPage() {
 
   const handleCopyLink = async () => {
     if (tenant?.agency_code) {
-      const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://medicforge.com";
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://medicforge.net";
       const inviteLink = `${baseUrl}/register?type=instructor&agency_code=${tenant.agency_code}`;
       await navigator.clipboard.writeText(inviteLink);
       setCopied("link");

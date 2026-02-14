@@ -99,7 +99,7 @@ export default function TermsPage() {
                 For questions about these Terms of Service, contact us at:
               </p>
               <p className="text-muted-foreground">
-                Email: admin@medicforge.com
+                Email: admin@medicforge.net
               </p>
             </div>
           </div>
