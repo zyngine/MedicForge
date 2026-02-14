@@ -54,12 +54,17 @@ export function LimitReachedAlert({
   const typeLabel =
     type === "instructor" ? "instructors" : type === "student" ? "students" : "courses";
 
-  const upgradeMessage = {
+  const upgradeMessage: Record<string, string> = {
     free: "Upgrade to Professional",
     pro: "Upgrade to Institution",
+    professional: "Upgrade to Institution",
     institution: "Contact sales for Enterprise",
     enterprise: "Contact support",
-  }[tier] || "Upgrade your plan";
+    "agency-starter": "Upgrade to Agency Pro",
+    "agency-pro": "Upgrade to Agency Enterprise",
+    "agency-enterprise": "Contact support",
+  };
+  const message = upgradeMessage[tier] || "Upgrade your plan";
 
   return (
     <Alert
@@ -75,7 +80,7 @@ export function LimitReachedAlert({
             <Link href="/admin/billing">
               <Button size="sm" variant="outline" className="mt-2">
                 <Zap className="h-3 w-3 mr-1" />
-                {upgradeMessage}
+                {message}
               </Button>
             </Link>
           </div>
@@ -108,14 +113,19 @@ export function UpgradeModal({
   const typeLabel =
     type === "instructor" ? "instructors" : type === "student" ? "students" : "courses";
 
-  const nextTier = {
+  const nextTierMap: Record<string, { name: string; price: string }> = {
     free: { name: "Professional", price: "$149/month" },
     pro: { name: "Institution", price: "$399/month" },
+    professional: { name: "Institution", price: "$399/month" },
     institution: { name: "Enterprise", price: "Custom" },
     enterprise: { name: "Enterprise", price: "Custom" },
-  }[currentTier] || { name: "Professional", price: "$149/month" };
+    "agency-starter": { name: "Agency Pro", price: "$249/month" },
+    "agency-pro": { name: "Agency Enterprise", price: "$499/month" },
+    "agency-enterprise": { name: "Agency Enterprise", price: "Custom" },
+  };
+  const nextTier = nextTierMap[currentTier] || { name: "Professional", price: "$149/month" };
 
-  const benefits = {
+  const benefitsMap: Record<string, string[]> = {
     free: [
       "5 instructors (vs 1)",
       "100 students (vs 25)",
@@ -130,6 +140,13 @@ export function UpgradeModal({
       "API access",
       "Priority support",
     ],
+    professional: [
+      "Unlimited instructors (vs 5)",
+      "500 students (vs 100)",
+      "Custom domain support",
+      "API access",
+      "Priority support",
+    ],
     institution: [
       "Unlimited students",
       "Dedicated support",
@@ -138,7 +155,19 @@ export function UpgradeModal({
       "On-premise option",
     ],
     enterprise: [],
-  }[currentTier] || [];
+    "agency-starter": [
+      "5 instructors (vs 2)",
+      "150 employees (vs 50)",
+      "Priority support",
+    ],
+    "agency-pro": [
+      "Unlimited instructors",
+      "Unlimited employees",
+      "Dedicated support",
+    ],
+    "agency-enterprise": [],
+  };
+  const benefits = benefitsMap[currentTier] || [];
 
   return (
     <Modal
@@ -248,8 +277,12 @@ export function SubscriptionStatusBadge({
   const tierLabels: Record<string, string> = {
     free: "Free",
     pro: "Pro",
+    professional: "Professional",
     institution: "Institution",
     enterprise: "Enterprise",
+    "agency-starter": "Agency Starter",
+    "agency-pro": "Agency Pro",
+    "agency-enterprise": "Agency Enterprise",
   };
 
   return (
