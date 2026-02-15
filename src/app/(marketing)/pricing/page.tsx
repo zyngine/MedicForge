@@ -96,7 +96,7 @@ const agencyTiers = [
       "No digital signatures",
     ],
     cta: "Get Started",
-    href: "/register?plan=agency-starter",
+    href: "/agency/register?plan=agency-starter",
     highlighted: false,
   },
   {
@@ -117,7 +117,7 @@ const agencyTiers = [
     ],
     limitations: [],
     cta: "Get Started",
-    href: "/register?plan=agency-pro",
+    href: "/agency/register?plan=agency-pro",
     highlighted: true,
   },
   {
