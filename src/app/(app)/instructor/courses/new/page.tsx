@@ -94,11 +94,19 @@ export default function NewCoursePage() {
         </Button>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-bold">Create New Course</h1>
-        <p className="text-muted-foreground">
-          Set up a new course for your students. An enrollment code will be automatically generated.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Create New Course</h1>
+          <p className="text-muted-foreground">
+            Set up a new course for your students. An enrollment code will be automatically generated.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/instructor/courses/templates">
+            <BookOpen className="h-4 w-4 mr-2" />
+            Import from Template
+          </Link>
+        </Button>
       </div>
 
       {/* Subscription Limit Alert */}

@@ -293,6 +293,99 @@ export function useCourseTemplates() {
     });
   };
 
+  const updateFromCourse = async (
+    templateId: string,
+    courseId: string,
+    options?: {
+      includeModules?: boolean;
+      includeLessons?: boolean;
+      includeAssignments?: boolean;
+    }
+  ): Promise<boolean> => {
+    if (!profile?.tenant_id) {
+      toast.error("You must be logged in");
+      return false;
+    }
+
+    try {
+      // Fetch course data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: course, error: courseError } = await (supabase as any)
+        .from("courses")
+        .select("*")
+        .eq("id", courseId)
+        .single();
+
+      if (courseError) throw courseError;
+
+      const templateData: CourseTemplate["template_data"] = {
+        settings: course.settings,
+      };
+
+      // Fetch modules if requested
+      if (options?.includeModules !== false) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: modules } = await (supabase as any)
+          .from("modules")
+          .select("*")
+          .eq("course_id", courseId)
+          .order("order_index");
+
+        templateData.modules = modules?.map((m: { title: string; description: string; order_index: number }) => ({
+          title: m.title,
+          description: m.description,
+          order_index: m.order_index,
+        })) || [];
+
+        // Fetch lessons for each module if requested
+        if (options?.includeLessons !== false && modules) {
+          for (let i = 0; i < modules.length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: lessons } = await (supabase as any)
+              .from("lessons")
+              .select("*")
+              .eq("module_id", modules[i].id)
+              .order("order_index");
+
+            templateData.modules![i].lessons = lessons?.map((l: { title: string; content_type: string; content: unknown; order_index: number }) => ({
+              title: l.title,
+              content_type: l.content_type,
+              content: l.content,
+              order_index: l.order_index,
+            })) || [];
+          }
+        }
+      }
+
+      // Fetch assignments if requested
+      if (options?.includeAssignments !== false) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: assignments } = await (supabase as any)
+          .from("assignments")
+          .select("*, module:modules(order_index)")
+          .eq("course_id", courseId);
+
+        templateData.assignments = assignments?.map((a: { title: string; description: string; type: string; points_possible: number; module?: { order_index: number } }) => ({
+          title: a.title,
+          description: a.description,
+          type: a.type,
+          points_possible: a.points_possible,
+          module_index: a.module?.order_index,
+        })) || [];
+      }
+
+      // Update the template with new data
+      return updateTemplate(templateId, {
+        template_data: templateData,
+        description: course.description,
+        course_type: course.course_type,
+      });
+    } catch (err) {
+      toast.error("Failed to update template from course");
+      return false;
+    }
+  };
+
   const toggleShared = async (id: string): Promise<boolean> => {
     const template = templates.find((t) => t.id === id);
     if (!template) return false;
@@ -305,6 +398,7 @@ export function useCourseTemplates() {
     refetch: fetchTemplates,
     createTemplate,
     createFromCourse,
+    updateFromCourse,
     updateTemplate,
     deleteTemplate,
     duplicateTemplate,

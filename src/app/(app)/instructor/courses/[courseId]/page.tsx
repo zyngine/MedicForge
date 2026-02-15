@@ -52,9 +52,12 @@ import { useLessons, useCreateLesson, useUpdateLesson, useDeleteLesson } from "@
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
+import { useCourseTemplates } from "@/lib/hooks/use-course-templates";
 import { ModuleForm } from "@/components/course/module-form";
 import { LessonEditor } from "@/components/course/lesson-editor";
 import { CourseInstructorsManager } from "@/components/courses/course-instructors-manager";
+import { Modal, ModalFooter } from "@/components/ui";
+import { Save } from "lucide-react";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -249,8 +252,15 @@ export default function CourseDetailPage() {
   const { mutateAsync: updateLesson } = useUpdateLesson();
   const { mutateAsync: deleteLesson } = useDeleteLesson();
 
+  // Template hook
+  const { createFromCourse, templates } = useCourseTemplates();
+
   // Modal state
   const [isModuleFormOpen, setIsModuleFormOpen] = React.useState(false);
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = React.useState(false);
+  const [templateName, setTemplateName] = React.useState("");
+  const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
+  const [selectedExistingTemplate, setSelectedExistingTemplate] = React.useState<string | "new">("new");
   const [editingModule, setEditingModule] = React.useState<typeof modules[0] | null>(null);
   const [isLessonEditorOpen, setIsLessonEditorOpen] = React.useState(false);
   const [editingLesson, setEditingLesson] = React.useState<any>(null);
@@ -400,6 +410,38 @@ export default function CourseDetailPage() {
     }
   };
 
+  // Save as Template handlers
+  const handleOpenSaveTemplate = () => {
+    setTemplateName(course?.title ? `${course.title} Template` : "");
+    setSelectedExistingTemplate("new");
+    setIsSaveTemplateOpen(true);
+  };
+
+  const handleSaveAsTemplate = async () => {
+    if (!templateName.trim()) return;
+
+    setIsSavingTemplate(true);
+    try {
+      const template = await createFromCourse(courseId, templateName.trim(), {
+        includeModules: true,
+        includeLessons: true,
+        includeAssignments: true,
+      });
+
+      if (template) {
+        setIsSaveTemplateOpen(false);
+        setTemplateName("");
+      }
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  // Get existing templates created from this course type
+  const relevantTemplates = templates.filter(
+    t => t.course_type === course?.course_type
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -430,6 +472,10 @@ export default function CourseDetailPage() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={handleOpenSaveTemplate}>
+                <Save className="h-4 w-4 mr-2" />
+                Save as Template
+              </Button>
               <Button variant="outline">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -975,6 +1021,86 @@ export default function CourseDetailPage() {
         } : undefined}
         isEditing={!!editingLesson}
       />
+
+      {/* Save as Template Modal */}
+      <Modal
+        isOpen={isSaveTemplateOpen}
+        onClose={() => setIsSaveTemplateOpen(false)}
+        title="Save Course as Template"
+        description="Save this course structure as a reusable template for creating future courses."
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="templateName" className="text-sm font-medium">
+              Template Name
+            </label>
+            <Input
+              id="templateName"
+              placeholder="e.g., EMT Basic Spring 2024"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+            <h4 className="font-medium text-sm">What will be saved:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                {modules.length} modules with structure
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                {modules.reduce((sum, m) => sum + (m.lessons_count || 0), 0)} lessons
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                {assignments.length} assignments
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-success" />
+                Course type: {course?.course_type || "Custom"}
+              </li>
+            </ul>
+          </div>
+
+          {relevantTemplates.length > 0 && (
+            <div className="p-3 rounded-lg border border-info/20 bg-info/5">
+              <p className="text-sm text-info">
+                You have {relevantTemplates.length} existing {course?.course_type} template(s).
+                To update an existing template, visit the Templates Library.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <ModalFooter className="mt-6">
+          <Button
+            variant="outline"
+            onClick={() => setIsSaveTemplateOpen(false)}
+            disabled={isSavingTemplate}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveAsTemplate}
+            disabled={!templateName.trim() || isSavingTemplate}
+          >
+            {isSavingTemplate ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Template
+              </>
+            )}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
