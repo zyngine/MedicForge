@@ -1582,6 +1582,7 @@ export type Database = {
           subscription_tier:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type: Database["public"]["Enums"]["tenant_type"] | null
           trial_ends_at: string | null
           updated_at: string | null
         }
@@ -1602,6 +1603,7 @@ export type Database = {
           subscription_tier?:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type?: Database["public"]["Enums"]["tenant_type"] | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -1622,6 +1624,7 @@ export type Database = {
           subscription_tier?:
             | Database["public"]["Enums"]["subscription_tier"]
             | null
+          tenant_type?: Database["public"]["Enums"]["tenant_type"] | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -1629,6 +1632,7 @@ export type Database = {
       }
       users: {
         Row: {
+          agency_role: Database["public"]["Enums"]["agency_role"] | null
           avatar_url: string | null
           created_at: string | null
           email: string
@@ -1642,6 +1646,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          agency_role?: Database["public"]["Enums"]["agency_role"] | null
           avatar_url?: string | null
           created_at?: string | null
           email: string
@@ -1655,6 +1660,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          agency_role?: Database["public"]["Enums"]["agency_role"] | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string
@@ -1698,6 +1704,7 @@ export type Database = {
       is_platform_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      agency_role: "agency_admin" | "medical_director"
       assignment_type: "quiz" | "written" | "skill_checklist" | "discussion"
       attendance_status: "present" | "absent" | "late" | "excused"
       booking_status: "booked" | "completed" | "cancelled" | "no_show"
@@ -1719,6 +1726,7 @@ export type Database = {
       submission_status: "in_progress" | "submitted" | "graded" | "returned"
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
       subscription_tier: "free" | "pro" | "institution" | "enterprise"
+      tenant_type: "education" | "agency" | "combined"
       user_role: "admin" | "instructor" | "student"
       verification_status: "pending" | "verified" | "rejected"
     }
@@ -1848,6 +1856,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agency_role: ["agency_admin", "medical_director"],
       assignment_type: ["quiz", "written", "skill_checklist", "discussion"],
       attendance_status: ["present", "absent", "late", "excused"],
       booking_status: ["booked", "completed", "cancelled", "no_show"],
@@ -1870,6 +1879,7 @@ export const Constants = {
       submission_status: ["in_progress", "submitted", "graded", "returned"],
       subscription_status: ["active", "canceled", "past_due", "trialing"],
       subscription_tier: ["free", "pro", "institution", "enterprise"],
+      tenant_type: ["education", "agency", "combined"],
       user_role: ["admin", "instructor", "student"],
       verification_status: ["pending", "verified", "rejected"],
     },

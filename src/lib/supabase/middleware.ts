@@ -12,6 +12,7 @@ interface TenantInfo {
   logo_url: string | null
   primary_color: string
   custom_domain: string | null
+  tenant_type: "education" | "agency" | "combined"
 }
 
 export async function updateSession(request: NextRequest) {
@@ -153,6 +154,36 @@ export async function updateSession(request: NextRequest) {
                            pathname.startsWith("/instructor") ||
                            pathname.startsWith("/student")
 
+  const isAgencyRoute = pathname.startsWith("/agency") &&
+                        !pathname.startsWith("/agency/register")
+
+  const isLMSRoute = pathname.startsWith("/admin") ||
+                     pathname.startsWith("/instructor") ||
+                     pathname.startsWith("/student")
+
+  // ============================================
+  // TENANT TYPE-BASED ROUTING
+  // ============================================
+
+  // If we have tenant info, enforce tenant-type routing
+  if (tenantInfo) {
+    const tenantType = tenantInfo.tenant_type
+
+    // Agency tenants cannot access LMS routes
+    if (tenantType === "agency" && isLMSRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/agency/dashboard"
+      return NextResponse.redirect(url)
+    }
+
+    // Education tenants cannot access standalone agency routes
+    if (tenantType === "education" && isAgencyRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/admin/dashboard"
+      return NextResponse.redirect(url)
+    }
+  }
+
   // For auth routes, allow users to access them freely
   // They might want to switch accounts or log in as a different user
   if (isAuthRoute) {
@@ -225,7 +256,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Protected routes - require login
-  if (isProtectedRoute || isPlatformAdminRoute) {
+  if (isProtectedRoute || isPlatformAdminRoute || isAgencyRoute) {
     try {
       // First, try to refresh the session - this handles expired access tokens
       // getUser() will automatically use refresh token if access token is expired
@@ -277,7 +308,7 @@ async function lookupTenantBySlug(
   try {
     const { data, error } = await supabase
       .from("tenants")
-      .select("id, name, slug, logo_url, primary_color, custom_domain")
+      .select("id, name, slug, logo_url, primary_color, custom_domain, tenant_type")
       .eq("slug", slug)
       .single()
 
@@ -292,6 +323,7 @@ async function lookupTenantBySlug(
       logo_url: data.logo_url,
       primary_color: data.primary_color || "#C53030",
       custom_domain: data.custom_domain,
+      tenant_type: (data.tenant_type as TenantInfo["tenant_type"]) || "education",
     }
   } catch {
     return null
@@ -305,7 +337,7 @@ async function lookupTenantByCustomDomain(
   try {
     const { data, error } = await supabase
       .from("tenants")
-      .select("id, name, slug, logo_url, primary_color, custom_domain")
+      .select("id, name, slug, logo_url, primary_color, custom_domain, tenant_type")
       .eq("custom_domain", domain)
       .single()
 
@@ -320,6 +352,7 @@ async function lookupTenantByCustomDomain(
       logo_url: data.logo_url,
       primary_color: data.primary_color || "#C53030",
       custom_domain: data.custom_domain,
+      tenant_type: (data.tenant_type as TenantInfo["tenant_type"]) || "education",
     }
   } catch {
     return null

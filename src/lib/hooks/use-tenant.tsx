@@ -24,6 +24,7 @@ export interface Tenant {
   trial_ends_at: string | null;
   agency_code: string | null;
   white_label_enabled: boolean;
+  tenant_type: "education" | "agency" | "combined";
 }
 
 interface TenantContextType {
@@ -156,6 +157,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           trial_ends_at: data.trial_ends_at,
           agency_code: data.agency_code || null,
           white_label_enabled: data.white_label_enabled || false,
+          tenant_type: (data.tenant_type as Tenant["tenant_type"]) || "education",
         };
         cachedTenant = tenantData;
         tenantInitialized = true;
