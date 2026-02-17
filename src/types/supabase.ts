@@ -1226,8 +1226,12 @@ export type Database = {
         Row: {
           assignment_id: string
           correct_answer: Json
+          excluded_at: string | null
+          excluded_by: string | null
+          exclusion_reason: string | null
           explanation: string | null
           id: string
+          is_excluded: boolean | null
           options: Json | null
           order_index: number | null
           points: number | null
@@ -1238,8 +1242,12 @@ export type Database = {
         Insert: {
           assignment_id: string
           correct_answer: Json
+          excluded_at?: string | null
+          excluded_by?: string | null
+          exclusion_reason?: string | null
           explanation?: string | null
           id?: string
+          is_excluded?: boolean | null
           options?: Json | null
           order_index?: number | null
           points?: number | null
@@ -1250,8 +1258,12 @@ export type Database = {
         Update: {
           assignment_id?: string
           correct_answer?: Json
+          excluded_at?: string | null
+          excluded_by?: string | null
+          exclusion_reason?: string | null
           explanation?: string | null
           id?: string
+          is_excluded?: boolean | null
           options?: Json | null
           order_index?: number | null
           points?: number | null

@@ -45,6 +45,7 @@ import {
   Video,
   File,
   Loader2,
+  BarChart3,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/lib/hooks/use-modules";
@@ -851,9 +852,19 @@ export default function CourseDetailPage() {
                           <p className="font-medium">{assignment.points_possible}</p>
                           <p className="text-xs text-muted-foreground">points</p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {assignment.type === "quiz" && (
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/instructor/courses/${courseId}/assignments/${assignment.id}/results`}>
+                                <BarChart3 className="h-4 w-4 mr-1" />
+                                Results
+                              </Link>
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm">
+                            View
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
