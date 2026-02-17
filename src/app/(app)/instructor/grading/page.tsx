@@ -36,6 +36,7 @@ import {
   Download,
   BarChart3,
   TrendingUp,
+  Edit,
 } from "lucide-react";
 import { useSubmissions, usePendingSubmissions, useGradeSubmission, useApplyGradeCurve } from "@/lib/hooks/use-submissions";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
@@ -297,6 +298,18 @@ export default function GradingPage() {
     }
   };
 
+  const handleEditGradedSubmission = (submission: SubmissionDisplay) => {
+    // Pre-fill with existing score and feedback
+    setGradeScore(submission.rawScore?.toString() || submission.autoScore?.toString() || "");
+    // Get feedback text if it exists
+    const rawSubmission = gradedSubmissionsRaw.find((s) => s.id === submission.id);
+    const feedbackText = rawSubmission?.feedback && typeof rawSubmission.feedback === "object"
+      ? (rawSubmission.feedback as { text?: string }).text || ""
+      : "";
+    setGradeFeedback(feedbackText);
+    setSelectedSubmission(submission);
+  };
+
   const isLoading = pendingLoading || gradedLoading;
 
   if (isLoading) {
@@ -422,7 +435,12 @@ export default function GradingPage() {
                     <div
                       key={submission.id}
                       className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedSubmission(submission)}
+                      onClick={() => {
+                        // Pre-fill auto score if available
+                        setGradeScore(submission.autoScore?.toString() || "");
+                        setGradeFeedback("");
+                        setSelectedSubmission(submission);
+                      }}
                     >
                       <div className="flex items-center gap-4">
                         <Avatar fallback={submission.student.name} size="md" />
@@ -465,7 +483,8 @@ export default function GradingPage() {
                 {gradedSubmissions.map((submission) => (
                   <div
                     key={submission.id}
-                    className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleEditGradedSubmission(submission)}
                   >
                     <div className="flex items-center gap-4">
                       <Avatar fallback={submission.student.name} size="md" />
@@ -498,8 +517,9 @@ export default function GradingPage() {
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">{submission.gradedAt ? formatDate(submission.gradedAt) : ""}</p>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        View
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditGradedSubmission(submission); }}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
                       </Button>
                     </div>
                   </div>
@@ -513,8 +533,12 @@ export default function GradingPage() {
       {/* Grading Modal */}
       <Modal
         isOpen={selectedSubmission !== null}
-        onClose={() => setSelectedSubmission(null)}
-        title="Grade Submission"
+        onClose={() => {
+          setSelectedSubmission(null);
+          setGradeScore("");
+          setGradeFeedback("");
+        }}
+        title={selectedSubmission?.gradedAt ? "Edit Grade" : "Grade Submission"}
         size="lg"
       >
         {selectedSubmission && (
@@ -540,8 +564,28 @@ export default function GradingPage() {
               </div>
             </div>
 
+            {/* Previous Grade (when editing) */}
+            {selectedSubmission.gradedAt && selectedSubmission.rawScore !== null && (
+              <Card className="border-warning/50 bg-warning/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Current Grade</p>
+                      <p className="text-sm text-muted-foreground">
+                        Graded on {formatDate(selectedSubmission.gradedAt)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">{selectedSubmission.rawScore}</p>
+                      <p className="text-sm text-muted-foreground">out of {selectedSubmission.maxScore}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Auto Score */}
-            {selectedSubmission.autoScore !== null && (
+            {selectedSubmission.autoScore !== null && !selectedSubmission.gradedAt && (
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -566,7 +610,7 @@ export default function GradingPage() {
                   <Input
                     type="number"
                     placeholder={`0 - ${selectedSubmission.maxScore}`}
-                    value={gradeScore || (selectedSubmission.autoScore?.toString() || "")}
+                    value={gradeScore}
                     onChange={(e) => setGradeScore(e.target.value)}
                   />
                 </div>
@@ -589,16 +633,22 @@ export default function GradingPage() {
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setSelectedSubmission(null)}>
+              <Button variant="outline" onClick={() => {
+                setSelectedSubmission(null);
+                setGradeScore("");
+                setGradeFeedback("");
+              }}>
                 Cancel
               </Button>
-              <Button variant="outline">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Request Revision
-              </Button>
+              {!selectedSubmission.gradedAt && (
+                <Button variant="outline">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Request Revision
+                </Button>
+              )}
               <Button onClick={handleGradeSubmit} isLoading={isGrading} disabled={!gradeScore}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Submit Grade
+                {selectedSubmission.gradedAt ? "Update Grade" : "Submit Grade"}
               </Button>
             </div>
           </div>

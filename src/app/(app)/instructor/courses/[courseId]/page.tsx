@@ -861,8 +861,11 @@ export default function CourseDetailPage() {
                               </Link>
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
-                            View
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/instructor/courses/${courseId}/assignments/${assignment.id}/edit`}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Link>
                           </Button>
                         </div>
                       </div>
