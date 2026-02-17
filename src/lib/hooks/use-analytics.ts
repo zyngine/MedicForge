@@ -140,7 +140,10 @@ export function useCourseAnalytics(courseId: string) {
   const supabase = createClient();
 
   const fetchAnalytics = useCallback(async () => {
-    if (!profile?.tenant_id || !courseId) return;
+    if (!profile?.tenant_id || !courseId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

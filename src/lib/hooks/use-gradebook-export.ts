@@ -83,7 +83,10 @@ export function useGradebookExportTemplates() {
   const supabase = createClient();
 
   const fetchTemplates = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
