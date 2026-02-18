@@ -24,12 +24,55 @@ let cachedUser: User | null = null;
 let cachedProfile: UserProfile | null = null;
 let authInitialized = false;
 
+// Try to load cached profile from localStorage for instant display
+function loadCachedProfile(): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem("user_profile_cache");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Check if cache is less than 1 hour old
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 3600000) {
+        return parsed.profile;
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+function saveCachedProfile(profile: UserProfile | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (profile) {
+      localStorage.setItem("user_profile_cache", JSON.stringify({
+        profile,
+        timestamp: Date.now(),
+      }));
+    } else {
+      localStorage.removeItem("user_profile_cache");
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function useUser(): UseUserReturn {
   // Initialize from cache to prevent loading flash on navigation
+  // Try localStorage cache first for instant display
   const [user, setUser] = useState<User | null>(cachedUser);
-  const [profile, setProfile] = useState<UserProfile | null>(cachedProfile);
-  // Only show loading if we haven't initialized auth yet
-  const [isLoading, setIsLoading] = useState(!authInitialized);
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    if (cachedProfile) return cachedProfile;
+    const localCached = loadCachedProfile();
+    if (localCached) {
+      cachedProfile = localCached;
+      return localCached;
+    }
+    return null;
+  });
+  // Only show loading if we don't have any cached profile
+  const [isLoading, setIsLoading] = useState(!authInitialized && !cachedProfile && !loadCachedProfile());
   const [error, setError] = useState<Error | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -77,7 +120,7 @@ export function useUser(): UseUserReturn {
       }
 
       try {
-        // Get session from cookies (synchronous, fast)
+        // Get session from cookies (fast, no network call if token valid)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (!isMounted) return;
@@ -98,30 +141,58 @@ export function useUser(): UseUserReturn {
           return;
         }
 
-        // We have a session - set user immediately from session
+        // We have a session - set user immediately
         cachedUser = session.user;
         setUser(session.user);
 
-        // Fetch profile with timeout to prevent hanging (10 seconds for slow connections)
+        // Try to create a temporary profile from auth metadata for instant display
+        const metadata = session.user.user_metadata;
+        const tempProfile: UserProfile | null = metadata?.full_name ? {
+          id: session.user.id,
+          email: session.user.email || "",
+          full_name: metadata.full_name || session.user.email?.split("@")[0] || "User",
+          role: metadata.role || "student",
+          tenant_id: metadata.tenant_id || null,
+          avatar_url: metadata.avatar_url || null,
+          created_at: session.user.created_at,
+          updated_at: new Date().toISOString(),
+          phone: null,
+          bio: null,
+          certification_level: null,
+          student_id_number: null,
+          enrollment_date: null,
+          expected_graduation: null,
+          emergency_contact_name: null,
+          emergency_contact_phone: null,
+          notification_preferences: null,
+          agency_role: null,
+        } as UserProfile : null;
+
+        // If we have metadata, show it immediately while fetching full profile
+        if (tempProfile) {
+          cachedProfile = tempProfile;
+          setProfile(tempProfile);
+          authInitialized = true;
+          setIsLoading(false);
+        }
+
+        // Fetch full profile in background (or foreground if no temp profile)
         if (session.user) {
           try {
-            const profilePromise = fetchProfile(session.user.id);
-            const timeoutPromise = new Promise<null>((resolve) =>
-              setTimeout(() => resolve(null), 10000)
-            );
-
-            const profileData = await Promise.race([profilePromise, timeoutPromise]);
-            if (isMounted) {
+            const profileData = await fetchProfile(session.user.id);
+            if (isMounted && profileData) {
               cachedProfile = profileData;
               setProfile(profileData);
+              saveCachedProfile(profileData); // Cache for next page load
             }
           } catch (profileErr) {
-            console.error("Profile fetch failed, continuing without profile:", profileErr);
-            // Don't block - user can still proceed, profile will be null
+            console.error("Profile fetch failed:", profileErr);
+            // If we have temp profile, that's fine - already showing it
           }
         }
 
-        if (isMounted) {
+        // If we didn't have temp profile, now mark as done loading
+        if (isMounted && !tempProfile) {
           authInitialized = true;
           setIsLoading(false);
         }
@@ -226,6 +297,7 @@ export function useUser(): UseUserReturn {
       cachedUser = null;
       cachedProfile = null;
       authInitialized = false;
+      saveCachedProfile(null); // Clear localStorage cache
       setUser(null);
       setProfile(null);
 
