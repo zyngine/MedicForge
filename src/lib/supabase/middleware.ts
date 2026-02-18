@@ -120,7 +120,8 @@ export async function updateSession(request: NextRequest) {
   // ============================================
 
   // Skip auth check for public routes (faster response - no network calls)
-  const isPublicRoute = pathname === "/" ||
+  // BUT only on the main marketing domain - subdomains should NOT show marketing pages
+  const isMarketingRoute = pathname === "/" ||
                         pathname.startsWith("/features") ||
                         pathname.startsWith("/pricing") ||
                         pathname.startsWith("/about") ||
@@ -137,7 +138,14 @@ export async function updateSession(request: NextRequest) {
                         pathname.startsWith("/integrations") ||
                         pathname.startsWith("/changelog")
 
-  if (isPublicRoute) {
+  // On subdomains, redirect marketing routes to login
+  if (!isMainDomain && isMarketingRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    return NextResponse.redirect(url)
+  }
+
+  if (isMarketingRoute) {
     return supabaseResponse
   }
 
