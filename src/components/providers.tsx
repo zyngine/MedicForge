@@ -6,12 +6,15 @@ import { TenantProvider } from "@/lib/hooks/use-tenant";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 
-// Create a client
+// Create a client with optimized caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer (previously cacheTime)
       retry: 1,
+      refetchOnWindowFocus: false, // Don't refetch on every tab focus
+      refetchOnReconnect: true, // Do refetch when network reconnects
     },
   },
 });
