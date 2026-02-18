@@ -420,6 +420,8 @@ export function useMyExamAttempts() {
   const supabase = createClient();
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!user?.id) {
       setIsLoading(false);
       return;
@@ -427,7 +429,6 @@ export function useMyExamAttempts() {
 
     const fetchAttempts = async () => {
       try {
-        setIsLoading(true);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("exam_attempts")
@@ -435,16 +436,30 @@ export function useMyExamAttempts() {
           .eq("student_id", user.id)
           .order("started_at", { ascending: false });
 
-        if (error) throw error;
-        setAttempts(data || []);
+        if (isMounted) {
+          // Don't throw on error - table might not exist
+          if (error) {
+            console.error("Failed to fetch attempts:", error);
+            setAttempts([]);
+          } else {
+            setAttempts(data || []);
+          }
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Failed to fetch attempts:", err);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setAttempts([]);
+          setIsLoading(false);
+        }
       }
     };
 
     fetchAttempts();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id, supabase]);
 
   return { attempts, isLoading };
@@ -928,10 +943,10 @@ export function useAvailableExams(courseId?: string) {
   const supabase = createClient();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchExams = async () => {
       try {
-        setIsLoading(true);
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let query = (supabase as any)
           .from("standardized_exams")
@@ -948,16 +963,31 @@ export function useAvailableExams(courseId?: string) {
           .or(`available_until.is.null,available_until.gte.${now}`);
 
         const { data, error } = await query.order("created_at", { ascending: false });
-        if (error) throw error;
-        setExams(data || []);
+
+        if (isMounted) {
+          // Don't throw on error - just return empty array (table might not exist)
+          if (error) {
+            console.error("Failed to fetch available exams:", error);
+            setExams([]);
+          } else {
+            setExams(data || []);
+          }
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Failed to fetch available exams:", err);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setExams([]);
+          setIsLoading(false);
+        }
       }
     };
 
     fetchExams();
+
+    return () => {
+      isMounted = false;
+    };
   }, [courseId, supabase]);
 
   return { exams, isLoading };
