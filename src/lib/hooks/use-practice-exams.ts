@@ -70,7 +70,10 @@ export function usePracticeExams() {
   const supabase = createClient();
 
   const fetchSessions = useCallback(async () => {
-    if (!profile?.tenant_id || !profile?.id) return;
+    if (!profile?.tenant_id || !profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -284,7 +287,10 @@ export function usePracticeExamSession(sessionId: string) {
   const supabase = createClient();
 
   const fetchSession = useCallback(async () => {
-    if (!profile?.tenant_id || !sessionId) return;
+    if (!profile?.tenant_id || !sessionId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -514,7 +520,10 @@ export function useWeakAreas() {
 
   useEffect(() => {
     const fetchWeakAreas = async () => {
-      if (!profile?.tenant_id || !profile?.id) return;
+      if (!profile?.tenant_id || !profile?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

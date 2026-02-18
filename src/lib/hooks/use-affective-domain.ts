@@ -157,7 +157,10 @@ export function useAffectiveEvaluations(options?: {
   const supabase = createClient();
 
   const fetchEvaluations = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -266,7 +269,10 @@ export function useMyAffectiveEvaluations(courseId?: string) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!profile?.id) return;
+      if (!profile?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -366,7 +372,10 @@ export function useAffectiveIncidents(options?: {
   const supabase = createClient();
 
   const fetchIncidents = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -520,7 +529,10 @@ export function useRemediationPlans(options?: {
   const supabase = createClient();
 
   const fetchPlans = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

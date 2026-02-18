@@ -93,7 +93,10 @@ export function useFlashcardDecks(options?: { courseId?: string; myDecksOnly?: b
   const supabase = createClient();
 
   const fetchDecks = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -231,7 +234,10 @@ export function useFlashcards(deckId: string) {
   const supabase = createClient();
 
   const fetchCards = useCallback(async () => {
-    if (!profile?.tenant_id || !deckId) return;
+    if (!profile?.tenant_id || !deckId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -414,7 +420,10 @@ export function useFlashcardStudy(deckId: string) {
   const supabase = createClient();
 
   const fetchDueCards = useCallback(async () => {
-    if (!profile?.tenant_id || !profile?.id || !deckId) return;
+    if (!profile?.tenant_id || !profile?.id || !deckId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -549,7 +558,10 @@ export function useFlashcardStats(deckId: string) {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!profile?.tenant_id || !profile?.id || !deckId) return;
+      if (!profile?.tenant_id || !profile?.id || !deckId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

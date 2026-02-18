@@ -82,7 +82,10 @@ export function useSurveys(courseId?: string) {
   const supabase = createClient();
 
   const fetchSurveys = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -239,7 +242,10 @@ export function useSurveyQuestions(surveyId: string) {
   const supabase = createClient();
 
   const fetchQuestions = useCallback(async () => {
-    if (!surveyId) return;
+    if (!surveyId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -380,7 +386,10 @@ export function useSurveySubmission(surveyId: string) {
 
   useEffect(() => {
     const fetchSurveyData = async () => {
-      if (!surveyId) return;
+      if (!surveyId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

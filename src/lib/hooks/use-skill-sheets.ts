@@ -139,7 +139,10 @@ export function useSkillSheetTemplate(templateId: string) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!templateId) return;
+    if (!templateId) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchTemplate = async () => {
       try {
@@ -385,7 +388,10 @@ export function useStudentSkillProgress(studentId?: string) {
   const effectiveStudentId = studentId || profile?.id;
 
   useEffect(() => {
-    if (!effectiveStudentId) return;
+    if (!effectiveStudentId) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchProgress = async () => {
       try {

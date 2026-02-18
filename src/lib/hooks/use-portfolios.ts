@@ -90,7 +90,10 @@ export function usePortfolios(ownerId?: string) {
   const supabase = createClient();
 
   const fetchPortfolios = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     const targetOwnerId = ownerId || profile.id;
 
@@ -265,7 +268,10 @@ export function usePortfolioBuilder(portfolioId: string) {
   const supabase = createClient();
 
   const fetchPortfolio = useCallback(async () => {
-    if (!profile?.tenant_id || !portfolioId) return;
+    if (!profile?.tenant_id || !portfolioId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -556,7 +562,10 @@ export function usePortfolioSharing(portfolioId: string) {
   const supabase = createClient();
 
   const fetchShares = useCallback(async () => {
-    if (!profile?.tenant_id || !portfolioId) return;
+    if (!profile?.tenant_id || !portfolioId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

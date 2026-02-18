@@ -61,7 +61,10 @@ export function usePrerequisites(targetType?: string, targetId?: string) {
   const supabase = createClient();
 
   const fetchPrerequisites = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -187,7 +190,10 @@ export function useReleaseConditions(targetType?: string, targetId?: string) {
   const supabase = createClient();
 
   const fetchConditions = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -359,7 +365,10 @@ export function useContentAccess(courseId: string) {
   const supabase = createClient();
 
   const fetchAccess = useCallback(async () => {
-    if (!profile?.tenant_id || !profile?.id) return;
+    if (!profile?.tenant_id || !profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -509,7 +518,10 @@ export function useCourseAccessSettings(courseId: string) {
 
   useEffect(() => {
     const fetchAll = async () => {
-      if (!profile?.tenant_id || !courseId) return;
+      if (!profile?.tenant_id || !courseId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

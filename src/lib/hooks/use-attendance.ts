@@ -61,7 +61,10 @@ export function useAttendanceSessions(courseId: string) {
   const supabase = createClient();
 
   const fetchSessions = useCallback(async () => {
-    if (!courseId || !profile?.tenant_id) return;
+    if (!courseId || !profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -184,7 +187,10 @@ export function useAttendanceRecords(sessionId: string) {
   const supabase = createClient();
 
   const fetchRecords = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -315,7 +321,10 @@ export function useStudentAttendanceSummary(courseId: string, studentId?: string
   const effectiveStudentId = studentId || profile?.id;
 
   useEffect(() => {
-    if (!courseId || !effectiveStudentId) return;
+    if (!courseId || !effectiveStudentId) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchSummary = async () => {
       try {

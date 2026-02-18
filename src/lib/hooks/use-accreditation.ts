@@ -137,7 +137,10 @@ export function useAccreditationDocuments() {
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -256,7 +259,10 @@ export function useComplianceTracking(courseId?: string) {
   const supabase = createClient();
 
   const fetchCompliance = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -362,7 +368,10 @@ export function useProgramOutcomes() {
   const supabase = createClient();
 
   const fetchOutcomes = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -425,7 +434,10 @@ export function useAccreditationReports() {
   const supabase = createClient();
 
   const fetchReports = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

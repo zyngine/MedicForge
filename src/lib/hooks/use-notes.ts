@@ -58,7 +58,10 @@ export function useNotes(options?: {
   const supabase = createClient();
 
   const fetchNotes = useCallback(async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -238,7 +241,10 @@ export function useNotesSummary() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchSummary = async () => {
       try {
@@ -270,7 +276,10 @@ export function useLessonHighlights(lessonId: string) {
   const supabase = createClient();
 
   const fetchHighlights = useCallback(async () => {
-    if (!profile?.id || !lessonId) return;
+    if (!profile?.id || !lessonId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

@@ -100,7 +100,10 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
   const config = DEFAULT_CONFIG;
 
   const calculatePrediction = useCallback(async () => {
-    if (!effectiveStudentId) return;
+    if (!effectiveStudentId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

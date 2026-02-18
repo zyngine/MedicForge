@@ -78,7 +78,10 @@ export function useCourseTemplates() {
   const supabase = createClient();
 
   const fetchTemplates = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -414,7 +417,10 @@ export function useBlueprintCourses(templateId?: string) {
   const supabase = createClient();
 
   const fetchBlueprints = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -668,7 +674,10 @@ export function useBlueprintSyncHistory(blueprintId: string) {
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!profile?.tenant_id || !blueprintId) return;
+      if (!profile?.tenant_id || !blueprintId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

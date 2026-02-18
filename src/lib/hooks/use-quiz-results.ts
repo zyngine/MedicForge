@@ -68,7 +68,10 @@ export function useQuizResults(assignmentId: string) {
   const supabase = createClient();
 
   const fetchResults = React.useCallback(async () => {
-    if (!profile?.tenant_id || !assignmentId) return;
+    if (!profile?.tenant_id || !assignmentId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

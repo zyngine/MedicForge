@@ -85,7 +85,10 @@ export function useRubrics(options?: { templateOnly?: boolean }) {
   const supabase = createClient();
 
   const fetchRubrics = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -305,7 +308,10 @@ export function useRubricBuilder(rubricId: string) {
   const supabase = createClient();
 
   const fetchRubric = useCallback(async () => {
-    if (!profile?.tenant_id || !rubricId) return;
+    if (!profile?.tenant_id || !rubricId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -546,7 +552,10 @@ export function useRubricAssessment(rubricId: string, submissionId: string) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!profile?.tenant_id || !profile?.id || !rubricId || !submissionId) return;
+      if (!profile?.tenant_id || !profile?.id || !rubricId || !submissionId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
