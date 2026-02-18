@@ -66,7 +66,10 @@ export function useLearningOutcomes(courseId?: string) {
   const supabase = createClient();
 
   const fetchOutcomes = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -247,7 +250,10 @@ export function useOutcomeAlignments(alignableType: string, alignableId: string)
   const supabase = createClient();
 
   const fetchAlignments = useCallback(async () => {
-    if (!profile?.tenant_id || !alignableType || !alignableId) return;
+    if (!profile?.tenant_id || !alignableType || !alignableId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -359,7 +365,10 @@ export function useStudentMastery(studentId?: string, courseId?: string) {
   const supabase = createClient();
 
   const fetchMastery = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     const targetStudentId = studentId || profile.id;
 
@@ -496,7 +505,10 @@ export function useCourseOutcomeReport(courseId: string) {
 
   useEffect(() => {
     const fetchReport = async () => {
-      if (!profile?.tenant_id || !courseId) return;
+      if (!profile?.tenant_id || !courseId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

@@ -89,7 +89,10 @@ export function useLTITools() {
   const supabase = createClient();
 
   const fetchTools = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -231,7 +234,10 @@ export function useLTIPlacements(courseId?: string) {
   const supabase = createClient();
 
   const fetchPlacements = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -611,7 +617,10 @@ export function useLTIGrades(assignmentId: string) {
 
   useEffect(() => {
     const fetchGrades = async () => {
-      if (!profile?.tenant_id || !assignmentId) return;
+      if (!profile?.tenant_id || !assignmentId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

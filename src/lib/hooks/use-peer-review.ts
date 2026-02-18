@@ -68,7 +68,10 @@ export function usePeerReviewAssignments(assignmentId?: string) {
   const supabase = createClient();
 
   const fetchAssignments = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -231,7 +234,10 @@ export function useMyPeerReviews() {
   const supabase = createClient();
 
   const fetchReviews = useCallback(async () => {
-    if (!profile?.tenant_id || !profile?.id) return;
+    if (!profile?.tenant_id || !profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -428,7 +434,10 @@ export function usePeerReviewOverview(peerReviewAssignmentId: string) {
 
   useEffect(() => {
     const fetchOverview = async () => {
-      if (!profile?.tenant_id || !peerReviewAssignmentId) return;
+      if (!profile?.tenant_id || !peerReviewAssignmentId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

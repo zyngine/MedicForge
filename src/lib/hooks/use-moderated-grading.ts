@@ -76,7 +76,10 @@ export function useModeratedAssignments(assignmentId?: string) {
   const supabase = createClient();
 
   const fetchModeratedAssignments = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -238,7 +241,10 @@ export function useModeratedGrading(moderatedAssignmentId: string) {
   const supabase = createClient();
 
   const fetchData = useCallback(async () => {
-    if (!profile?.tenant_id || !profile?.id || !moderatedAssignmentId) return;
+    if (!profile?.tenant_id || !profile?.id || !moderatedAssignmentId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -391,7 +397,10 @@ export function useModeratorReview(moderatedAssignmentId: string) {
   const supabase = createClient();
 
   const fetchDiscrepancies = useCallback(async () => {
-    if (!profile?.tenant_id || !moderatedAssignmentId) return;
+    if (!profile?.tenant_id || !moderatedAssignmentId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

@@ -77,7 +77,10 @@ export function useCheckinZones() {
   const supabase = createClient();
 
   const fetchZones = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -197,7 +200,10 @@ export function useCheckinEvents(courseId?: string) {
   const supabase = createClient();
 
   const fetchEvents = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -342,7 +348,10 @@ export function useUserCheckin(eventId: string) {
   // Fetch event and existing checkin
   useEffect(() => {
     const fetchData = async () => {
-      if (!profile?.tenant_id || !profile?.id || !eventId) return;
+      if (!profile?.tenant_id || !profile?.id || !eventId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -576,7 +585,10 @@ export function useEventCheckins(eventId: string) {
   const supabase = createClient();
 
   const fetchCheckins = useCallback(async () => {
-    if (!profile?.tenant_id || !eventId) return;
+    if (!profile?.tenant_id || !eventId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -654,7 +666,10 @@ export function useMyCheckins() {
 
   useEffect(() => {
     const fetchMyCheckins = async () => {
-      if (!profile?.tenant_id || !profile?.id) return;
+      if (!profile?.tenant_id || !profile?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

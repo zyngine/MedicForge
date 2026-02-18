@@ -51,7 +51,10 @@ export function useGradeDistribution(assignmentId: string, bucketSize: number = 
 
   useEffect(() => {
     const fetchDistribution = async () => {
-      if (!assignmentId) return;
+      if (!assignmentId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -84,7 +87,10 @@ export function useCourseGradeStats(courseId: string) {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!courseId) return;
+      if (!courseId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -132,7 +138,10 @@ export function useStudentGrades(courseId: string) {
   const supabase = createClient();
 
   const fetchStudentGrades = useCallback(async () => {
-    if (!profile?.tenant_id || !courseId) return;
+    if (!profile?.tenant_id || !courseId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -251,7 +260,10 @@ export function useCourseGradeOverviews() {
 
   useEffect(() => {
     const fetchOverviews = async () => {
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

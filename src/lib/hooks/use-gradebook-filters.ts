@@ -35,7 +35,10 @@ export function useGradebookFilters(courseId: string) {
   const supabase = createClient();
 
   const fetchFilters = useCallback(async () => {
-    if (!profile?.id || !courseId) return;
+    if (!profile?.id || !courseId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -227,7 +230,10 @@ export function useFilteredGradebook(
 
   useEffect(() => {
     const fetchGradebookData = async () => {
-      if (!profile?.tenant_id || !courseId) return;
+      if (!profile?.tenant_id || !courseId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

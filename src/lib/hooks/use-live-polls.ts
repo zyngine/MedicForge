@@ -62,7 +62,10 @@ export function useLivePolls(courseId: string) {
   const supabase = createClient();
 
   const fetchPolls = useCallback(async () => {
-    if (!profile?.tenant_id || !courseId) return;
+    if (!profile?.tenant_id || !courseId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -274,7 +277,10 @@ export function usePollResponse(pollId: string) {
   // Fetch poll and user's response
   useEffect(() => {
     const fetchData = async () => {
-      if (!profile?.id || !pollId) return;
+      if (!profile?.id || !pollId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);

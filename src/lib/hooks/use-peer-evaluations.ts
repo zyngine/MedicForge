@@ -101,7 +101,10 @@ export function usePeerEvalTemplates() {
   const supabase = createClient();
 
   const fetchTemplates = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -201,7 +204,10 @@ export function usePeerEvalAssignments(courseId?: string) {
   const supabase = createClient();
 
   const fetchAssignments = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -318,7 +324,10 @@ export function useMyPendingEvaluations() {
   const supabase = createClient();
 
   const fetchEvaluations = useCallback(async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -456,7 +465,10 @@ export function usePeerEvalResults(assignmentId?: string, studentId?: string) {
   const supabase = createClient();
 
   const fetchResults = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -531,7 +543,10 @@ export function usePeerEvalProgress(assignmentId: string) {
   const supabase = createClient();
 
   useEffect(() => {
-    if (!assignmentId) return;
+    if (!assignmentId) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchProgress = async () => {
       try {

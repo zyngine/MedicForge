@@ -45,7 +45,10 @@ export function useMyMentions() {
   const supabase = createClient();
 
   const fetchMentions = useCallback(async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -188,7 +191,10 @@ export function useMentionSuggestions(courseId: string) {
   const supabase = createClient();
 
   const fetchSuggestions = useCallback(async () => {
-    if (!profile?.tenant_id || !courseId) return;
+    if (!profile?.tenant_id || !courseId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);

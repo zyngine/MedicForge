@@ -162,7 +162,10 @@ export function useAccreditationDocuments(category?: DocumentCategory) {
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
-    if (!profile?.tenant_id) return;
+    if (!profile?.tenant_id) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
