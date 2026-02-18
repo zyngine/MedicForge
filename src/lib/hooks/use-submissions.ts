@@ -53,7 +53,10 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
         .from("submissions")
         .select(`
           *,
-          assignment:assignments(*),
+          assignment:assignments(
+            *,
+            module:modules(id, title, course_id)
+          ),
           student:users!submissions_student_id_fkey(id, full_name, email),
           grader:users!submissions_graded_by_fkey(id, full_name, email)
         `)
