@@ -102,12 +102,12 @@ export function useUser(): UseUserReturn {
         cachedUser = session.user;
         setUser(session.user);
 
-        // Fetch profile with timeout to prevent hanging
+        // Fetch profile with timeout to prevent hanging (10 seconds for slow connections)
         if (session.user) {
           try {
             const profilePromise = fetchProfile(session.user.id);
             const timeoutPromise = new Promise<null>((resolve) =>
-              setTimeout(() => resolve(null), 3000)
+              setTimeout(() => resolve(null), 10000)
             );
 
             const profileData = await Promise.race([profilePromise, timeoutPromise]);
@@ -135,7 +135,7 @@ export function useUser(): UseUserReturn {
       }
     };
 
-    // Set a shorter timeout (5 seconds) to prevent long loading states
+    // Set timeout (15 seconds) to prevent infinite loading states
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
         console.warn("Auth initialization timed out - clearing stale state");
@@ -157,7 +157,7 @@ export function useUser(): UseUserReturn {
           }
         }
       }
-    }, 5000);
+    }, 15000);
 
     initAuth();
 

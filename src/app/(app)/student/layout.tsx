@@ -127,7 +127,8 @@ export default function StudentLayout({
     window.location.href = "/login";
   };
 
-  if (isLoading) {
+  // Keep showing spinner until profile is loaded (not just auth)
+  if (isLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -136,10 +137,10 @@ export default function StudentLayout({
   }
 
   const user = {
-    name: profile?.full_name || "Student",
-    email: profile?.email || "",
-    role: profile?.role || "student",
-    avatar: profile?.avatar_url || undefined,
+    name: profile.full_name || profile.email || "User",
+    email: profile.email || "",
+    role: profile.role || "student",
+    avatar: profile.avatar_url || undefined,
   };
 
   return (
