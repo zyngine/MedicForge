@@ -47,11 +47,9 @@ interface Tenant {
 
 const SUBSCRIPTION_TIERS = [
   { value: "free", label: "Free (Starter)" },
-  { value: "professional", label: "Professional - $149/mo" },
+  { value: "pro", label: "Professional - $149/mo" },
   { value: "institution", label: "Institution - $399/mo" },
-  { value: "agency-starter", label: "Agency Starter - $99/mo" },
-  { value: "agency-pro", label: "Agency Pro - $249/mo" },
-  { value: "agency-enterprise", label: "Agency Enterprise - $499/mo" },
+  { value: "enterprise", label: "Enterprise - Custom" },
 ];
 
 const SUBSCRIPTION_STATUSES = [
@@ -307,7 +305,7 @@ export default function TenantsPage() {
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col items-end gap-1">
                     <Badge variant={getTierBadgeVariant(tenant.subscription_tier || "free")}>
-                      {tenant.subscription_tier || "free"}
+                      {tenant.subscription_tier === "pro" ? "Professional" : tenant.subscription_tier || "free"}
                     </Badge>
                     <Badge variant={getStatusBadgeVariant(tenant.subscription_status || "trialing")}>
                       {tenant.subscription_status || "trialing"}
