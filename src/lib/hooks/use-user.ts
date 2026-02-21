@@ -157,14 +157,8 @@ export function useUser(): UseUserReturn {
           created_at: session.user.created_at,
           updated_at: new Date().toISOString(),
           phone: null,
-          bio: null,
-          certification_level: null,
-          student_id_number: null,
-          enrollment_date: null,
-          expected_graduation: null,
-          emergency_contact_name: null,
-          emergency_contact_phone: null,
-          notification_preferences: null,
+          emergency_contact: null,
+          is_active: true,
           agency_role: null,
         } as UserProfile : null;
 
