@@ -40,6 +40,39 @@ interface DashboardLayoutProps {
   onSignOut?: () => void;
 }
 
+// Logo component with error fallback
+function TenantLogo({ logoUrl, tenantName, isWhiteLabeled }: { logoUrl: string; tenantName: string; isWhiteLabeled: boolean }) {
+  const [hasError, setHasError] = React.useState(false);
+
+  // Reset error state when URL changes
+  React.useEffect(() => {
+    setHasError(false);
+  }, [logoUrl]);
+
+  if (isWhiteLabeled && !hasError) {
+    return (
+      <Image
+        src={logoUrl}
+        alt={tenantName}
+        width={32}
+        height={32}
+        className="w-8 h-8 rounded-lg object-contain"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src="/logo-icon.svg"
+      alt="MedicForge"
+      width={32}
+      height={32}
+      className="w-8 h-8"
+    />
+  );
+}
+
 function NavItemRenderer({ item, pathname }: { item: NavItem; pathname: string }) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -169,23 +202,7 @@ export function DashboardLayout({
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b shrink-0">
           <Link href="/" className="flex items-center gap-2">
-            {isWhiteLabeled ? (
-              <Image
-                src={logoUrl}
-                alt={tenantName}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-lg object-contain"
-              />
-            ) : (
-              <Image
-                src="/logo-icon.svg"
-                alt="MedicForge"
-                width={32}
-                height={32}
-                className="w-8 h-8"
-              />
-            )}
+            <TenantLogo logoUrl={logoUrl} tenantName={tenantName} isWhiteLabeled={isWhiteLabeled} />
             <span className="font-bold">{tenantName}</span>
           </Link>
           <button

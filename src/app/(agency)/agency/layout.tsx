@@ -27,6 +27,32 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+// Logo component with error fallback
+function AgencyLogo({ logoUrl, tenantName }: { logoUrl: string | null; tenantName: string }) {
+  const [hasError, setHasError] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasError(false);
+  }, [logoUrl]);
+
+  if (logoUrl && !hasError) {
+    return (
+      <img
+        src={logoUrl}
+        alt={tenantName}
+        className="h-8 w-auto"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+      <Building2 className="h-5 w-5 text-primary" />
+    </div>
+  );
+}
+
 interface NavItem {
   label: string;
   href: string;
@@ -86,16 +112,8 @@ function AgencySidebar({
           <Link href="/agency/dashboard" className="flex items-center gap-3">
             {tenantLoading ? (
               <div className="w-8 h-8 bg-muted rounded animate-pulse" />
-            ) : tenant?.logo_url ? (
-              <img
-                src={tenant.logo_url}
-                alt={tenantName}
-                className="h-8 w-auto"
-              />
             ) : (
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
+              <AgencyLogo logoUrl={tenant?.logo_url || null} tenantName={tenantName} />
             )}
             <span className="font-semibold text-lg truncate">{tenantName}</span>
           </Link>

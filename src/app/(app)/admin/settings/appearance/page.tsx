@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Card,
   CardHeader,
@@ -17,6 +17,38 @@ import { Palette, Upload, X, Eye, Check } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+
+// Logo preview component with error handling
+function LogoPreview({ url }: { url: string | null }) {
+  const [hasError, setHasError] = useState(false);
+
+  // Reset error when URL changes
+  useEffect(() => {
+    setHasError(false);
+  }, [url]);
+
+  if (!url) {
+    return <span className="text-muted-foreground text-sm">No logo</span>;
+  }
+
+  if (hasError) {
+    return (
+      <div className="text-center">
+        <span className="text-destructive text-xs">Failed to load</span>
+        <p className="text-muted-foreground text-xs mt-1">Check bucket is public</p>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt="Organization logo"
+      className="max-w-full max-h-full object-contain"
+      onError={() => setHasError(true)}
+    />
+  );
+}
 
 // Preset color options
 const colorPresets = [
@@ -238,15 +270,7 @@ export default function AppearanceSettingsPage() {
           {/* Current Logo Preview */}
           <div className="flex items-center gap-6">
             <div className="w-48 h-16 border rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt="Organization logo"
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : (
-                <span className="text-muted-foreground text-sm">No logo</span>
-              )}
+              <LogoPreview url={logoUrl} />
             </div>
 
             <div className="flex gap-2">
@@ -294,6 +318,11 @@ export default function AppearanceSettingsPage() {
               placeholder="https://example.com/logo.png"
             />
           </div>
+
+          {/* Troubleshooting tip */}
+          <p className="text-xs text-muted-foreground">
+            If your uploaded logo shows as broken, ensure the storage bucket is set to public in your Supabase dashboard.
+          </p>
         </CardContent>
       </Card>
 

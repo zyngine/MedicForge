@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTenantBranding } from "@/lib/hooks/use-tenant";
@@ -8,6 +9,50 @@ interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   description?: string;
+}
+
+// Logo component with error fallback
+function TenantLogo({
+  logoUrl,
+  tenantName,
+  isWhiteLabeled,
+  size = "default"
+}: {
+  logoUrl: string;
+  tenantName: string;
+  isWhiteLabeled: boolean;
+  size?: "default" | "large";
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  // Reset error state when URL changes
+  useEffect(() => {
+    setHasError(false);
+  }, [logoUrl]);
+
+  const dimensions = size === "large" ? { width: 40, height: 40 } : { width: 32, height: 32 };
+  const sizeClass = size === "large" ? "w-10 h-10" : "w-8 h-8";
+
+  if (isWhiteLabeled && !hasError) {
+    return (
+      <Image
+        src={logoUrl}
+        alt={tenantName}
+        {...dimensions}
+        className={`${sizeClass} rounded-lg object-contain ${size === "large" ? "bg-white/20 p-1" : ""}`}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src="/logo-icon.svg"
+      alt="MedicForge"
+      {...dimensions}
+      className={sizeClass}
+    />
+  );
 }
 
 export function AuthLayout({ children, title, description }: AuthLayoutProps) {
@@ -24,23 +69,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         </div>
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="flex items-center gap-3">
-            {isWhiteLabeled ? (
-              <Image
-                src={logoUrl}
-                alt={tenantName}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-lg object-contain bg-white/20 p-1"
-              />
-            ) : (
-              <Image
-                src="/logo-icon.svg"
-                alt="MedicForge"
-                width={40}
-                height={40}
-                className="w-10 h-10"
-              />
-            )}
+            <TenantLogo logoUrl={logoUrl} tenantName={tenantName} isWhiteLabeled={isWhiteLabeled} size="large" />
             <span className="text-2xl font-bold">{tenantName}</span>
           </Link>
 
@@ -83,23 +112,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         {/* Mobile header */}
         <div className="lg:hidden p-6 border-b">
           <Link href="/" className="flex items-center gap-2">
-            {isWhiteLabeled ? (
-              <Image
-                src={logoUrl}
-                alt={tenantName}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-lg object-contain"
-              />
-            ) : (
-              <Image
-                src="/logo-icon.svg"
-                alt="MedicForge"
-                width={32}
-                height={32}
-                className="w-8 h-8"
-              />
-            )}
+            <TenantLogo logoUrl={logoUrl} tenantName={tenantName} isWhiteLabeled={isWhiteLabeled} />
             <span className="text-xl font-bold">{tenantName}</span>
           </Link>
         </div>
