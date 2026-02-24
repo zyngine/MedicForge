@@ -74,47 +74,34 @@ function useUsers() {
 
 type UserRole = "admin" | "instructor" | "student";
 
-// Hook to create a single user
+// Hook to create/invite a single user
 function useCreateUser() {
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (userData: { email: string; full_name: string; role: UserRole }) => {
+    mutationFn: async (userData: { email: string; full_name: string; role: UserRole }): Promise<{ user: User; invited: boolean }> => {
       if (!tenant?.id) throw new Error("No tenant");
 
-      const supabase = createClient();
-
-      // Check if user already exists
-      const { data: existing } = await supabase
-        .from("users")
-        .select("id")
-        .eq("tenant_id", tenant.id)
-        .eq("email", userData.email)
-        .single();
-
-      if (existing) {
-        throw new Error(`User with email ${userData.email} already exists`);
-      }
-
-      // Generate a UUID for the user
-      const userId = crypto.randomUUID();
-
-      const { data, error } = await supabase
-        .from("users")
-        .insert({
-          id: userId,
-          tenant_id: tenant.id,
+      // Use the invite API which properly creates auth user + profile
+      const response = await fetch("/api/admin/invite-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           email: userData.email,
           full_name: userData.full_name,
           role: userData.role,
-          is_active: true,
-        })
-        .select()
-        .single();
+          tenant_id: tenant.id,
+        }),
+      });
 
-      if (error) throw error;
-      return data;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to invite user");
+      }
+
+      return { user: result.user, invited: result.invited };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -131,45 +118,33 @@ function useBulkImportUsers() {
     mutationFn: async (users: Array<{ email: string; full_name: string; role: string }>) => {
       if (!tenant?.id) throw new Error("No tenant");
 
-      const supabase = createClient();
-      const results: Array<{ email: string; success: boolean; error?: string }> = [];
+      const results: Array<{ email: string; success: boolean; error?: string; invited?: boolean }> = [];
 
       for (const user of users) {
         try {
-          // Check if user already exists
-          const { data: existing } = await supabase
-            .from("users")
-            .select("id")
-            .eq("tenant_id", tenant.id)
-            .eq("email", user.email)
-            .single();
-
-          if (existing) {
-            results.push({ email: user.email, success: false, error: "Already exists" });
-            continue;
-          }
-
           // Validate role
           const validRole = ["admin", "instructor", "student"].includes(user.role)
-            ? (user.role as UserRole)
+            ? user.role
             : "student";
 
-          // Generate a UUID for the user
-          const userId = crypto.randomUUID();
-
-          const { error } = await supabase.from("users").insert({
-            id: userId,
-            tenant_id: tenant.id,
-            email: user.email,
-            full_name: user.full_name,
-            role: validRole,
-            is_active: true,
+          // Use the invite API
+          const response = await fetch("/api/admin/invite-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              full_name: user.full_name,
+              role: validRole,
+              tenant_id: tenant.id,
+            }),
           });
 
-          if (error) {
-            results.push({ email: user.email, success: false, error: error.message });
+          const result = await response.json();
+
+          if (!response.ok) {
+            results.push({ email: user.email, success: false, error: result.error || "Failed" });
           } else {
-            results.push({ email: user.email, success: true });
+            results.push({ email: user.email, success: true, invited: result.invited });
           }
         } catch (err) {
           results.push({
@@ -244,6 +219,7 @@ export default function AdminUsersPage() {
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   const [upgradeModalType, setUpgradeModalType] = React.useState<"instructor" | "student">("student");
   const [error, setError] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [importResults, setImportResults] = React.useState<Array<{
     email: string;
     success: boolean;
@@ -304,10 +280,18 @@ export default function AdminUsersPage() {
     }
 
     try {
-      await createUser(newUser);
+      const result = await createUser(newUser);
       refetchUsage(); // Refresh usage counts
       setShowAddModal(false);
       setNewUser({ email: "", full_name: "", role: "student" });
+
+      // Show success message
+      if (result.invited) {
+        setSuccessMessage(`User added! An invitation email has been sent to ${newUser.email}`);
+      } else {
+        setSuccessMessage(`User ${newUser.email} has been added to your organization`);
+      }
+      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user");
     }
@@ -456,6 +440,12 @@ export default function AdminUsersPage() {
       {error && (
         <Alert variant="error" onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {successMessage && (
+        <Alert variant="success" onClose={() => setSuccessMessage(null)}>
+          {successMessage}
         </Alert>
       )}
 
