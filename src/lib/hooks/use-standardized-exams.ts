@@ -787,7 +787,7 @@ export function useExamSession(attemptId: string | undefined) {
           question_id: questionId,
           response,
           is_correct: isCorrect,
-          points_earned: isCorrect ? question.points : 0,
+          points_earned: isCorrect ? (question.points || 1) : 0,
           time_spent_seconds: timeSpentSeconds,
           theta_after: newTheta,
           se_after: newSe,

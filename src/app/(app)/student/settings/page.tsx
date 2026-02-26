@@ -1,20 +1,83 @@
 "use client";
 
-import { Settings, Bell, User, Shield } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button } from "@/components/ui";
+import * as React from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Button,
+  Input,
+  Label,
+  Switch,
+  Avatar,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Alert,
+  Badge,
+} from "@/components/ui";
+import {
+  Settings,
+  User,
+  Bell,
+  Shield,
+  Save,
+  Camera,
+  Mail,
+} from "lucide-react";
+import { useUser } from "@/lib/hooks/use-user";
 import { NotificationSettings } from "@/components/notifications";
-import { useState } from "react";
-
-type SettingsTab = "notifications" | "profile" | "security";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 export default function StudentSettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("notifications");
+  const { profile, refreshProfile } = useUser();
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const tabs = [
-    { id: "notifications" as const, label: "Notifications", icon: Bell },
-    { id: "profile" as const, label: "Profile", icon: User },
-    { id: "security" as const, label: "Security", icon: Shield },
-  ];
+  // Profile form state
+  const [profileForm, setProfileForm] = React.useState({
+    full_name: profile?.full_name || "",
+    email: profile?.email || "",
+    phone: profile?.phone || "",
+  });
+
+  // Update form when profile loads
+  React.useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        full_name: profile.full_name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+      });
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    if (!profile?.id) return;
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("users")
+        .update({
+          full_name: profileForm.full_name,
+          phone: profileForm.phone,
+        })
+        .eq("id", profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="container max-w-4xl py-8">
@@ -28,58 +91,191 @@ export default function StudentSettingsPage() {
         </p>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <div className="w-48 shrink-0">
-          <nav className="space-y-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+      <Tabs defaultValue="profile">
+        <TabsList>
+          <TabsTrigger value="profile">
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="h-4 w-4 mr-2" />
+            Security
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Content */}
-        <div className="flex-1">
-          {activeTab === "notifications" && <NotificationSettings />}
-
-          {activeTab === "profile" && (
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="mt-6">
+          <div className="grid gap-6">
+            {/* Avatar Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
+                <CardTitle>Profile Photo</CardTitle>
+                <CardDescription>
+                  This will be displayed on your profile
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Profile settings coming soon. You can update your profile from your dashboard.
-                </p>
+                <div className="flex items-center gap-6">
+                  <Avatar
+                    src={profile?.avatar_url}
+                    fallback={profile?.full_name || "S"}
+                    size="xl"
+                  />
+                  <div className="space-y-2">
+                    <Button variant="outline">
+                      <Camera className="h-4 w-4 mr-2" />
+                      Change Photo
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      JPG, PNG or GIF. Max 2MB.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
 
-          {activeTab === "security" && (
+            {/* Basic Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>
+                  Your personal information
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Security settings coming soon. You can change your password from Supabase Auth.
-                </p>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      value={profileForm.full_name}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, full_name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Contact admin to change email
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={profileForm.phone}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, phone: e.target.value })
+                      }
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveProfile} disabled={isLoading}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </div>
+          </div>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="mt-6">
+          <NotificationSettings />
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security" className="mt-6">
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>
+                  Update your password regularly to keep your account secure
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current_password">Current Password</Label>
+                  <Input id="current_password" type="password" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new_password">New Password</Label>
+                  <Input id="new_password" type="password" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password">Confirm New Password</Label>
+                  <Input id="confirm_password" type="password" />
+                </div>
+                <div className="flex justify-end">
+                  <Button>Update Password</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Two-Factor Authentication</CardTitle>
+                <CardDescription>
+                  Add an extra layer of security to your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Alert variant="info">
+                  Two-factor authentication is not yet enabled for your account.
+                </Alert>
+                <div className="mt-4">
+                  <Button variant="outline">Enable 2FA</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Sessions</CardTitle>
+                <CardDescription>
+                  Manage your active login sessions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">Current Session</p>
+                      <p className="text-sm text-muted-foreground">
+                        Active now
+                      </p>
+                    </div>
+                    <Badge variant="success">Current</Badge>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Button variant="outline" className="text-destructive">
+                    Sign Out All Other Sessions
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

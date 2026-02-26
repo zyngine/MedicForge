@@ -201,26 +201,15 @@ export function useUser(): UseUserReturn {
     };
 
     // Set timeout (15 seconds) to prevent infinite loading states
+    // NOTE: We do NOT clear cookies on timeout - that destroys the user's session
+    // Instead, just log and stop loading to let the user continue with cached data
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
-        console.warn("Auth initialization timed out - clearing stale state");
+        console.warn("Auth initialization taking longer than expected");
         authInitialized = true;
-        cachedUser = null;
-        cachedProfile = null;
-        setUser(null);
-        setProfile(null);
         setIsLoading(false);
-
-        // Clear potentially corrupted auth cookies
-        if (typeof document !== "undefined") {
-          const cookies = document.cookie.split(";");
-          for (const cookie of cookies) {
-            const cookieName = cookie.split("=")[0].trim();
-            if (cookieName.includes("supabase") || cookieName.includes("sb-")) {
-              document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-            }
-          }
-        }
+        // Keep any cached data we have - don't clear user/profile state
+        // The auth listener will update state when the request eventually completes
       }
     }, 15000);
 
