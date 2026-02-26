@@ -192,11 +192,78 @@ function useUpdateUser() {
   });
 }
 
+// Hook to delete user (removes from both database and Supabase Auth)
+function useDeleteUser() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, deleteFromAuth = true }: { userId: string; deleteFromAuth?: boolean }) => {
+      if (!tenant?.id) throw new Error("No tenant");
+
+      const response = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          tenant_id: tenant.id,
+          delete_from_auth: deleteFromAuth,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete user");
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+  });
+}
+
+// Hook to resend invitation
+function useResendInvite() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      if (!tenant?.id) throw new Error("No tenant");
+
+      const response = await fetch("/api/admin/resend-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          tenant_id: tenant.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to resend invite");
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+  });
+}
+
 export default function AdminUsersPage() {
   const { data: users = [], isLoading } = useUsers();
   const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
   const { mutateAsync: bulkImport, isPending: isImporting } = useBulkImportUsers();
   const { mutateAsync: updateUser } = useUpdateUser();
+  const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser();
+  const { mutateAsync: resendInvite, isPending: isResending } = useResendInvite();
 
   // Subscription enforcement
   const {
@@ -217,6 +284,8 @@ export default function AdminUsersPage() {
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [showImportModal, setShowImportModal] = React.useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
   const [upgradeModalType, setUpgradeModalType] = React.useState<"instructor" | "student">("student");
   const [error, setError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
@@ -404,6 +473,31 @@ export default function AdminUsersPage() {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update user");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteUser({ userId: userToDelete.id, deleteFromAuth: true });
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      refetchUsage();
+      setSuccessMessage(`User ${userToDelete.email} has been permanently deleted`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user");
+    }
+  };
+
+  const handleResendInvite = async (user: User) => {
+    try {
+      await resendInvite(user.id);
+      setSuccessMessage(`Invitation resent to ${user.email}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend invitation");
     }
   };
 
@@ -623,13 +717,36 @@ export default function AdminUsersPage() {
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleUserActive(user)}
-                        >
-                          {user.is_active !== false ? "Deactivate" : "Activate"}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResendInvite(user)}
+                            disabled={isResending}
+                            title="Resend invitation email"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleUserActive(user)}
+                          >
+                            {user.is_active !== false ? "Deactivate" : "Activate"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setUserToDelete(user);
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                            title="Permanently delete user"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -839,6 +956,65 @@ export default function AdminUsersPage() {
         type={upgradeModalType}
         currentTier={tier}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+        title="Delete User"
+      >
+        <div className="space-y-4">
+          <Alert variant="warning">
+            <AlertCircle className="h-4 w-4" />
+            <div>
+              <p className="font-medium">This action cannot be undone</p>
+              <p className="text-sm">
+                This will permanently delete the user from your organization and remove their
+                authentication account. They will need to be re-invited to regain access.
+              </p>
+            </div>
+          </Alert>
+
+          {userToDelete && (
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  src={userToDelete.avatar_url || undefined}
+                  fallback={userToDelete.full_name || userToDelete.email}
+                  size="sm"
+                />
+                <div>
+                  <p className="font-medium">{userToDelete.full_name || "—"}</p>
+                  <p className="text-sm text-muted-foreground">{userToDelete.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setUserToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              isLoading={isDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete User
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

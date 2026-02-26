@@ -39,6 +39,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized - must be tenant admin" }, { status: 403 });
     }
 
+    // Get tenant info for redirect URL
+    const { data: tenant } = await supabaseAdmin
+      .from("tenants")
+      .select("slug, custom_domain")
+      .eq("id", tenant_id)
+      .single();
+
+    // Build redirect URL using tenant's subdomain or custom domain
+    let redirectUrl: string;
+    if (tenant?.custom_domain) {
+      redirectUrl = `https://${tenant.custom_domain}/auth/callback`;
+    } else if (tenant?.slug) {
+      redirectUrl = `https://${tenant.slug}.medicforge.net/auth/callback`;
+    } else {
+      // Fallback to main site (shouldn't happen)
+      redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/callback`;
+    }
+
     // Check if user already exists in this tenant
     const { data: existingUser } = await supabaseAdmin
       .from("users")
@@ -71,7 +89,7 @@ export async function POST(request: NextRequest) {
           role,
           tenant_id,
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/callback`,
+        redirectTo: redirectUrl,
       });
 
       if (inviteError) {
