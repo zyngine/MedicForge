@@ -325,9 +325,9 @@ export function useSendMessage() {
         p_to_user_id: conversationId,
         p_content: content,
         p_content_type: contentType,
-        p_file_url: fileUrl || null,
-        p_file_name: fileName || null,
-        p_file_size: fileSize || null,
+        p_file_url: fileUrl,
+        p_file_name: fileName,
+        p_file_size: fileSize,
       });
 
       if (error) throw error;
@@ -371,9 +371,6 @@ export function useStartConversation() {
           p_to_user_id: participantId,
           p_content: initialMessage,
           p_content_type: "text",
-          p_file_url: null,
-          p_file_name: null,
-          p_file_size: null,
         });
       }
 
