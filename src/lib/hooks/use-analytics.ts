@@ -160,7 +160,10 @@ export function useCourseAnalytics(courseId: string) {
         .gte("metric_date", thirtyDaysAgo.toISOString().split("T")[0])
         .order("metric_date");
 
-      if (metricsError) throw metricsError;
+      // Silently fail if table doesn't exist (404) - analytics tables may not be set up
+      if (metricsError && metricsError.code !== "PGRST116" && !metricsError.message?.includes("404")) {
+        console.warn("Daily metrics fetch failed:", metricsError.message);
+      }
       setDailyMetrics(metrics || []);
 
       // Fetch student engagement for current week
@@ -178,7 +181,10 @@ export function useCourseAnalytics(courseId: string) {
         .eq("week_start", weekStart.toISOString().split("T")[0])
         .order("engagement_score", { ascending: false });
 
-      if (engagementError) throw engagementError;
+      // Silently fail if table doesn't exist
+      if (engagementError && !engagementError.message?.includes("404")) {
+        console.warn("Student engagement fetch failed:", engagementError.message);
+      }
       setEngagementData(engagement || []);
 
       // Calculate summary

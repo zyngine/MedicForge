@@ -11,6 +11,13 @@ function getDb() {
   return createClient() as any;
 }
 
+export interface WebSearchMatch {
+  title: string;
+  url: string;
+  snippet: string;
+  matchedQuery: string;
+}
+
 export interface PlagiarismCheck {
   id: string;
   tenant_id: string;
@@ -19,6 +26,7 @@ export interface PlagiarismCheck {
   status: "pending" | "processing" | "completed" | "failed";
   similarity_score: number | null;
   matches: any[] | null;
+  web_matches?: WebSearchMatch[] | null;
   original_content: string | null;
   word_count: number | null;
   checked_at: string | null;
@@ -180,9 +188,11 @@ export function useRunPlagiarismCheck() {
     mutationFn: async ({
       submissionId,
       content,
+      checkWeb = false,
     }: {
       submissionId: string;
       content: string;
+      checkWeb?: boolean;
     }) => {
       if (!tenant?.id || !user?.id) {
         throw new Error("Not authenticated");
@@ -245,7 +255,7 @@ export function useRunPlagiarismCheck() {
 
       if (sourcesError) throw sourcesError;
 
-      // Run the plagiarism check
+      // Run the plagiarism check against local sources
       let result: PlagiarismResult;
       try {
         const sourcesForCheck = (sources || []).map((s: PlagiarismSource) => ({
@@ -270,17 +280,51 @@ export function useRunPlagiarismCheck() {
         throw err;
       }
 
+      // Optionally check against the web
+      let webMatches: WebSearchMatch[] | null = null;
+      if (checkWeb) {
+        try {
+          const webResponse = await fetch("/api/plagiarism/web-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          });
+
+          if (webResponse.ok) {
+            const webData = await webResponse.json();
+            webMatches = webData.results || [];
+          }
+        } catch (webErr) {
+          // Web search is optional, don't fail the whole check
+          console.warn("Web search failed:", webErr);
+        }
+      }
+
       // Update with results
+      const updateData: Record<string, unknown> = {
+        status: "completed",
+        similarity_score: result.overallSimilarity,
+        matches: result.matches,
+        word_count: result.wordCount,
+        checked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Store web matches in the matches array with a special type
+      if (webMatches && webMatches.length > 0) {
+        updateData.matches = [
+          ...(result.matches || []),
+          ...webMatches.map((wm) => ({
+            ...wm,
+            sourceType: "web",
+            similarity: 100, // Web matches are exact phrase matches
+          })),
+        ];
+      }
+
       const { data: updatedCheck, error: updateError } = await supabase
         .from("plagiarism_checks")
-        .update({
-          status: "completed",
-          similarity_score: result.overallSimilarity,
-          matches: result.matches,
-          word_count: result.wordCount,
-          checked_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", checkId)
         .select()
         .single();
@@ -373,6 +417,52 @@ export function useRemovePlagiarismSource() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plagiarism-sources"] });
+    },
+  });
+}
+
+/**
+ * AI Detection result interface
+ */
+export interface AIDetectionResult {
+  isAIGenerated: boolean;
+  confidence: number;
+  aiScore: number;
+  humanScore: number;
+  provider: string;
+  details: {
+    perplexity?: number;
+    burstiness?: number;
+    sentenceVariability?: number;
+    vocabularyRichness?: number;
+    repetitionScore?: number;
+    naturalness?: number;
+  };
+  sentences?: Array<{
+    text: string;
+    aiProbability: number;
+  }>;
+  message?: string;
+}
+
+/**
+ * Run AI detection on content
+ */
+export function useAIDetection() {
+  return useMutation({
+    mutationFn: async (content: string): Promise<AIDetectionResult> => {
+      const response = await fetch("/api/plagiarism/ai-detection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "AI detection failed");
+      }
+
+      return response.json();
     },
   });
 }

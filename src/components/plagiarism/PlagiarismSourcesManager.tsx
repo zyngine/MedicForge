@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, FileText, Trash2, Loader2, Upload, Database } from "lucide-react";
+import { Plus, FileText, Trash2, Loader2, Upload, Database, FileIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,6 +20,8 @@ import {
 } from "@/lib/hooks/use-plagiarism";
 import { format } from "date-fns";
 
+const ACCEPTED_FILE_TYPES = ".txt,.pdf,.doc,.docx,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
 export function PlagiarismSourcesManager() {
   const { data: sources, isLoading } = usePlagiarismSources();
   const { mutate: addSource, isPending: isAdding, error: addError } = useAddPlagiarismSource();
@@ -29,6 +31,8 @@ export function PlagiarismSourcesManager() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const handleAdd = () => {
     if (!title.trim() || !content.trim()) return;
@@ -56,18 +60,50 @@ export function PlagiarismSourcesManager() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Only accept text files
-    if (!file.type.startsWith("text/") && !file.name.endsWith(".txt")) {
-      alert("Please upload a text file (.txt)");
+    const fileName = file.name.toLowerCase();
+    const isText = file.type.startsWith("text/") || fileName.endsWith(".txt");
+    const isPdf = fileName.endsWith(".pdf");
+    const isWord = fileName.endsWith(".doc") || fileName.endsWith(".docx");
+
+    if (!isText && !isPdf && !isWord) {
+      setParseError("Please upload a PDF, Word (.docx), or text file");
       return;
     }
 
+    setParseError(null);
+
     try {
-      const text = await file.text();
-      setTitle(file.name.replace(/\.[^/.]+$/, ""));
-      setContent(text);
+      // For text files, read directly
+      if (isText) {
+        const text = await file.text();
+        setTitle(file.name.replace(/\.[^/.]+$/, ""));
+        setContent(text);
+        return;
+      }
+
+      // For PDF/Word, use the API
+      setIsParsing(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/plagiarism/parse-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to parse document");
+      }
+
+      setTitle(result.title);
+      setContent(result.content);
     } catch (err) {
       console.error("Error reading file:", err);
+      setParseError(err instanceof Error ? err.message : "Failed to read file");
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -192,6 +228,7 @@ export function PlagiarismSourcesManager() {
           setShowAddModal(false);
           setTitle("");
           setContent("");
+          setParseError(null);
         }}
         title="Add Source Document"
       >
@@ -202,20 +239,33 @@ export function PlagiarismSourcesManager() {
             </Alert>
           )}
 
+          {parseError && (
+            <Alert variant="error" onClose={() => setParseError(null)}>
+              {parseError}
+            </Alert>
+          )}
+
           <div className="flex items-center gap-3 p-4 border rounded-lg border-dashed">
-            <Upload className="h-5 w-5 text-muted-foreground" />
+            {isParsing ? (
+              <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+            ) : (
+              <Upload className="h-5 w-5 text-muted-foreground" />
+            )}
             <div className="flex-1">
-              <p className="text-sm font-medium">Upload a text file</p>
+              <p className="text-sm font-medium">
+                {isParsing ? "Parsing document..." : "Upload a document"}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Or paste content below
+                PDF, Word (.docx), or text files supported
               </p>
             </div>
-            <label className="cursor-pointer">
+            <label className={`cursor-pointer ${isParsing ? "pointer-events-none opacity-50" : ""}`}>
               <input
                 type="file"
-                accept=".txt,text/*"
+                accept={ACCEPTED_FILE_TYPES}
                 onChange={handleFileUpload}
                 className="hidden"
+                disabled={isParsing}
               />
               <span className="text-sm text-primary hover:underline">
                 Browse
@@ -254,13 +304,14 @@ export function PlagiarismSourcesManager() {
                 setShowAddModal(false);
                 setTitle("");
                 setContent("");
+                setParseError(null);
               }}
             >
               Cancel
             </Button>
             <Button
               onClick={handleAdd}
-              disabled={!title.trim() || !content.trim() || isAdding}
+              disabled={!title.trim() || !content.trim() || isAdding || isParsing}
             >
               {isAdding ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
