@@ -20,6 +20,7 @@ import {
   TabsTrigger,
   TabsContent,
   Textarea,
+  Progress,
 } from "@/components/ui";
 import {
   Download,
@@ -37,6 +38,7 @@ import {
   GraduationCap,
   TrendingUp,
   Upload,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -91,6 +93,18 @@ export default function InstructorGradebookPage() {
     template?: GradebookExportTemplate;
   } | null>(null);
   const [previewModal, setPreviewModal] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<{
+    name: string;
+    email: string;
+    submissions: Array<{
+      assignment: string;
+      type: string;
+      score: number | null;
+      percentage: number | null;
+      submitted: string | null;
+    }>;
+    averageScore: number;
+  } | null>(null);
 
   // Template form state
   const [templateForm, setTemplateForm] = React.useState({
@@ -433,7 +447,12 @@ export default function InstructorGradebookPage() {
                                   </Badge>
                                 </td>
                                 <td className="py-3 px-4 text-right">
-                                  <Button variant="ghost" size="sm">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedStudent(student)}
+                                    title="View student details"
+                                  >
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                 </td>
@@ -520,6 +539,79 @@ export default function InstructorGradebookPage() {
           </Tabs>
         </>
       )}
+
+      {/* Student Detail Modal */}
+      <Modal
+        isOpen={selectedStudent !== null}
+        onClose={() => setSelectedStudent(null)}
+        title={selectedStudent?.name || "Student Details"}
+        size="lg"
+      >
+        {selectedStudent && (
+          <div className="space-y-6">
+            {/* Student Info */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div>
+                <h3 className="font-medium">{selectedStudent.name}</h3>
+                <p className="text-sm text-muted-foreground">{selectedStudent.email}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold">{selectedStudent.averageScore}%</p>
+                <Badge variant={getGradeBadgeVariant(getLetterGrade(selectedStudent.averageScore))}>
+                  {getLetterGrade(selectedStudent.averageScore)}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Submissions List */}
+            <div>
+              <h4 className="font-medium mb-3">Submissions ({selectedStudent.submissions.length})</h4>
+              {selectedStudent.submissions.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No submissions yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedStudent.submissions.map((sub, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{sub.assignment}</p>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {sub.type}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        {sub.score !== null ? (
+                          <>
+                            <p className={`font-bold ${getScoreColor(sub.percentage || 0)}`}>
+                              {sub.score}
+                              {sub.percentage !== null && ` (${sub.percentage}%)`}
+                            </p>
+                            {sub.submitted && (
+                              <p className="text-xs text-muted-foreground">
+                                {formatDate(sub.submitted)}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <Badge variant="secondary">Not Graded</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={() => setSelectedStudent(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Template Modal */}
       <Modal

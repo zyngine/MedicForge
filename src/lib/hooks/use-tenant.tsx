@@ -10,6 +10,14 @@ const supabase = createClient();
 // Module-level cache for tenant state to persist across navigations
 let cachedTenant: Tenant | null = null;
 let tenantInitialized = false;
+let cachedTenantUserId: string | null = null; // Track which user ID the cache is for
+
+// Clear tenant cache (call when user changes)
+function clearTenantCache() {
+  cachedTenant = null;
+  tenantInitialized = false;
+  cachedTenantUserId = null;
+}
 
 export interface Tenant {
   id: string;
@@ -184,13 +192,20 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (!user) {
         // No user, no cookies, no subdomain = main marketing site
         if (mountedRef.current) {
-          cachedTenant = null;
+          clearTenantCache();
           tenantInitialized = true;
           setTenant(null);
           setIsLoading(false);
         }
         return;
       }
+
+      // Check if user changed - if so, clear cached tenant
+      if (cachedTenantUserId && cachedTenantUserId !== user.id) {
+        console.log("User changed, clearing tenant cache");
+        clearTenantCache();
+      }
+      cachedTenantUserId = user.id;
 
       // Check if platform admin
       const { data: isPlatformAdmin } = await (supabase as any).rpc("is_platform_admin");
@@ -266,10 +281,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
-        cachedTenant = null;
-        tenantInitialized = false;
+        clearTenantCache();
         fetchAttemptedRef.current = false;
         setTenant(null);
         setIsLoading(false);
@@ -279,8 +293,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // Only re-fetch if we don't have a tenant
-        if (!cachedTenant) {
+        // Check if user changed
+        const newUserId = session?.user?.id || null;
+        if (cachedTenantUserId && newUserId && cachedTenantUserId !== newUserId) {
+          console.log("User changed via tenant auth event, clearing tenant cache");
+          clearTenantCache();
+          fetchAttemptedRef.current = false;
+          fetchTenant();
+        } else if (!cachedTenant) {
+          // Only re-fetch if we don't have a tenant
           tenantInitialized = false;
           fetchAttemptedRef.current = false;
           fetchTenant();

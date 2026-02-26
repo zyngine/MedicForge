@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
+import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
 
 export default function InstructorStudentsPage() {
@@ -44,8 +45,33 @@ export default function InstructorStudentsPage() {
   // Fetch enrollments for selected course (or first course)
   const courseId = selectedCourse || courses[0]?.id || "";
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useCourseEnrollments(courseId);
+  const { data: allSubmissions = [] } = useSubmissions({});
 
   const isLoading = coursesLoading || enrollmentsLoading;
+
+  // Calculate grades for each student from their submissions
+  const studentGrades = React.useMemo(() => {
+    const grades = new Map<string, number>();
+
+    // Get all student IDs in this course
+    const studentIds = enrollments.map(e => e.student_id);
+
+    // Filter submissions to only this course's students
+    const courseSubmissions = allSubmissions.filter(s =>
+      studentIds.includes(s.student_id) && s.final_score !== null
+    );
+
+    // Group by student and calculate average
+    studentIds.forEach(studentId => {
+      const studentSubs = courseSubmissions.filter(s => s.student_id === studentId);
+      if (studentSubs.length > 0) {
+        const avg = studentSubs.reduce((sum, s) => sum + (s.final_score || 0), 0) / studentSubs.length;
+        grades.set(studentId, Math.round(avg * 10) / 10);
+      }
+    });
+
+    return grades;
+  }, [enrollments, allSubmissions]);
 
   // Filter students
   const filteredStudents = React.useMemo(() => {
@@ -267,7 +293,9 @@ export default function InstructorStudentsPage() {
                         {/* Grade */}
                         <div className="text-center w-20">
                           <div className="text-lg font-bold">
-                            {enrollment.final_grade?.toFixed(1) || "--"}%
+                            {studentGrades.has(enrollment.student_id)
+                              ? `${studentGrades.get(enrollment.student_id)}%`
+                              : "--"}
                           </div>
                           <p className="text-xs text-muted-foreground">Grade</p>
                         </div>
