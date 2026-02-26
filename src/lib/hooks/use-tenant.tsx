@@ -38,6 +38,9 @@ interface TenantContextType {
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
+// Main domains that should NOT be treated as tenant subdomains
+const MAIN_DOMAINS = ["www.medicforge.net", "medicforge.net", "localhost", "127.0.0.1"];
+
 // Get tenant slug from cookie (set by middleware)
 function getTenantSlugFromCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -45,7 +48,7 @@ function getTenantSlugFromCookie(): string | null {
   const cookies = document.cookie.split(";");
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split("=");
-    if (name === "tenant_slug") {
+    if (name === "tenant_slug" && value && value !== "user-tenant") {
       return decodeURIComponent(value);
     }
   }
@@ -59,10 +62,35 @@ function getTenantIdFromCookie(): string | null {
   const cookies = document.cookie.split(";");
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split("=");
-    if (name === "tenant_id") {
+    if (name === "tenant_id" && value) {
       return decodeURIComponent(value);
     }
   }
+  return null;
+}
+
+// Extract tenant slug from hostname (e.g., "test" from "test.medicforge.net")
+function getTenantSlugFromHostname(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const hostname = window.location.hostname;
+
+  // Check if this is a main domain
+  const isMainDomain = MAIN_DOMAINS.some(domain =>
+    hostname === domain || hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")
+  );
+
+  if (isMainDomain) return null;
+
+  // Extract subdomain
+  const parts = hostname.split(".");
+  if (parts.length >= 3 || (parts.length === 2 && !parts[1].includes("localhost"))) {
+    const potentialSlug = parts[0];
+    if (potentialSlug !== "www") {
+      return potentialSlug;
+    }
+  }
+
   return null;
 }
 
@@ -72,7 +100,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(!tenantInitialized);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchAttemptedRef = useRef(false);
 
   const fetchTenant = async () => {
     // If already initialized and cached, skip fetch
@@ -82,44 +110,79 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Prevent duplicate fetches
+    if (fetchAttemptedRef.current) return;
+    fetchAttemptedRef.current = true;
+
     try {
+      // STRATEGY 1: Try to get tenant ID from cookie (fastest)
       let tenantId = getTenantIdFromCookie();
+      let tenantSlug = getTenantSlugFromCookie();
 
-      // If no tenant cookie, try to get tenant from logged-in user's profile
-      if (!tenantId) {
-        const { data: { user } } = await (supabase as any).auth.getUser();
-        if (user) {
-          // Check if user is a platform admin (they won't have a tenant)
-          const { data: isPlatformAdmin } = await (supabase as any).rpc("is_platform_admin");
-          if (isPlatformAdmin) {
-            // Platform admins don't have tenants, skip tenant lookup
-            if (mountedRef.current) {
-              cachedTenant = null;
-              tenantInitialized = true;
-              setTenant(null);
-              setIsLoading(false);
-            }
-            return;
+      // STRATEGY 2: If no cookie, try to get slug from hostname
+      if (!tenantId && !tenantSlug) {
+        tenantSlug = getTenantSlugFromHostname();
+      }
+
+      // STRATEGY 3: If we have a slug but no ID, query by slug (fast, single query)
+      if (!tenantId && tenantSlug) {
+        const { data: tenantBySlug, error: slugError } = await (supabase as any)
+          .from("tenants")
+          .select("*")
+          .eq("slug", tenantSlug)
+          .single();
+
+        if (!slugError && tenantBySlug) {
+          tenantId = tenantBySlug.id;
+          // Set cookies for future loads
+          if (typeof document !== "undefined") {
+            document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax; max-age=86400`;
+            document.cookie = `tenant_slug=${encodeURIComponent(tenantSlug)}; path=/; samesite=lax; max-age=86400`;
           }
 
-          // Fetch user's tenant_id from their profile
-          const { data: userProfile } = await (supabase as any)
-            .from("users")
-            .select("tenant_id")
-            .eq("id", user.id)
-            .single();
-
-          if (userProfile?.tenant_id) {
-            tenantId = userProfile.tenant_id;
-            // Set the cookie for future requests (client-side only)
-            document.cookie = `tenant_id=${encodeURIComponent(tenantId!)}; path=/; samesite=lax`;
-            document.cookie = `tenant_slug=user-tenant; path=/; samesite=lax`;
+          // We already have the tenant data, use it directly
+          if (mountedRef.current) {
+            const tenantData = transformTenantData(tenantBySlug);
+            cachedTenant = tenantData;
+            tenantInitialized = true;
+            setTenant(tenantData);
+            setIsLoading(false);
           }
+          return;
         }
       }
 
-      if (!tenantId) {
-        // No tenant cookie and no logged-in user = main marketing site
+      // STRATEGY 4: If we have tenant ID, fetch by ID
+      if (tenantId) {
+        const { data, error: fetchError } = await (supabase as any)
+          .from("tenants")
+          .select("*")
+          .eq("id", tenantId)
+          .single();
+
+        if (!mountedRef.current) return;
+
+        if (fetchError) {
+          console.error("Error fetching tenant by ID:", fetchError);
+          // Don't give up yet - try auth-based lookup
+        } else if (data) {
+          const tenantData = transformTenantData(data);
+          cachedTenant = tenantData;
+          tenantInitialized = true;
+          setTenant(tenantData);
+          setIsLoading(false);
+          // Update cookie with correct slug
+          if (typeof document !== "undefined" && data.slug) {
+            document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax; max-age=86400`;
+          }
+          return;
+        }
+      }
+
+      // STRATEGY 5: Fall back to auth-based lookup (slowest, but works when cookies fail)
+      const { data: { user } } = await (supabase as any).auth.getUser();
+      if (!user) {
+        // No user, no cookies, no subdomain = main marketing site
         if (mountedRef.current) {
           cachedTenant = null;
           tenantInitialized = true;
@@ -129,52 +192,62 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data, error: fetchError } = await (supabase as any)
-        .from("tenants")
-        .select("*")
-        .eq("id", tenantId)
+      // Check if platform admin
+      const { data: isPlatformAdmin } = await (supabase as any).rpc("is_platform_admin");
+      if (isPlatformAdmin) {
+        if (mountedRef.current) {
+          cachedTenant = null;
+          tenantInitialized = true;
+          setTenant(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Get user's tenant
+      const { data: userProfile } = await (supabase as any)
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
         .single();
 
-      if (!mountedRef.current) return;
+      if (!userProfile?.tenant_id) {
+        if (mountedRef.current) {
+          cachedTenant = null;
+          tenantInitialized = true;
+          setTenant(null);
+          setIsLoading(false);
+        }
+        return;
+      }
 
-      if (fetchError) {
-        console.error("Error fetching tenant:", fetchError);
-        setError(new Error("Failed to load tenant"));
-        cachedTenant = null;
+      // Fetch tenant details
+      const { data: tenantData } = await (supabase as any)
+        .from("tenants")
+        .select("*")
+        .eq("id", userProfile.tenant_id)
+        .single();
+
+      if (mountedRef.current && tenantData) {
+        const transformed = transformTenantData(tenantData);
+        cachedTenant = transformed;
         tenantInitialized = true;
-        setTenant(null);
-      } else {
-        const tenantData: Tenant = {
-          id: data.id,
-          name: data.name,
-          slug: data.slug,
-          logo_url: data.logo_url,
-          primary_color: data.primary_color || "#C53030",
-          custom_domain: data.custom_domain,
-          settings: (data.settings as Record<string, unknown>) || {},
-          subscription_tier: data.subscription_tier as Tenant["subscription_tier"],
-          subscription_status: data.subscription_status as Tenant["subscription_status"],
-          trial_ends_at: data.trial_ends_at,
-          agency_code: data.agency_code || null,
-          white_label_enabled: data.white_label_enabled || false,
-          tenant_type: (data.tenant_type as Tenant["tenant_type"]) || "education",
-        };
-        cachedTenant = tenantData;
-        tenantInitialized = true;
-        setTenant(tenantData);
-        // Also set the tenant_slug cookie with actual slug
+        setTenant(transformed);
+        // Set cookies for future loads
         if (typeof document !== "undefined") {
-          document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax`;
+          document.cookie = `tenant_id=${encodeURIComponent(tenantData.id)}; path=/; samesite=lax; max-age=86400`;
+          document.cookie = `tenant_slug=${encodeURIComponent(tenantData.slug)}; path=/; samesite=lax; max-age=86400`;
         }
       }
     } catch (err) {
-      // Ignore AbortErrors - these are expected when component unmounts or navigation occurs
+      // Ignore AbortErrors
       if (err instanceof Error && err.name === "AbortError") {
         return;
       }
       if (mountedRef.current) {
         console.error("Tenant fetch error:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
+        // Still mark as initialized to prevent infinite loading
         tenantInitialized = true;
       }
     } finally {
@@ -186,56 +259,49 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true;
-
-    // Set a timeout to prevent infinite loading
-    timeoutRef.current = setTimeout(() => {
-      if (mountedRef.current && !tenantInitialized) {
-        console.warn("Tenant fetch timed out after 5 seconds");
-        tenantInitialized = true;
-        setIsLoading(false);
-        // Clear any potentially stale auth state that might be causing the hang
-        if (!cachedTenant) {
-          // If we couldn't get tenant, clear auth cookies to allow fresh login
-          document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        }
-      }
-    }, 5000);
+    fetchAttemptedRef.current = false;
 
     fetchTenant();
 
-    // Listen for auth state changes to re-fetch tenant when user logs in/out
+    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
-        // Clear cache on sign out
         cachedTenant = null;
         tenantInitialized = false;
+        fetchAttemptedRef.current = false;
         setTenant(null);
         setIsLoading(false);
+        // Clear cookies on sign out
+        if (typeof document !== "undefined") {
+          document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // Re-fetch tenant on sign in
-        tenantInitialized = false; // Force re-fetch
-        fetchTenant();
+        // Only re-fetch if we don't have a tenant
+        if (!cachedTenant) {
+          tenantInitialized = false;
+          fetchAttemptedRef.current = false;
+          fetchTenant();
+        }
       }
     });
 
     return () => {
       mountedRef.current = false;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
       subscription.unsubscribe();
     };
   }, []);
 
   const refreshTenant = async () => {
+    tenantInitialized = false;
+    fetchAttemptedRef.current = false;
     setIsLoading(true);
     await fetchTenant();
   };
 
-  const isMainSite = !getTenantSlugFromCookie();
+  const isMainSite = !getTenantSlugFromCookie() && !getTenantSlugFromHostname();
 
   return (
     <TenantContext.Provider
@@ -251,6 +317,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       {children}
     </TenantContext.Provider>
   );
+}
+
+// Transform database row to Tenant type
+function transformTenantData(data: any): Tenant {
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug,
+    logo_url: data.logo_url,
+    primary_color: data.primary_color || "#C53030",
+    custom_domain: data.custom_domain,
+    settings: (data.settings as Record<string, unknown>) || {},
+    subscription_tier: data.subscription_tier as Tenant["subscription_tier"],
+    subscription_status: data.subscription_status as Tenant["subscription_status"],
+    trial_ends_at: data.trial_ends_at,
+    agency_code: data.agency_code || null,
+    white_label_enabled: data.white_label_enabled || false,
+    tenant_type: (data.tenant_type as Tenant["tenant_type"]) || "education",
+  };
 }
 
 export function useTenant(): TenantContextType {
@@ -277,7 +362,6 @@ export function useSubscriptionLimits() {
     professional: { instructors: 5, students: 100, courses: -1, storage: 25 },
     institution: { instructors: -1, students: 500, courses: -1, storage: 100 },
     enterprise: { instructors: -1, students: -1, courses: -1, storage: -1 },
-    // Agency tiers
     "agency-starter": { instructors: 2, students: 50, courses: -1, storage: 10 },
     "agency-pro": { instructors: 5, students: 150, courses: -1, storage: 50 },
     "agency-enterprise": { instructors: -1, students: -1, courses: -1, storage: -1 },
