@@ -33,23 +33,20 @@ export function ConversationList({
 
   const filteredConversations = conversations?.filter((conv: Conversation) => {
     if (!search) return true;
-    const otherParticipant = conv.participants?.find((p) => p.user_id !== user?.id);
-    return otherParticipant?.user?.full_name
+    // Use direct other_user_name property from simplified schema
+    return conv.other_user_name
       ?.toLowerCase()
       .includes(search.toLowerCase());
   });
 
   const getConversationTitle = (conv: Conversation) => {
-    if (conv.title) return conv.title;
-    if (conv.is_group) return "Group Chat";
-    const otherParticipant = conv.participants?.find((p) => p.user_id !== user?.id);
-    return otherParticipant?.user?.full_name || "Unknown";
+    // Use direct other_user_name from simplified schema
+    return conv.other_user_name || conv.title || "Unknown";
   };
 
   const getConversationAvatar = (conv: Conversation) => {
-    if (conv.is_group) return null;
-    const otherParticipant = conv.participants?.find((p) => p.user_id !== user?.id);
-    return otherParticipant?.user?.avatar_url || null;
+    // Use direct other_user_avatar from simplified schema
+    return conv.other_user_avatar || null;
   };
 
   if (isLoading) {
@@ -134,8 +131,7 @@ export function ConversationList({
                     </div>
                     {conv.last_message && (
                       <p className="text-sm text-muted-foreground truncate">
-                        {conv.last_message.sender_id === user?.id ? "You: " : ""}
-                        {conv.last_message.content}
+                        {conv.last_message}
                       </p>
                     )}
                   </div>
