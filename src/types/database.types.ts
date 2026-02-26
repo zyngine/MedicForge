@@ -616,6 +616,44 @@ export type Database = {
           },
         ]
       }
+      attendance_check_in_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          max_uses: number | null
+          session_id: string
+          use_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          max_uses?: number | null
+          session_id: string
+          use_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          max_uses?: number | null
+          session_id?: string
+          use_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_check_in_codes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           check_in_time: string | null
@@ -2729,6 +2767,133 @@ export type Database = {
           },
         ]
       }
+      gradebook_export_templates: {
+        Row: {
+          columns: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          filters: Json | null
+          format: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          columns?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          format?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          columns?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          format?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gradebook_export_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gradebook_export_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_outcomes: {
+        Row: {
+          category: string | null
+          code: string | null
+          course_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          level: string | null
+          parent_id: string | null
+          sort_order: number | null
+          tenant_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          code?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          code?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_outcomes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_outcomes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_outcomes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed_at: string | null
@@ -3227,6 +3392,41 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "nremt_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outcome_alignments: {
+        Row: {
+          alignable_id: string
+          alignable_type: string
+          created_at: string | null
+          id: string
+          outcome_id: string
+          weight: number | null
+        }
+        Insert: {
+          alignable_id: string
+          alignable_type: string
+          created_at?: string | null
+          id?: string
+          outcome_id: string
+          weight?: number | null
+        }
+        Update: {
+          alignable_id?: string
+          alignable_type?: string
+          created_at?: string | null
+          id?: string
+          outcome_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcome_alignments_outcome_id_fkey"
+            columns: ["outcome_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
             referencedColumns: ["id"]
           },
         ]
@@ -5375,6 +5575,67 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_outcome_progress: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          evidence_count: number | null
+          id: string
+          last_assessed_at: string | null
+          mastery_level: string | null
+          mastery_score: number | null
+          outcome_id: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          evidence_count?: number | null
+          id?: string
+          last_assessed_at?: string | null
+          mastery_level?: string | null
+          mastery_score?: number | null
+          outcome_id: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          evidence_count?: number | null
+          id?: string
+          last_assessed_at?: string | null
+          mastery_level?: string | null
+          mastery_score?: number | null
+          outcome_id?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_outcome_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_outcome_progress_outcome_id_fkey"
+            columns: ["outcome_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_outcome_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
