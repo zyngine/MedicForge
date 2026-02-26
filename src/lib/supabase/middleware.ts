@@ -101,7 +101,7 @@ export async function updateSession(request: NextRequest) {
       supabaseResponse.headers.set("x-tenant-id", tenantInfo.id)
       supabaseResponse.headers.set("x-tenant-slug", tenantInfo.slug)
       supabaseResponse.cookies.set("tenant_id", tenantInfo.id, {
-        httpOnly: true,
+        httpOnly: false, // Must be false so client-side JS can read it
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
