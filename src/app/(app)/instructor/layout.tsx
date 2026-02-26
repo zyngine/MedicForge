@@ -50,7 +50,6 @@ const instructorNavigation = [
     title: "Grading",
     href: "/instructor/grading",
     icon: <ClipboardList className="h-5 w-5" />,
-    badge: 12,
   },
   {
     title: "Gradebook",
