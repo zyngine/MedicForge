@@ -330,6 +330,64 @@ export type Database = {
           },
         ]
       }
+      analytics_events: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          event_category: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          session_id: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          event_category: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          session_id?: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          event_category?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          session_id?: string | null
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           author_id: string
@@ -1968,6 +2026,63 @@ export type Database = {
           },
           {
             foreignKeyName: "courses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_metrics: {
+        Row: {
+          active_users: number | null
+          average_score: number | null
+          content_views: number | null
+          course_id: string | null
+          created_at: string | null
+          id: string
+          metric_date: string
+          new_enrollments: number | null
+          submissions_count: number | null
+          tenant_id: string
+          time_spent_minutes: number | null
+        }
+        Insert: {
+          active_users?: number | null
+          average_score?: number | null
+          content_views?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          metric_date: string
+          new_enrollments?: number | null
+          submissions_count?: number | null
+          tenant_id: string
+          time_spent_minutes?: number | null
+        }
+        Update: {
+          active_users?: number | null
+          average_score?: number | null
+          content_views?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          metric_date?: string
+          new_enrollments?: number | null
+          submissions_count?: number | null
+          tenant_id?: string
+          time_spent_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_metrics_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_metrics_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -5077,6 +5192,76 @@ export type Database = {
           },
         ]
       }
+      student_engagement: {
+        Row: {
+          assignments_submitted: number | null
+          content_views: number | null
+          course_id: string
+          created_at: string | null
+          discussion_posts: number | null
+          engagement_score: number | null
+          id: string
+          logins: number | null
+          student_id: string
+          tenant_id: string
+          time_spent_minutes: number | null
+          updated_at: string | null
+          week_start: string
+        }
+        Insert: {
+          assignments_submitted?: number | null
+          content_views?: number | null
+          course_id: string
+          created_at?: string | null
+          discussion_posts?: number | null
+          engagement_score?: number | null
+          id?: string
+          logins?: number | null
+          student_id: string
+          tenant_id: string
+          time_spent_minutes?: number | null
+          updated_at?: string | null
+          week_start: string
+        }
+        Update: {
+          assignments_submitted?: number | null
+          content_views?: number | null
+          course_id?: string
+          created_at?: string | null
+          discussion_posts?: number | null
+          engagement_score?: number | null
+          id?: string
+          logins?: number | null
+          student_id?: string
+          tenant_id?: string
+          time_spent_minutes?: number | null
+          updated_at?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_engagement_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_engagement_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_engagement_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           assignment_id: string
@@ -5770,6 +5955,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      calculate_engagement_score: {
+        Args: {
+          p_course_id: string
+          p_student_id: string
+          p_week_start: string
+        }
+        Returns: number
       }
       calculate_item_information: {
         Args: {
