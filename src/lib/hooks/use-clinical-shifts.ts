@@ -54,18 +54,24 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
       if (fetchError) throw fetchError;
 
       // Transform data to include computed fields
-      const transformedShifts: ClinicalShiftWithDetails[] = (data || []).map((shift: any) => ({
-        ...shift,
-        site: shift.site ? {
-          ...shift.site,
-          preceptors: (shift.site.preceptors || []) as any,
-        } : undefined,
-        bookings_count: shift.bookings?.[0]?.count || 0,
-        available_slots: shift.capacity - (shift.bookings?.[0]?.count || 0),
-        is_available:
-          (shift.capacity - (shift.bookings?.[0]?.count || 0)) > 0 &&
-          new Date(shift.shift_date) >= new Date(),
-      }));
+      const transformedShifts: ClinicalShiftWithDetails[] = (data || []).map((shift: any) => {
+        const capacity = shift.capacity ?? 0;
+        const bookingsCount = shift.bookings?.[0]?.count || 0;
+        return {
+          ...shift,
+          capacity,
+          is_active: shift.is_active ?? true,
+          site: shift.site ? {
+            ...shift.site,
+            preceptors: (shift.site.preceptors || []) as any,
+          } : undefined,
+          bookings_count: bookingsCount,
+          available_slots: capacity - bookingsCount,
+          is_available:
+            (capacity - bookingsCount) > 0 &&
+            new Date(shift.shift_date) >= new Date(),
+        };
+      });
 
       setShifts(transformedShifts);
     } catch (err) {
@@ -212,16 +218,20 @@ export function useClinicalShift(shiftId: string | null) {
 
         if (fetchError) throw fetchError;
 
+        const capacity = data.capacity ?? 0;
+        const bookingsCount = data.bookings?.length || 0;
         const transformedShift = {
           ...data,
+          capacity,
+          is_active: data.is_active ?? true,
           site: data.site ? {
             ...data.site,
             preceptors: (data.site.preceptors || []) as any,
           } : undefined,
-          bookings_count: data.bookings?.length || 0,
-          available_slots: data.capacity - (data.bookings?.length || 0),
+          bookings_count: bookingsCount,
+          available_slots: capacity - bookingsCount,
           is_available:
-            (data.capacity - (data.bookings?.length || 0)) > 0 &&
+            (capacity - bookingsCount) > 0 &&
             new Date(data.shift_date) >= new Date(),
         } as ClinicalShiftWithDetails;
 
