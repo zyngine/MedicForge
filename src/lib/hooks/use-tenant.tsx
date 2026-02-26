@@ -135,7 +135,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         if (!slugError && tenantBySlug) {
           tenantId = tenantBySlug.id;
           // Set cookies for future loads
-          if (typeof document !== "undefined") {
+          if (typeof document !== "undefined" && tenantId && tenantSlug) {
             document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax; max-age=86400`;
             document.cookie = `tenant_slug=${encodeURIComponent(tenantSlug)}; path=/; samesite=lax; max-age=86400`;
           }
@@ -234,7 +234,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         tenantInitialized = true;
         setTenant(transformed);
         // Set cookies for future loads
-        if (typeof document !== "undefined") {
+        if (typeof document !== "undefined" && tenantData.id && tenantData.slug) {
           document.cookie = `tenant_id=${encodeURIComponent(tenantData.id)}; path=/; samesite=lax; max-age=86400`;
           document.cookie = `tenant_slug=${encodeURIComponent(tenantData.slug)}; path=/; samesite=lax; max-age=86400`;
         }
