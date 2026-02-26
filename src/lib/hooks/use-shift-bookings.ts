@@ -103,7 +103,16 @@ export function useShiftBookings(options: UseBookingsOptions = {}) {
       if (bookError) throw bookError;
 
       await fetchBookings();
-      return data;
+
+      // Transform database response to ShiftBooking type
+      if (!data) return null;
+      return {
+        ...data,
+        status: data.status ?? "booked",
+        booked_at: data.booked_at ?? new Date().toISOString(),
+        created_at: data.created_at ?? new Date().toISOString(),
+        updated_at: data.updated_at ?? new Date().toISOString(),
+      } as ShiftBooking;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to book shift";
       setError(new Error(errorMessage));
