@@ -108,7 +108,13 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
 
       // Refetch to get the full data with relations
       await fetchShifts();
-      return data;
+
+      // Map database response to ClinicalShift type
+      return {
+        ...data,
+        capacity: data.capacity ?? 0,
+        is_active: data.is_active ?? true,
+      } as ClinicalShift;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to create shift"));
       return null;
@@ -130,7 +136,13 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
       if (updateError) throw updateError;
 
       await fetchShifts();
-      return data;
+
+      // Map database response to ClinicalShift type
+      return {
+        ...data,
+        capacity: data.capacity ?? 0,
+        is_active: data.is_active ?? true,
+      } as ClinicalShift;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to update shift"));
       return null;
