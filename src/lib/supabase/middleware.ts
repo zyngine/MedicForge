@@ -105,12 +105,14 @@ export async function updateSession(request: NextRequest) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
+        maxAge: 86400, // 24 hours - persist across sessions
       })
       supabaseResponse.cookies.set("tenant_slug", tenantInfo.slug, {
         httpOnly: false, // Allow client-side access
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
+        maxAge: 86400, // 24 hours - persist across sessions
       })
     }
   }
