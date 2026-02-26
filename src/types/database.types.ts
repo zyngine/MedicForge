@@ -620,36 +620,56 @@ export type Database = {
         Row: {
           code: string
           created_at: string | null
+          created_by: string | null
           expires_at: string
           id: string
           max_uses: number | null
           session_id: string
+          tenant_id: string | null
           use_count: number | null
         }
         Insert: {
           code: string
           created_at?: string | null
+          created_by?: string | null
           expires_at: string
           id?: string
           max_uses?: number | null
           session_id: string
+          tenant_id?: string | null
           use_count?: number | null
         }
         Update: {
           code?: string
           created_at?: string | null
+          created_by?: string | null
           expires_at?: string
           id?: string
           max_uses?: number | null
           session_id?: string
+          tenant_id?: string | null
           use_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_check_in_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_check_in_codes_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_check_in_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -4958,6 +4978,7 @@ export type Database = {
         Row: {
           attempt_date: string | null
           attempt_number: number | null
+          completed_at: string | null
           course_id: string | null
           created_at: string | null
           critical_failures: string[] | null
@@ -4972,8 +4993,11 @@ export type Database = {
           passed: boolean | null
           remediation_plan: string | null
           signature_timestamp: string | null
+          started_at: string | null
+          status: string | null
           step_results: Json
           student_id: string
+          student_notes: string | null
           student_reflection: string | null
           student_signature_data: string | null
           student_signed_at: string | null
@@ -4982,11 +5006,13 @@ export type Database = {
           time_taken_seconds: number | null
           total_score: number | null
           updated_at: string | null
+          verified_at: string | null
           video_url: string | null
         }
         Insert: {
           attempt_date?: string | null
           attempt_number?: number | null
+          completed_at?: string | null
           course_id?: string | null
           created_at?: string | null
           critical_failures?: string[] | null
@@ -5001,8 +5027,11 @@ export type Database = {
           passed?: boolean | null
           remediation_plan?: string | null
           signature_timestamp?: string | null
+          started_at?: string | null
+          status?: string | null
           step_results?: Json
           student_id: string
+          student_notes?: string | null
           student_reflection?: string | null
           student_signature_data?: string | null
           student_signed_at?: string | null
@@ -5011,11 +5040,13 @@ export type Database = {
           time_taken_seconds?: number | null
           total_score?: number | null
           updated_at?: string | null
+          verified_at?: string | null
           video_url?: string | null
         }
         Update: {
           attempt_date?: string | null
           attempt_number?: number | null
+          completed_at?: string | null
           course_id?: string | null
           created_at?: string | null
           critical_failures?: string[] | null
@@ -5030,8 +5061,11 @@ export type Database = {
           passed?: boolean | null
           remediation_plan?: string | null
           signature_timestamp?: string | null
+          started_at?: string | null
+          status?: string | null
           step_results?: Json
           student_id?: string
+          student_notes?: string | null
           student_reflection?: string | null
           student_signature_data?: string | null
           student_signed_at?: string | null
@@ -5040,6 +5074,7 @@ export type Database = {
           time_taken_seconds?: number | null
           total_score?: number | null
           updated_at?: string | null
+          verified_at?: string | null
           video_url?: string | null
         }
         Relationships: [
@@ -5090,15 +5125,18 @@ export type Database = {
           equipment_needed: string[] | null
           id: string
           is_active: boolean | null
+          is_nremt_official: boolean | null
           name: string
           passing_score: number | null
           patient_scenario: string | null
           setup_instructions: string | null
           skill_code: string | null
           steps: Json
+          tenant_id: string | null
           time_limit_seconds: number | null
           total_points: number | null
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           category: string
@@ -5109,15 +5147,18 @@ export type Database = {
           equipment_needed?: string[] | null
           id?: string
           is_active?: boolean | null
+          is_nremt_official?: boolean | null
           name: string
           passing_score?: number | null
           patient_scenario?: string | null
           setup_instructions?: string | null
           skill_code?: string | null
           steps?: Json
+          tenant_id?: string | null
           time_limit_seconds?: number | null
           total_points?: number | null
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           category?: string
@@ -5128,17 +5169,28 @@ export type Database = {
           equipment_needed?: string[] | null
           id?: string
           is_active?: boolean | null
+          is_nremt_official?: boolean | null
           name?: string
           passing_score?: number | null
           patient_scenario?: string | null
           setup_instructions?: string | null
           skill_code?: string | null
           steps?: Json
+          tenant_id?: string | null
           time_limit_seconds?: number | null
           total_points?: number | null
           updated_at?: string | null
+          version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "skill_sheet_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skills: {
         Row: {
