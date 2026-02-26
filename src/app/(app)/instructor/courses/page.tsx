@@ -35,6 +35,7 @@ import {
 import { useInstructorCourses, useArchiveCourse, useDeleteCourse, type CourseWithDetails } from "@/lib/hooks/use-courses";
 import { useSubscriptionEnforcement } from "@/lib/hooks/use-subscription-enforcement";
 import { LimitWarningBanner, LimitReachedAlert, UpgradeModal } from "@/components/subscription";
+import { DuplicateCourseModal } from "@/components/courses/DuplicateCourseModal";
 import { formatDate } from "@/lib/utils";
 
 const courseTypes = [
@@ -116,6 +117,7 @@ export default function InstructorCoursesPage() {
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [duplicateCourse, setDuplicateCourse] = React.useState<CourseWithDetails | null>(null);
 
   const filteredCourses = courses.filter((course: CourseWithDetails) => {
     const matchesSearch =
@@ -298,7 +300,10 @@ export default function InstructorCoursesPage() {
                       >
                         Edit Course
                       </DropdownItem>
-                      <DropdownItem icon={<Copy className="h-4 w-4" />}>
+                      <DropdownItem
+                        icon={<Copy className="h-4 w-4" />}
+                        onClick={() => setDuplicateCourse(course)}
+                      >
                         Duplicate
                       </DropdownItem>
                       <DropdownSeparator />
@@ -380,6 +385,16 @@ export default function InstructorCoursesPage() {
         type="course"
         currentTier={tier}
       />
+
+      {/* Duplicate Course Modal */}
+      {duplicateCourse && (
+        <DuplicateCourseModal
+          isOpen={!!duplicateCourse}
+          onClose={() => setDuplicateCourse(null)}
+          course={duplicateCourse}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

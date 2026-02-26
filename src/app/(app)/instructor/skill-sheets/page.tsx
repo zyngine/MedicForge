@@ -13,7 +13,9 @@ import {
   AlertTriangle,
   ChevronDown,
   Users,
+  Upload,
 } from "lucide-react";
+import Link from "next/link";
 import {
   useSkillSheetTemplates,
   useSkillSheetAttempts,
@@ -84,6 +86,12 @@ export default function InstructorSkillSheetsPage() {
             Manage psychomotor skill evaluations and track student competencies
           </p>
         </div>
+        <Link href="/instructor/skill-sheets/import">
+          <Button variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Import Skills
+          </Button>
+        </Link>
       </div>
 
       {/* Tabs */}

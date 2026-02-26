@@ -35,6 +35,11 @@ const adminNavigation = [
     icon: <Users className="h-5 w-5" />,
   },
   {
+    title: "Cohorts",
+    href: "/admin/cohorts",
+    icon: <GraduationCap className="h-5 w-5" />,
+  },
+  {
     title: "Organization",
     href: "/admin/organization",
     icon: <Building2 className="h-5 w-5" />,

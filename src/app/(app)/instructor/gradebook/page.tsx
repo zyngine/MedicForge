@@ -36,7 +36,9 @@ import {
   Target,
   GraduationCap,
   TrendingUp,
+  Upload,
 } from "lucide-react";
+import Link from "next/link";
 import {
   useGradebookExportTemplates,
   useQuickExport,
@@ -274,6 +276,12 @@ export default function InstructorGradebookPage() {
             placeholder="Select a course"
             className="w-[250px]"
           />
+          <Link href={`/instructor/gradebook/import${selectedCourse ? `?course=${selectedCourse}` : ""}`}>
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Grades
+            </Button>
+          </Link>
           <Button
             variant="outline"
             onClick={() => handleExport()}

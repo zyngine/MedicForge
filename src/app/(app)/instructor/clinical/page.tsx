@@ -22,6 +22,7 @@ import {
   XCircle,
   FileText,
   RefreshCw,
+  Upload,
 } from "lucide-react";
 import { format, addDays, startOfToday } from "date-fns";
 import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
@@ -92,6 +93,12 @@ export default function InstructorClinicalPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/instructor/clinical/import">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Hours
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/instructor/clinical/sites">
               <Building2 className="h-4 w-4 mr-2" />

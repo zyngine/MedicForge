@@ -426,9 +426,15 @@ export default function AdminUsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <a href="/admin/students/import">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Students
+            </a>
+          </Button>
           <Button variant="outline" onClick={() => setShowImportModal(true)}>
             <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
+            Quick Import
           </Button>
           <Button onClick={() => setShowAddModal(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
