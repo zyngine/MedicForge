@@ -210,11 +210,28 @@ function useSessionCheckIns(sessionId: string | null) {
       const { data, error } = await supabase
         .from("attendance_records")
         .select(`
-          id, status, check_in_time, recorded_at,
-          student:users!attendance_records_student_id_fkey(id, full_name, email)
+          id, status, check_in_time, recorded_at, student_id
         `)
         .eq("session_id", sessionId)
         .order("recorded_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Fetch student info separately since FK is to auth.users, not public.users
+      const studentIds = (data || []).map((r: any) => r.student_id);
+      const { data: students } = studentIds.length > 0
+        ? await supabase
+            .from("users")
+            .select("id, full_name, email")
+            .in("id", studentIds)
+        : { data: [] };
+
+      // Map students to records
+      const studentMap = new Map((students || []).map((s: any) => [s.id, s]));
+      return (data || []).map((record: any) => ({
+        ...record,
+        student: studentMap.get(record.student_id) || null,
+      }));
 
       if (error) throw error;
       return data || [];

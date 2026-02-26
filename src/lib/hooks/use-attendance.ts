@@ -199,7 +199,7 @@ export function useAttendanceRecords(sessionId: string) {
         .from("attendance_records")
         .select(`
           *,
-          student:users!attendance_records_student_id_fkey(id, full_name, email)
+          student:users(id, full_name, email)
         `)
         .eq("session_id", sessionId)
         .order("recorded_at", { ascending: true });
@@ -249,7 +249,7 @@ export function useAttendanceRecords(sessionId: string) {
           .eq("id", existingRecord.id)
           .select(`
             *,
-            student:users!attendance_records_student_id_fkey(id, full_name, email)
+            student:users(id, full_name, email)
           `)
           .single();
 
@@ -273,7 +273,7 @@ export function useAttendanceRecords(sessionId: string) {
           })
           .select(`
             *,
-            student:users!attendance_records_student_id_fkey(id, full_name, email)
+            student:users(id, full_name, email)
           `)
           .single();
 
