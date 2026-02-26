@@ -2907,7 +2907,11 @@ export type Database = {
           id: string
           is_active: boolean | null
           level: string | null
+          mastery_threshold: number | null
+          outcome_code: string | null
+          outcome_type: Database["public"]["Enums"]["outcome_type"] | null
           parent_id: string | null
+          parent_outcome_id: string | null
           sort_order: number | null
           tenant_id: string
           title: string
@@ -2922,7 +2926,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           level?: string | null
+          mastery_threshold?: number | null
+          outcome_code?: string | null
+          outcome_type?: Database["public"]["Enums"]["outcome_type"] | null
           parent_id?: string | null
+          parent_outcome_id?: string | null
           sort_order?: number | null
           tenant_id: string
           title: string
@@ -2937,7 +2945,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           level?: string | null
+          mastery_threshold?: number | null
+          outcome_code?: string | null
+          outcome_type?: Database["public"]["Enums"]["outcome_type"] | null
           parent_id?: string | null
+          parent_outcome_id?: string | null
           sort_order?: number | null
           tenant_id?: string
           title?: string
@@ -2954,6 +2966,13 @@ export type Database = {
           {
             foreignKeyName: "learning_outcomes_parent_id_fkey"
             columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_outcomes_parent_outcome_id_fkey"
+            columns: ["parent_outcome_id"]
             isOneToOne: false
             referencedRelation: "learning_outcomes"
             referencedColumns: ["id"]
@@ -6376,6 +6395,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_md_invitation: {
+        Args: { p_invite_code: string; p_user_id: string }
+        Returns: boolean
+      }
       book_clinical_shift: {
         Args: { p_shift_id: string; p_student_id: string; p_tenant_id: string }
         Returns: {
@@ -6469,6 +6492,37 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_sso_sessions: { Args: never; Returns: number }
+      create_md_invitation: {
+        Args: {
+          p_email: string
+          p_is_primary?: boolean
+          p_md_credentials?: string
+          p_md_license_number?: string
+          p_md_name: string
+          p_tenant_id: string
+        }
+        Returns: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invite_code: string
+          invited_by: string
+          is_primary: boolean | null
+          md_credentials: string | null
+          md_license_number: string | null
+          md_name: string
+          tenant_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "medical_director_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_agency_code: { Args: never; Returns: string }
       generate_invite_code: { Args: never; Returns: string }
       get_accreditation_compliance_summary: {
@@ -6685,6 +6739,15 @@ export type Database = {
         }
         Returns: Json
       }
+      validate_md_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: {
+          email: string
+          md_name: string
+          tenant_name: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       accreditation_doc_category:
@@ -6746,6 +6809,7 @@ export type Database = {
       file_context: "course" | "assignment" | "submission" | "profile"
       log_type: "hours" | "patient_contact"
       notification_type: "assignment" | "grade" | "announcement" | "reminder"
+      outcome_type: "course" | "program" | "institutional"
       patient_age_range:
         | "neonate"
         | "infant"
@@ -6967,6 +7031,7 @@ export const Constants = {
       file_context: ["course", "assignment", "submission", "profile"],
       log_type: ["hours", "patient_contact"],
       notification_type: ["assignment", "grade", "announcement", "reminder"],
+      outcome_type: ["course", "program", "institutional"],
       patient_age_range: [
         "neonate",
         "infant",

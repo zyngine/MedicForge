@@ -15,11 +15,6 @@ import {
   Stethoscope,
   ClipboardList,
   Database,
-  Shield,
-  UserCheck,
-  BookOpen,
-  CalendarClock,
-  UserCog,
   GraduationCap,
 } from "lucide-react";
 
@@ -58,38 +53,6 @@ const adminNavigation = [
     title: "Question Bank",
     href: "/instructor/question-bank",
     icon: <Database className="h-5 w-5" />,
-  },
-  // Agency Portal Section
-  {
-    title: "Agency Portal",
-    icon: <Shield className="h-5 w-5" />,
-    children: [
-      {
-        title: "Overview",
-        href: "/admin/agency",
-        icon: <LayoutDashboard className="h-4 w-4" />,
-      },
-      {
-        title: "Employees",
-        href: "/admin/agency/employees",
-        icon: <UserCheck className="h-4 w-4" />,
-      },
-      {
-        title: "Skills Library",
-        href: "/admin/agency/skills",
-        icon: <BookOpen className="h-4 w-4" />,
-      },
-      {
-        title: "Verification Cycles",
-        href: "/admin/agency/cycles",
-        icon: <CalendarClock className="h-4 w-4" />,
-      },
-      {
-        title: "Medical Directors",
-        href: "/admin/agency/medical-directors",
-        icon: <UserCog className="h-4 w-4" />,
-      },
-    ],
   },
   {
     title: "Billing",

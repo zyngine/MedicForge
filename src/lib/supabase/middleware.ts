@@ -229,17 +229,22 @@ export async function updateSession(request: NextRequest) {
           return NextResponse.redirect(url)
         }
 
-        // Not a platform admin, check their role in users table
+        // Not a platform admin, check their role and tenant type
         const { data: profile } = await supabase
           .from("users")
-          .select("role")
+          .select("role, tenant_id, agency_role")
           .eq("id", user.id)
           .single()
 
         // Only redirect if we have a profile with a role
         if (profile?.role) {
           const url = request.nextUrl.clone()
-          if (profile.role === "student") {
+
+          // Check if user's tenant is an agency tenant
+          if (profile.tenant_id && profile.agency_role) {
+            // Agency user - redirect to agency dashboard
+            url.pathname = "/agency/dashboard"
+          } else if (profile.role === "student") {
             url.pathname = "/student/dashboard"
           } else {
             url.pathname = "/instructor/dashboard"
