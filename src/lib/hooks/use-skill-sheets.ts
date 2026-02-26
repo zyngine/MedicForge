@@ -194,9 +194,7 @@ export function useSkillSheetAttempts(options?: {
         .from("skill_sheet_attempts")
         .select(`
           *,
-          template:skill_sheet_templates(*),
-          student:users!skill_sheet_attempts_student_id_fkey(id, full_name, email),
-          evaluator:users!skill_sheet_attempts_evaluator_id_fkey(id, full_name)
+          template:skill_sheet_templates(*)
         `);
 
       if (options?.studentId) {
