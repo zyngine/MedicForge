@@ -3231,6 +3231,123 @@ export type Database = {
           },
         ]
       }
+      plagiarism_checks: {
+        Row: {
+          checked_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          matches: Json | null
+          original_content: string | null
+          requested_by: string
+          similarity_score: number | null
+          status: string | null
+          submission_id: string
+          tenant_id: string
+          updated_at: string | null
+          word_count: number | null
+        }
+        Insert: {
+          checked_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          matches?: Json | null
+          original_content?: string | null
+          requested_by: string
+          similarity_score?: number | null
+          status?: string | null
+          submission_id: string
+          tenant_id: string
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Update: {
+          checked_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          matches?: Json | null
+          original_content?: string | null
+          requested_by?: string
+          similarity_score?: number | null
+          status?: string | null
+          submission_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plagiarism_checks_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plagiarism_checks_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plagiarism_checks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plagiarism_sources: {
+        Row: {
+          content: string
+          content_hash: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          source_id: string | null
+          source_type: string
+          tenant_id: string
+          title: string
+          word_count: number | null
+        }
+        Insert: {
+          content: string
+          content_hash: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          source_id?: string | null
+          source_type: string
+          tenant_id: string
+          title: string
+          word_count?: number | null
+        }
+        Update: {
+          content?: string
+          content_hash?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          source_id?: string | null
+          source_type?: string
+          tenant_id?: string
+          title?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plagiarism_sources_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string | null
@@ -6271,6 +6388,7 @@ export type Database = {
         | "adolescent"
         | "adult"
         | "geriatric"
+      plagiarism_status: "pending" | "processing" | "completed" | "failed"
       question_difficulty: "easy" | "medium" | "hard" | "expert"
       question_type:
         | "multiple_choice"
@@ -6492,6 +6610,7 @@ export const Constants = {
         "adult",
         "geriatric",
       ],
+      plagiarism_status: ["pending", "processing", "completed", "failed"],
       question_difficulty: ["easy", "medium", "hard", "expert"],
       question_type: [
         "multiple_choice",
