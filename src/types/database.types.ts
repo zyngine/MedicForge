@@ -6467,22 +6467,7 @@ export type Database = {
       }
       get_or_create_direct_conversation: {
         Args: { p_tenant_id: string; p_user1_id: string; p_user2_id: string }
-        Returns: {
-          created_at: string | null
-          created_by: string
-          id: string
-          is_group: boolean | null
-          last_message_at: string | null
-          tenant_id: string
-          title: string | null
-          updated_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "conversations"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: Json
       }
       get_storage_usage: { Args: { p_tenant_id: string }; Returns: Json }
       get_user_agency_role: {
@@ -6555,29 +6540,7 @@ export type Database = {
           p_sender_id: string
           p_tenant_id: string
         }
-        Returns: {
-          content: string
-          content_type: string | null
-          conversation_id: string
-          created_at: string | null
-          deleted_at: string | null
-          edited_at: string | null
-          file_name: string | null
-          file_size: number | null
-          file_url: string | null
-          id: string
-          is_deleted: boolean | null
-          is_edited: boolean | null
-          reply_to_id: string | null
-          sender_id: string
-          tenant_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "messages"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: Json
       }
     }
     Enums: {
