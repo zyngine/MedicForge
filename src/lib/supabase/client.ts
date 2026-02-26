@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/types/database.types";
 
 // Singleton instance to prevent multiple clients
 let browserClient: ReturnType<typeof createBrowserClient<Database>> | null = null;

@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import type { Database } from "@/types/supabase"
+import type { Database } from "@/types/database.types"
 
 // Domains that should show the main marketing site (no tenant)
 const MAIN_DOMAINS = ["www.medicforge.net", "medicforge.net", "localhost", "localhost:3000"]
