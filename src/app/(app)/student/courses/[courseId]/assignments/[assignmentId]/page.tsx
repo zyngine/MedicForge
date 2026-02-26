@@ -266,7 +266,8 @@ export default function AssignmentPage() {
 
       if (assignment.type === "quiz") {
         for (const question of questions) {
-          const questionPoints = question.points ?? 0;
+          // Default to 1 point if not specified
+          const questionPoints = question.points ?? 1;
           totalPoints += questionPoints;
           const userAnswer = answers[question.id];
 
@@ -302,6 +303,9 @@ export default function AssignmentPage() {
         });
       }
 
+      // Calculate percentage score for quiz (final_score should be 0-100 percentage)
+      const percentageScore = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+
       // Create submission
       const { error: submitError } = await supabase.from("submissions").insert({
         tenant_id: profile.tenant_id,
@@ -313,7 +317,7 @@ export default function AssignmentPage() {
         submitted_at: new Date().toISOString(),
         status: assignment.type === "quiz" ? "graded" : "submitted",
         raw_score: assignment.type === "quiz" ? score : null,
-        final_score: assignment.type === "quiz" ? score : null,
+        final_score: assignment.type === "quiz" ? percentageScore : null,
       });
 
       if (submitError) throw submitError;

@@ -46,6 +46,7 @@ import {
   File,
   Loader2,
   BarChart3,
+  Target,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/lib/hooks/use-modules";
@@ -477,9 +478,11 @@ export default function CourseDetailPage() {
                 <Save className="h-4 w-4 mr-2" />
                 Save as Template
               </Button>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
+              <Button variant="outline" asChild>
+                <Link href={`/instructor/courses/${courseId}/edit`}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
               </Button>
               <Button asChild>
                 <Link href={`/instructor/courses/${courseId}/assignments/new`}>
@@ -951,20 +954,99 @@ export default function CourseDetailPage() {
                 <CardDescription>View and manage student grades</CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline">
-                  Apply Curve
-                </Button>
-                <Button variant="outline">
-                  Export Grades
+                <Button variant="outline" asChild>
+                  <Link href="/instructor/gradebook">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Full Gradebook
+                  </Link>
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <ClipboardCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Grade center will display a full gradebook with all assignments and student scores.</p>
-                <p className="text-sm mt-2">This feature is coming soon.</p>
-              </div>
+              {enrollments.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No students enrolled yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Assignment headers */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-2 font-medium min-w-[200px]">Student</th>
+                          {assignments.slice(0, 5).map(a => (
+                            <th key={a.id} className="text-center py-3 px-2 font-medium min-w-[100px]">
+                              <span className="text-xs truncate block" title={a.title}>
+                                {a.title.length > 15 ? a.title.slice(0, 15) + '...' : a.title}
+                              </span>
+                            </th>
+                          ))}
+                          <th className="text-center py-3 px-2 font-medium min-w-[80px]">Average</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {enrollments.slice(0, 10).map(enrollment => {
+                          const studentSubmissions = courseSubmissions.filter(
+                            s => s.student_id === enrollment.student_id
+                          );
+                          const grades = assignments.slice(0, 5).map(a => {
+                            const sub = studentSubmissions.find(s => s.assignment_id === a.id);
+                            return sub?.final_score ?? null;
+                          });
+                          const validGrades = grades.filter(g => g !== null) as number[];
+                          const avg = validGrades.length > 0
+                            ? Math.round(validGrades.reduce((a, b) => a + b, 0) / validGrades.length)
+                            : null;
+
+                          return (
+                            <tr key={enrollment.id} className="border-b last:border-0 hover:bg-muted/50">
+                              <td className="py-3 px-2">
+                                <div className="flex items-center gap-2">
+                                  <Avatar fallback={enrollment.student?.full_name || 'S'} size="sm" />
+                                  <span className="font-medium text-sm">
+                                    {enrollment.student?.full_name || 'Unknown'}
+                                  </span>
+                                </div>
+                              </td>
+                              {grades.map((grade, idx) => (
+                                <td key={idx} className="text-center py-3 px-2">
+                                  {grade !== null ? (
+                                    <Badge variant={grade >= 70 ? 'success' : 'warning'}>
+                                      {grade}%
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">--</span>
+                                  )}
+                                </td>
+                              ))}
+                              <td className="text-center py-3 px-2">
+                                {avg !== null ? (
+                                  <span className={`font-bold ${avg >= 70 ? 'text-success' : 'text-warning'}`}>
+                                    {avg}%
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">--</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {enrollments.length > 10 && (
+                    <div className="text-center pt-4">
+                      <Button variant="outline" asChild>
+                        <Link href="/instructor/gradebook">
+                          View All {enrollments.length} Students
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -982,16 +1064,54 @@ export default function CourseDetailPage() {
                 <CardTitle>NREMT Competency Tracking</CardTitle>
                 <CardDescription>Track student skills and clinical requirements</CardDescription>
               </div>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Skills
+              <Button variant="outline" asChild>
+                <Link href="/instructor/outcomes">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Skills
+                </Link>
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>NREMT competency tracking dashboard will show skill completion, clinical hours, and patient contacts.</p>
-                <p className="text-sm mt-2">This feature is coming soon.</p>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Quick Stats */}
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Competency Overview
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <span>Total Skills Tracked</span>
+                      <Badge variant="secondary">--</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <span>Students Proficient</span>
+                      <Badge variant="success">--</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <span>Needs Attention</span>
+                      <Badge variant="warning">--</Badge>
+                    </div>
+                  </div>
+                </div>
+                {/* Quick Actions */}
+                <div className="space-y-4">
+                  <h4 className="font-medium">Quick Actions</h4>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <Link href="/instructor/outcomes">
+                        <Target className="h-4 w-4 mr-2" />
+                        Manage Learning Outcomes
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <Link href={`/instructor/courses/${courseId}/students`}>
+                        <Users className="h-4 w-4 mr-2" />
+                        View Student Progress
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
