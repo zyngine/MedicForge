@@ -2128,6 +2128,79 @@ export type Database = {
           },
         ]
       }
+      direct_messages: {
+        Row: {
+          content: string
+          content_type: string | null
+          created_at: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          from_user_id: string
+          from_user_name: string
+          id: string
+          is_deleted: boolean | null
+          is_read: boolean | null
+          tenant_id: string
+          to_user_id: string | null
+          to_user_name: string | null
+        }
+        Insert: {
+          content: string
+          content_type?: string | null
+          created_at?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          from_user_id: string
+          from_user_name: string
+          id?: string
+          is_deleted?: boolean | null
+          is_read?: boolean | null
+          tenant_id: string
+          to_user_id?: string | null
+          to_user_name?: string | null
+        }
+        Update: {
+          content?: string
+          content_type?: string | null
+          created_at?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          from_user_id?: string
+          from_user_name?: string
+          id?: string
+          is_deleted?: boolean | null
+          is_read?: boolean | null
+          tenant_id?: string
+          to_user_id?: string | null
+          to_user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_posts: {
         Row: {
           author_id: string
@@ -6447,6 +6520,29 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: string[]
       }
+      get_messages_with_user: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_other_user_id: string
+          p_user_id: string
+        }
+        Returns: {
+          content: string
+          content_type: string
+          created_at: string
+          file_name: string
+          file_size: number
+          file_url: string
+          from_user_id: string
+          from_user_name: string
+          id: string
+          is_mine: boolean
+          is_read: boolean
+          to_user_id: string
+          to_user_name: string
+        }[]
+      }
       get_next_cat_question: {
         Args: {
           p_answered_ids: string[]
@@ -6473,6 +6569,19 @@ export type Database = {
       get_user_agency_role: {
         Args: never
         Returns: Database["public"]["Enums"]["agency_role"]
+      }
+      get_user_conversations: {
+        Args: { p_user_id: string }
+        Returns: {
+          is_sender: boolean
+          last_message: string
+          last_message_at: string
+          other_user_avatar: string
+          other_user_email: string
+          other_user_id: string
+          other_user_name: string
+          unread_count: number
+        }[]
       }
       get_user_role: {
         Args: never
@@ -6524,6 +6633,40 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "signature_verifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      send_direct_message: {
+        Args: {
+          p_content: string
+          p_content_type?: string
+          p_file_name?: string
+          p_file_size?: number
+          p_file_url?: string
+          p_from_user_id: string
+          p_tenant_id: string
+          p_to_user_id: string
+        }
+        Returns: {
+          content: string
+          content_type: string | null
+          created_at: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          from_user_id: string
+          from_user_name: string
+          id: string
+          is_deleted: boolean | null
+          is_read: boolean | null
+          tenant_id: string
+          to_user_id: string | null
+          to_user_name: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "direct_messages"
           isOneToOne: true
           isSetofReturn: false
         }
