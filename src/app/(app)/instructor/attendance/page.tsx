@@ -28,10 +28,14 @@ import {
   History,
   CheckCircle,
   AlertCircle,
+  CalendarDays,
+  Play,
+  MapPin,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import { useTodaysSessions, formatTimeDisplay, getSessionTypeLabel } from "@/lib/hooks/use-program-schedules";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
@@ -48,6 +52,8 @@ interface AttendanceSession {
   start_time: string;
   end_time: string;
   created_at: string;
+  tardy_window_minutes?: number;
+  allow_late_checkin?: boolean;
   code?: {
     code: string;
     expires_at: string;
@@ -55,6 +61,31 @@ interface AttendanceSession {
   _count?: { records: number };
   course?: { title: string } | null;
 }
+
+// Status badge variant mapping
+const getStatusBadgeVariant = (status: string): "success" | "warning" | "destructive" | "info" | "secondary" => {
+  switch (status) {
+    case "present": return "success";
+    case "late": return "warning";
+    case "absent": return "destructive";
+    case "excused": return "info";
+    case "virtual": return "secondary";
+    case "left_early": return "warning";
+    default: return "secondary";
+  }
+};
+
+const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case "present": return "Present";
+    case "late": return "Tardy";
+    case "absent": return "Absent";
+    case "excused": return "Excused";
+    case "virtual": return "Virtual";
+    case "left_early": return "Left Early";
+    default: return status;
+  }
+};
 
 // Generate a 4-digit code
 function generateCode(): string {
@@ -128,6 +159,8 @@ function useStartAttendance() {
       title: string;
       courseId?: string;
       durationMinutes: number;
+      tardyWindowMinutes?: number;
+      allowLateCheckin?: boolean;
     }) => {
       if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
 
@@ -135,7 +168,7 @@ function useStartAttendance() {
       const now = new Date();
       const endTime = new Date(now.getTime() + params.durationMinutes * 60 * 1000);
 
-      // Create session
+      // Create session with tardy configuration
       const { data: session, error: sessionError } = await supabase
         .from("attendance_sessions")
         .insert({
@@ -146,6 +179,9 @@ function useStartAttendance() {
           scheduled_date: now.toISOString().split("T")[0],
           start_time: now.toTimeString().slice(0, 5),
           end_time: endTime.toTimeString().slice(0, 5),
+          tardy_window_minutes: params.tardyWindowMinutes ?? 15,
+          allow_late_checkin: params.allowLateCheckin ?? true,
+          session_status: "in_progress",
           created_by: user.id,
         })
         .select()
@@ -210,7 +246,7 @@ function useSessionCheckIns(sessionId: string | null) {
       const { data, error } = await supabase
         .from("attendance_records")
         .select(`
-          id, status, check_in_time, recorded_at, student_id
+          id, status, check_in_time, recorded_at, student_id, was_late
         `)
         .eq("session_id", sessionId)
         .order("recorded_at", { ascending: true });
@@ -232,18 +268,40 @@ function useSessionCheckIns(sessionId: string | null) {
         ...record,
         student: studentMap.get(record.student_id) || null,
       }));
-
-      if (error) throw error;
-      return data || [];
     },
     enabled: !!sessionId && !!tenant?.id,
     refetchInterval: 5000, // Poll for new check-ins
   });
 }
 
+// Hook to update a student's attendance status
+function useUpdateAttendanceStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ recordId, status }: { recordId: string; status: string }) => {
+      const supabase = getDb();
+
+      const { error } = await supabase
+        .from("attendance_records")
+        .update({
+          status,
+          was_late: status === "late",
+        })
+        .eq("id", recordId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["session-checkins"] });
+    },
+  });
+}
+
 export default function InstructorAttendancePage() {
   const { data: sessions = [], isLoading } = useAttendanceSessionsWithCodes();
   const { data: courses = [] } = useInstructorCourses();
+  const { data: todaysSessions = [], isLoading: todaysLoading } = useTodaysSessions();
   const startMutation = useStartAttendance();
   const endMutation = useEndAttendance();
 
@@ -255,6 +313,8 @@ export default function InstructorAttendancePage() {
   const [title, setTitle] = React.useState("Class Attendance");
   const [courseId, setCourseId] = React.useState("");
   const [duration, setDuration] = React.useState("60");
+  const [tardyWindow, setTardyWindow] = React.useState("15");
+  const [allowLateCheckin, setAllowLateCheckin] = React.useState(true);
 
   // Find active session (has unexpired code)
   const activeSession = sessions.find(
@@ -267,10 +327,14 @@ export default function InstructorAttendancePage() {
         title,
         courseId: courseId || undefined,
         durationMinutes: parseInt(duration),
+        tardyWindowMinutes: parseInt(tardyWindow),
+        allowLateCheckin,
       });
       setShowStartModal(false);
       setTitle("Class Attendance");
       setCourseId("");
+      setTardyWindow("15");
+      setAllowLateCheckin(true);
     } catch (error) {
       console.error("Failed to start attendance:", error);
     }
@@ -313,6 +377,75 @@ export default function InstructorAttendancePage() {
           </Button>
         )}
       </div>
+
+      {/* Today's Scheduled Classes */}
+      {!todaysLoading && todaysSessions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Today&apos;s Scheduled Classes
+            </CardTitle>
+            <CardDescription>
+              Pre-scheduled sessions for today. Click &quot;Start&quot; to begin taking attendance.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {todaysSessions.map((ts: any) => (
+                <div
+                  key={ts.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-muted/30"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{ts.title}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>{formatTimeDisplay(ts.start_time)} - {formatTimeDisplay(ts.end_time)}</span>
+                        {ts.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {ts.location}
+                          </span>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {getSessionTypeLabel(ts.session_type)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{ts.program_name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {ts.has_active_code ? (
+                      <Badge variant="success">
+                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse mr-2" />
+                        In Progress ({ts.check_in_count} checked in)
+                      </Badge>
+                    ) : ts.session_status === "completed" ? (
+                      <Badge variant="secondary">Completed ({ts.check_in_count})</Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          // Pre-fill the start modal with session details
+                          setTitle(ts.title);
+                          setShowStartModal(true);
+                        }}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Attendance
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active Session Card */}
       {activeSession && activeSession.code && (
@@ -483,8 +616,48 @@ export default function InstructorAttendancePage() {
               ]}
             />
             <p className="text-xs text-muted-foreground">
-              How long students can check in
+              How long students can check in as "Present"
             </p>
+          </div>
+
+          {/* Tardy Configuration */}
+          <div className="border-t pt-4 mt-4">
+            <p className="font-medium text-sm mb-3">Late Check-in Settings</p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tardy Window</Label>
+                <Select
+                  value={tardyWindow}
+                  onChange={setTardyWindow}
+                  options={[
+                    { value: "5", label: "5 minutes" },
+                    { value: "10", label: "10 minutes" },
+                    { value: "15", label: "15 minutes" },
+                    { value: "30", label: "30 minutes" },
+                    { value: "60", label: "1 hour" },
+                  ]}
+                />
+                <p className="text-xs text-muted-foreground">
+                  After code expires, students can still check in as "Tardy" within this window
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Allow late check-in</p>
+                  <p className="text-xs text-muted-foreground">
+                    Allow check-in even after tardy window (marked as Tardy)
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowLateCheckin}
+                  onChange={(e) => setAllowLateCheckin(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -545,7 +718,11 @@ function LiveCheckIns({ sessionId }: { sessionId: string }) {
               key={checkin.id}
               className="flex items-center gap-2 p-2 rounded bg-background"
             >
-              <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <CheckCircle className={`h-4 w-4 flex-shrink-0 ${
+                checkin.status === "present" ? "text-green-500" :
+                checkin.status === "late" ? "text-yellow-500" :
+                "text-gray-400"
+              }`} />
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">
                   {checkin.student?.full_name || "Unknown"}
@@ -555,9 +732,9 @@ function LiveCheckIns({ sessionId }: { sessionId: string }) {
                     format(new Date(checkin.recorded_at), "h:mm a")}
                 </p>
               </div>
-              {checkin.status === "late" && (
-                <Badge variant="warning" className="text-xs">Late</Badge>
-              )}
+              <Badge variant={getStatusBadgeVariant(checkin.status)} className="text-xs">
+                {getStatusLabel(checkin.status)}
+              </Badge>
             </div>
           ))}
         </div>
@@ -565,6 +742,16 @@ function LiveCheckIns({ sessionId }: { sessionId: string }) {
     </div>
   );
 }
+
+// All available attendance statuses for manual override
+const ATTENDANCE_STATUSES = [
+  { value: "present", label: "Present" },
+  { value: "late", label: "Tardy" },
+  { value: "absent", label: "Absent" },
+  { value: "excused", label: "Excused" },
+  { value: "virtual", label: "Virtual" },
+  { value: "left_early", label: "Left Early" },
+];
 
 // Session details component
 function SessionDetails({
@@ -575,6 +762,26 @@ function SessionDetails({
   onClose: () => void;
 }) {
   const { data: checkIns = [], isLoading } = useSessionCheckIns(session.id);
+  const updateStatusMutation = useUpdateAttendanceStatus();
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+
+  const handleStatusChange = async (recordId: string, newStatus: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ recordId, status: newStatus });
+      setEditingId(null);
+    } catch (error) {
+      console.error("Failed to update status:", error);
+    }
+  };
+
+  // Count students by status
+  const statusCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    checkIns.forEach((c: any) => {
+      counts[c.status] = (counts[c.status] || 0) + 1;
+    });
+    return counts;
+  }, [checkIns]);
 
   return (
     <div className="space-y-4">
@@ -594,13 +801,27 @@ function SessionDetails({
           <p className="font-medium">{session.course?.title || "No course"}</p>
         </div>
         <div>
-          <p className="text-muted-foreground">Check-ins</p>
+          <p className="text-muted-foreground">Total Check-ins</p>
           <p className="font-medium">{checkIns.length}</p>
         </div>
       </div>
 
+      {/* Status Summary */}
+      {checkIns.length > 0 && (
+        <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <Badge key={status} variant={getStatusBadgeVariant(status)}>
+              {getStatusLabel(status)}: {count}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       <div className="border-t pt-4">
-        <p className="font-medium mb-3">Attendance List</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-medium">Attendance List</p>
+          <p className="text-xs text-muted-foreground">Click status to change</p>
+        </div>
         {isLoading ? (
           <div className="flex justify-center py-4">
             <Spinner size="sm" />
@@ -624,16 +845,27 @@ function SessionDetails({
                     {checkin.student?.email}
                   </p>
                 </div>
-                <div className="text-right">
-                  <Badge
-                    variant={checkin.status === "present" ? "success" : "warning"}
-                  >
-                    {checkin.status}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-right flex items-center gap-2">
+                  {editingId === checkin.id ? (
+                    <Select
+                      value={checkin.status}
+                      onChange={(newStatus) => handleStatusChange(checkin.id, newStatus)}
+                      options={ATTENDANCE_STATUSES}
+                    />
+                  ) : (
+                    <Badge
+                      variant={getStatusBadgeVariant(checkin.status)}
+                      className="cursor-pointer hover:opacity-80"
+                      onClick={() => setEditingId(checkin.id)}
+                    >
+                      {getStatusLabel(checkin.status)}
+                      {checkin.was_late && checkin.status === "present" && " (was late)"}
+                    </Badge>
+                  )}
+                  <div className="text-xs text-muted-foreground min-w-[60px]">
                     {checkin.recorded_at &&
                       format(new Date(checkin.recorded_at), "h:mm a")}
-                  </p>
+                  </div>
                 </div>
               </div>
             ))}

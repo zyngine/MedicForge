@@ -11,6 +11,7 @@ import {
   Modal,
   ModalFooter,
   Spinner,
+  Alert,
 } from "@/components/ui";
 import {
   Clock,
@@ -23,6 +24,7 @@ import {
   Brain,
   Target,
   BookOpen,
+  ShieldAlert,
 } from "lucide-react";
 import {
   useExamSession,
@@ -31,6 +33,9 @@ import {
   type StandardizedQuestion,
   type ExamResponse,
 } from "@/lib/hooks/use-standardized-exams";
+import { createIntegrityTracker, type IntegrityTracker, type IntegrityEvent } from "@/lib/integrity-tracker";
+import { useTenant } from "@/lib/hooks/use-tenant";
+import { useUser } from "@/lib/hooks/use-user";
 
 interface ExamPlayerProps {
   templateId: string;
@@ -46,6 +51,8 @@ export function ExamPlayer({
   onComplete,
 }: ExamPlayerProps) {
   const router = useRouter();
+  const { tenant } = useTenant();
+  const { user } = useUser();
   const { startAttempt, isStarting } = useStartExamAttempt();
   const [attemptId, setAttemptId] = React.useState<string | undefined>(existingAttemptId);
   const [showStartScreen, setShowStartScreen] = React.useState(!existingAttemptId);
@@ -66,6 +73,58 @@ export function ExamPlayer({
   const [questionStartTime, setQuestionStartTime] = React.useState<number>(Date.now());
   const [timeRemaining, setTimeRemaining] = React.useState<number | null>(null);
   const [flaggedQuestions, setFlaggedQuestions] = React.useState<Set<string>>(new Set());
+
+  // Integrity tracking state
+  const integrityTrackerRef = React.useRef<IntegrityTracker | null>(null);
+  const [integrityWarning, setIntegrityWarning] = React.useState<string | null>(null);
+  const [integrityEventCount, setIntegrityEventCount] = React.useState(0);
+
+  // Initialize integrity tracker when exam starts
+  React.useEffect(() => {
+    if (!attemptId || !tenant?.id || !user?.id || attempt?.status !== "in_progress") return;
+
+    // Check if integrity monitoring is enabled for this exam
+    // Cast to any since integrity fields may not be in generated types yet
+    const template = attempt?.template as any;
+    const monitoringEnabled = template?.integrity_monitoring_enabled !== false;
+    if (!monitoringEnabled) return;
+
+    // Create and initialize tracker
+    const tracker = createIntegrityTracker({
+      attemptId,
+      tenantId: tenant.id,
+      userId: user.id,
+      preventCopyPaste: template?.prevent_copy_paste || false,
+      blockRightClick: template?.block_right_click || false,
+      warnOnBlur: template?.warn_on_blur !== false,
+      onEvent: (event: IntegrityEvent) => {
+        setIntegrityEventCount((prev) => prev + 1);
+      },
+      onWarning: (message: string) => {
+        setIntegrityWarning(message);
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => setIntegrityWarning(null), 5000);
+      },
+    });
+
+    integrityTrackerRef.current = tracker;
+
+    // Cleanup on unmount or exam complete
+    return () => {
+      tracker.destroy();
+      integrityTrackerRef.current = null;
+    };
+  }, [attemptId, tenant?.id, user?.id, attempt?.status, attempt?.template]);
+
+  // Update current question in tracker
+  React.useEffect(() => {
+    if (integrityTrackerRef.current && currentQuestion) {
+      integrityTrackerRef.current.setCurrentQuestion(
+        currentQuestion.id,
+        attempt?.questions_answered ? attempt.questions_answered + 1 : 1
+      );
+    }
+  }, [currentQuestion?.id, attempt?.questions_answered]);
 
   // Timer effect
   React.useEffect(() => {
@@ -111,6 +170,8 @@ export function ExamPlayer({
     const result = await submitResponse(currentQuestion.id, selectedAnswer, timeSpent);
 
     if (result?.isComplete) {
+      // Flush integrity events before navigating away
+      await integrityTrackerRef.current?.flush();
       onComplete?.(attempt!.id);
       router.push(`/student/exams/${attempt!.id}/results`);
     }
@@ -118,12 +179,14 @@ export function ExamPlayer({
 
   const handleTimeUp = async () => {
     if (attempt) {
+      await integrityTrackerRef.current?.flush();
       await abandonExam();
       router.push(`/student/exams/${attempt.id}/results`);
     }
   };
 
   const handleExit = async () => {
+    await integrityTrackerRef.current?.flush();
     await abandonExam();
     router.push("/student/exams");
   };
@@ -213,6 +276,14 @@ export function ExamPlayer({
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
+      {/* Integrity Warning Banner */}
+      {integrityWarning && (
+        <Alert variant="warning" className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+          <span>{integrityWarning}</span>
+        </Alert>
+      )}
+
       {/* Header */}
       <Card>
         <CardContent className="p-4">

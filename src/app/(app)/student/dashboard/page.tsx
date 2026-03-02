@@ -25,12 +25,16 @@ import {
   Stethoscope,
   CheckCircle,
   RefreshCw,
+  FolderOpen,
+  ExternalLink,
+  Star,
 } from "lucide-react";
 import { useUser } from "@/lib/hooks/use-user";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { useStudentClinicalHours } from "@/lib/hooks/use-clinical-logs";
 import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
+import { useStudentLinks } from "@/lib/hooks/use-program-links";
 import { formatDate } from "@/lib/utils";
 
 function getAssignmentIcon(type: string) {
@@ -59,6 +63,7 @@ export default function StudentDashboardPage() {
   const { data: submissions = [], isLoading: submissionsLoading } = useMySubmissions();
   const { data: clinicalHours, isLoading: clinicalLoading } = useStudentClinicalHours(profile?.id || null, null);
   const { bookings: upcomingShifts, isLoading: shiftsLoading } = useMyBookings();
+  const { data: studentLinks = [], isLoading: linksLoading } = useStudentLinks();
 
   const isLoading = userLoading || enrollmentsLoading;
 
@@ -478,6 +483,59 @@ export default function StudentDashboardPage() {
                     </Link>
                   </Button>
                 </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Program Resources */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary" />
+                Program Resources
+              </CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/student/resources">
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {linksLoading ? (
+                <div className="flex justify-center py-4">
+                  <Spinner size="sm" />
+                </div>
+              ) : studentLinks.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No resources available
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {studentLinks.slice(0, 4).map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                    >
+                      {link.is_required && (
+                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                      )}
+                      <span className="text-sm truncate flex-1 group-hover:text-primary">
+                        {link.title}
+                      </span>
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </a>
+                  ))}
+                  {studentLinks.length > 4 && (
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link href="/student/resources">
+                        View All ({studentLinks.length})
+                      </Link>
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

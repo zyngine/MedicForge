@@ -33,6 +33,40 @@ import { format } from "date-fns";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getDb = () => createClient() as any;
 
+// Status badge variant mapping
+const getStatusBadgeVariant = (status: string): "success" | "warning" | "destructive" | "info" | "secondary" => {
+  switch (status) {
+    case "present": return "success";
+    case "late": return "warning";
+    case "absent": return "destructive";
+    case "excused": return "info";
+    case "virtual": return "secondary";
+    case "left_early": return "warning";
+    default: return "secondary";
+  }
+};
+
+const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case "present": return "Present";
+    case "late": return "Tardy";
+    case "absent": return "Absent";
+    case "excused": return "Excused";
+    case "virtual": return "Virtual";
+    case "left_early": return "Left Early";
+    default: return status;
+  }
+};
+
+// Check-in result interface
+interface CheckInResult {
+  success: boolean;
+  session_title: string;
+  check_in_time: string;
+  status: string;
+  was_late: boolean;
+}
+
 // Hook for student check-in
 function useStudentCheckIn() {
   const { tenant } = useTenant();
@@ -40,7 +74,7 @@ function useStudentCheckIn() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (code: string) => {
+    mutationFn: async (code: string): Promise<CheckInResult> => {
       if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
 
       const supabase = getDb();
@@ -57,13 +91,13 @@ function useStudentCheckIn() {
         if (error.message.includes("Invalid")) {
           throw new Error("Invalid code. Please check and try again.");
         }
-        if (error.message.includes("expired")) {
-          throw new Error("This code has expired. Ask your instructor for a new one.");
+        if (error.message.includes("expired") || error.message.includes("closed")) {
+          throw new Error("This check-in window has closed. Please contact your instructor.");
         }
         throw error;
       }
 
-      return data;
+      return data as CheckInResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["student-attendance-history"] });
@@ -87,7 +121,7 @@ function useAttendanceHistory() {
       const { data, error } = await supabase
         .from("attendance_records")
         .select(`
-          id, status, check_in_time, recorded_at,
+          id, status, check_in_time, recorded_at, was_late,
           session:attendance_sessions(
             id, title, scheduled_date, start_time,
             course:courses(title)
@@ -130,7 +164,13 @@ function useAttendanceStats() {
       const late = records.filter((r: { status: string }) => r.status === "late").length;
       const absent = records.filter((r: { status: string }) => r.status === "absent").length;
       const excused = records.filter((r: { status: string }) => r.status === "excused").length;
-      const total = present + late + absent + excused;
+      const virtual = records.filter((r: { status: string }) => r.status === "virtual").length;
+      const leftEarly = records.filter((r: { status: string }) => r.status === "left_early").length;
+      const total = records.length;
+
+      // Present, late, excused, and virtual all count toward attendance
+      const attended = present + late + excused + virtual;
+      const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 100;
 
       return {
         total,
@@ -138,7 +178,10 @@ function useAttendanceStats() {
         late,
         absent,
         excused,
-        attendanceRate: total > 0 ? Math.round(((present + late + excused) / total) * 100) : 100,
+        virtual,
+        leftEarly,
+        attended,
+        attendanceRate,
       };
     },
     enabled: !!tenant?.id && !!user?.id,
@@ -147,7 +190,7 @@ function useAttendanceStats() {
 
 export default function StudentAttendancePage() {
   const [code, setCode] = React.useState("");
-  const [success, setSuccess] = React.useState(false);
+  const [checkInResult, setCheckInResult] = React.useState<CheckInResult | null>(null);
   const checkInMutation = useStudentCheckIn();
   const { data: history = [], isLoading: historyLoading } = useAttendanceHistory();
   const { data: stats, isLoading: statsLoading } = useAttendanceStats();
@@ -156,13 +199,13 @@ export default function StudentAttendancePage() {
     e.preventDefault();
     if (!code.trim()) return;
 
-    setSuccess(false);
+    setCheckInResult(null);
     try {
-      await checkInMutation.mutateAsync(code);
-      setSuccess(true);
+      const result = await checkInMutation.mutateAsync(code);
+      setCheckInResult(result);
       setCode("");
-      // Clear success after 5 seconds
-      setTimeout(() => setSuccess(false), 5000);
+      // Clear success after 8 seconds
+      setTimeout(() => setCheckInResult(null), 8000);
     } catch (error) {
       // Error is handled by mutation
     }
@@ -205,10 +248,24 @@ export default function StudentAttendancePage() {
               </Alert>
             )}
 
-            {success && (
-              <Alert variant="success">
+            {checkInResult && (
+              <Alert variant={checkInResult.was_late ? "warning" : "success"}>
                 <CheckCircle className="h-4 w-4" />
-                You're checked in! Your attendance has been recorded.
+                <div>
+                  <p className="font-medium">
+                    {checkInResult.was_late
+                      ? "Checked in as Tardy"
+                      : "You're checked in!"}
+                  </p>
+                  <p className="text-sm mt-1">
+                    {checkInResult.session_title}
+                    {checkInResult.was_late && (
+                      <span className="block text-xs mt-1">
+                        You checked in after the on-time window closed
+                      </span>
+                    )}
+                  </p>
+                </div>
               </Alert>
             )}
 
@@ -279,7 +336,7 @@ export default function StudentAttendancePage() {
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Late</p>
+                <p className="text-sm text-muted-foreground">Tardy</p>
                 <p className="text-2xl font-bold">
                   {statsLoading ? "..." : stats?.late || 0}
                 </p>
@@ -312,7 +369,7 @@ export default function StudentAttendancePage() {
             <div className="flex items-center justify-between mb-2">
               <p className="font-medium">Overall Attendance</p>
               <p className="text-sm text-muted-foreground">
-                {stats.present + stats.late + stats.excused} / {stats.total} sessions
+                {stats.attended} / {stats.total} sessions
               </p>
             </div>
             <Progress value={stats.attendanceRate} className="h-3" />
@@ -365,18 +422,8 @@ export default function StudentAttendancePage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge
-                      variant={
-                        record.status === "present"
-                          ? "success"
-                          : record.status === "late"
-                          ? "warning"
-                          : record.status === "excused"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {record.status}
+                    <Badge variant={getStatusBadgeVariant(record.status)}>
+                      {getStatusLabel(record.status)}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {record.recorded_at &&

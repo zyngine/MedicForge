@@ -35,6 +35,14 @@ import {
   Plus,
   Trash2,
   RefreshCw,
+  Link2,
+  ExternalLink,
+  Edit,
+  Star,
+  Clock,
+  Play,
+  CalendarDays,
+  XCircle,
 } from "lucide-react";
 import {
   useCohort,
@@ -44,6 +52,32 @@ import {
   useStudents,
 } from "@/lib/hooks/use-cohorts";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import {
+  useProgramLinks,
+  useCreateProgramLink,
+  useUpdateProgramLink,
+  useDeleteProgramLink,
+  LINK_CATEGORIES,
+  ProgramLink,
+  getCategoryLabel,
+} from "@/lib/hooks/use-program-links";
+import {
+  useProgramSchedules,
+  useCreateSchedule,
+  useUpdateSchedule,
+  useDeleteSchedule,
+  useExcludedDates,
+  useAddExcludedDate,
+  useRemoveExcludedDate,
+  useGenerateSessions,
+  DAYS_OF_WEEK,
+  SESSION_TYPES,
+  ProgramSchedule,
+  getDayLabel,
+  getSessionTypeLabel,
+  formatTimeDisplay,
+  groupSchedulesByDay,
+} from "@/lib/hooks/use-program-schedules";
 import { formatDate } from "@/lib/utils";
 
 const MEMBER_STATUSES = [
@@ -79,9 +113,55 @@ export default function CohortDetailPage() {
   const { students } = useStudents();
   const { data: allCourses = [] } = useInstructorCourses();
 
+  // Program links hooks
+  const { data: programLinks = [], isLoading: linksLoading } = useProgramLinks(cohortId);
+  const createLinkMutation = useCreateProgramLink();
+  const updateLinkMutation = useUpdateProgramLink();
+  const deleteLinkMutation = useDeleteProgramLink();
+
+  // Program schedules hooks
+  const { data: schedules = [], isLoading: schedulesLoading } = useProgramSchedules(cohortId);
+  const { data: excludedDates = [] } = useExcludedDates(cohortId);
+  const createScheduleMutation = useCreateSchedule();
+  const updateScheduleMutation = useUpdateSchedule();
+  const deleteScheduleMutation = useDeleteSchedule();
+  const addExcludedDateMutation = useAddExcludedDate();
+  const removeExcludedDateMutation = useRemoveExcludedDate();
+  const generateSessionsMutation = useGenerateSessions();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddMembersModal, setShowAddMembersModal] = useState(false);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [editingLink, setEditingLink] = useState<ProgramLink | null>(null);
+  const [linkForm, setLinkForm] = useState({
+    title: "",
+    url: "",
+    description: "",
+    category: "other",
+    is_required: false,
+  });
+  // Schedule state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<ProgramSchedule | null>(null);
+  const [scheduleForm, setScheduleForm] = useState({
+    title: "Class",
+    day_of_week: 1,
+    start_time: "09:00",
+    end_time: "12:00",
+    session_type: "lecture",
+    location: "",
+  });
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [generateForm, setGenerateForm] = useState({
+    start_date: "",
+    end_date: "",
+  });
+  const [showExcludedDateModal, setShowExcludedDateModal] = useState(false);
+  const [excludedDateForm, setExcludedDateForm] = useState({
+    date: "",
+    reason: "",
+  });
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [enrollAfterAdd, setEnrollAfterAdd] = useState(true);
@@ -187,6 +267,225 @@ export default function CohortDetailPage() {
         ? prev.filter((id) => id !== studentId)
         : [...prev, studentId]
     );
+  };
+
+  // Link handlers
+  const handleOpenLinkModal = (link?: ProgramLink) => {
+    if (link) {
+      setEditingLink(link);
+      setLinkForm({
+        title: link.title,
+        url: link.url,
+        description: link.description || "",
+        category: link.category,
+        is_required: link.is_required,
+      });
+    } else {
+      setEditingLink(null);
+      setLinkForm({
+        title: "",
+        url: "",
+        description: "",
+        category: "other",
+        is_required: false,
+      });
+    }
+    setShowLinkModal(true);
+  };
+
+  const handleSaveLink = async () => {
+    if (!linkForm.title.trim() || !linkForm.url.trim()) {
+      setError("Title and URL are required");
+      return;
+    }
+
+    try {
+      if (editingLink) {
+        await updateLinkMutation.mutateAsync({
+          id: editingLink.id,
+          title: linkForm.title,
+          url: linkForm.url,
+          description: linkForm.description || undefined,
+          category: linkForm.category as any,
+          is_required: linkForm.is_required,
+        });
+        setSuccess("Link updated successfully");
+      } else {
+        await createLinkMutation.mutateAsync({
+          program_id: cohortId,
+          title: linkForm.title,
+          url: linkForm.url,
+          description: linkForm.description || undefined,
+          category: linkForm.category as any,
+          is_required: linkForm.is_required,
+        });
+        setSuccess("Link added successfully");
+      }
+      setShowLinkModal(false);
+      setEditingLink(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save link");
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string, linkTitle: string) => {
+    if (!confirm(`Delete "${linkTitle}"?`)) return;
+
+    try {
+      await deleteLinkMutation.mutateAsync(linkId);
+      setSuccess("Link deleted successfully");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete link");
+    }
+  };
+
+  const handleToggleLinkActive = async (link: ProgramLink) => {
+    try {
+      await updateLinkMutation.mutateAsync({
+        id: link.id,
+        is_active: !link.is_active,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update link");
+    }
+  };
+
+  // Schedule handlers
+  const handleOpenScheduleModal = (schedule?: ProgramSchedule) => {
+    if (schedule) {
+      setEditingSchedule(schedule);
+      setScheduleForm({
+        title: schedule.title,
+        day_of_week: schedule.day_of_week,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        session_type: schedule.session_type,
+        location: schedule.location || "",
+      });
+    } else {
+      setEditingSchedule(null);
+      setScheduleForm({
+        title: "Class",
+        day_of_week: 1,
+        start_time: "09:00",
+        end_time: "12:00",
+        session_type: "lecture",
+        location: "",
+      });
+    }
+    setShowScheduleModal(true);
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!scheduleForm.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+
+    try {
+      if (editingSchedule) {
+        await updateScheduleMutation.mutateAsync({
+          id: editingSchedule.id,
+          title: scheduleForm.title,
+          day_of_week: scheduleForm.day_of_week,
+          start_time: scheduleForm.start_time,
+          end_time: scheduleForm.end_time,
+          session_type: scheduleForm.session_type as any,
+          location: scheduleForm.location || undefined,
+        });
+        setSuccess("Schedule updated successfully");
+      } else {
+        await createScheduleMutation.mutateAsync({
+          program_id: cohortId,
+          title: scheduleForm.title,
+          day_of_week: scheduleForm.day_of_week,
+          start_time: scheduleForm.start_time,
+          end_time: scheduleForm.end_time,
+          session_type: scheduleForm.session_type as any,
+          location: scheduleForm.location || undefined,
+        });
+        setSuccess("Schedule added successfully");
+      }
+      setShowScheduleModal(false);
+      setEditingSchedule(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save schedule");
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string, title: string) => {
+    if (!confirm(`Delete "${title}" from the schedule?`)) return;
+
+    try {
+      await deleteScheduleMutation.mutateAsync(scheduleId);
+      setSuccess("Schedule deleted successfully");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete schedule");
+    }
+  };
+
+  const handleToggleScheduleActive = async (schedule: ProgramSchedule) => {
+    try {
+      await updateScheduleMutation.mutateAsync({
+        id: schedule.id,
+        is_active: !schedule.is_active,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update schedule");
+    }
+  };
+
+  const handleGenerateSessions = async () => {
+    if (!generateForm.start_date || !generateForm.end_date) {
+      setError("Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(generateForm.start_date) > new Date(generateForm.end_date)) {
+      setError("End date must be after start date");
+      return;
+    }
+
+    try {
+      const count = await generateSessionsMutation.mutateAsync({
+        program_id: cohortId,
+        start_date: generateForm.start_date,
+        end_date: generateForm.end_date,
+      });
+      setSuccess(`Generated ${count} attendance sessions`);
+      setShowGenerateModal(false);
+      setGenerateForm({ start_date: "", end_date: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate sessions");
+    }
+  };
+
+  const handleAddExcludedDate = async () => {
+    if (!excludedDateForm.date) {
+      setError("Please select a date");
+      return;
+    }
+
+    try {
+      await addExcludedDateMutation.mutateAsync({
+        program_id: cohortId,
+        excluded_date: excludedDateForm.date,
+        reason: excludedDateForm.reason || undefined,
+      });
+      setSuccess("Date excluded successfully");
+      setShowExcludedDateModal(false);
+      setExcludedDateForm({ date: "", reason: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add excluded date");
+    }
+  };
+
+  const handleRemoveExcludedDate = async (dateId: string) => {
+    try {
+      await removeExcludedDateMutation.mutateAsync(dateId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove date");
+    }
   };
 
   const isLoading = cohortLoading || membersLoading || coursesLoading;
@@ -327,6 +626,8 @@ export default function CohortDetailPage() {
         <TabsList>
           <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
           <TabsTrigger value="courses">Courses ({cohortCourses.length})</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule ({schedules.length})</TabsTrigger>
+          <TabsTrigger value="links">Links ({programLinks.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="members" className="space-y-4">
@@ -486,6 +787,256 @@ export default function CohortDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="schedule" className="space-y-4">
+          {/* Schedule Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowExcludedDateModal(true)}>
+                <XCircle className="h-4 w-4 mr-2" />
+                Excluded Dates ({excludedDates.length})
+              </Button>
+              {schedules.length > 0 && (
+                <Button variant="outline" onClick={() => setShowGenerateModal(true)}>
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  Generate Sessions
+                </Button>
+              )}
+            </div>
+            <Button onClick={() => handleOpenScheduleModal()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Schedule
+            </Button>
+          </div>
+
+          {/* Weekly Schedule */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Weekly Schedule
+              </CardTitle>
+              <CardDescription>
+                Recurring class times for this program
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {schedulesLoading ? (
+                <div className="flex justify-center py-8">
+                  <Spinner size="lg" />
+                </div>
+              ) : schedules.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No schedule set</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add recurring class times for this program
+                  </p>
+                  <Button onClick={() => handleOpenScheduleModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Class Time
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const daySchedules = schedules.filter((s) => s.day_of_week === day.value);
+                    if (daySchedules.length === 0) return null;
+
+                    return (
+                      <div key={day.value} className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-3">{day.label}</h4>
+                        <div className="space-y-2">
+                          {daySchedules.map((schedule) => (
+                            <div
+                              key={schedule.id}
+                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="text-center min-w-[100px]">
+                                  <p className="font-medium">
+                                    {formatTimeDisplay(schedule.start_time)} - {formatTimeDisplay(schedule.end_time)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="font-medium">{schedule.title}</p>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Badge variant="outline" className="text-xs">
+                                      {getSessionTypeLabel(schedule.session_type)}
+                                    </Badge>
+                                    {schedule.location && (
+                                      <span>{schedule.location}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={schedule.is_active ? "success" : "secondary"}
+                                  className="cursor-pointer"
+                                  onClick={() => handleToggleScheduleActive(schedule)}
+                                >
+                                  {schedule.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenScheduleModal(schedule)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteSchedule(schedule.id, schedule.title)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Excluded Dates Summary */}
+          {excludedDates.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Excluded Dates</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {excludedDates.slice(0, 10).map((ed) => (
+                    <Badge
+                      key={ed.id}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-destructive/10"
+                      onClick={() => handleRemoveExcludedDate(ed.id)}
+                    >
+                      {formatDate(ed.excluded_date)}
+                      {ed.reason && ` - ${ed.reason}`}
+                      <XCircle className="h-3 w-3 ml-1" />
+                    </Badge>
+                  ))}
+                  {excludedDates.length > 10 && (
+                    <Badge variant="secondary">+{excludedDates.length - 10} more</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="links" className="space-y-4">
+          {/* Add Link Button */}
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenLinkModal()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Link
+            </Button>
+          </div>
+
+          {/* Links List */}
+          <Card>
+            <CardContent className="p-0">
+              {linksLoading ? (
+                <div className="flex justify-center py-12">
+                  <Spinner size="lg" />
+                </div>
+              ) : programLinks.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No links yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add helpful resources and links for students in this program
+                  </p>
+                  <Button onClick={() => handleOpenLinkModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Link
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left py-3 px-4 font-medium">Title</th>
+                        <th className="text-left py-3 px-4 font-medium">Category</th>
+                        <th className="text-left py-3 px-4 font-medium">Status</th>
+                        <th className="text-right py-3 px-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {programLinks.map((link) => (
+                        <tr key={link.id} className="border-b last:border-0">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              {link.is_required && (
+                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              )}
+                              <div>
+                                <a
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium hover:text-primary inline-flex items-center gap-1"
+                                >
+                                  {link.title}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                                {link.description && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {link.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="outline">{getCategoryLabel(link.category)}</Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge
+                              variant={link.is_active ? "success" : "secondary"}
+                              className="cursor-pointer"
+                              onClick={() => handleToggleLinkActive(link)}
+                            >
+                              {link.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenLinkModal(link)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLink(link.id, link.title)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Add Members Modal */}
@@ -623,6 +1174,331 @@ export default function CohortDetailPage() {
             >
               {(isEnrolling || isBatchEnrolling) ? <Spinner size="sm" className="mr-2" /> : null}
               Add Course & Enroll Members
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add/Edit Link Modal */}
+      <Modal
+        isOpen={showLinkModal}
+        onClose={() => {
+          setShowLinkModal(false);
+          setEditingLink(null);
+        }}
+        title={editingLink ? "Edit Link" : "Add Link"}
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Title *</Label>
+            <Input
+              value={linkForm.title}
+              onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
+              placeholder="e.g., NREMT Registration"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>URL *</Label>
+            <Input
+              value={linkForm.url}
+              onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Input
+              value={linkForm.description}
+              onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
+              placeholder="Brief description of this resource"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select
+              options={LINK_CATEGORIES.map((c) => ({
+                value: c.value,
+                label: c.label,
+              }))}
+              value={linkForm.category}
+              onChange={(v) => setLinkForm({ ...linkForm, category: v })}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+            <Checkbox
+              id="isRequired"
+              checked={linkForm.is_required}
+              onChange={(checked) => setLinkForm({ ...linkForm, is_required: checked as boolean })}
+            />
+            <Label htmlFor="isRequired" className="cursor-pointer">
+              <span className="font-medium">Required resource</span>
+              <p className="text-sm text-muted-foreground">
+                Mark as required for students to access
+              </p>
+            </Label>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowLinkModal(false);
+                setEditingLink(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveLink}
+              disabled={createLinkMutation.isPending || updateLinkMutation.isPending}
+            >
+              {(createLinkMutation.isPending || updateLinkMutation.isPending) ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : null}
+              {editingLink ? "Save Changes" : "Add Link"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add/Edit Schedule Modal */}
+      <Modal
+        isOpen={showScheduleModal}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setEditingSchedule(null);
+        }}
+        title={editingSchedule ? "Edit Class Time" : "Add Class Time"}
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input
+              value={scheduleForm.title}
+              onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })}
+              placeholder="e.g., Morning Lecture"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Day of Week</Label>
+              <Select
+                options={DAYS_OF_WEEK.map((d) => ({
+                  value: d.value.toString(),
+                  label: d.label,
+                }))}
+                value={scheduleForm.day_of_week.toString()}
+                onChange={(v) => setScheduleForm({ ...scheduleForm, day_of_week: parseInt(v) })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Session Type</Label>
+              <Select
+                options={SESSION_TYPES.map((t) => ({
+                  value: t.value,
+                  label: t.label,
+                }))}
+                value={scheduleForm.session_type}
+                onChange={(v) => setScheduleForm({ ...scheduleForm, session_type: v })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Time</Label>
+              <Input
+                type="time"
+                value={scheduleForm.start_time}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End Time</Label>
+              <Input
+                type="time"
+                value={scheduleForm.end_time}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Location (optional)</Label>
+            <Input
+              value={scheduleForm.location}
+              onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
+              placeholder="e.g., Room 101"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowScheduleModal(false);
+                setEditingSchedule(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSchedule}
+              disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending}
+            >
+              {(createScheduleMutation.isPending || updateScheduleMutation.isPending) ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : null}
+              {editingSchedule ? "Save Changes" : "Add Class Time"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Generate Sessions Modal */}
+      <Modal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        title="Generate Attendance Sessions"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              This will create attendance sessions for all active schedule items between the selected dates.
+              Existing sessions will not be duplicated.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <Input
+                type="date"
+                value={generateForm.start_date}
+                onChange={(e) => setGenerateForm({ ...generateForm, start_date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End Date</Label>
+              <Input
+                type="date"
+                value={generateForm.end_date}
+                onChange={(e) => setGenerateForm({ ...generateForm, end_date: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {excludedDates.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {excludedDates.length} date(s) will be excluded (holidays, breaks, etc.)
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowGenerateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateSessions}
+              disabled={generateSessionsMutation.isPending}
+            >
+              {generateSessionsMutation.isPending ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              Generate Sessions
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Excluded Date Modal */}
+      <Modal
+        isOpen={showExcludedDateModal}
+        onClose={() => setShowExcludedDateModal(false)}
+        title="Manage Excluded Dates"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Excluded dates (holidays, breaks, etc.) will be skipped when generating attendance sessions.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date to Exclude</Label>
+                <Input
+                  type="date"
+                  value={excludedDateForm.date}
+                  onChange={(e) => setExcludedDateForm({ ...excludedDateForm, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Reason (optional)</Label>
+                <Input
+                  value={excludedDateForm.reason}
+                  onChange={(e) => setExcludedDateForm({ ...excludedDateForm, reason: e.target.value })}
+                  placeholder="e.g., Holiday"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={handleAddExcludedDate}
+              disabled={addExcludedDateMutation.isPending}
+              className="w-full"
+            >
+              {addExcludedDateMutation.isPending ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Add Excluded Date
+            </Button>
+          </div>
+
+          {excludedDates.length > 0 && (
+            <div className="border-t pt-4">
+              <Label className="mb-3 block">Current Excluded Dates</Label>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {excludedDates.map((ed) => (
+                  <div
+                    key={ed.id}
+                    className="flex items-center justify-between p-2 rounded border"
+                  >
+                    <div>
+                      <p className="font-medium">{formatDate(ed.excluded_date)}</p>
+                      {ed.reason && (
+                        <p className="text-sm text-muted-foreground">{ed.reason}</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveExcludedDate(ed.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowExcludedDateModal(false)}>
+              Done
             </Button>
           </div>
         </div>

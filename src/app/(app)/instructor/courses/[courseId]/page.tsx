@@ -47,6 +47,7 @@ import {
   Loader2,
   BarChart3,
   Target,
+  Share2,
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/lib/hooks/use-modules";
@@ -474,6 +475,12 @@ export default function CourseDetailPage() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link href={`/instructor/courses/${courseId}/sharing`}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Link>
+              </Button>
               <Button variant="outline" onClick={handleOpenSaveTemplate}>
                 <Save className="h-4 w-4 mr-2" />
                 Save as Template

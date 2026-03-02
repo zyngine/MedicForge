@@ -25,6 +25,7 @@ import {
   Check,
   HardDrive,
   KeyRound,
+  Link2,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
@@ -72,6 +73,12 @@ const settingsItems = [
     description: "Configure SAML, OIDC, and social login providers",
     href: "/admin/settings/sso",
     icon: KeyRound,
+  },
+  {
+    title: "Quick Links",
+    description: "Manage organization-wide resource links for students",
+    href: "/admin/settings/links",
+    icon: Link2,
   },
 ];
 
