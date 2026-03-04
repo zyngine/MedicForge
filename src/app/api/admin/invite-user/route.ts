@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
     // Build redirect URL using tenant's subdomain or custom domain
     let redirectUrl: string;
     if (tenant?.custom_domain) {
-      redirectUrl = `https://${tenant.custom_domain}/auth/accept-invite`;
+      redirectUrl = `https://${tenant.custom_domain}/auth/callback`;
     } else if (tenant?.slug) {
-      redirectUrl = `https://${tenant.slug}.medicforge.net/auth/accept-invite`;
+      redirectUrl = `https://${tenant.slug}.medicforge.net/auth/callback`;
     } else {
       // Fallback to main site (shouldn't happen)
-      redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/accept-invite`;
+      redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/callback`;
     }
 
     // Check if user already exists in this tenant
