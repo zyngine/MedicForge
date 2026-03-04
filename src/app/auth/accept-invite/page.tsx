@@ -27,7 +27,7 @@ export default function AcceptInvitePage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         // Session is established — send the user to set their password
-        router.replace("/auth/set-password");
+        router.replace("/set-password");
       }
     });
 
@@ -35,7 +35,7 @@ export default function AcceptInvitePage() {
     // this component mounted (e.g. fast navigation)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.replace("/auth/set-password");
+        router.replace("/set-password");
       }
     });
 
