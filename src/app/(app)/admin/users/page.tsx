@@ -51,24 +51,17 @@ interface User {
 
 // Hook to fetch users
 function useUsers() {
-  const { tenant } = useTenant();
-
   return useQuery({
-    queryKey: ["admin-users", tenant?.id],
+    queryKey: ["admin-users"],
     queryFn: async () => {
-      if (!tenant?.id) return [];
-
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("tenant_id", tenant.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as User[];
+      const response = await fetch("/api/admin/users");
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || "Failed to fetch users");
+      }
+      const result = await response.json();
+      return result.users as User[];
     },
-    enabled: !!tenant?.id,
   });
 }
 

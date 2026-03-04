@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts";
@@ -90,7 +91,15 @@ export default function AdminLayout({
     window.location.href = "/login";
   };
 
-  // Keep showing spinner until profile is loaded (not just auth)
+  // If loading finished but there is no profile, redirect to login instead of
+  // showing an infinite spinner. This can happen when a profile DB fetch fails
+  // (e.g. RLS issue, newly invited user whose session was not fully established).
+  React.useEffect(() => {
+    if (!isLoading && !profile) {
+      router.replace("/login");
+    }
+  }, [isLoading, profile, router]);
+
   if (isLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
