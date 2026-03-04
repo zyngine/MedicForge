@@ -40,7 +40,16 @@ export async function GET(request: Request) {
       console.log("[Auth Callback] Session created for user:", data.user.id);
       console.log("[Auth Callback] User metadata:", data.user.user_metadata);
 
-      // Call the setup-user API to create the user profile
+      // Invite flow: skip setup-user entirely — the profile was already created
+      // by invite-user/route.ts when the admin sent the invite. setup-user would
+      // fail (400) for invite users because their metadata has no registration_type.
+      const type = searchParams.get("type");
+      if (type === "invite") {
+        console.log("[Auth Callback] Invite detected, redirecting to set-password");
+        return NextResponse.redirect(`${origin}/set-password`);
+      }
+
+      // Non-invite flow: call setup-user to create the profile for new sign-ups
       try {
         const setupResponse = await fetch(`${origin}/api/auth/setup-user`, {
           method: "POST",
@@ -61,15 +70,6 @@ export async function GET(request: Request) {
           return NextResponse.redirect(
             `${origin}/login?error=${encodeURIComponent(setupResult.error || "Failed to set up account")}`
           );
-        }
-
-        // Invite flow: send user to set-password instead of dashboard.
-        // Supabase includes type=invite in the redirect URL for both old
-        // (/auth/callback) and new (/auth/accept-invite) invite links.
-        const type = searchParams.get("type");
-        if (type === "invite") {
-          console.log("[Auth Callback] Invite detected, redirecting to set-password");
-          return NextResponse.redirect(`${origin}/set-password`);
         }
 
         // Redirect based on role
