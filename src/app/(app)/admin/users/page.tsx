@@ -279,6 +279,10 @@ export default function AdminUsersPage() {
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
+  const [showEditModal, setShowEditModal] = React.useState(false);
+  const [userToEdit, setUserToEdit] = React.useState<User | null>(null);
+  const [editRole, setEditRole] = React.useState<UserRole>("instructor");
+  const [isEditSaving, setIsEditSaving] = React.useState(false);
   const [upgradeModalType, setUpgradeModalType] = React.useState<"instructor" | "student">("student");
   const [error, setError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
@@ -481,6 +485,28 @@ export default function AdminUsersPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setUserToEdit(user);
+    setEditRole((user.role as UserRole) ?? "instructor");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!userToEdit) return;
+    setIsEditSaving(true);
+    try {
+      await updateUser({ userId: userToEdit.id, updates: { role: editRole } });
+      setShowEditModal(false);
+      setUserToEdit(null);
+      setSuccessMessage(`${userToEdit.full_name || userToEdit.email}'s role updated to ${editRole}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update role");
+    } finally {
+      setIsEditSaving(false);
     }
   };
 
@@ -723,6 +749,14 @@ export default function AdminUsersPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleEditUser(user)}
+                            title="Edit role"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => toggleUserActive(user)}
                           >
                             {user.is_active !== false ? "Deactivate" : "Activate"}
@@ -949,6 +983,51 @@ export default function AdminUsersPage() {
         type={upgradeModalType}
         currentTier={tier}
       />
+
+      {/* Edit Role Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => { setShowEditModal(false); setUserToEdit(null); }}
+        title="Edit User Role"
+      >
+        {userToEdit && (
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  src={userToEdit.avatar_url || undefined}
+                  fallback={userToEdit.full_name || userToEdit.email}
+                  size="sm"
+                />
+                <div>
+                  <p className="font-medium">{userToEdit.full_name || "—"}</p>
+                  <p className="text-sm text-muted-foreground">{userToEdit.email}</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label required>Role</Label>
+              <Select
+                options={[
+                  { value: "student", label: "Student" },
+                  { value: "instructor", label: "Instructor" },
+                  { value: "admin", label: "Admin" },
+                ]}
+                value={editRole}
+                onChange={(val) => setEditRole(val as UserRole)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => { setShowEditModal(false); setUserToEdit(null); }}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} isLoading={isEditSaving}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
