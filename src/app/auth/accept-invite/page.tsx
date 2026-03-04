@@ -8,38 +8,59 @@ import { Spinner } from "@/components/ui";
 /**
  * Client-side handler for Supabase invite magic links.
  *
- * Supabase's inviteUserByEmail sends the session as a URL hash fragment
- * (#access_token=...&type=invite). Hash fragments are never sent to the
- * server, so a server-side route.ts cannot handle them. This client-side
- * page lets the Supabase SDK read the hash, establish the session, then
- * redirect the user to the set-password page.
+ * Supabase can deliver the invite session two ways:
+ *
+ * 1. Hash fragment (#access_token=...&type=invite) — implicit flow.
+ *    The server never sees the hash, so we handle it here via
+ *    onAuthStateChange which the Supabase SDK fires automatically.
+ *
+ * 2. Query param (?code=...&type=invite) — PKCE flow.
+ *    The client-side SDK cannot exchange PKCE codes without a stored
+ *    code verifier, so we forward the code to the server-side
+ *    /auth/callback route which can exchange it properly and will then
+ *    redirect to /set-password because type=invite is present.
  */
 export default function AcceptInvitePage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // ── PKCE flow: ?code=xxx arrives as a query param ──────────────────
+    // The server-side /auth/callback route can exchange PKCE codes and
+    // already detects type=invite to redirect to /set-password.
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get("code");
+    if (code) {
+      // Ensure type=invite is in the params so the callback knows to
+      // redirect to /set-password instead of the dashboard.
+      if (!searchParams.has("type")) {
+        searchParams.set("type", "invite");
+      }
+      window.location.replace("/auth/callback?" + searchParams.toString());
+      return;
+    }
+
+    // ── Implicit flow: #access_token=xxx arrives as a hash fragment ─────
     const supabase = createClient();
 
-    // onAuthStateChange fires as soon as the SDK parses the hash fragment
+    // onAuthStateChange fires as soon as the SDK parses the hash
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        // Session is established — send the user to set their password
         router.replace("/set-password");
       }
     });
 
-    // Also handle the case where the session was already set before
-    // this component mounted (e.g. fast navigation)
+    // Handle the case where the session was already set before this
+    // component mounted (e.g. fast navigation / re-visit)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.replace("/set-password");
       }
     });
 
-    // Timeout: if the SDK never fires SIGNED_IN the link is invalid/expired
+    // Timeout: if nothing fires the link is invalid or expired
     const timeout = setTimeout(() => {
       setError(
         "This invitation link is invalid or has expired. Please contact your administrator for a new one."

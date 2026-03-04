@@ -63,6 +63,15 @@ export async function GET(request: Request) {
           );
         }
 
+        // Invite flow: send user to set-password instead of dashboard.
+        // Supabase includes type=invite in the redirect URL for both old
+        // (/auth/callback) and new (/auth/accept-invite) invite links.
+        const type = searchParams.get("type");
+        if (type === "invite") {
+          console.log("[Auth Callback] Invite detected, redirecting to set-password");
+          return NextResponse.redirect(`${origin}/set-password`);
+        }
+
         // Redirect based on role
         const role = setupResult.role;
         let redirectTo = "/instructor/dashboard";
