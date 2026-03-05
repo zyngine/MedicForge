@@ -73,7 +73,7 @@ function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (userData: { email: string; full_name: string; role: UserRole }): Promise<{ user: User; invited: boolean }> => {
+    mutationFn: async (userData: { email: string; full_name: string; role: UserRole }): Promise<{ user: User; invited: boolean; invite_link?: string }> => {
       if (!tenant?.id) throw new Error("No tenant");
 
       // Use the invite API which properly creates auth user + profile
@@ -94,7 +94,7 @@ function useCreateUser() {
         throw new Error(result.error || "Failed to invite user");
       }
 
-      return { user: result.user, invited: result.invited };
+      return { user: result.user, invited: result.invited, invite_link: result.invite_link };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -286,6 +286,7 @@ export default function AdminUsersPage() {
   const [upgradeModalType, setUpgradeModalType] = React.useState<"instructor" | "student">("student");
   const [error, setError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [inviteLink, setInviteLink] = React.useState<{ url: string; email: string } | null>(null);
   const [importResults, setImportResults] = React.useState<Array<{
     email: string;
     success: boolean;
@@ -351,13 +352,16 @@ export default function AdminUsersPage() {
       setShowAddModal(false);
       setNewUser({ email: "", full_name: "", role: "student" });
 
-      // Show success message
-      if (result.invited) {
+      // Show success message or invite link modal
+      if (result.invite_link) {
+        setInviteLink({ url: result.invite_link, email: newUser.email });
+      } else if (result.invited) {
         setSuccessMessage(`User added! An invitation email has been sent to ${newUser.email}`);
+        setTimeout(() => setSuccessMessage(null), 5000);
       } else {
         setSuccessMessage(`User ${newUser.email} has been added to your organization`);
+        setTimeout(() => setSuccessMessage(null), 5000);
       }
-      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user");
     }
@@ -832,6 +836,49 @@ export default function AdminUsersPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Invite Link Modal (shown when email rate limit is hit) */}
+      <Modal
+        isOpen={!!inviteLink}
+        onClose={() => setInviteLink(null)}
+        title="Share Invite Link Manually"
+      >
+        <div className="space-y-4">
+          <Alert variant="warning">
+            The email rate limit was reached. Copy this link and send it to <strong>{inviteLink?.email}</strong> directly.
+          </Alert>
+          <div className="space-y-2">
+            <Label>Invite Link</Label>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={inviteLink?.url ?? ""}
+                className="font-mono text-xs"
+                onFocus={(e) => e.target.select()}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (inviteLink?.url) {
+                    navigator.clipboard.writeText(inviteLink.url);
+                    setSuccessMessage("Link copied to clipboard");
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                  }
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This link is single-use and expires in 24 hours. The user will be prompted to set a password after clicking it.
+          </p>
+          <div className="flex justify-end">
+            <Button onClick={() => setInviteLink(null)}>Done</Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Bulk Import Modal */}
