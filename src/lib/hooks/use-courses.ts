@@ -131,6 +131,41 @@ export function useInstructorCourses() {
 
       const supabase = createClient();
 
+      // Helper: attach enrollment and module counts to a list of courses
+      async function withCounts(data: Course[]): Promise<CourseWithDetails[]> {
+        const ids = data.map((c) => c.id);
+        if (ids.length === 0) return [];
+
+        const { data: enrollmentCounts } = await supabase
+          .from("enrollments")
+          .select("course_id")
+          .in("course_id", ids)
+          .eq("status", "active");
+
+        const countMap = new Map<string, number>();
+        enrollmentCounts?.forEach((e) => {
+          countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
+        });
+
+        const { data: moduleCounts } = await supabase
+          .from("modules")
+          .select("course_id")
+          .in("course_id", ids);
+
+        const moduleCountMap = new Map<string, number>();
+        moduleCounts?.forEach((m) => {
+          moduleCountMap.set(m.course_id, (moduleCountMap.get(m.course_id) || 0) + 1);
+        });
+
+        return data.map((course) => ({
+          ...course,
+          enrollment_count: countMap.get(course.id) || 0,
+          enrollments_count: countMap.get(course.id) || 0,
+          module_count: moduleCountMap.get(course.id) || 0,
+          modules_count: moduleCountMap.get(course.id) || 0,
+        })) as CourseWithDetails[];
+      }
+
       // First get course IDs from junction table
       const { data: courseInstructors, error: ciError } = await (supabase as any)
         .from("course_instructors")
@@ -149,7 +184,7 @@ export function useInstructorCourses() {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        return data as CourseWithDetails[];
+        return withCounts(data || []);
       }
 
       if (!courseInstructors || courseInstructors.length === 0) {
@@ -163,7 +198,7 @@ export function useInstructorCourses() {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        return data as CourseWithDetails[];
+        return withCounts(data || []);
       }
 
       const courseIds = courseInstructors.map((ci: any) => ci.course_id);
@@ -179,8 +214,10 @@ export function useInstructorCourses() {
 
       if (error) throw error;
 
+      const counted = await withCounts(courses || []);
+
       // Add role/permissions info to each course
-      return (courses || []).map((course) => {
+      return counted.map((course) => {
         const ci = courseInstructors.find((c: any) => c.course_id === course.id);
         return {
           ...course,
