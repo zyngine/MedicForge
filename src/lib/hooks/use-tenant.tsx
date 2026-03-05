@@ -379,16 +379,16 @@ export function useSubscriptionLimits() {
 
   const limits: Record<string, { instructors: number; students: number; courses: number; storage: number }> = {
     free: { instructors: 1, students: 25, courses: 2, storage: 1 },
-    pro: { instructors: 5, students: 100, courses: -1, storage: 25 },
-    professional: { instructors: 5, students: 100, courses: -1, storage: 25 },
-    institution: { instructors: -1, students: 500, courses: -1, storage: 100 },
+    pro: { instructors: 5, students: 25, courses: -1, storage: 25 },
+    professional: { instructors: 5, students: 25, courses: -1, storage: 25 },
+    institution: { instructors: -1, students: 100, courses: -1, storage: 100 },
     enterprise: { instructors: -1, students: -1, courses: -1, storage: -1 },
     "agency-starter": { instructors: 2, students: 50, courses: -1, storage: 10 },
     "agency-pro": { instructors: 5, students: 150, courses: -1, storage: 50 },
     "agency-enterprise": { instructors: -1, students: -1, courses: -1, storage: -1 },
   };
 
-  const tier = tenant?.subscription_tier || "free";
+  const tier = tenant?.subscription_tier || "professional";
   const tierLimits = limits[tier];
 
   return {
