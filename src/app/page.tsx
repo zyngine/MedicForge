@@ -192,35 +192,9 @@ export default function HomePage() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Free Starter plan available. No credit card required.
-            </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="container mx-auto px-4 pb-20">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 p-8 bg-card rounded-2xl border shadow-lg">
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary">500+</div>
-                <div className="text-sm text-muted-foreground mt-1">Training Programs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary">50K+</div>
-                <div className="text-sm text-muted-foreground mt-1">Students Trained</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary">98%</div>
-                <div className="text-sm text-muted-foreground mt-1">NREMT Pass Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary">4.9</div>
-                <div className="text-sm text-muted-foreground mt-1">Average Rating</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Features Section */}

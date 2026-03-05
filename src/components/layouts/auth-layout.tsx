@@ -83,20 +83,6 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
               The modern learning management system built specifically for EMS education.
               Train EMRs, EMTs, AEMTs, and Paramedics with confidence.
             </p>
-            <div className="flex gap-8">
-              <div>
-                <div className="text-3xl font-bold">500+</div>
-                <div className="text-sm text-white/70">Training Programs</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold">50K+</div>
-                <div className="text-sm text-white/70">Students Trained</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold">98%</div>
-                <div className="text-sm text-white/70">Pass Rate</div>
-              </div>
-            </div>
           </div>
 
           {!hideVendorBranding && (

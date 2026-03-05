@@ -23,12 +23,6 @@ const values = [
   },
 ];
 
-const stats = [
-  { value: "500+", label: "Training Programs" },
-  { value: "50,000+", label: "Students Trained" },
-  { value: "98%", label: "NREMT Pass Rate" },
-  { value: "50", label: "States Served" },
-];
 
 export default function AboutPage() {
   return (
@@ -88,7 +82,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
