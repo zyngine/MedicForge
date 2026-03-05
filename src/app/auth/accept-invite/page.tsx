@@ -8,17 +8,17 @@ import { Spinner } from "@/components/ui";
 /**
  * Client-side handler for Supabase invite magic links.
  *
- * Supabase can deliver the invite session two ways:
+ * Supabase can deliver the invite session in two ways:
  *
- * 1. Hash fragment (#access_token=...&type=invite) — implicit flow.
- *    The server never sees the hash, so we handle it here via
- *    onAuthStateChange which the Supabase SDK fires automatically.
+ * 1. Query param (?code=...) — PKCE flow.
+ *    Forward to the server-side /auth/callback which exchanges the code
+ *    and redirects to /set-password (because type=invite is appended).
  *
- * 2. Query param (?code=...&type=invite) — PKCE flow.
- *    The client-side SDK cannot exchange PKCE codes without a stored
- *    code verifier, so we forward the code to the server-side
- *    /auth/callback route which can exchange it properly and will then
- *    redirect to /set-password because type=invite is present.
+ * 2. Hash fragment (#access_token=...&type=invite) — implicit flow.
+ *    Supabase sends invite tokens as hash fragments even on PKCE-configured
+ *    projects. The browser client with flowType:'pkce' ignores hash tokens,
+ *    so we must parse the hash ourselves and call setSession() directly.
+ *    onAuthStateChange is kept as a fallback for any remaining SDK-handled cases.
  */
 export default function AcceptInvitePage() {
   const router = useRouter();
@@ -26,13 +26,9 @@ export default function AcceptInvitePage() {
 
   useEffect(() => {
     // ── PKCE flow: ?code=xxx arrives as a query param ──────────────────
-    // The server-side /auth/callback route can exchange PKCE codes and
-    // already detects type=invite to redirect to /set-password.
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
     if (code) {
-      // Ensure type=invite is in the params so the callback knows to
-      // redirect to /set-password instead of the dashboard.
       if (!searchParams.has("type")) {
         searchParams.set("type", "invite");
       }
@@ -40,10 +36,30 @@ export default function AcceptInvitePage() {
       return;
     }
 
-    // ── Implicit flow: #access_token=xxx arrives as a hash fragment ─────
+    // ── Implicit/hash flow: #access_token=xxx ──────────────────────────
+    // The PKCE browser client ignores hash-based tokens, so handle manually.
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token") ?? "";
+    if (accessToken) {
+      const supabase = createClient();
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: sessionError }) => {
+          if (sessionError) {
+            setError(
+              "This invitation link is invalid or has expired. Please contact your administrator for a new one."
+            );
+          } else {
+            router.replace("/set-password");
+          }
+        });
+      return;
+    }
+
+    // ── Fallback: SDK auto-detection via onAuthStateChange ─────────────
     const supabase = createClient();
 
-    // onAuthStateChange fires as soon as the SDK parses the hash
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -52,15 +68,12 @@ export default function AcceptInvitePage() {
       }
     });
 
-    // Handle the case where the session was already set before this
-    // component mounted (e.g. fast navigation / re-visit)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.replace("/set-password");
       }
     });
 
-    // Timeout: if nothing fires the link is invalid or expired
     const timeout = setTimeout(() => {
       setError(
         "This invitation link is invalid or has expired. Please contact your administrator for a new one."
