@@ -46,15 +46,17 @@ export async function POST(request: NextRequest) {
       .eq("id", tenant_id)
       .single();
 
-    // Build redirect URL using tenant's subdomain or custom domain
+    // Build redirect URL using tenant's subdomain or custom domain.
+    // Must point to /auth/accept-invite so both hash (implicit) and code
+    // (PKCE) invite tokens are handled before reaching the server callback.
     let redirectUrl: string;
     if (tenant?.custom_domain) {
-      redirectUrl = `https://${tenant.custom_domain}/auth/callback`;
+      redirectUrl = `https://${tenant.custom_domain}/auth/accept-invite`;
     } else if (tenant?.slug) {
-      redirectUrl = `https://${tenant.slug}.medicforge.net/auth/callback`;
+      redirectUrl = `https://${tenant.slug}.medicforge.net/auth/accept-invite`;
     } else {
       // Fallback to main site (shouldn't happen)
-      redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/callback`;
+      redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.medicforge.net'}/auth/accept-invite`;
     }
 
     // Check if user already exists in this tenant
