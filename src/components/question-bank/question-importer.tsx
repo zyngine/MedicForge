@@ -13,6 +13,8 @@ interface QuestionImporterProps {
   categories: QuestionBankCategory[];
   onImport: () => Promise<void>;
   onCancel: () => void;
+  /** Optional override — if provided, used instead of useQuestionBank().importQuestions */
+  importFn?: (questions: CreateQuestionInput[]) => Promise<number>;
 }
 
 interface ParsedQuestion {
@@ -28,7 +30,7 @@ interface ParsedQuestion {
   error?: string;
 }
 
-export function QuestionImporter({ categories, onImport, onCancel }: QuestionImporterProps) {
+export function QuestionImporter({ categories, onImport, onCancel, importFn }: QuestionImporterProps) {
   const [step, setStep] = useState<"upload" | "preview" | "importing">("upload");
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
@@ -215,7 +217,7 @@ export function QuestionImporter({ categories, onImport, onCancel }: QuestionImp
       tags: q.tags,
     }));
 
-    const count = await importQuestions(questionsToImport);
+    const count = await (importFn ? importFn(questionsToImport) : importQuestions(questionsToImport));
 
     if (count > 0) {
       await onImport();

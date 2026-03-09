@@ -29,8 +29,11 @@ import {
   ArrowLeft,
   GraduationCap,
   Plus,
+  Upload,
 } from "lucide-react";
 import { QuestionEditor } from "@/components/question-bank/question-editor";
+import { QuestionImporter } from "@/components/question-bank/question-importer";
+import type { CreateQuestionInput } from "@/lib/hooks/use-question-bank";
 
 interface QuestionBankItem {
   id: string;
@@ -92,6 +95,7 @@ export default function PlatformQuestionBankPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionBankItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuestionBankItem | null>(null);
+  const [showImporter, setShowImporter] = useState(false);
 
   useEffect(() => { fetchLevelCounts(); }, []);
   useEffect(() => { if (selectedLevel) { fetchQuestions(); fetchCategories(); } }, [selectedLevel, filters]);
@@ -270,6 +274,38 @@ export default function PlatformQuestionBankPage() {
     }
   };
 
+
+  const handleGlobalImport = async (questions: CreateQuestionInput[]): Promise<number> => {
+    try {
+      const supabase = createClient();
+      const rows = questions.map((q) => ({
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: q.options ?? null,
+        correct_answer: q.correct_answer ?? { answerId: "a" },
+        explanation: q.explanation ?? null,
+        certification_level: q.certification_level ?? selectedLevel ?? "EMT",
+        difficulty: q.difficulty ?? "medium",
+        points: q.points ?? 1,
+        time_estimate_seconds: q.time_estimate_seconds ?? 60,
+        tags: q.tags ?? null,
+        tenant_id: null,
+        is_validated: false,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).from("question_bank").insert(rows).select("id");
+      if (error) throw error;
+      const count = data?.length ?? 0;
+      toast.success(count + " questions imported");
+      if (selectedLevel) fetchQuestions();
+      else fetchLevelCounts();
+      return count;
+    } catch (err) {
+      console.error("Global import error:", err);
+      toast.error("Failed to import questions");
+      return 0;
+    }
+  };
   const totalQuestions = Object.values(levelCounts).reduce((a, b) => a + b, 0);
 
   // FOLDER VIEW
@@ -349,9 +385,14 @@ export default function PlatformQuestionBankPage() {
             <p className="text-muted-foreground">{total.toLocaleString()} questions in this level</p>
           </div>
         </div>
-        <Button onClick={() => setShowEditor(true)}>
-          <Plus className="h-4 w-4 mr-2" />Add Question
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImporter(true)}>
+            <Upload className="h-4 w-4 mr-2" />Import CSV
+          </Button>
+          <Button onClick={() => setShowEditor(true)}>
+            <Plus className="h-4 w-4 mr-2" />Add Question
+          </Button>
+        </div>
       </div>
       {error && <Alert variant="error" title="Error">{error}</Alert>}
       <Card>
@@ -447,6 +488,21 @@ export default function PlatformQuestionBankPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal
+        isOpen={showImporter}
+        onClose={() => setShowImporter(false)}
+        title="Import Questions from CSV"
+        size="xl"
+      >
+        <QuestionImporter
+          categories={[]}
+          importFn={handleGlobalImport}
+          onImport={async () => { setShowImporter(false); }}
+          onCancel={() => setShowImporter(false)}
+        />
       </Modal>
 
       {/* Question Editor Modal */}
