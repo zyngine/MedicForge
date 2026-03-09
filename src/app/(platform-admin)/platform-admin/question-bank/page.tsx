@@ -462,7 +462,7 @@ export default function PlatformQuestionBankPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Options:</p>
                 {selectedQuestion.options.map((opt, i) => (
-                  <div key={opt.id} className={`p-3 rounded-lg border ${opt.isCorrect ? "border-green-500 bg-green-50" : ""}`}>
+                  <div key={opt.id} className={`p-3 rounded-lg border ${opt.isCorrect ? "border-green-500 bg-green-50 text-gray-900" : ""}`}>
                     <span className="font-medium mr-2">{String.fromCharCode(65 + i)}.</span>{opt.text}
                     {opt.isCorrect && <CheckCircle className="inline h-4 w-4 ml-2 text-green-600" />}
                   </div>

@@ -391,7 +391,7 @@ export default function QuestionBankPage() {
                   <div
                     key={opt.id}
                     className={`p-3 rounded-lg border ${
-                      opt.isCorrect ? "border-green-500 bg-green-50" : ""
+                      opt.isCorrect ? "border-green-500 bg-green-50 text-gray-900" : ""
                     }`}
                   >
                     <span className="font-medium mr-2">
