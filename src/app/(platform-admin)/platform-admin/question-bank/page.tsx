@@ -493,6 +493,7 @@ export default function PlatformQuestionBankPage() {
       >
         <QuestionImporter
           categories={[]}
+          defaultCertificationLevel={selectedLevel ?? "EMT"}
           importFn={handleGlobalImport}
           onImport={async () => { setShowImporter(false); }}
           onCancel={() => setShowImporter(false)}

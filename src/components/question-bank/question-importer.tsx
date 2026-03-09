@@ -13,6 +13,8 @@ interface QuestionImporterProps {
   categories: QuestionBankCategory[];
   onImport: () => Promise<void>;
   onCancel: () => void;
+  /** Default certification level to use when CSV row has none */
+  defaultCertificationLevel?: string;
   /** Optional override — if provided, used instead of useQuestionBank().importQuestions */
   importFn?: (questions: CreateQuestionInput[]) => Promise<number>;
 }
@@ -30,7 +32,7 @@ interface ParsedQuestion {
   error?: string;
 }
 
-export function QuestionImporter({ categories, onImport, onCancel, importFn }: QuestionImporterProps) {
+export function QuestionImporter({ categories, onImport, onCancel, importFn, defaultCertificationLevel }: QuestionImporterProps) {
   const [step, setStep] = useState<"upload" | "preview" | "importing">("upload");
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
@@ -212,7 +214,7 @@ export function QuestionImporter({ categories, onImport, onCancel, importFn }: Q
       options: q.options,
       correct_answer: q.correct_answer,
       explanation: q.explanation,
-      certification_level: (q.certification_level as "EMR" | "EMT" | "AEMT" | "Paramedic" | "All") || "EMT",
+      certification_level: (q.certification_level as "EMR" | "EMT" | "AEMT" | "Paramedic" | "All") || (defaultCertificationLevel as "EMR" | "EMT" | "AEMT" | "Paramedic" | "All") || "EMT",
       difficulty: (q.difficulty as "easy" | "medium" | "hard" | "expert") || "medium",
       tags: q.tags,
     }));
