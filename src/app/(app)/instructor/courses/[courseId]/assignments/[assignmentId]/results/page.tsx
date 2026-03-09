@@ -407,9 +407,9 @@ export default function QuizResultsPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/instructor/courses/${courseId}/assignments/${assignmentId}`}>
+          <Link href={`/instructor/courses/${courseId}`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Assignment
+            Back to Course
           </Link>
         </Button>
       </div>

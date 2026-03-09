@@ -381,7 +381,7 @@ export default function NREMTReadinessPage() {
           </Card>
         </Link>
 
-        <Link href="/student/question-bank">
+        <Link href="/student/adaptive-test">
           <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer group">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -390,7 +390,7 @@ export default function NREMTReadinessPage() {
                 </div>
                 <div>
                   <p className="font-medium">Practice Questions</p>
-                  <p className="text-sm text-muted-foreground">Question Bank</p>
+                  <p className="text-sm text-muted-foreground">Adaptive Test</p>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
