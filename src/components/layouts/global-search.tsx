@@ -26,7 +26,8 @@ export function GlobalSearch({ userRole }: GlobalSearchProps) {
   const [activeIndex, setActiveIndex] = React.useState(-1);
 
   const router = useRouter();
-  const { tenantId } = useTenant();
+  const { tenant } = useTenant();
+  const tenantId = tenant?.id;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
