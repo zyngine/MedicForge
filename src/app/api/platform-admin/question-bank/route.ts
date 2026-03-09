@@ -37,22 +37,23 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient();
 
     const rows = questions.map((q: Record<string, unknown>) => ({
-      question_text: q.question_text,
-      question_type: q.question_type,
-      options: q.options ?? null,
-      correct_answer: q.correct_answer ?? { answerId: "a" },
-      explanation: q.explanation ?? null,
-      certification_level: q.certification_level ?? "EMT",
-      difficulty: q.difficulty ?? "medium",
-      points: q.points ?? 1,
-      time_estimate_seconds: q.time_estimate_seconds ?? 60,
-      tags: q.tags ?? null,
-      tenant_id: null, // Global — visible to all tenants
+      question_text: q.question_text as string,
+      question_type: q.question_type as string,
+      options: (q.options ?? null) as object | null,
+      correct_answer: (q.correct_answer ?? { answerId: "a" }) as object,
+      explanation: (q.explanation ?? null) as string | null,
+      certification_level: (q.certification_level ?? "EMT") as string,
+      difficulty: (q.difficulty ?? "medium") as string,
+      points: (q.points ?? 1) as number,
+      time_estimate_seconds: (q.time_estimate_seconds ?? 60) as number,
+      tags: (q.tags ?? null) as string[] | null,
+      tenant_id: null,
       is_validated: false,
       created_by: user.id,
     }));
 
-    const { data, error } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (adminClient as any)
       .from("question_bank")
       .insert(rows)
       .select("id");
