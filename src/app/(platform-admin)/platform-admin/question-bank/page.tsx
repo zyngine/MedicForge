@@ -277,25 +277,19 @@ export default function PlatformQuestionBankPage() {
 
   const handleGlobalImport = async (questions: CreateQuestionInput[]): Promise<number> => {
     try {
-      const supabase = createClient();
-      const rows = questions.map((q) => ({
-        question_text: q.question_text,
-        question_type: q.question_type,
-        options: q.options ?? null,
-        correct_answer: q.correct_answer ?? { answerId: "a" },
-        explanation: q.explanation ?? null,
-        certification_level: q.certification_level ?? selectedLevel ?? "EMT",
-        difficulty: q.difficulty ?? "medium",
-        points: q.points ?? 1,
-        time_estimate_seconds: q.time_estimate_seconds ?? 60,
-        tags: q.tags ?? null,
-        tenant_id: null,
-        is_validated: false,
-      }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).from("question_bank").insert(rows).select("id");
-      if (error) throw error;
-      const count = data?.length ?? 0;
+      const res = await fetch("/api/platform-admin/question-bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questions: questions.map((q) => ({
+            ...q,
+            certification_level: q.certification_level ?? selectedLevel ?? "EMT",
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Import failed");
+      const count: number = json.count ?? 0;
       toast.success(count + " questions imported");
       if (selectedLevel) fetchQuestions();
       else fetchLevelCounts();
