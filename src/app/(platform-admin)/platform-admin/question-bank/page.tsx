@@ -245,25 +245,26 @@ export default function PlatformQuestionBankPage() {
   const handleUpdateQuestion = async (data: any) => {
     if (!editingQuestion) return;
     try {
-      const supabase = createClient();
-      // Only include valid columns for the question_bank table
-      const updateData = {
-        question_text: data.question_text,
-        question_type: data.question_type,
-        options: data.options,
-        correct_answer: data.correct_answer,
-        explanation: data.explanation || null,
-        certification_level: data.certification_level,
-        difficulty: data.difficulty,
-        points: data.points,
-        time_estimate_seconds: data.time_estimate_seconds,
-        source: data.source || null,
-        tags: data.tags || null,
-        updated_at: new Date().toISOString(),
-      };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("question_bank").update(updateData).eq("id", editingQuestion.id);
-      if (error) throw error;
+      const res = await fetch("/api/platform-admin/question-bank", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingQuestion.id,
+          question_text: data.question_text,
+          question_type: data.question_type,
+          options: data.options,
+          correct_answer: data.correct_answer,
+          explanation: data.explanation || null,
+          certification_level: data.certification_level,
+          difficulty: data.difficulty,
+          points: data.points,
+          time_estimate_seconds: data.time_estimate_seconds,
+          source: data.source || null,
+          tags: data.tags || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
       toast.success("Question updated");
       setShowEditor(false);
       setEditingQuestion(null);

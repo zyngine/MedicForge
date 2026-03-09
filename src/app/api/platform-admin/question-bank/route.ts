@@ -17,6 +17,46 @@ async function verifyPlatformAdmin() {
   return data ? user : null;
 }
 
+// PATCH - Update a single question (bypasses RLS via service role)
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await verifyPlatformAdmin();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized - Platform admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const { id, ...updates } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: "Question ID required" }, { status: 400 });
+    }
+
+    const adminClient = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (adminClient as any)
+      .from("question_bank")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("Platform admin question update error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, question: data });
+  } catch (error) {
+    console.error("Platform admin question update error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 // POST - Bulk import questions into the global question bank
 export async function POST(request: NextRequest) {
   try {

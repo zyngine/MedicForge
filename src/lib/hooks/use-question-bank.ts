@@ -278,7 +278,14 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
         .select("*, category:question_bank_categories(*)")
         .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        // PGRST116 = 0 rows matched — update was silently blocked by RLS
+        if (updateError.code === "PGRST116") {
+          throw new Error("Permission denied: you do not have access to edit this question");
+        }
+        throw updateError;
+      }
+      if (!data) throw new Error("Update returned no data");
       setQuestions((prev) => prev.map((q) => (q.id === id ? data : q)));
       toast.success("Question updated");
       return data;
