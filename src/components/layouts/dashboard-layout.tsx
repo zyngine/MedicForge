@@ -11,13 +11,13 @@ import { useTenantBranding } from "@/lib/hooks/use-tenant";
 import {
   Menu,
   X,
-  Search,
   ChevronDown,
   LogOut,
   Settings,
   User,
   HelpCircle,
 } from "lucide-react";
+import { GlobalSearch } from "./global-search";
 
 interface NavItem {
   title: string;
@@ -256,17 +256,7 @@ export function DashboardLayout({
               </button>
 
               {/* Search */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-md w-64">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-transparent border-none outline-none text-sm flex-1"
-                />
-                <kbd className="text-xs text-muted-foreground bg-background px-1.5 py-0.5 rounded">
-                  ⌘K
-                </kbd>
-              </div>
+              <GlobalSearch userRole={user.role} />
             </div>
 
             {/* Right side */}

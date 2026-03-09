@@ -1,4 +1,42 @@
+
+.dark {
+  --primary: #E53E3E;
+  --primary-foreground: #ffffff;
+  --primary-hover: #FC8181;
+
+  --secondary: #718096;
+  --secondary-foreground: #ffffff;
+  --secondary-hover: #A0AEC0;
+
+  --accent: #F6AD55;
+  --accent-foreground: #1A202C;
+  --accent-hover: #FBD38D;
+
+  --background: #1A202C;
+  --foreground: #F7FAFC;
+
+  --card: #2D3748;
+  --card-foreground: #F7FAFC;
+
+  --popover: #2D3748;
+  --popover-foreground: #F7FAFC;
+
+  --muted: #2D3748;
+  --muted-foreground: #A0AEC0;
+
+  --border: #4A5568;
+  --input: #4A5568;
+  --ring: #E53E3E;
+
+  --success: #48BB78;
+  --warning: #F6AD55;
+  --error: #FC8181;
+  --info: #63B3ED;
+}
 @import "tailwindcss";
+
+/* Enable class-based dark mode for manual toggle */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* MedicForge Custom Theme - Medic Red & Forge Gray */
 :root {
