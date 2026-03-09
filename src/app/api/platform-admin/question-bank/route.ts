@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       tags: (q.tags ?? null) as string[] | null,
       tenant_id: null,
       is_validated: false,
-      created_by: user.id,
+
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
