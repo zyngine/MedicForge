@@ -231,13 +231,13 @@ export function useUser(): UseUserReturn {
     // Instead, just log and stop loading to let the user continue with cached data
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
-        console.warn("Auth initialization taking longer than expected");
+        console.warn("Auth initialization timed out after 8s - proceeding with cached data");
         authInitialized = true;
         setIsLoading(false);
         // Keep any cached data we have - don't clear user/profile state
         // The auth listener will update state when the request eventually completes
       }
-    }, 15000);
+    }, 8000);
 
     initAuth();
 

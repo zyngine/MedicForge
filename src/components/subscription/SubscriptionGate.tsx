@@ -35,9 +35,17 @@ const GRACE_PERIOD_DAYS = 3;
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { user, isLoading: userLoading } = useUser();
+  const [timedOut, setTimedOut] = React.useState(false);
 
-  // Show loading while fetching tenant/user
-  if (tenantLoading || userLoading) {
+  // Safety timeout — if loading takes more than 8s, unblock the UI
+  React.useEffect(() => {
+    if (!tenantLoading && !userLoading) return;
+    const t = setTimeout(() => setTimedOut(true), 8000);
+    return () => clearTimeout(t);
+  }, [tenantLoading, userLoading]);
+
+  // Show loading while fetching tenant/user (but never more than 8s)
+  if ((tenantLoading || userLoading) && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

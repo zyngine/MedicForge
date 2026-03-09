@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts";
 import { useUser } from "@/lib/hooks/use-user";
@@ -157,7 +158,13 @@ export default function InstructorLayout({
     window.location.href = "/login";
   };
 
-  // Keep showing spinner until profile is loaded (not just auth)
+  // Redirect to login if auth finished but no profile (expired session, RLS error, etc.)
+  useEffect(() => {
+    if (!isLoading && !profile) {
+      router.replace("/login");
+    }
+  }, [isLoading, profile, router]);
+
   if (isLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
