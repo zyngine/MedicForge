@@ -167,6 +167,13 @@ export async function updateSession(request: NextRequest) {
   const isAgencyRoute = pathname.startsWith("/agency") &&
                         !pathname.startsWith("/agency/register")
 
+  // CE Platform routes — require session but role checks done in layout
+  const isCEAdminRoute = pathname.startsWith("/ce/admin")
+  const isCEAgencyRoute = pathname.startsWith("/ce/agency")
+  const isCEUserRoute = pathname.startsWith("/ce/my-training") ||
+                        pathname.startsWith("/ce/transcript") ||
+                        pathname.startsWith("/ce/account")
+
   const isLMSRoute = pathname.startsWith("/admin") ||
                      pathname.startsWith("/instructor") ||
                      pathname.startsWith("/student")
@@ -271,7 +278,9 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Protected routes - require login
-  if (isProtectedRoute || isPlatformAdminRoute || isAgencyRoute) {
+  if (isProtectedRoute || isPlatformAdminRoute || isAgencyRoute || isCEAdminRoute || isCEAgencyRoute || isCEUserRoute) {
+    const isCEProtected = isCEAdminRoute || isCEAgencyRoute || isCEUserRoute
+
     try {
       // First, try to refresh the session - this handles expired access tokens
       // getUser() will automatically use refresh token if access token is expired
@@ -284,7 +293,7 @@ export async function updateSession(request: NextRequest) {
         if (!session) {
           // No session at all, redirect to login
           const url = request.nextUrl.clone()
-          url.pathname = "/login"
+          url.pathname = isCEProtected ? "/ce/login" : "/login"
           url.searchParams.set("redirect", pathname)
           return NextResponse.redirect(url)
         }
@@ -294,7 +303,7 @@ export async function updateSession(request: NextRequest) {
         if (refreshError) {
           // Refresh failed, session is truly expired
           const url = request.nextUrl.clone()
-          url.pathname = "/login"
+          url.pathname = isCEProtected ? "/ce/login" : "/login"
           url.searchParams.set("redirect", pathname)
           return NextResponse.redirect(url)
         }
@@ -302,7 +311,7 @@ export async function updateSession(request: NextRequest) {
     } catch {
       // If auth check fails, redirect to login
       const url = request.nextUrl.clone()
-      url.pathname = "/login"
+      url.pathname = isCEProtected ? "/ce/login" : "/login"
       url.searchParams.set("redirect", pathname)
       return NextResponse.redirect(url)
     }
