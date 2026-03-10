@@ -80,6 +80,8 @@ export default function TenantsPage() {
   const [editStatus, setEditStatus] = useState("");
   const [editPaymentMethod, setEditPaymentMethod] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const [slugError, setSlugError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -135,6 +137,8 @@ export default function TenantsPage() {
     setEditStatus(tenant.subscription_status || "active");
     setEditPaymentMethod(tenant.payment_method || "stripe");
     setEditNotes(tenant.subscription_notes || "");
+    setEditSlug(tenant.slug || "");
+    setSlugError(null);
     setSaveError(null);
     setSaveSuccess(false);
   };
@@ -145,8 +149,19 @@ export default function TenantsPage() {
     setSaveSuccess(false);
   };
 
+  const handleSlugChange = (value: string) => {
+    const cleaned = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setEditSlug(cleaned);
+    if (cleaned && !/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(cleaned)) {
+      setSlugError("3–50 chars, lowercase letters/numbers/hyphens, no leading or trailing hyphens");
+    } else {
+      setSlugError(null);
+    }
+  };
+
   const handleSaveSubscription = async () => {
     if (!editingTenant) return;
+    if (slugError) return;
 
     setIsSaving(true);
     setSaveError(null);
@@ -163,6 +178,8 @@ export default function TenantsPage() {
           subscription_status: editStatus,
           payment_method: editPaymentMethod,
           subscription_notes: editNotes,
+          // Only send slug if it changed
+          ...(editSlug !== editingTenant.slug ? { slug: editSlug } : {}),
           // Clear trial_ends_at if activating a paid subscription
           trial_ends_at: editStatus === "active" && editTier !== "free" ? null : editingTenant.trial_ends_at,
         }),
@@ -179,6 +196,7 @@ export default function TenantsPage() {
         t.id === editingTenant.id
           ? {
               ...t,
+              slug: editSlug,
               subscription_tier: editTier,
               subscription_status: editStatus,
               payment_method: editPaymentMethod,
@@ -374,6 +392,29 @@ export default function TenantsPage() {
               )}
 
               <div className="space-y-2">
+                <label className="text-sm font-medium">Subdomain URL</label>
+                <div className="flex items-center gap-1">
+                  <Input
+                    value={editSlug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    placeholder="mfrd"
+                    className="font-mono"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">.medicforge.net</span>
+                </div>
+                {slugError ? (
+                  <p className="text-xs text-destructive">{slugError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    URL: <span className="font-mono">{editSlug || "…"}.medicforge.net</span>
+                    {editSlug !== editingTenant.slug && editSlug && (
+                      <span className="text-warning ml-2">Changing this will break existing invite links</span>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Subscription Tier</label>
                 <Select
                   value={editTier}
@@ -440,7 +481,7 @@ export default function TenantsPage() {
                 <Button variant="outline" onClick={closeEditModal}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveSubscription} disabled={isSaving}>
+                <Button onClick={handleSaveSubscription} disabled={isSaving || !!slugError}>
                   {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
               </div>

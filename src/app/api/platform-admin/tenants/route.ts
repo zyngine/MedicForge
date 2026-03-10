@@ -36,7 +36,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { tenantId, subscription_tier, subscription_status, payment_method, subscription_notes, trial_ends_at } = body;
+    const { tenantId, subscription_tier, subscription_status, payment_method, subscription_notes, trial_ends_at, slug } = body;
 
     if (!tenantId) {
       return NextResponse.json(
@@ -45,18 +45,37 @@ export async function PATCH(request: Request) {
       );
     }
 
-    console.log("[Platform Admin API] Updating tenant:", tenantId, {
-      subscription_tier,
-      subscription_status,
-      payment_method,
-    });
-
     const adminClient = createAdminClient();
+
+    // Validate and check slug uniqueness if provided
+    if (slug !== undefined) {
+      const slugRegex = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
+      if (!slugRegex.test(slug)) {
+        return NextResponse.json(
+          { error: "Slug must be 3–50 characters: lowercase letters, numbers, and hyphens only (cannot start or end with a hyphen)" },
+          { status: 400 }
+        );
+      }
+      // Check uniqueness — exclude current tenant
+      const { data: existing } = await adminClient
+        .from("tenants")
+        .select("id")
+        .eq("slug", slug)
+        .neq("id", tenantId)
+        .single();
+      if (existing) {
+        return NextResponse.json(
+          { error: `The slug "${slug}" is already taken by another tenant` },
+          { status: 409 }
+        );
+      }
+    }
 
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
 
+    if (slug !== undefined) updateData.slug = slug;
     if (subscription_tier !== undefined) {
       updateData.subscription_tier = subscription_tier;
     }
