@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createCEAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -13,7 +13,7 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const adminClient = createAdminClient();
+    const adminClient = createCEAdminClient();
     const now = new Date().toISOString();
 
     const { error } = await adminClient

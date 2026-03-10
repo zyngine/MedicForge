@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -28,7 +28,7 @@ export default function CELoginPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
+      const supabase = createCEClient();
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,

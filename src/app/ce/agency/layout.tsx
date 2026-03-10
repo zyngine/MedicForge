@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createCEClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui";
 import { BookOpen, LayoutDashboard, Users, BarChart3, Settings, LogOut, Upload, Shield } from "lucide-react";
 
@@ -15,7 +15,7 @@ export default function CEAgencyLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const checkAccess = async () => {
-      const supabase = createClient();
+      const supabase = createCEClient();
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -50,7 +50,7 @@ export default function CEAgencyLayout({ children }: { children: React.ReactNode
   }, [router]);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
+    const supabase = createCEClient();
     await supabase.auth.signOut();
     router.push("/ce/login");
   };

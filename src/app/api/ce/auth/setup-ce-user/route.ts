@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createCEAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminClient = createAdminClient();
+    const adminClient = createCEAdminClient();
 
     // Check if CE user already exists
     const { data: existing } = await adminClient

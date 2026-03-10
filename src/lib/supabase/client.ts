@@ -24,3 +24,10 @@ export function createClient() {
 
   return browserClient;
 }
+
+// CE platform: untyped because ce_* tables are not yet in database.types.ts
+// TODO: regenerate database.types.ts after CE schema is stable
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createCEClient(): any {
+  return createClient();
+}
