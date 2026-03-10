@@ -5,31 +5,6 @@
 -- =============================================================================
 
 -- ============================================
--- HELPER FUNCTIONS (performance-optimized)
--- ============================================
-
-CREATE OR REPLACE FUNCTION get_ce_user_id()
-RETURNS uuid
-LANGUAGE sql STABLE
-AS $$
-  SELECT id FROM ce_users WHERE id = (SELECT auth.uid())
-$$;
-
-CREATE OR REPLACE FUNCTION get_ce_user_role()
-RETURNS text
-LANGUAGE sql STABLE
-AS $$
-  SELECT role FROM ce_users WHERE id = (SELECT auth.uid())
-$$;
-
-CREATE OR REPLACE FUNCTION get_ce_user_agency_id()
-RETURNS uuid
-LANGUAGE sql STABLE
-AS $$
-  SELECT agency_id FROM ce_users WHERE id = (SELECT auth.uid())
-$$;
-
--- ============================================
 -- AGENCIES
 -- ============================================
 
@@ -50,24 +25,7 @@ CREATE TABLE IF NOT EXISTS ce_agencies (
 );
 
 ALTER TABLE ce_agencies ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "CE admins can manage all agencies"
-  ON ce_agencies FOR ALL
-  USING (get_ce_user_role() = 'admin');
-
-CREATE POLICY "Agency admins can view own agency"
-  ON ce_agencies FOR SELECT
-  USING (
-    get_ce_user_role() = 'agency_admin'
-    AND id = get_ce_user_agency_id()
-  );
-
-CREATE POLICY "Agency admins can update own agency"
-  ON ce_agencies FOR UPDATE
-  USING (
-    get_ce_user_role() = 'agency_admin'
-    AND id = get_ce_user_agency_id()
-  );
+-- Policies for ce_agencies added below after ce_users is created
 
 -- ============================================
 -- CE USERS
@@ -102,21 +60,68 @@ CREATE POLICY "Users can update own CE profile"
 
 CREATE POLICY "CE admins can view all CE users"
   ON ce_users FOR SELECT
-  USING (get_ce_user_role() = 'admin');
+  USING ((SELECT role FROM ce_users u WHERE u.id = (SELECT auth.uid())) = 'admin');
 
 CREATE POLICY "CE admins can manage CE users"
   ON ce_users FOR ALL
-  USING (get_ce_user_role() = 'admin');
+  USING ((SELECT role FROM ce_users u WHERE u.id = (SELECT auth.uid())) = 'admin');
 
 CREATE POLICY "Agency admins can view own agency users"
   ON ce_users FOR SELECT
   USING (
-    get_ce_user_role() = 'agency_admin'
-    AND agency_id = get_ce_user_agency_id()
+    (SELECT role FROM ce_users u WHERE u.id = (SELECT auth.uid())) = 'agency_admin'
+    AND agency_id = (SELECT agency_id FROM ce_users u WHERE u.id = (SELECT auth.uid()))
   );
 
 -- For setup: allow insert when no row exists yet (service role handles this via API)
 -- Note: inserts go through setup-ce-user API (service role) so no RLS INSERT policy needed
+
+-- ============================================
+-- HELPER FUNCTIONS (defined after ce_users exists)
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_ce_user_id()
+RETURNS uuid
+LANGUAGE sql STABLE
+AS $$
+  SELECT id FROM ce_users WHERE id = (SELECT auth.uid())
+$$;
+
+CREATE OR REPLACE FUNCTION get_ce_user_role()
+RETURNS text
+LANGUAGE sql STABLE
+AS $$
+  SELECT role FROM ce_users WHERE id = (SELECT auth.uid())
+$$;
+
+CREATE OR REPLACE FUNCTION get_ce_user_agency_id()
+RETURNS uuid
+LANGUAGE sql STABLE
+AS $$
+  SELECT agency_id FROM ce_users WHERE id = (SELECT auth.uid())
+$$;
+
+-- ============================================
+-- CE_AGENCIES POLICIES (helpers now available)
+-- ============================================
+
+CREATE POLICY "CE admins can manage all agencies"
+  ON ce_agencies FOR ALL
+  USING (get_ce_user_role() = 'admin');
+
+CREATE POLICY "Agency admins can view own agency"
+  ON ce_agencies FOR SELECT
+  USING (
+    get_ce_user_role() = 'agency_admin'
+    AND id = get_ce_user_agency_id()
+  );
+
+CREATE POLICY "Agency admins can update own agency"
+  ON ce_agencies FOR UPDATE
+  USING (
+    get_ce_user_role() = 'agency_admin'
+    AND id = get_ce_user_agency_id()
+  );
 
 -- ============================================
 -- AGENCY INVITE CODES
