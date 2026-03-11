@@ -76,7 +76,7 @@ export default function CEAdminAgenciesPage() {
         .select("agency_id")
         .not("agency_id", "is", null);
 
-      const counts = (users || []).reduce((acc: Record<string, number>, u) => {
+      const counts = (users || []).reduce((acc: Record<string, number>, u: { agency_id: string | null }) => {
         if (u.agency_id) acc[u.agency_id] = (acc[u.agency_id] || 0) + 1;
         return acc;
       }, {});
