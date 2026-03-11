@@ -247,8 +247,8 @@ export default function CECommitteeReviewsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {r.medical_director_approved === true && <CheckCircle className="h-4 w-4 text-green-500" title="MD Approved" />}
-                  {r.medical_director_approved === false && <XCircle className="h-4 w-4 text-red-500" title="MD Not Approved" />}
+                  {r.medical_director_approved === true && <span title="MD Approved"><CheckCircle className="h-4 w-4 text-green-500" /></span>}
+                  {r.medical_director_approved === false && <span title="MD Not Approved"><XCircle className="h-4 w-4 text-red-500" /></span>}
                   {r.committee_decision && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DECISION_STYLES[r.committee_decision] || "bg-gray-100 text-gray-700"}`}>
                       {DECISION_LABELS[r.committee_decision] || r.committee_decision}
