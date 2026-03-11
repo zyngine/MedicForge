@@ -81,7 +81,7 @@ export default function CEAdminAgenciesPage() {
         return acc;
       }, {});
 
-      setAgencies(data.map((a) => ({ ...a, user_count: counts[a.id] || 0 })) as Agency[]);
+      setAgencies(data.map((a: Agency) => ({ ...a, user_count: counts[a.id] || 0 })));
     }
     setIsLoading(false);
   };
