@@ -15,6 +15,7 @@ interface TranscriptRow {
     ceh_hours: number;
   } | null;
   ce_certificates: {
+    id: string;
     certificate_number: string;
     issued_at: string;
   }[] | null;
@@ -40,7 +41,7 @@ export default function CETranscriptPage() {
 
       const { data } = await supabase
         .from("ce_enrollments")
-        .select("id, completed_at, ce_courses(title, category, ceh_hours), ce_certificates(certificate_number, issued_at)")
+        .select("id, completed_at, ce_courses(title, category, ceh_hours), ce_certificates(id, certificate_number, issued_at)")
         .eq("user_id", ceUser.id)
         .eq("completion_status", "completed")
         .order("completed_at", { ascending: false });
@@ -121,13 +122,15 @@ export default function CETranscriptPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {cert && (
-                        <button
+                        <a
+                          href={`/api/ce/certificate?id=${cert.id}`}
+                          download
                           className="inline-flex items-center gap-1 text-xs text-red-700 hover:underline"
-                          title="Download certificate"
+                          title="Download certificate PDF"
                         >
                           <Download className="h-3.5 w-3.5" />
                           PDF
-                        </button>
+                        </a>
                       )}
                     </td>
                   </tr>
