@@ -104,7 +104,7 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex text-gray-900">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-800">

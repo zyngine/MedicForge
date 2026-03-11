@@ -155,7 +155,7 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Main content */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-8 text-gray-900">
         {children}
       </main>
     </div>

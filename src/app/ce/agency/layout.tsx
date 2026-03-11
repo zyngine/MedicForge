@@ -74,7 +74,7 @@ export default function CEAgencyLayout({ children }: { children: React.ReactNode
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex text-gray-900">
       <aside className="w-60 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-800">
           <Link href="/ce/agency" className="flex items-center gap-2">
