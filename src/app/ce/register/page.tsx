@@ -96,35 +96,36 @@ export default function CERegisterPage() {
         return;
       }
 
-      // If session created immediately (email confirm off), call setup API
+      // Always create the ce_users row now — admin client bypasses RLS,
+      // no session required, so this works even when email confirm is on.
+      const setupRes = await fetch("/api/ce/auth/setup-ce-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          email,
+          firstName,
+          lastName,
+          certificationLevel: certLevel,
+          state,
+          nremtId: nremtId || null,
+          registrationType: regType,
+          agencyInviteCode: regType === "agency_employee" ? agencyCode : null,
+        }),
+      });
+
+      const setupData = await setupRes.json();
+
+      if (!setupRes.ok) {
+        setError(setupData.error || "Account setup failed. Please contact support.");
+        return;
+      }
+
       if (authData.session) {
-        const setupRes = await fetch("/api/ce/auth/setup-ce-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            email,
-            firstName,
-            lastName,
-            certificationLevel: certLevel,
-            state,
-            nremtId: nremtId || null,
-            registrationType: regType,
-            agencyInviteCode: regType === "agency_employee" ? agencyCode : null,
-          }),
-        });
-
-        const setupData = await setupRes.json();
-
-        if (!setupRes.ok) {
-          setError(setupData.error || "Account setup failed. Please contact support.");
-          return;
-        }
-
-        // Redirect to terms (must accept before using the platform)
+        // Email confirm off — session ready, go straight to terms
         router.push("/ce/terms?redirect=/ce/my-training");
       } else {
-        // Email confirmation required
+        // Email confirmation required — row is created, user just needs to confirm
         setSuccess(true);
       }
     } catch {
