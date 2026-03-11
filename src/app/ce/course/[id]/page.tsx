@@ -75,7 +75,7 @@ export default function CECourseDetailPage() {
         const { data: ceUser } = await supabase
           .from("ce_users")
           .select("id")
-          .eq("auth_user_id", user.id)
+          .eq("id", user.id)
           .single();
 
         if (ceUser) {

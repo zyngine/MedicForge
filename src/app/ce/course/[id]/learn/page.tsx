@@ -91,7 +91,7 @@ export default function CECourseLearnPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push(`/ce/login?redirect=/ce/course/${id}/learn`); return; }
 
-      const { data: ceUser } = await supabase.from("ce_users").select("id").eq("auth_user_id", user.id).single();
+      const { data: ceUser } = await supabase.from("ce_users").select("id").eq("id", user.id).single();
       if (!ceUser) { router.push("/ce/catalog"); return; }
       setCeUserId(ceUser.id);
 

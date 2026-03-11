@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const { data: ceUser } = await supabase
     .from("ce_users")
     .select("id, terms_accepted_at, role")
-    .eq("auth_user_id", data.user.id)
+    .eq("id", data.user.id)
     .single();
 
   if (!ceUser) {
