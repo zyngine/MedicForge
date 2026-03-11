@@ -7,9 +7,9 @@ import { Users, Search } from "lucide-react";
 
 interface Employee {
   id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
   certification_level: string | null;
   state: string | null;
   nremt_id: string | null;
@@ -72,9 +72,9 @@ export default function CEAgencyEmployeesPage() {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      e.email.toLowerCase().includes(s) ||
-      e.first_name.toLowerCase().includes(s) ||
-      e.last_name.toLowerCase().includes(s) ||
+      (e.email?.toLowerCase().includes(s) ?? false) ||
+      (e.first_name?.toLowerCase().includes(s) ?? false) ||
+      (e.last_name?.toLowerCase().includes(s) ?? false) ||
       (e.nremt_id && e.nremt_id.toLowerCase().includes(s))
     );
   });
