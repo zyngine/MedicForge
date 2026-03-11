@@ -43,7 +43,7 @@ export default function CECourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [objectives, setObjectives] = useState<Objective[]>([]);
-  const [enrollment, setEnrollment] = useState<{ id: string; status: string; progress_pct: number } | null>(null);
+  const [enrollment, setEnrollment] = useState<{ id: string; completion_status: string; progress_percentage: number } | null>(null);
   const [ceUserId, setCeUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
@@ -82,8 +82,8 @@ export default function CECourseDetailPage() {
           setCeUserId(ceUser.id);
           const { data: enroll } = await supabase
             .from("ce_enrollments")
-            .select("id, status, progress_pct")
-            .eq("ce_user_id", ceUser.id)
+            .select("id, completion_status, progress_percentage")
+            .eq("user_id", ceUser.id)
             .eq("course_id", id)
             .single();
           setEnrollment(enroll || null);
@@ -103,7 +103,7 @@ export default function CECourseDetailPage() {
       const supabase = createCEClient();
       const { data, error: insertError } = await supabase
         .from("ce_enrollments")
-        .insert({ ce_user_id: ceUserId, course_id: id, status: "enrolled", progress_pct: 0 })
+        .insert({ user_id: ceUserId, course_id: id, completion_status: "enrolled", progress_percentage: 0 })
         .select("id, status, progress_pct")
         .single();
       if (insertError) {
@@ -135,8 +135,8 @@ export default function CECourseDetailPage() {
     );
   }
 
-  const enrolled = enrollment?.status === "enrolled" || enrollment?.status === "in_progress";
-  const completed = enrollment?.status === "completed";
+  const enrolled = enrollment?.completion_status === "enrolled" || enrollment?.completion_status === "in_progress";
+  const completed = enrollment?.completion_status === "completed";
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
@@ -254,7 +254,7 @@ export default function CECourseDetailPage() {
             ) : enrolled ? (
               <Link href={`/ce/course/${id}/learn`}>
                 <Button className="w-full">
-                  {enrollment?.progress_pct ? "Continue Course" : "Start Course"}
+                  {enrollment?.progress_percentage ? "Continue Course" : "Start Course"}
                 </Button>
               </Link>
             ) : ceUserId ? (

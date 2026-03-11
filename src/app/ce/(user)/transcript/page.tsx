@@ -41,8 +41,8 @@ export default function CETranscriptPage() {
       const { data } = await supabase
         .from("ce_enrollments")
         .select("id, completed_at, ce_courses(title, category, ceh_hours), ce_certificates(certificate_number, issued_at)")
-        .eq("ce_user_id", ceUser.id)
-        .eq("status", "completed")
+        .eq("user_id", ceUser.id)
+        .eq("completion_status", "completed")
         .order("completed_at", { ascending: false });
 
       setRows(data || []);

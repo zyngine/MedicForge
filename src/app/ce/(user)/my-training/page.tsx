@@ -8,8 +8,8 @@ import { BookOpen, CheckCircle, Clock, ChevronRight } from "lucide-react";
 
 interface Enrollment {
   id: string;
-  status: string;
-  progress_pct: number;
+  completion_status: string;
+  progress_percentage: number;
   enrolled_at: string;
   completed_at: string | null;
   ce_courses: {
@@ -40,8 +40,8 @@ export default function CEMyTrainingPage() {
 
       const { data } = await supabase
         .from("ce_enrollments")
-        .select("id, status, progress_pct, enrolled_at, completed_at, ce_courses(id, title, category, ceh_hours)")
-        .eq("ce_user_id", ceUser.id)
+        .select("id, completion_status, progress_percentage, enrolled_at, completed_at, ce_courses(id, title, category, ceh_hours)")
+        .eq("user_id", ceUser.id)
         .order("enrolled_at", { ascending: false });
 
       setEnrollments(data || []);
@@ -50,8 +50,8 @@ export default function CEMyTrainingPage() {
     load();
   }, []);
 
-  const inProgress = enrollments.filter((e) => e.status === "in_progress");
-  const completed = enrollments.filter((e) => e.status === "completed");
+  const inProgress = enrollments.filter((e) => e.completion_status === "in_progress" || e.completion_status === "enrolled");
+  const completed = enrollments.filter((e) => e.completion_status === "completed");
   const totalCEH = completed.reduce((sum, e) => sum + (e.ce_courses?.ceh_hours || 0), 0);
 
   if (isLoading) {
@@ -101,10 +101,10 @@ export default function CEMyTrainingPage() {
                 <div className="w-full bg-gray-100 rounded-full h-2">
                   <div
                     className="bg-red-700 h-2 rounded-full transition-all"
-                    style={{ width: `${e.progress_pct || 0}%` }}
+                    style={{ width: `${e.progress_percentage || 0}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{e.progress_pct || 0}% complete</p>
+                <p className="text-xs text-muted-foreground mt-1">{e.progress_percentage || 0}% complete</p>
               </div>
             ))}
           </div>

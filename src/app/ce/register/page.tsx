@@ -70,6 +70,7 @@ export default function CERegisterPage() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/ce/auth/callback`,
           data: {
             first_name: firstName,
             last_name: lastName,
