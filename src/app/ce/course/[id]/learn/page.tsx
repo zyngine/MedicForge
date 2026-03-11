@@ -114,7 +114,9 @@ export default function CECourseLearnPage() {
         supabase.from("ce_quizzes").select("id, passing_score").eq("course_id", id).limit(1).single(),
       ]);
 
-      const progressMap = new Map((progressRes.data || []).map((p: any) => [p.module_id, p]));
+      const progressMap = new Map<string, { completed_at: string | null; started_at: string | null }>(
+        (progressRes.data || []).map((p: any) => [p.module_id, p])
+      );
 
       const mods: Module[] = (modsRes.data || []).map((m: any) => ({
         id: m.id,
