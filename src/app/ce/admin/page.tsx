@@ -47,7 +47,7 @@ export default function CEAdminDashboardPage() {
           .limit(5),
       ]);
 
-      const courses = coursesRes.data || [];
+      const courses = (coursesRes.data || []) as { id: string; status: string }[];
       setStats({
         totalCourses: courses.length,
         publishedCourses: courses.filter((c) => c.status === "published").length,

@@ -34,7 +34,7 @@ export default function CECapceDashboardPage() {
         supabase.from("ce_capce_submission_records").select("id", { count: "exact", head: true }).eq("status", "reported"),
       ]);
 
-      const courses = coursesRes.data || [];
+      const courses = (coursesRes.data || []) as { id: string; status: string; capce_approved: boolean | null }[];
       const totalCompletions = completionsRes.count || 0;
       const reportedCompletions = submissionsRes.count || 0;
 

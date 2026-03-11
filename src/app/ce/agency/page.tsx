@@ -50,7 +50,7 @@ export default function CEAgencyDashboardPage() {
         supabase.from("ce_users").select("id, first_name, last_name, certification_level").eq("agency_id", agencyId),
       ]);
 
-      const employees = employeesRes.data || [];
+      const employees = (employeesRes.data || []) as { id: string; first_name: string | null; last_name: string | null; certification_level: string | null }[];
 
       if (employees.length > 0) {
         const { data: enrollments } = await supabase

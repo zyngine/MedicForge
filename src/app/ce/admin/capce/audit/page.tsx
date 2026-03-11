@@ -31,8 +31,8 @@ export default function CECapceAuditPage() {
         supabase.from("ce_instructors").select("id, cv_url, coi_expires_at"),
       ]);
 
-      const courses = coursesRes.data || [];
-      const instructors = instructorsRes.data || [];
+      const courses = (coursesRes.data || []) as { id: string; capce_number: string | null; status: string; passing_score: number | null }[];
+      const instructors = (instructorsRes.data || []) as { id: string; cv_url: string | null; coi_expires_at: string | null }[];
       const publishedWithCapce = courses.filter((c) => c.status === "published" && c.capce_number);
       const coursesGoodPassScore = courses.filter((c) => (c.passing_score || 0) >= 70);
       const instructorsWithCV = instructors.filter((i) => i.cv_url);
