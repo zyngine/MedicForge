@@ -104,7 +104,7 @@ export default function CECourseDetailPage() {
       const { data, error: insertError } = await supabase
         .from("ce_enrollments")
         .insert({ user_id: ceUserId, course_id: id, completion_status: "enrolled", progress_percentage: 0 })
-        .select("id, status, progress_pct")
+        .select("id, completion_status, progress_percentage")
         .single();
       if (insertError) {
         setError("Failed to enroll. Please try again.");
