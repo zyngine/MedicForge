@@ -8,9 +8,9 @@ import { Input } from "@/components/ui";
 
 interface CEUser {
   id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
   role: string;
   certification_level: string | null;
   state: string | null;
@@ -75,9 +75,9 @@ export default function CEAdminUsersPage() {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      u.email.toLowerCase().includes(s) ||
-      u.first_name.toLowerCase().includes(s) ||
-      u.last_name.toLowerCase().includes(s) ||
+      (u.email?.toLowerCase().includes(s) ?? false) ||
+      (u.first_name?.toLowerCase().includes(s) ?? false) ||
+      (u.last_name?.toLowerCase().includes(s) ?? false) ||
       (u.nremt_id && u.nremt_id.toLowerCase().includes(s))
     );
   });

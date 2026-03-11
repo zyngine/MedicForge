@@ -18,8 +18,8 @@ interface AgencyStats {
 
 interface EmployeeSummary {
   id: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   certification_level: string | null;
   completed_count: number;
   total_ceh: number;
