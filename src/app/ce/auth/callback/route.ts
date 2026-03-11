@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createCEServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/ce/login`);
   }
 
-  const supabase = await createClient();
+  const supabase = await createCEServerClient();
   const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError || !data.session || !data.user) {
