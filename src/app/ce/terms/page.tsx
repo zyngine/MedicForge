@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui";
@@ -10,7 +8,7 @@ import { Alert } from "@/components/ui";
 import { Spinner } from "@/components/ui";
 import { BookOpen, CheckCircle } from "lucide-react";
 
-export default function CETermsPage() {
+function CETermsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/ce/my-training";
@@ -225,5 +223,19 @@ export default function CETermsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CETermsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <CETermsContent />
+    </Suspense>
   );
 }

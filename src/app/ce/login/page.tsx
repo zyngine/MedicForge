@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
@@ -13,7 +11,7 @@ import { Alert } from "@/components/ui";
 import { Spinner } from "@/components/ui";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 
-export default function CELoginPage() {
+function CELoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/ce/my-training";
@@ -180,5 +178,19 @@ export default function CELoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function CELoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <CELoginContent />
+    </Suspense>
   );
 }
