@@ -42,12 +42,13 @@ export default function CEAgencyCompliancePage() {
         .eq("agency_id", ceUser.agency_id)
         .order("last_name");
 
-      if (!members || members.length === 0) { setIsLoading(false); return; }
+      const typedMembers = (members || []) as { id: string; first_name: string | null; last_name: string | null; certification_level: string | null }[];
+      if (typedMembers.length === 0) { setIsLoading(false); return; }
 
       const { data: enrollments } = await supabase
         .from("ce_enrollments")
         .select("user_id, completion_status, completed_at, ce_courses(ceh_hours)")
-        .in("user_id", members.map((m) => m.id))
+        .in("user_id", typedMembers.map((m) => m.id))
         .eq("completion_status", "completed");
 
       const byUser: Record<string, { completed: number; ceh: number; last: string | null }> = {};
@@ -60,7 +61,7 @@ export default function CEAgencyCompliancePage() {
         }
       });
 
-      setEmployees(members.map((m) => ({
+      setEmployees(typedMembers.map((m) => ({
         ...m,
         completed: byUser[m.id]?.completed || 0,
         total_ceh: byUser[m.id]?.ceh || 0,

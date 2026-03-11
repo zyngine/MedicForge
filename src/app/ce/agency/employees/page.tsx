@@ -38,12 +38,13 @@ export default function CEAgencyEmployeesPage() {
         .eq("agency_id", ceUser.agency_id)
         .order("last_name");
 
-      if (!members || members.length === 0) { setIsLoading(false); return; }
+      const typedMembers = (members || []) as { id: string; first_name: string | null; last_name: string | null; email: string | null; certification_level: string | null; state: string | null; nremt_id: string | null }[];
+      if (typedMembers.length === 0) { setIsLoading(false); return; }
 
       const { data: enrollments } = await supabase
         .from("ce_enrollments")
         .select("user_id, completion_status, ce_courses(ceh_hours)")
-        .in("user_id", members.map((m) => m.id));
+        .in("user_id", typedMembers.map((m) => m.id));
 
       const byUser: Record<string, { completed: number; in_progress: number; ceh: number }> = {};
       (enrollments || []).forEach((en: any) => {
@@ -56,7 +57,7 @@ export default function CEAgencyEmployeesPage() {
         }
       });
 
-      setEmployees(members.map((m) => ({
+      setEmployees(typedMembers.map((m) => ({
         ...m,
         completed: byUser[m.id]?.completed || 0,
         in_progress: byUser[m.id]?.in_progress || 0,
