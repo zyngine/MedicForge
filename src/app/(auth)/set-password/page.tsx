@@ -30,16 +30,21 @@ export default function SetPasswordPage() {
 
   React.useEffect(() => {
     const verify = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidSession(true);
-        setUserEmail(session.user.email ?? null);
-        setUserRole(session.user.user_metadata?.role ?? null);
-      } else {
-        setError("Session not found. Please use the invitation link from your email.");
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsValidSession(true);
+          setUserEmail(session.user.email ?? null);
+          setUserRole(session.user.user_metadata?.role ?? null);
+        } else {
+          setError("Session not found. Please use the invitation link from your email.");
+        }
+      } catch {
+        setError("Unable to verify session. Please use the invitation link from your email.");
+      } finally {
+        setIsVerifying(false);
       }
-      setIsVerifying(false);
     };
     verify();
   }, []);

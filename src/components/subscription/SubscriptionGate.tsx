@@ -37,12 +37,12 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const { user, isLoading: userLoading } = useUser();
   const [timedOut, setTimedOut] = React.useState(false);
 
-  // Safety timeout — if loading takes more than 8s, unblock the UI
+  // Safety timeout — if loading takes more than 8s, unblock the UI.
+  // Run once on mount with empty deps so re-renders don't reset the timer.
   React.useEffect(() => {
-    if (!tenantLoading && !userLoading) return;
     const t = setTimeout(() => setTimedOut(true), 8000);
     return () => clearTimeout(t);
-  }, [tenantLoading, userLoading]);
+  }, []);
 
   // Show loading while fetching tenant/user (but never more than 8s)
   if ((tenantLoading || userLoading) && !timedOut) {

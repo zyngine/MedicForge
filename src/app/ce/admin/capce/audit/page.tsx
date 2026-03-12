@@ -102,7 +102,7 @@ export default function CECapceAuditPage() {
                     ? <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                     : <XCircle className="h-5 w-5 text-red-400 shrink-0" />}
                   <div>
-                    <p className="text-sm">{item.label}</p>
+                    <p className="text-sm text-gray-900 font-medium">{item.label}</p>
                     <p className={`text-xs ${item.pass ? "text-green-700" : "text-red-600"}`}>{item.detail}</p>
                   </div>
                 </div>

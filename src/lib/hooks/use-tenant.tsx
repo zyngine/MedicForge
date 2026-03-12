@@ -300,9 +300,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           clearTenantCache();
           fetchAttemptedRef.current = false;
           fetchTenant();
-        } else if (!cachedTenant) {
-          // Only re-fetch if we don't have a tenant
-          tenantInitialized = false;
+        } else if (!cachedTenant && !tenantInitialized) {
+          // Only re-fetch if we don't have a tenant AND haven't finished initializing yet.
+          // This prevents re-fetching on every TOKEN_REFRESHED for main-site users (no tenant).
           fetchAttemptedRef.current = false;
           fetchTenant();
         }
