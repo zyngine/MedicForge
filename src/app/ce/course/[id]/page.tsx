@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Alert } from "@/components/ui";
-import { Clock, Award, ChevronLeft, CheckCircle, BookOpen } from "lucide-react";
+import { CEHeader } from "@/components/ce/CEHeader";
+import { Clock, Award, ChevronLeft, CheckCircle, BookOpen, Users, Star } from "lucide-react";
 
 interface CourseDetail {
   id: string;
@@ -24,12 +25,20 @@ interface CourseDetail {
   disclosure_statement: string | null;
   passing_score: number;
   certification_levels: string[] | null;
+  expiration_months: number | null;
 }
 
 interface Objective {
   id: string;
   objective_text: string;
   bloom_level: string | null;
+}
+
+interface Instructor {
+  id: string;
+  name: string;
+  credentials: string | null;
+  bio: string | null;
 }
 
 const DELIVERY_LABELS: Record<string, string> = {
@@ -43,8 +52,9 @@ export default function CECourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [enrollment, setEnrollment] = useState<{ id: string; completion_status: string; progress_percentage: number } | null>(null);
-  const [ceUserId, setCeUserId] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +63,10 @@ export default function CECourseDetailPage() {
     const load = async () => {
       const supabase = createCEClient();
 
-      const [courseRes, objRes] = await Promise.all([
+      const [courseRes, objRes, instrRes] = await Promise.all([
         supabase
           .from("ce_courses")
-          .select("id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, capce_approved, capce_number, target_audience, prerequisites, disclosure_statement, passing_score, certification_levels")
+          .select("id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, capce_approved, capce_number, target_audience, prerequisites, disclosure_statement, passing_score, certification_levels, expiration_months")
           .eq("id", id)
           .single(),
         supabase
@@ -64,14 +74,24 @@ export default function CECourseDetailPage() {
           .select("id, objective_text, bloom_level")
           .eq("course_id", id)
           .order("order_index"),
+        supabase
+          .from("ce_course_instructors")
+          .select("ce_instructors(id, name, credentials, bio)")
+          .eq("course_id", id),
       ]);
 
       setCourse(courseRes.data || null);
       setObjectives(objRes.data || []);
 
-      // Check enrollment
+      const instrData = (instrRes.data || [])
+        .map((r: any) => r.ce_instructors)
+        .filter(Boolean) as Instructor[];
+      setInstructors(instrData);
+
+      // Check auth + enrollment
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setIsLoggedIn(true);
         const { data: ceUser } = await supabase
           .from("ce_users")
           .select("id")
@@ -79,7 +99,6 @@ export default function CECourseDetailPage() {
           .single();
 
         if (ceUser) {
-          setCeUserId(ceUser.id);
           const { data: enroll } = await supabase
             .from("ce_enrollments")
             .select("id, completion_status, progress_percentage")
@@ -88,6 +107,8 @@ export default function CECourseDetailPage() {
             .single();
           setEnrollment(enroll || null);
         }
+      } else {
+        setIsLoggedIn(false);
       }
 
       setIsLoading(false);
@@ -96,21 +117,26 @@ export default function CECourseDetailPage() {
   }, [id]);
 
   const handleEnroll = async () => {
-    if (!ceUserId) return;
     setIsEnrolling(true);
     setError(null);
     try {
-      const supabase = createCEClient();
-      const { data, error: insertError } = await supabase
-        .from("ce_enrollments")
-        .insert({ user_id: ceUserId, course_id: id, completion_status: "enrolled", progress_percentage: 0 })
-        .select("id, completion_status, progress_percentage")
-        .single();
-      if (insertError) {
-        setError("Failed to enroll. Please try again.");
+      const res = await fetch("/api/ce/course/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = `/ce/login?redirect=/ce/course/${id}`;
+          return;
+        }
+        setError(data.error || "Failed to enroll. Please try again.");
       } else {
         setEnrollment(data);
       }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsEnrolling(false);
     }
@@ -118,158 +144,248 @@ export default function CECourseDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <Spinner size="lg" />
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <CEHeader />
+        <div className="flex justify-center py-24">
+          <Spinner size="lg" />
+        </div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-16 text-center text-muted-foreground">
-        <p>Course not found.</p>
-        <Link href="/ce/catalog" className="mt-4 inline-block">
-          <Button variant="outline">Back to Catalog</Button>
-        </Link>
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <CEHeader />
+        <div className="max-w-4xl mx-auto px-6 py-16 text-center text-muted-foreground">
+          <p className="mb-4">Course not found.</p>
+          <Link href="/ce/catalog">
+            <Button variant="outline">Back to Catalog</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   const enrolled = enrollment?.completion_status === "enrolled" || enrollment?.completion_status === "in_progress";
   const completed = enrollment?.completion_status === "completed";
+  const isFree = course.is_free || !course.price;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-      {/* Back */}
-      <Link href="/ce/catalog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-4 w-4" />
-        Back to Catalog
-      </Link>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <CEHeader />
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Header */}
-          <div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {course.category && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                  {course.category}
-                </span>
-              )}
-              {course.capce_approved && (
-                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Award className="h-3 w-3" />
-                  CAPCE Approved
-                  {course.capce_number && <span className="font-mono ml-1">{course.capce_number}</span>}
-                </span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold">{course.title}</h1>
-            {course.description && (
-              <p className="text-muted-foreground mt-2">{course.description}</p>
-            )}
-          </div>
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        {/* Back */}
+        <Link href="/ce/catalog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-4 w-4" />
+          Back to Catalog
+        </Link>
 
-          {/* Meta */}
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground border-b pb-4">
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              {course.ceh_hours} CEH
-            </span>
-            {course.delivery_method && (
-              <span>{DELIVERY_LABELS[course.delivery_method] || course.delivery_method}</span>
-            )}
-            {course.course_type && (
-              <span className="capitalize">{course.course_type.replace(/_/g, " ")}</span>
-            )}
-            <span>Passing score: {course.passing_score}%</span>
-          </div>
-
-          {/* Learning Objectives */}
-          {objectives.length > 0 && (
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Header */}
             <div>
-              <h2 className="font-semibold text-lg mb-3">Learning Objectives</h2>
-              <ul className="space-y-2">
-                {objectives.map((obj) => (
-                  <li key={obj.id} className="flex items-start gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span>{obj.objective_text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Target Audience */}
-          {course.target_audience && course.target_audience.length > 0 && (
-            <div>
-              <h2 className="font-semibold mb-2">Target Audience</h2>
-              <div className="flex flex-wrap gap-2">
-                {course.target_audience.map((a) => (
-                  <span key={a} className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                    {a}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {course.category && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    {course.category}
                   </span>
-                ))}
+                )}
+                {course.capce_approved && (
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Award className="h-3 w-3" />
+                    CAPCE Approved
+                    {course.capce_number && (
+                      <span className="font-mono ml-0.5">{course.capce_number}</span>
+                    )}
+                  </span>
+                )}
+                {course.delivery_method && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    {DELIVERY_LABELS[course.delivery_method] || course.delivery_method}
+                  </span>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Prerequisites */}
-          {course.prerequisites && (
-            <div>
-              <h2 className="font-semibold mb-2">Prerequisites</h2>
-              <p className="text-sm text-muted-foreground">{course.prerequisites}</p>
-            </div>
-          )}
-
-          {/* CAPCE Disclosure */}
-          {course.capce_approved && course.disclosure_statement && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800">
-              <p className="font-semibold mb-1">Disclosure Statement</p>
-              <p>{course.disclosure_statement}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Enroll card */}
-        <div>
-          <div className="bg-white border rounded-lg p-5 sticky top-6">
-            <div className="text-2xl font-bold mb-1">
-              {course.is_free ? "Free" : course.price ? `$${course.price.toFixed(2)}` : "Free"}
+              <h1 className="text-2xl font-bold">{course.title}</h1>
+              {course.description && (
+                <p className="text-muted-foreground mt-2 text-base leading-relaxed">{course.description}</p>
+              )}
             </div>
 
-            {error && <Alert variant="error" className="mb-3 text-sm">{error}</Alert>}
+            {/* Meta stats */}
+            <div className="flex flex-wrap gap-6 text-sm py-4 border-y">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <strong className="text-gray-900">{course.ceh_hours}</strong> CEH
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Star className="h-4 w-4" />
+                Passing score: <strong className="text-gray-900">{course.passing_score}%</strong>
+              </span>
+              {course.certification_levels && course.certification_levels.length > 0 && (
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  {course.certification_levels.join(", ")}
+                </span>
+              )}
+              {course.expiration_months && (
+                <span className="text-muted-foreground text-xs">
+                  Certificate valid {course.expiration_months} months
+                </span>
+              )}
+            </div>
 
-            {completed ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-green-700 text-sm mb-3">
-                  <CheckCircle className="h-4 w-4" />
-                  Course completed
-                </div>
-                <Link href="/ce/transcript">
-                  <Button className="w-full" variant="outline">View Certificate</Button>
-                </Link>
+            {/* Learning Objectives */}
+            {objectives.length > 0 && (
+              <div>
+                <h2 className="font-semibold text-lg mb-3">Learning Objectives</h2>
+                <ul className="space-y-2">
+                  {objectives.map((obj) => (
+                    <li key={obj.id} className="flex items-start gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>{obj.objective_text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ) : enrolled ? (
-              <Link href={`/ce/course/${id}/learn`}>
-                <Button className="w-full">
-                  {enrollment?.progress_percentage ? "Continue Course" : "Start Course"}
-                </Button>
-              </Link>
-            ) : ceUserId ? (
-              <Button className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
-                {isEnrolling ? "Enrolling..." : "Enroll Now"}
-              </Button>
-            ) : (
-              <Link href={`/ce/login?redirect=/ce/course/${id}`}>
-                <Button className="w-full">Sign In to Enroll</Button>
-              </Link>
             )}
 
-            <div className="mt-4 space-y-2 text-xs text-muted-foreground">
-              <p className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{course.ceh_hours} CEH upon completion</p>
-              <p className="flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" />Passing score: {course.passing_score}%</p>
+            {/* Instructors */}
+            {instructors.length > 0 && (
+              <div>
+                <h2 className="font-semibold text-lg mb-3">
+                  {instructors.length === 1 ? "Instructor" : "Instructors"}
+                </h2>
+                <div className="space-y-3">
+                  {instructors.map((instr) => (
+                    <div key={instr.id} className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
+                        {instr.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{instr.name}</p>
+                        {instr.credentials && (
+                          <p className="text-xs text-muted-foreground">{instr.credentials}</p>
+                        )}
+                        {instr.bio && (
+                          <p className="text-sm text-muted-foreground mt-1">{instr.bio}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Target Audience */}
+            {course.target_audience && course.target_audience.length > 0 && (
+              <div>
+                <h2 className="font-semibold mb-2">Target Audience</h2>
+                <div className="flex flex-wrap gap-2">
+                  {course.target_audience.map((a) => (
+                    <span key={a} className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Prerequisites */}
+            {course.prerequisites && (
+              <div>
+                <h2 className="font-semibold mb-1">Prerequisites</h2>
+                <p className="text-sm text-muted-foreground">{course.prerequisites}</p>
+              </div>
+            )}
+
+            {/* CAPCE Disclosure */}
+            {course.capce_approved && course.disclosure_statement && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800">
+                <p className="font-semibold mb-1">Disclosure Statement</p>
+                <p>{course.disclosure_statement}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Enroll card — sticky */}
+          <div>
+            <div className="bg-white border rounded-lg p-5 sticky top-6 space-y-4">
+              <div>
+                <div className="text-3xl font-bold">
+                  {isFree ? "Free" : `$${course.price!.toFixed(2)}`}
+                </div>
+                {!isFree && (
+                  <p className="text-xs text-muted-foreground mt-0.5">One-time purchase</p>
+                )}
+              </div>
+
+              {error && (
+                <Alert variant="error" className="text-sm">{error}</Alert>
+              )}
+
+              {completed ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-green-700 text-sm">
+                    <CheckCircle className="h-4 w-4" />
+                    Course completed
+                  </div>
+                  <Link href={`/ce/course/${id}/learn`}>
+                    <Button className="w-full" variant="outline">Review Course</Button>
+                  </Link>
+                  <Link href="/ce/transcript">
+                    <Button className="w-full" variant="ghost">View Certificate</Button>
+                  </Link>
+                </div>
+              ) : enrolled ? (
+                <Link href={`/ce/course/${id}/learn`}>
+                  <Button className="w-full">
+                    {enrollment?.progress_percentage ? "Continue Course" : "Start Course"}
+                  </Button>
+                </Link>
+              ) : isLoggedIn ? (
+                <Button className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
+                  {isEnrolling ? "Enrolling..." : isFree ? "Enroll Free" : "Enroll Now"}
+                </Button>
+              ) : (
+                <Link href={`/ce/login?redirect=/ce/course/${id}`}>
+                  <Button className="w-full">Sign In to Enroll</Button>
+                </Link>
+              )}
+
+              {enrolled && enrollment?.progress_percentage !== undefined && enrollment.progress_percentage > 0 && (
+                <div>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Progress</span>
+                    <span>{enrollment.progress_percentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className="bg-red-700 h-1.5 rounded-full"
+                      style={{ width: `${enrollment.progress_percentage}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-3 space-y-2 text-xs text-muted-foreground">
+                <p className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  {course.ceh_hours} Continuing Education Hour{course.ceh_hours !== 1 ? "s" : ""}
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                  Passing score: {course.passing_score}%
+                </p>
+                {course.capce_approved && (
+                  <p className="flex items-center gap-1.5">
+                    <Award className="h-3.5 w-3.5 shrink-0" />
+                    CAPCE Approved
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
