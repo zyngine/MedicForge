@@ -86,7 +86,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --primary: #E53E3E;
     --primary-foreground: #ffffff;
     --primary-hover: #FC8181;
