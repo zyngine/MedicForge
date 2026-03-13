@@ -25,6 +25,7 @@ import {
   AlertCircle,
   FileText,
   Loader2,
+  Hourglass,
 } from "lucide-react";
 import { useClinicalShift } from "@/lib/hooks/use-clinical-shifts";
 import { useShiftBookings } from "@/lib/hooks/use-shift-bookings";
@@ -35,6 +36,9 @@ const STATUS_CONFIG = {
   completed: { label: "Completed", variant: "secondary" as const, icon: CheckCircle },
   cancelled: { label: "Cancelled", variant: "destructive" as const, icon: XCircle },
   no_show: { label: "No Show", variant: "outline" as const, icon: AlertCircle },
+  pending_poc_approval: { label: "Pending Approval", variant: "outline" as const, icon: Hourglass },
+  poc_approved: { label: "POC Approved", variant: "secondary" as const, icon: CheckCircle },
+  poc_denied: { label: "POC Denied", variant: "destructive" as const, icon: XCircle },
 };
 
 export default function ShiftDetailPage() {
