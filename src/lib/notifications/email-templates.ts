@@ -302,6 +302,196 @@ export function skillVerifiedEmail(data: {
   };
 }
 
+// ─── Clinical Scheduling Workflow Templates ────────────────────────────────
+
+// 1. Shift request → to POC (external clinical site contact)
+export function clinicalShiftRequestEmail(data: {
+  pocName: string;
+  studentName: string;
+  siteName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
+  requestNotes: string | null;
+  approveUrl: string;
+  denyUrl: string;
+}): EmailTemplate {
+  const content = `
+    <h1>Clinical Shift Request</h1>
+    <p>Hello ${data.pocName},</p>
+    <p>A student has requested to attend a clinical shift at <strong>${data.siteName}</strong>:</p>
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Student:</strong> ${data.studentName}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
+      <p style="margin: 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
+    </div>
+    ${data.requestNotes ? `
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Student's note:</strong></p>
+      <p style="margin: 0;">${data.requestNotes}</p>
+    </div>
+    ` : ""}
+    <p>Please review and respond to this request:</p>
+    <div style="text-align: center; margin: 25px 0;">
+      <a href="${data.approveUrl}" class="button" style="background: #16a34a; margin-right: 10px;">Approve Request</a>
+      <a href="${data.denyUrl}" class="button" style="background: #dc2626;">Deny Request</a>
+    </div>
+    <p class="muted" style="font-size: 13px;">This link will expire in 7 days. If you have questions, reply to this email or contact the program coordinator.</p>
+  `;
+
+  return {
+    subject: `Clinical Shift Request: ${data.studentName} — ${data.shiftDate}`,
+    html: wrapEmail(content, `${data.studentName} has requested a clinical shift at ${data.siteName}`),
+    text: `Hello ${data.pocName},\n\n${data.studentName} has requested a clinical shift at ${data.siteName}.\n\nShift: ${data.shiftTitle}\nDate: ${data.shiftDate}\nTime: ${data.startTime} – ${data.endTime}\n${data.requestNotes ? `\nStudent note: ${data.requestNotes}\n` : ""}\nApprove: ${data.approveUrl}\nDeny: ${data.denyUrl}\n\nThis link expires in 7 days.`,
+  };
+}
+
+// 2. Shift approved → to student
+export function clinicalShiftApprovedEmail(data: {
+  studentName: string;
+  siteName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
+  address: string;
+  scheduleUrl: string;
+}): EmailTemplate {
+  const content = `
+    <h1 style="color: #16a34a;">Shift Request Approved!</h1>
+    <p>Hi ${data.studentName},</p>
+    <p>Great news! Your clinical shift request has been approved by <strong>${data.siteName}</strong>.</p>
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>${data.shiftTitle}</strong></p>
+      <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
+      ${data.address ? `<p style="margin: 0;"><strong>Location:</strong> ${data.address}</p>` : ""}
+    </div>
+    <h3>Don't forget to bring:</h3>
+    <ul>
+      <li>Clinical uniform</li>
+      <li>Student ID</li>
+      <li>Stethoscope and watch</li>
+      <li>Documentation materials</li>
+    </ul>
+    <div style="text-align: center;">
+      <a href="${data.scheduleUrl}" class="button">View My Shifts</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">If you need to cancel, please do so as soon as possible so another student can take the slot.</p>
+  `;
+
+  return {
+    subject: `Shift Approved: ${data.siteName} on ${data.shiftDate}`,
+    html: wrapEmail(content, `Your shift at ${data.siteName} on ${data.shiftDate} has been approved!`),
+    text: `Hi ${data.studentName},\n\nYour clinical shift has been approved!\n\nSite: ${data.siteName}\nShift: ${data.shiftTitle}\nDate: ${data.shiftDate}\nTime: ${data.startTime} – ${data.endTime}\n${data.address ? `Location: ${data.address}\n` : ""}\nView your shifts: ${data.scheduleUrl}`,
+  };
+}
+
+// 3. Shift denied → to student
+export function clinicalShiftDeniedEmail(data: {
+  studentName: string;
+  siteName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  pocNotes: string | null;
+  scheduleUrl: string;
+}): EmailTemplate {
+  const content = `
+    <h1>Shift Request Not Approved</h1>
+    <p>Hi ${data.studentName},</p>
+    <p>Unfortunately, your request for a clinical shift at <strong>${data.siteName}</strong> was not approved.</p>
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0;"><strong>Date:</strong> ${data.shiftDate}</p>
+    </div>
+    ${data.pocNotes ? `
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Notes from site:</strong></p>
+      <p style="margin: 0;">${data.pocNotes}</p>
+    </div>
+    ` : ""}
+    <p>Please browse the schedule to find another available shift.</p>
+    <div style="text-align: center;">
+      <a href="${data.scheduleUrl}" class="button">View Available Shifts</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">If you have questions, please contact your program instructor.</p>
+  `;
+
+  return {
+    subject: `Shift Request Not Approved: ${data.shiftDate}`,
+    html: wrapEmail(content, `Your shift request at ${data.siteName} on ${data.shiftDate} was not approved`),
+    text: `Hi ${data.studentName},\n\nYour shift request at ${data.siteName} on ${data.shiftDate} was not approved.\n${data.pocNotes ? `\nNotes from site: ${data.pocNotes}\n` : ""}\nFind another shift: ${data.scheduleUrl}`,
+  };
+}
+
+// 4. Student cancelled request → to POC
+export function clinicalRequestCancelledEmail(data: {
+  pocName: string;
+  studentName: string;
+  siteName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
+}): EmailTemplate {
+  const content = `
+    <h1>Shift Request Cancelled</h1>
+    <p>Hello ${data.pocName},</p>
+    <p>This is to let you know that <strong>${data.studentName}</strong> has cancelled their shift request at <strong>${data.siteName}</strong>. No action is required from you.</p>
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
+      <p style="margin: 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
+    </div>
+    <p class="muted" style="font-size: 14px;">If you have any questions, please contact the program coordinator.</p>
+  `;
+
+  return {
+    subject: `Shift Request Cancelled: ${data.studentName} — ${data.shiftDate}`,
+    html: wrapEmail(content, `${data.studentName} has cancelled their shift request at ${data.siteName}`),
+    text: `Hello ${data.pocName},\n\n${data.studentName} has cancelled their shift request at ${data.siteName}. No action required.\n\nShift: ${data.shiftTitle}\nDate: ${data.shiftDate}\nTime: ${data.startTime} – ${data.endTime}`,
+  };
+}
+
+// 5. Instructor cancelled shift → to student
+export function clinicalShiftCancelledByAdminEmail(data: {
+  studentName: string;
+  siteName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  reason: string | null;
+  scheduleUrl: string;
+}): EmailTemplate {
+  const content = `
+    <h1>Clinical Shift Cancelled</h1>
+    <p>Hi ${data.studentName},</p>
+    <p>Your clinical shift at <strong>${data.siteName}</strong> has been cancelled by your program coordinator.</p>
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0;"><strong>Date:</strong> ${data.shiftDate}</p>
+    </div>
+    ${data.reason ? `
+    <div class="info-box">
+      <p style="margin: 0 0 5px 0;"><strong>Reason:</strong></p>
+      <p style="margin: 0;">${data.reason}</p>
+    </div>
+    ` : ""}
+    <p>Please check the schedule to find an alternative shift.</p>
+    <div style="text-align: center;">
+      <a href="${data.scheduleUrl}" class="button">View Available Shifts</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">If you have questions, please contact your program instructor.</p>
+  `;
+
+  return {
+    subject: `Clinical Shift Cancelled: ${data.siteName} on ${data.shiftDate}`,
+    html: wrapEmail(content, `Your clinical shift at ${data.siteName} on ${data.shiftDate} has been cancelled`),
+    text: `Hi ${data.studentName},\n\nYour clinical shift at ${data.siteName} on ${data.shiftDate} has been cancelled.${data.reason ? `\n\nReason: ${data.reason}` : ""}\n\nFind another shift: ${data.scheduleUrl}`,
+  };
+}
+
 // Enrollment confirmation
 export function enrollmentConfirmationEmail(data: {
   userName: string;

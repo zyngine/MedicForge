@@ -36,6 +36,11 @@ import { format, addDays, startOfWeek, addWeeks, isSameDay } from "date-fns";
 export default function ClinicalSchedulePage() {
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [requestModal, setRequestModal] = useState<{ open: boolean; shiftId: string | null; shiftTitle: string }>({
+    open: false, shiftId: null, shiftTitle: "",
+  });
+  const [requestNotes, setRequestNotes] = useState("");
+  const [isRequesting, setIsRequesting] = useState(false);
 
   // Fetch real data from hooks
   const { sites, isLoading: sitesLoading } = useClinicalSites();
@@ -45,16 +50,18 @@ export default function ClinicalSchedulePage() {
   const {
     bookings,
     isLoading: bookingsLoading,
-    bookShift,
+    requestShift,
     cancelBooking,
     refetch: refetchBookings,
   } = useMyBookings();
 
   const isLoading = sitesLoading || shiftsLoading || bookingsLoading;
 
-  // Get booked shift IDs for the current student
+  // Include pending/approved statuses so slot shows as taken
   const bookedShiftIds = new Set(
-    bookings.filter((b) => b.status === "booked").map((b) => b.shift_id)
+    bookings
+      .filter((b) => ["booked", "poc_approved", "pending_poc_approval"].includes(b.status))
+      .map((b) => b.shift_id)
   );
 
   // Filter shifts by selected site
@@ -71,14 +78,22 @@ export default function ClinicalSchedulePage() {
   // Generate week dates
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
 
-  const handleBookShift = async (shiftId: string) => {
+  const handleBookShift = (shiftId: string, shiftTitle = "Clinical Shift") => {
+    setRequestModal({ open: true, shiftId, shiftTitle });
+  };
+
+  const handleConfirmRequest = async () => {
+    if (!requestModal.shiftId) return;
+    setIsRequesting(true);
     try {
-      await bookShift(shiftId);
-      // Refetch both shifts and bookings to update availability
+      await requestShift(requestModal.shiftId, requestNotes);
       await Promise.all([refetchShifts(), refetchBookings()]);
+      setRequestModal({ open: false, shiftId: null, shiftTitle: "" });
+      setRequestNotes("");
     } catch (error) {
-      // Error is handled by the hook
-      console.error("Failed to book shift:", error);
+      console.error("Failed to request shift:", error);
+    } finally {
+      setIsRequesting(false);
     }
   };
 
@@ -99,7 +114,9 @@ export default function ClinicalSchedulePage() {
     );
   }
 
-  const activeBookings = bookings.filter((b) => b.status === "booked");
+  const activeBookings = bookings.filter((b) =>
+    ["booked", "poc_approved", "pending_poc_approval"].includes(b.status)
+  );
 
   return (
     <div className="space-y-6">
@@ -312,7 +329,7 @@ export default function ClinicalSchedulePage() {
                         isBooked={isBooked}
                         onBook={
                           !isBooked && shift.is_available
-                            ? () => handleBookShift(shift.id)
+                            ? () => handleBookShift(shift.id, shift.title)
                             : undefined
                         }
                       />
@@ -321,7 +338,7 @@ export default function ClinicalSchedulePage() {
                           <BookingButton
                             shift={shift}
                             onConfirm={async () => {
-                              await handleBookShift(shift.id);
+                              handleBookShift(shift.id, shift.title);
                             }}
                           />
                         </div>
@@ -334,6 +351,44 @@ export default function ClinicalSchedulePage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Request Shift Modal */}
+      {requestModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card rounded-lg shadow-xl border border-border p-6 w-full max-w-md mx-4">
+            <h2 className="text-lg font-semibold mb-1">Request Shift</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>{requestModal.shiftTitle}</strong> — your request will be sent to the clinical site for approval.
+            </p>
+            <label className="block text-sm font-medium mb-1">
+              Note to site coordinator <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={requestNotes}
+              onChange={(e) => setRequestNotes(e.target.value)}
+              placeholder="Any relevant details about your availability, experience, etc."
+              rows={3}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="flex gap-3 mt-4">
+              <Button
+                onClick={handleConfirmRequest}
+                disabled={isRequesting}
+                className="flex-1"
+              >
+                {isRequesting ? "Sending Request..." : "Send Request"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setRequestModal({ open: false, shiftId: null, shiftTitle: "" }); setRequestNotes(""); }}
+                disabled={isRequesting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

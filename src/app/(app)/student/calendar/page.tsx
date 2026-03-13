@@ -23,6 +23,7 @@ import {
   Download,
 } from "lucide-react";
 import { CalendarSync } from "@/components/calendar";
+import { CalendarExport } from "@/components/clinical/CalendarExport";
 import {
   format,
   startOfMonth,
@@ -430,6 +431,11 @@ export default function CalendarPage() {
           Export & Sync
         </h2>
         <CalendarSync />
+      </div>
+
+      {/* Clinical Schedule Export */}
+      <div className="pt-4">
+        <CalendarExport />
       </div>
     </div>
   );

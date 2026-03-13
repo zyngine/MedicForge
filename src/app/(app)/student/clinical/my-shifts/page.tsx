@@ -22,41 +22,45 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Hourglass,
   RefreshCw,
 } from "lucide-react";
 import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
-import type { BookingStatus } from "@/types";
 
-const STATUS_TABS: { value: BookingStatus | "all"; label: string; icon: React.ReactNode }[] = [
+const CANCELLABLE_STATUSES = ["booked", "poc_approved", "pending_poc_approval"];
+
+const STATUS_TABS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "All Shifts", icon: <Calendar className="h-4 w-4" /> },
-  { value: "booked", label: "Upcoming", icon: <Clock className="h-4 w-4" /> },
+  { value: "upcoming", label: "Upcoming", icon: <Clock className="h-4 w-4" /> },
+  { value: "pending_poc_approval", label: "Pending Approval", icon: <Hourglass className="h-4 w-4" /> },
   { value: "completed", label: "Completed", icon: <CheckCircle className="h-4 w-4" /> },
   { value: "cancelled", label: "Cancelled", icon: <XCircle className="h-4 w-4" /> },
 ];
 
 export default function MyShiftsPage() {
-  const [activeTab, setActiveTab] = useState<BookingStatus | "all">("all");
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   // Fetch real bookings data
   const {
     bookings,
     isLoading,
-    cancelBooking,
+    cancelMyBooking,
     refetch,
   } = useMyBookings();
 
   const handleCancelBooking = async (bookingId: string, reason?: string) => {
     try {
-      await cancelBooking(bookingId, reason);
+      await cancelMyBooking(bookingId, reason);
     } catch (error) {
       console.error("Failed to cancel booking:", error);
     }
   };
 
-  const filteredBookings =
-    activeTab === "all"
-      ? bookings
-      : bookings.filter((b) => b.status === activeTab);
+  const filteredBookings = (() => {
+    if (activeTab === "all") return bookings;
+    if (activeTab === "upcoming") return bookings.filter((b) => ["booked", "poc_approved"].includes(b.status));
+    return bookings.filter((b) => b.status === activeTab);
+  })();
 
   // Sort by shift date
   const sortedBookings = [...filteredBookings].sort((a, b) => {
@@ -67,7 +71,8 @@ export default function MyShiftsPage() {
 
   // Stats
   const stats = {
-    upcoming: bookings.filter((b) => b.status === "booked").length,
+    upcoming: bookings.filter((b) => ["booked", "poc_approved"].includes(b.status)).length,
+    pending: bookings.filter((b) => b.status === "pending_poc_approval").length,
     completed: bookings.filter((b) => b.status === "completed").length,
     totalHours: bookings
       .filter((b) => b.status === "completed" && b.hours_completed)
@@ -106,7 +111,7 @@ export default function MyShiftsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
@@ -114,7 +119,19 @@ export default function MyShiftsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{stats.upcoming}</p>
-              <p className="text-sm text-muted-foreground">Upcoming Shifts</p>
+              <p className="text-sm text-muted-foreground">Upcoming</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400">
+              <Hourglass className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{stats.pending}</p>
+              <p className="text-sm text-muted-foreground">Pending Approval</p>
             </div>
           </CardContent>
         </Card>
@@ -126,7 +143,7 @@ export default function MyShiftsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{stats.completed}</p>
-              <p className="text-sm text-muted-foreground">Completed Shifts</p>
+              <p className="text-sm text-muted-foreground">Completed</p>
             </div>
           </CardContent>
         </Card>
@@ -151,21 +168,26 @@ export default function MyShiftsPage() {
         onValueChange={(v) => setActiveTab(v as BookingStatus | "all")}
       >
         <TabsList>
-          {STATUS_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              <span className="flex items-center gap-2">
-                {tab.icon}
-                {tab.label}
-                {tab.value !== "all" && (
-                  <Badge variant="secondary" className="ml-1">
-                    {bookings.filter((b) =>
-                      tab.value === "all" ? true : b.status === tab.value
-                    ).length}
-                  </Badge>
-                )}
-              </span>
-            </TabsTrigger>
-          ))}
+          {STATUS_TABS.map((tab) => {
+            const count = tab.value === "all"
+              ? bookings.length
+              : tab.value === "upcoming"
+              ? bookings.filter((b) => ["booked", "poc_approved"].includes(b.status)).length
+              : bookings.filter((b) => b.status === tab.value).length;
+            return (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                <span className="flex items-center gap-2">
+                  {tab.icon}
+                  {tab.label}
+                  {count > 0 && (
+                    <Badge variant="secondary" className="ml-1">
+                      {count}
+                    </Badge>
+                  )}
+                </span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
@@ -195,7 +217,7 @@ export default function MyShiftsPage() {
                   key={booking.id}
                   booking={booking}
                   onCancel={(reason) => handleCancelBooking(booking.id, reason)}
-                  showCancelButton={booking.status === "booked"}
+                  showCancelButton={CANCELLABLE_STATUSES.includes(booking.status)}
                   showDocumentButton={booking.status === "completed"}
                 />
               ))}

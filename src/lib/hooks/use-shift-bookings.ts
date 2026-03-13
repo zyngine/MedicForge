@@ -233,13 +233,64 @@ export function useShiftBookings(options: UseBookingsOptions = {}) {
     }
   };
 
+  // Request a shift via the POC approval workflow
+  const requestShift = async (
+    shiftId: string,
+    requestNotes?: string
+  ): Promise<{ bookingId: string } | null> => {
+    try {
+      const res = await fetch(`/api/clinical/shifts/${shiftId}/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_notes: requestNotes || null }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to request shift");
+
+      await fetchBookings();
+      return { bookingId: data.bookingId };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to request shift";
+      setError(new Error(msg));
+      throw err;
+    }
+  };
+
+  // Cancel a booking via the API (handles notifications + audit log)
+  const cancelMyBooking = async (
+    bookingId: string,
+    reason?: string
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/clinical/bookings/${bookingId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason || null }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to cancel booking");
+      }
+
+      await fetchBookings();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to cancel booking"));
+      return false;
+    }
+  };
+
   return {
     bookings,
     isLoading,
     error,
     refetch: fetchBookings,
     bookShift,
+    requestShift,
     cancelBooking,
+    cancelMyBooking,
     checkIn,
     checkOut,
     updateBookingStatus,
