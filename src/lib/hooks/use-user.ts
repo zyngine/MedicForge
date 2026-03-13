@@ -75,21 +75,11 @@ export function useUser(): UseUserReturn {
   // Initialize from cache to prevent loading flash on navigation
   // Try localStorage cache first for instant display
   const [user, setUser] = useState<User | null>(cachedUser);
-  const [profile, setProfile] = useState<UserProfile | null>(() => {
-    if (cachedProfile) return cachedProfile;
-    const localCached = loadCachedProfile();
-    if (localCached) {
-      cachedProfile = localCached.profile;
-      cachedUserId = localCached.userId;
-      return localCached.profile;
-    }
-    return null;
-  });
-  // Only show loading if we don't have any cached profile
-  const [isLoading, setIsLoading] = useState(() => {
-    const hasLocalCache = loadCachedProfile() !== null;
-    return !authInitialized && !cachedProfile && !hasLocalCache;
-  });
+  // Do NOT read localStorage here — it runs on the server too (during SSR) and
+  // would produce a different value than the server, causing React error #418.
+  // localStorage is restored in useEffect instead.
+  const [profile, setProfile] = useState<UserProfile | null>(cachedProfile);
+  const [isLoading, setIsLoading] = useState(!authInitialized && !cachedProfile);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -122,6 +112,18 @@ export function useUser(): UseUserReturn {
   useEffect(() => {
     let isMounted = true;
     let effectInitialized = false;
+
+    // Restore from localStorage now that we're on the client.
+    // Must happen here (not in useState initializer) to avoid SSR/client mismatch.
+    if (!cachedProfile) {
+      const localCached = loadCachedProfile();
+      if (localCached) {
+        cachedProfile = localCached.profile;
+        cachedUserId = localCached.userId;
+        setProfile(localCached.profile);
+        setIsLoading(false);
+      }
+    }
 
     const initAuth = async () => {
       // Prevent double initialization within same effect cycle
