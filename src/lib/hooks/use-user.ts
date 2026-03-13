@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback } from "react";
+
+// useLayoutEffect runs before paint on the client; fall back to useEffect on the server
+// to avoid the SSR warning ("useLayoutEffect does nothing on the server").
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
@@ -109,12 +114,10 @@ export function useUser(): UseUserReturn {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    let effectInitialized = false;
-
-    // Restore from localStorage now that we're on the client.
-    // Must happen here (not in useState initializer) to avoid SSR/client mismatch.
+  // Restore localStorage cache before the browser paints so returning users
+  // never see a spinner flash. useLayoutEffect is synchronous with the DOM
+  // paint cycle; the isomorphic wrapper avoids the SSR warning.
+  useIsomorphicLayoutEffect(() => {
     if (!cachedProfile) {
       const localCached = loadCachedProfile();
       if (localCached) {
@@ -124,6 +127,11 @@ export function useUser(): UseUserReturn {
         setIsLoading(false);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    let effectInitialized = false;
 
     const initAuth = async () => {
       // Prevent double initialization within same effect cycle
