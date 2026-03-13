@@ -26,6 +26,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
+import type { BookingStatus } from "@/types";
 
 const CANCELLABLE_STATUSES = ["booked", "poc_approved", "pending_poc_approval"];
 
