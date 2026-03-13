@@ -19,7 +19,7 @@ async function getSubscriptionPrice(): Promise<string> {
 export default async function CELandingPage() {
   const annualPrice = await getSubscriptionPrice();
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Nav */}
       <nav className="border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
