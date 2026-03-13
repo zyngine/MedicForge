@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendContactFormEmail } from "@/lib/email-ce";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,16 +9,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Log to console for now — swap with Resend/email service when configured
-    console.log("[CE Contact Form]", { name, email, topic, message, timestamp: new Date().toISOString() });
-
-    // TODO: Send email via Resend or similar:
-    // await resend.emails.send({
-    //   from: "noreply@medicforge.net",
-    //   to: "ce@medicforge.net",
-    //   subject: `CE Contact: ${topic || "General inquiry"} from ${name}`,
-    //   text: `From: ${name} <${email}>\nTopic: ${topic}\n\n${message}`,
-    // });
+    try {
+      await sendContactFormEmail(name, email, topic, message);
+    } catch (e) {
+      console.error("[CE Contact] Email failed:", e);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

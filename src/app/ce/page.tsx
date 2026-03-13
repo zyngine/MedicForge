@@ -1,7 +1,23 @@
 import Link from "next/link";
 import { BookOpen, Award, Shield, Clock, Users, CheckCircle } from "lucide-react";
+import { createCEAdminClient } from "@/lib/supabase/admin";
 
-export default function CELandingPage() {
+async function getSubscriptionPrice(): Promise<string> {
+  try {
+    const admin = createCEAdminClient();
+    const { data } = await admin
+      .from("ce_platform_settings")
+      .select("value")
+      .eq("key", "annual_subscription_price")
+      .single();
+    return data?.value || "99.00";
+  } catch {
+    return "99.00";
+  }
+}
+
+export default async function CELandingPage() {
+  const annualPrice = await getSubscriptionPrice();
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
@@ -135,8 +151,8 @@ export default function CELandingPage() {
               Most Popular
             </div>
             <h3 className="font-semibold text-lg mb-1">Annual Unlimited</h3>
-            <div className="text-3xl font-bold mb-1">$150<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-green-600 mb-4">Save $78 vs monthly</p>
+            <div className="text-3xl font-bold mb-1">${annualPrice}<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-green-600 mb-4">All courses included</p>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Unlimited course access</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> All certificates included</li>

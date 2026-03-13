@@ -48,12 +48,41 @@ export async function POST(request: Request) {
     // Verify course is published
     const { data: course } = await admin
       .from("ce_courses")
-      .select("id, status")
+      .select("id, status, is_free, price")
       .eq("id", courseId)
       .single();
 
     if (!course || course.status !== "published") {
       return NextResponse.json({ error: "Course not available" }, { status: 404 });
+    }
+
+    // Payment gate for paid courses
+    if (!course.is_free && course.price && course.price > 0) {
+      const now = new Date().toISOString();
+      const [{ data: activeSub }, { data: purchase }] = await Promise.all([
+        admin
+          .from("ce_user_subscriptions")
+          .select("id")
+          .eq("user_id", ceUser.id)
+          .eq("status", "active")
+          .gt("expires_at", now)
+          .limit(1)
+          .maybeSingle(),
+        admin
+          .from("ce_purchases")
+          .select("id")
+          .eq("user_id", ceUser.id)
+          .eq("course_id", courseId)
+          .eq("refunded", false)
+          .maybeSingle(),
+      ]);
+
+      if (!activeSub && !purchase) {
+        return NextResponse.json(
+          { error: "Payment required", requiresPayment: true },
+          { status: 402 }
+        );
+      }
     }
 
     // Create enrollment

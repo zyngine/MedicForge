@@ -1,5 +1,6 @@
 import { createCEAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendWelcomeEmail } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -111,6 +112,13 @@ export async function POST(request: Request) {
     }
 
     console.log("[CE Setup User] CE user created successfully:", callerUserId);
+
+    try {
+      await sendWelcomeEmail(email, firstName || "there");
+    } catch (e) {
+      console.error("[CE Email] Welcome email failed:", e);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[CE Setup User] Unexpected error:", err);

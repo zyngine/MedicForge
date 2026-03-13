@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Alert } from "@/components/ui";
 import { CEHeader } from "@/components/ce/CEHeader";
+import { SquarePaymentModal } from "@/components/ce/SquarePaymentModal";
 import { Clock, Award, ChevronLeft, CheckCircle, BookOpen, Users, Star } from "lucide-react";
 
 interface CourseDetail {
@@ -55,6 +56,10 @@ export default function CECourseDetailPage() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [enrollment, setEnrollment] = useState<{ id: string; completion_status: string; progress_percentage: number } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [hasPurchase, setHasPurchase] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [subscriptionPrice, setSubscriptionPrice] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +68,7 @@ export default function CECourseDetailPage() {
     const load = async () => {
       const supabase = createCEClient();
 
-      const [courseRes, objRes, instrRes] = await Promise.all([
+      const [courseRes, objRes, instrRes, settingRes] = await Promise.all([
         supabase
           .from("ce_courses")
           .select("id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, capce_approved, capce_number, target_audience, prerequisites, disclosure_statement, passing_score, certification_levels, expiration_months")
@@ -78,9 +83,17 @@ export default function CECourseDetailPage() {
           .from("ce_course_instructors")
           .select("ce_instructors(id, name, credentials, bio)")
           .eq("course_id", id),
+        supabase
+          .from("ce_platform_settings")
+          .select("value")
+          .eq("key", "annual_subscription_price")
+          .single(),
       ]);
 
       setCourse(courseRes.data || null);
+      if (settingRes.data) {
+        setSubscriptionPrice(parseFloat(settingRes.data.value));
+      }
       setObjectives(objRes.data || []);
 
       const instrData = (instrRes.data || [])
@@ -99,13 +112,33 @@ export default function CECourseDetailPage() {
           .single();
 
         if (ceUser) {
-          const { data: enroll } = await supabase
-            .from("ce_enrollments")
-            .select("id, completion_status, progress_percentage")
-            .eq("user_id", ceUser.id)
-            .eq("course_id", id)
-            .single();
-          setEnrollment(enroll || null);
+          const now = new Date().toISOString();
+          const [enrollRes, purchaseRes, subRes] = await Promise.all([
+            supabase
+              .from("ce_enrollments")
+              .select("id, completion_status, progress_percentage")
+              .eq("user_id", ceUser.id)
+              .eq("course_id", id)
+              .maybeSingle(),
+            supabase
+              .from("ce_purchases")
+              .select("id")
+              .eq("user_id", ceUser.id)
+              .eq("course_id", id)
+              .eq("refunded", false)
+              .maybeSingle(),
+            supabase
+              .from("ce_user_subscriptions")
+              .select("id")
+              .eq("user_id", ceUser.id)
+              .eq("status", "active")
+              .gt("expires_at", now)
+              .limit(1)
+              .maybeSingle(),
+          ]);
+          setEnrollment(enrollRes.data || null);
+          setHasPurchase(!!purchaseRes.data);
+          setHasSubscription(!!subRes.data);
         }
       } else {
         setIsLoggedIn(false);
@@ -170,6 +203,7 @@ export default function CECourseDetailPage() {
   const enrolled = enrollment?.completion_status === "enrolled" || enrollment?.completion_status === "in_progress";
   const completed = enrollment?.completion_status === "completed";
   const isFree = course.is_free || !course.price;
+  const hasAccess = isFree || hasPurchase || hasSubscription;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -315,10 +349,13 @@ export default function CECourseDetailPage() {
             <div className="bg-white border rounded-lg p-5 sticky top-6 space-y-4">
               <div>
                 <div className="text-3xl font-bold">
-                  {isFree ? "Free" : `$${course.price!.toFixed(2)}`}
+                  {isFree ? "Free" : hasSubscription ? "Included" : `$${course.price!.toFixed(2)}`}
                 </div>
-                {!isFree && (
+                {!isFree && !hasSubscription && (
                   <p className="text-xs text-muted-foreground mt-0.5">One-time purchase</p>
+                )}
+                {hasSubscription && (
+                  <p className="text-xs text-green-700 mt-0.5">Covered by your subscription</p>
                 )}
               </div>
 
@@ -345,15 +382,31 @@ export default function CECourseDetailPage() {
                     {enrollment?.progress_percentage ? "Continue Course" : "Start Course"}
                   </Button>
                 </Link>
-              ) : isLoggedIn ? (
+              ) : isLoggedIn && hasAccess ? (
                 <Button className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
-                  {isEnrolling ? "Enrolling..." : isFree ? "Enroll Free" : "Enroll Now"}
+                  {isEnrolling ? "Enrolling..." : isFree ? "Enroll Free" : "Access Course"}
                 </Button>
-              ) : (
+              ) : isLoggedIn && !isFree ? (
+                <div className="space-y-3">
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowPaymentModal(true)}
+                  >
+                    Purchase — ${course.price!.toFixed(2)}
+                  </Button>
+                  {subscriptionPrice !== null && (
+                    <Link href="/ce/subscribe">
+                      <Button variant="outline" className="w-full text-xs">
+                        Or subscribe for ${subscriptionPrice.toFixed(2)}/yr — all courses
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ) : !isLoggedIn ? (
                 <Link href={`/ce/login?redirect=/ce/course/${id}`}>
                   <Button className="w-full">Sign In to Enroll</Button>
                 </Link>
-              )}
+              ) : null}
 
               {enrolled && enrollment?.progress_percentage !== undefined && enrollment.progress_percentage > 0 && (
                 <div>
@@ -390,6 +443,21 @@ export default function CECourseDetailPage() {
           </div>
         </div>
       </div>
+
+      {course && !isFree && (
+        <SquarePaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            setHasPurchase(true);
+          }}
+          type="course"
+          courseId={id}
+          amount={course.price!}
+          title={course.title}
+        />
+      )}
     </div>
   );
 }

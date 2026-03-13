@@ -7,7 +7,7 @@ import { createCEClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui";
 import {
   BookOpen, LayoutDashboard, GraduationCap, Users, Building2,
-  BarChart3, Users2, LogOut, ChevronDown,
+  BarChart3, Users2, LogOut, ChevronDown, Settings, CreditCard,
 } from "lucide-react";
 
 export default function CEAdminLayout({ children }: { children: React.ReactNode }) {
@@ -93,12 +93,19 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
       ],
     },
     {
-      label: "CAPCE (Phase 4)",
+      label: "CAPCE",
       items: [
         { href: "/ce/admin/capce", label: "CAPCE Dashboard", icon: ChevronDown },
         { href: "/ce/admin/capce/reporting", label: "Reporting", icon: BarChart3 },
         { href: "/ce/admin/capce/submissions", label: "Submissions", icon: BookOpen },
         { href: "/ce/admin/capce/audit", label: "Audit Prep", icon: Users },
+      ],
+    },
+    {
+      label: "Platform",
+      items: [
+        { href: "/ce/admin/billing", label: "Billing", icon: CreditCard },
+        { href: "/ce/admin/settings", label: "Settings", icon: Settings },
       ],
     },
   ];

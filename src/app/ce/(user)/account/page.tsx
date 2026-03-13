@@ -9,7 +9,25 @@ import { Alert } from "@/components/ui";
 import { Select } from "@/components/ui";
 import { Spinner } from "@/components/ui";
 import { Badge } from "@/components/ui";
-import { User, Shield, Save } from "lucide-react";
+import Link from "next/link";
+import { User, Shield, Save, CreditCard, CheckCircle, Clock } from "lucide-react";
+
+interface Subscription {
+  id: string;
+  plan: string;
+  price: number;
+  starts_at: string;
+  expires_at: string;
+  status: string;
+}
+
+interface Purchase {
+  id: string;
+  purchased_at: string;
+  amount: number;
+  refunded: boolean;
+  ce_courses: { title: string; id: string } | null;
+}
 
 const CERTIFICATION_LEVELS = [
   { value: "EMR", label: "Emergency Medical Responder (EMR)" },
@@ -46,6 +64,8 @@ interface CEUserProfile {
 
 export default function CEAccountPage() {
   const [profile, setProfile] = useState<CEUserProfile | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -82,6 +102,27 @@ export default function CEAccountPage() {
         setCertLevel(data.certification_level || "");
         setState(data.state || "");
         setLanguage(data.preferred_language || "en");
+
+        const now = new Date().toISOString();
+        const [subRes, purchRes] = await Promise.all([
+          supabase
+            .from("ce_user_subscriptions")
+            .select("id, plan, price, starts_at, expires_at, status")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .gt("expires_at", now)
+            .order("expires_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("ce_purchases")
+            .select("id, purchased_at, amount, refunded, ce_courses(title, id)")
+            .eq("user_id", user.id)
+            .order("purchased_at", { ascending: false })
+            .limit(10),
+        ]);
+        setSubscription((subRes.data as Subscription) || null);
+        setPurchases((purchRes.data || []) as Purchase[]);
       }
       setIsLoading(false);
     };
@@ -256,6 +297,74 @@ export default function CEAccountPage() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Subscription & Billing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Subscription & Billing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current plan */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+            <div>
+              <p className="text-sm font-medium">Current Plan</p>
+              {subscription ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700 font-medium capitalize">
+                    {subscription.plan} subscription
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    — expires {new Date(subscription.expires_at).toLocaleDateString()}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">No active subscription</span>
+                </div>
+              )}
+            </div>
+            {!subscription && (
+              <Link href="/ce/subscribe">
+                <Button size="sm">Subscribe</Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Purchase history */}
+          {purchases.length > 0 && (
+            <div>
+              <p className="text-sm font-medium mb-2">Course Purchases</p>
+              <div className="space-y-2">
+                {purchases.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      {p.refunded ? (
+                        <span className="text-xs text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Refunded</span>
+                      ) : (
+                        <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                      )}
+                      <span className={p.refunded ? "text-muted-foreground line-through" : ""}>
+                        {p.ce_courses?.title || "Course"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-xs">
+                        {new Date(p.purchased_at).toLocaleDateString()}
+                      </span>
+                      <span className="font-medium">${p.amount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

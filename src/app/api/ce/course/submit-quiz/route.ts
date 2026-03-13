@@ -1,4 +1,5 @@
 import { createCEAdminClient } from "@/lib/supabase/admin";
+import { sendCourseCompletionEmail } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       const [enrollRes, courseRes, userRes] = await Promise.all([
         supabase.from("ce_enrollments").select("enrolled_at").eq("id", enrollmentId).single(),
         supabase.from("ce_courses").select("title, course_number, ceh_hours, capce_approved, expiration_months").eq("id", courseId).single(),
-        supabase.from("ce_users").select("first_name, last_name, nremt_id").eq("id", ceUserId).single(),
+        supabase.from("ce_users").select("first_name, last_name, nremt_id, email").eq("id", ceUserId).single(),
       ]);
 
       const course = courseRes.data;
@@ -102,6 +103,14 @@ export async function POST(request: Request) {
           completion_date: now.split("T")[0],
           is_capce_accredited: course.capce_approved || false,
         });
+
+        if (user.email) {
+          try {
+            await sendCourseCompletionEmail(user.email, user.first_name, course.title, course.ceh_hours, certNumber, expiresAt);
+          } catch (e) {
+            console.error("[CE Email] Completion email failed:", e);
+          }
+        }
       }
     }
 
