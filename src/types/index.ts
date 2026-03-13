@@ -199,7 +199,7 @@ export type ClinicalSiteType =
   | "urgent_care"
   | "other";
 
-export type BookingStatus = "booked" | "completed" | "cancelled" | "no_show";
+export type BookingStatus = "booked" | "completed" | "cancelled" | "no_show" | "pending_poc_approval" | "poc_approved" | "poc_denied";
 
 export type PatientAgeRange =
   | "neonate"
