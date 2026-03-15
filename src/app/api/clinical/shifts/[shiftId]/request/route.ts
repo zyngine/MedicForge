@@ -80,7 +80,7 @@ export async function POST(
 
     // Send email to POC
     const site = shiftData?.site as any;
-    if (site?.contact_email && tokenRow) {
+    if (shiftData && site?.contact_email && tokenRow) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net";
       const approveUrl = `${appUrl}/poc/${tokenRow.token}?action=approve`;
       const denyUrl = `${appUrl}/poc/${tokenRow.token}?action=deny`;
