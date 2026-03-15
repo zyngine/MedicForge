@@ -217,7 +217,8 @@ export function useShiftBookings(options: UseBookingsOptions = {}) {
     try {
       const { error: updateError } = await supabase
         .from("clinical_shift_bookings")
-        .update({ status })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ status: status as any })
         .eq("id", bookingId);
 
       if (updateError) throw updateError;
