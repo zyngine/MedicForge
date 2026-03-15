@@ -56,9 +56,11 @@ export function useShiftBookings(options: UseBookingsOptions = {}) {
 
       if (options.status) {
         if (Array.isArray(options.status)) {
-          query = query.in("status", options.status);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = query.in("status", options.status as any[]);
         } else {
-          query = query.eq("status", options.status);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = query.eq("status", options.status as any);
         }
       }
 
