@@ -13,6 +13,7 @@ import {
   AlertCircle,
   FileText,
   Trash2,
+  Hourglass,
 } from "lucide-react";
 import type { ShiftBookingWithDetails, BookingStatus } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -47,6 +48,21 @@ const STATUS_CONFIG: Record<
     label: "No Show",
     color: "bg-red-100 text-red-800",
     icon: <AlertCircle className="h-3 w-3" />,
+  },
+  pending_poc_approval: {
+    label: "Pending Approval",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <Hourglass className="h-3 w-3" />,
+  },
+  poc_approved: {
+    label: "Site Approved",
+    color: "bg-green-100 text-green-800",
+    icon: <CheckCircle className="h-3 w-3" />,
+  },
+  poc_denied: {
+    label: "Site Denied",
+    color: "bg-red-100 text-red-800",
+    icon: <XCircle className="h-3 w-3" />,
   },
 };
 
