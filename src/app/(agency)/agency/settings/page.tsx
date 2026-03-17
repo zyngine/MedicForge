@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
 import { useTenant } from "@/lib/hooks/use-tenant";
+import { useAgencySettings } from "@/lib/hooks/use-agency-data";
 
 const US_STATES = [
   { value: "AL", label: "Alabama" },
@@ -85,13 +86,14 @@ const US_STATES = [
 export default function SettingsPage() {
   const { isAgencyAdmin } = useAgencyRole();
   const { tenant } = useTenant();
+  const { settings, isLoading, saveSettings } = useAgencySettings();
 
-  const [isLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
 
   const [agencySettings, setAgencySettings] = React.useState({
-    name: tenant?.name || "",
+    name: "",
     stateCode: "PA",
     address: "",
     phone: "",
@@ -100,16 +102,44 @@ export default function SettingsPage() {
     expirationWarningDays: "60",
   });
 
+  // Populate form from loaded settings
+  React.useEffect(() => {
+    if (settings) {
+      setAgencySettings({
+        name: (settings.agency_name as string) || tenant?.name || "",
+        stateCode: (settings.state_code as string) || "PA",
+        address: (settings.address as string) || "",
+        phone: (settings.phone as string) || "",
+        email: (settings.contact_email as string) || "",
+        verificationReminderDays: String(settings.verification_reminder_days ?? 30),
+        expirationWarningDays: String(settings.expiration_warning_days ?? 60),
+      });
+    } else if (tenant) {
+      setAgencySettings((prev) => ({ ...prev, name: tenant.name || "" }));
+    }
+  }, [settings, tenant]);
+
   const handleSave = async () => {
     setIsSaving(true);
     setSuccess(false);
-
-    // TODO: Implement API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setIsSaving(false);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    setSaveError(null);
+    try {
+      await saveSettings({
+        agency_name: agencySettings.name,
+        state_code: agencySettings.stateCode,
+        address: agencySettings.address,
+        phone: agencySettings.phone,
+        contact_email: agencySettings.email,
+        verification_reminder_days: parseInt(agencySettings.verificationReminderDays, 10),
+        expiration_warning_days: parseInt(agencySettings.expirationWarningDays, 10),
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isAgencyAdmin) {
@@ -164,6 +194,11 @@ export default function SettingsPage() {
       {success && (
         <Alert variant="success" onClose={() => setSuccess(false)}>
           Settings saved successfully
+        </Alert>
+      )}
+      {saveError && (
+        <Alert variant="error" onClose={() => setSaveError(null)}>
+          {saveError}
         </Alert>
       )}
 

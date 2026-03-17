@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";
+import { useEvents } from "@/lib/hooks/use-events";
 import { formatDate } from "@/lib/utils";
 import { CalendarExport } from "@/components/clinical";
 
@@ -46,10 +47,19 @@ interface CalendarEvent {
   description?: string;
 }
 
+const EVENT_TYPE_MAP: Record<string, CalendarEvent["type"]> = {
+  class: "class",
+  lab: "class",
+  clinical: "clinical",
+  exam: "exam",
+  other: "meeting",
+};
+
 export default function InstructorCalendarPage() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
   const courseIds = courses.map((c) => c.id);
   const { data: allAssignments = [], isLoading: assignmentsLoading } = useAssignments({});
+  const { events: dbEvents, isLoading: eventsLoading, createEvent } = useEvents();
 
   // Filter assignments to only those in instructor's courses
   const assignments = allAssignments.filter(
@@ -59,29 +69,81 @@ export default function InstructorCalendarPage() {
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [showEventModal, setShowEventModal] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<"month" | "week">("month");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [newEvent, setNewEvent] = React.useState({
+    title: "",
+    event_type: "class",
+    date: "",
+    start_time: "",
+    end_time: "",
+    course_id: "",
+    description: "",
+    location: "",
+  });
 
-  const isLoading = coursesLoading || assignmentsLoading;
+  const isLoading = coursesLoading || assignmentsLoading || eventsLoading;
 
   // Create a lookup map for course titles
   const courseMap = React.useMemo(() => {
     return new Map(courses.map((c) => [c.id, c.title]));
   }, [courses]);
 
-  // Convert assignments to calendar events
+  // Merge DB events + assignment due dates into calendar events
   const events: CalendarEvent[] = React.useMemo(() => {
-    return assignments
+    const fromAssignments: CalendarEvent[] = assignments
       .filter((a) => a.due_date)
       .map((a) => ({
         id: a.id,
         title: a.title,
         date: new Date(a.due_date!),
-        type: a.type === "quiz" ? "exam" : "assignment",
+        type: (a.type === "quiz" ? "exam" : "assignment") as CalendarEvent["type"],
         courseId: a.module?.course_id,
         courseName: a.module?.course_id ? courseMap.get(a.module.course_id) : undefined,
         description: a.description || undefined,
       }));
-  }, [assignments, courseMap]);
+
+    const fromDB: CalendarEvent[] = dbEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      date: new Date(e.start_time),
+      type: EVENT_TYPE_MAP[e.event_type] ?? "class",
+      courseId: e.course_id,
+      courseName: e.course?.title,
+      startTime: new Date(e.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      endTime: new Date(e.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      location: e.location ?? undefined,
+      description: e.description ?? undefined,
+    }));
+
+    return [...fromAssignments, ...fromDB];
+  }, [assignments, courseMap, dbEvents]);
+
+  const handleCreateEvent = async () => {
+    if (!newEvent.title || !newEvent.date || !newEvent.start_time || !newEvent.end_time || !newEvent.course_id) {
+      setSubmitError("Title, date, start time, end time, and course are required.");
+      return;
+    }
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await createEvent({
+        title: newEvent.title,
+        event_type: newEvent.event_type,
+        start_time: `${newEvent.date}T${newEvent.start_time}:00`,
+        end_time: `${newEvent.date}T${newEvent.end_time}:00`,
+        course_id: newEvent.course_id,
+        description: newEvent.description || undefined,
+        location: newEvent.location || undefined,
+      });
+      setShowEventModal(false);
+      setNewEvent({ title: "", event_type: "class", date: "", start_time: "", end_time: "", course_id: "", description: "", location: "" });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to create event");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Get days in month
   const getDaysInMonth = (date: Date) => {
@@ -427,57 +489,97 @@ export default function InstructorCalendarPage() {
         )}
       </Modal>
 
-      {/* Add Event Modal - Placeholder */}
+      {/* Add Event Modal */}
       <Modal
         isOpen={showEventModal}
-        onClose={() => setShowEventModal(false)}
+        onClose={() => { setShowEventModal(false); setSubmitError(null); }}
         title="Add Event"
         size="md"
       >
         <div className="space-y-4">
+          {submitError && (
+            <p className="text-sm text-destructive">{submitError}</p>
+          )}
           <div className="space-y-2">
-            <Label>Event Title</Label>
-            <Input placeholder="Enter event title" />
+            <Label>Event Title *</Label>
+            <Input
+              placeholder="Enter event title"
+              value={newEvent.title}
+              onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
+            />
           </div>
           <div className="space-y-2">
             <Label>Event Type</Label>
             <Select
+              value={newEvent.event_type}
+              onChange={(v) => setNewEvent((p) => ({ ...p, event_type: v }))}
               options={[
                 { value: "class", label: "Class" },
-                { value: "assignment", label: "Assignment Due" },
-                { value: "exam", label: "Exam/Quiz" },
+                { value: "lab", label: "Lab" },
                 { value: "clinical", label: "Clinical" },
-                { value: "meeting", label: "Meeting" },
+                { value: "exam", label: "Exam/Quiz" },
+                { value: "other", label: "Meeting / Other" },
               ]}
-              placeholder="Select type"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input type="date" />
-            </div>
-            <div className="space-y-2">
-              <Label>Time</Label>
-              <Input type="time" />
-            </div>
-          </div>
           <div className="space-y-2">
-            <Label>Course (Optional)</Label>
+            <Label>Course *</Label>
             <Select
+              value={newEvent.course_id}
+              onChange={(v) => setNewEvent((p) => ({ ...p, course_id: v }))}
               options={courses.map((c) => ({ value: c.id, label: c.title }))}
               placeholder="Select course"
             />
           </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={newEvent.date}
+                onChange={(e) => setNewEvent((p) => ({ ...p, date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Start *</Label>
+              <Input
+                type="time"
+                value={newEvent.start_time}
+                onChange={(e) => setNewEvent((p) => ({ ...p, start_time: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End *</Label>
+              <Input
+                type="time"
+                value={newEvent.end_time}
+                onChange={(e) => setNewEvent((p) => ({ ...p, end_time: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Location</Label>
+            <Input
+              placeholder="Room 101, Zoom link, etc."
+              value={newEvent.location}
+              onChange={(e) => setNewEvent((p) => ({ ...p, location: e.target.value }))}
+            />
+          </div>
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea placeholder="Event description..." />
+            <Textarea
+              placeholder="Event description..."
+              value={newEvent.description}
+              onChange={(e) => setNewEvent((p) => ({ ...p, description: e.target.value }))}
+            />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowEventModal(false)}>
+            <Button variant="outline" onClick={() => { setShowEventModal(false); setSubmitError(null); }}>
               Cancel
             </Button>
-            <Button onClick={() => setShowEventModal(false)}>Create Event</Button>
+            <Button onClick={handleCreateEvent} disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Event"}
+            </Button>
           </div>
         </div>
       </Modal>

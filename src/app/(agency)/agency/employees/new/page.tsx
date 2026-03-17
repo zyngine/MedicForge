@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { ArrowLeft, User, Mail, Phone, Award } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
+import { useAgencyEmployees } from "@/lib/hooks/use-agency-data";
 
 const CERT_LEVELS = [
   { value: "EMR", label: "Emergency Medical Responder (EMR)" },
@@ -29,6 +30,7 @@ const CERT_LEVELS = [
 export default function NewEmployeePage() {
   const router = useRouter();
   const { isAgencyAdmin } = useAgencyRole();
+  const { createEmployee } = useAgencyEmployees();
 
   const [formData, setFormData] = React.useState({
     firstName: "",
@@ -56,19 +58,19 @@ export default function NewEmployeePage() {
     setError(null);
 
     try {
-      // TODO: Implement API call
-      // const response = await fetch("/api/agency/employees", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await createEmployee({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        certLevel: formData.certLevel,
+        certNumber: formData.certNumber || undefined,
+        certExpiry: formData.certExpiry || undefined,
+        employeeId: formData.employeeId || undefined,
+      });
       router.push("/agency/employees");
     } catch (err) {
-      setError("Failed to create employee. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to create employee. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

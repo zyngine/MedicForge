@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   Button,
   Input,
   Badge,
@@ -16,73 +15,15 @@ import {
 import {
   FileText,
   Search,
-  Download,
-  Filter,
   CheckCircle,
   XCircle,
   UserPlus,
-  Edit,
   Trash2,
+  Edit,
   RefreshCw,
 } from "lucide-react";
-
-// Placeholder data
-const MOCK_AUDIT_LOG = [
-  {
-    id: "1",
-    action: "verification_approved",
-    actor: "Dr. Sarah Johnson",
-    actorRole: "Medical Director",
-    target: "John Smith - BLS/CPR",
-    timestamp: "2025-02-15T10:30:00Z",
-    details: "Approved annual BLS recertification",
-  },
-  {
-    id: "2",
-    action: "employee_added",
-    actor: "Admin User",
-    actorRole: "Agency Admin",
-    target: "Mike Johnson",
-    timestamp: "2025-02-14T14:15:00Z",
-    details: "New employee record created",
-  },
-  {
-    id: "3",
-    action: "verification_rejected",
-    actor: "Dr. Sarah Johnson",
-    actorRole: "Medical Director",
-    target: "Jane Doe - IV Therapy",
-    timestamp: "2025-02-13T09:00:00Z",
-    details: "Rejected: Needs additional practice hours",
-  },
-  {
-    id: "4",
-    action: "cycle_created",
-    actor: "Admin User",
-    actorRole: "Agency Admin",
-    target: "Annual 2025",
-    timestamp: "2025-01-02T08:00:00Z",
-    details: "Created new verification cycle",
-  },
-  {
-    id: "5",
-    action: "skill_updated",
-    actor: "Admin User",
-    actorRole: "Agency Admin",
-    target: "12-Lead ECG Interpretation",
-    timestamp: "2025-01-15T11:30:00Z",
-    details: "Updated renewal period from 12 to 24 months",
-  },
-  {
-    id: "6",
-    action: "employee_deactivated",
-    actor: "Admin User",
-    actorRole: "Agency Admin",
-    target: "Former Employee",
-    timestamp: "2025-01-10T16:45:00Z",
-    details: "Employment ended",
-  },
-];
+import { useAgencyAuditLog } from "@/lib/hooks/use-agency-data";
+import type { AuditLogEntry } from "@/lib/hooks/use-agency-data";
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   verification_approved: CheckCircle,
@@ -111,9 +52,10 @@ const ACTION_LABELS: Record<string, string> = {
   cycle_created: "Cycle Created",
 };
 
-function AuditLogRow({ entry }: { entry: typeof MOCK_AUDIT_LOG[0] }) {
+function AuditLogRow({ entry }: { entry: AuditLogEntry }) {
   const Icon = ACTION_ICONS[entry.action] || FileText;
   const colorClass = ACTION_COLORS[entry.action] || "text-muted-foreground bg-muted";
+  const label = ACTION_LABELS[entry.action] || entry.action.replace(/_/g, " ");
 
   return (
     <div className="flex items-start gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
@@ -122,55 +64,55 @@ function AuditLogRow({ entry }: { entry: typeof MOCK_AUDIT_LOG[0] }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-medium">{ACTION_LABELS[entry.action]}</p>
+          <p className="font-medium capitalize">{label}</p>
           <Badge variant="secondary" className="text-xs">
-            {entry.actorRole}
+            {entry.entity_type}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {entry.target}
-        </p>
-        {entry.details && (
-          <p className="text-sm text-muted-foreground mt-1 italic">
-            {entry.details}
+        {entry.performed_by_name && (
+          <p className="text-sm text-muted-foreground mt-1">
+            By {entry.performed_by_name}
           </p>
         )}
-        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-          <span>{entry.actor}</span>
-          <span>{new Date(entry.timestamp).toLocaleString()}</span>
-        </div>
+        {entry.new_values && Object.keys(entry.new_values).length > 0 && (
+          <p className="text-sm text-muted-foreground mt-1 italic">
+            {Object.entries(entry.new_values)
+              .slice(0, 3)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground mt-2">
+          {new Date(entry.created_at).toLocaleString()}
+        </p>
       </div>
     </div>
   );
 }
 
 export default function AuditLogPage() {
+  const { entries, isLoading } = useAgencyAuditLog();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [actionFilter, setActionFilter] = React.useState("all");
-  const [isLoading] = React.useState(false);
 
   const filteredLogs = React.useMemo(() => {
-    return MOCK_AUDIT_LOG.filter((entry) => {
-      // Search filter
+    return entries.filter((entry) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         if (
-          !entry.target.toLowerCase().includes(query) &&
-          !entry.actor.toLowerCase().includes(query) &&
-          !(entry.details?.toLowerCase().includes(query))
+          !entry.action.toLowerCase().includes(query) &&
+          !(entry.performed_by_name?.toLowerCase().includes(query)) &&
+          !entry.entity_type.toLowerCase().includes(query)
         ) {
           return false;
         }
       }
-
-      // Action filter
       if (actionFilter !== "all" && entry.action !== actionFilter) {
         return false;
       }
-
       return true;
     });
-  }, [searchQuery, actionFilter]);
+  }, [entries, searchQuery, actionFilter]);
 
   if (isLoading) {
     return (
@@ -190,10 +132,6 @@ export default function AuditLogPage() {
             Track all actions and changes in your agency
           </p>
         </div>
-        <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export Log
-        </Button>
       </div>
 
       {/* Filters */}
@@ -255,17 +193,6 @@ export default function AuditLogPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Pagination placeholder */}
-      <div className="flex items-center justify-center gap-2">
-        <Button variant="outline" size="sm" disabled>
-          Previous
-        </Button>
-        <span className="text-sm text-muted-foreground">Page 1 of 1</span>
-        <Button variant="outline" size="sm" disabled>
-          Next
-        </Button>
-      </div>
     </div>
   );
 }

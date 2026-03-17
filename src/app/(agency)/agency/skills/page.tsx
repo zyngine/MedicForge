@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -17,94 +16,35 @@ import {
   BookOpen,
   Plus,
   Search,
-  Settings,
-  ChevronRight,
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
+import { useAgencySkills } from "@/lib/hooks/use-agency-data";
+import type { AgencySkill } from "@/lib/hooks/use-agency-data";
 
-// Placeholder data - based on existing agency_skills table
-const MOCK_SKILLS = [
-  {
-    id: "1",
-    name: "BLS/CPR",
-    description: "Basic Life Support and CPR certification",
-    certLevels: ["EMR", "EMT", "AEMT", "Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 24,
-    employeeCount: 45,
-  },
-  {
-    id: "2",
-    name: "ACLS",
-    description: "Advanced Cardiac Life Support",
-    certLevels: ["AEMT", "Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 24,
-    employeeCount: 28,
-  },
-  {
-    id: "3",
-    name: "PALS",
-    description: "Pediatric Advanced Life Support",
-    certLevels: ["AEMT", "Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 24,
-    employeeCount: 28,
-  },
-  {
-    id: "4",
-    name: "12-Lead ECG Interpretation",
-    description: "Ability to obtain and interpret 12-lead ECGs",
-    certLevels: ["Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 12,
-    employeeCount: 18,
-  },
-  {
-    id: "5",
-    name: "IV Therapy",
-    description: "Intravenous access and medication administration",
-    certLevels: ["AEMT", "Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 12,
-    employeeCount: 28,
-  },
-  {
-    id: "6",
-    name: "Airway Management",
-    description: "Advanced airway management including intubation",
-    certLevels: ["Paramedic"],
-    verificationRequired: true,
-    renewalMonths: 12,
-    employeeCount: 18,
-  },
-];
-
-function SkillCard({ skill }: { skill: typeof MOCK_SKILLS[0] }) {
+function SkillCard({ skill }: { skill: AgencySkill }) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold">{skill.name}</h3>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold">{skill.name}</h3>
+          {skill.description && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
               {skill.description}
             </p>
-            <div className="flex flex-wrap gap-1 mt-3">
-              {skill.certLevels.map((level) => (
-                <Badge key={level} variant="secondary" className="text-xs">
-                  {level}
-                </Badge>
-              ))}
-            </div>
+          )}
+          <div className="flex flex-wrap gap-1 mt-3">
+            {skill.certification_levels.map((level) => (
+              <Badge key={level} variant="secondary" className="text-xs">
+                {level}
+              </Badge>
+            ))}
           </div>
-          <Button variant="ghost" size="sm">
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
         <div className="flex items-center justify-between mt-4 pt-4 border-t text-sm text-muted-foreground">
-          <span>{skill.employeeCount} employees</span>
-          <span>Renews every {skill.renewalMonths} months</span>
+          <span>{skill.category}</span>
+          {skill.requires_annual_verification && (
+            <span className="text-warning text-xs">Annual verification</span>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -113,18 +53,18 @@ function SkillCard({ skill }: { skill: typeof MOCK_SKILLS[0] }) {
 
 export default function SkillsPage() {
   const { isAgencyAdmin } = useAgencyRole();
+  const { skills, isLoading } = useAgencySkills();
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [isLoading] = React.useState(false);
 
   const filteredSkills = React.useMemo(() => {
-    if (!searchQuery) return MOCK_SKILLS;
+    if (!searchQuery) return skills;
     const query = searchQuery.toLowerCase();
-    return MOCK_SKILLS.filter(
+    return skills.filter(
       (skill) =>
         skill.name.toLowerCase().includes(query) ||
-        skill.description.toLowerCase().includes(query)
+        (skill.description?.toLowerCase().includes(query) ?? false)
     );
-  }, [searchQuery]);
+  }, [skills, searchQuery]);
 
   if (isLoading) {
     return (

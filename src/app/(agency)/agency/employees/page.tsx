@@ -26,68 +26,30 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
+import { useAgencyEmployees } from "@/lib/hooks/use-agency-data";
 
-// Placeholder data - will be replaced with real API calls
-const MOCK_EMPLOYEES = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    certLevel: "Paramedic",
-    status: "active",
-    completedSkills: 28,
-    totalSkills: 32,
-    expiringSkills: 0,
-  },
-  {
-    id: "2",
-    name: "Jane Doe",
-    email: "jane.doe@example.com",
-    certLevel: "EMT",
-    status: "active",
-    completedSkills: 18,
-    totalSkills: 24,
-    expiringSkills: 2,
-  },
-  {
-    id: "3",
-    name: "Mike Johnson",
-    email: "mike.j@example.com",
-    certLevel: "AEMT",
-    status: "active",
-    completedSkills: 22,
-    totalSkills: 28,
-    expiringSkills: 0,
-  },
-  {
-    id: "4",
-    name: "Sarah Williams",
-    email: "sarah.w@example.com",
-    certLevel: "Paramedic",
-    status: "inactive",
-    completedSkills: 30,
-    totalSkills: 32,
-    expiringSkills: 1,
-  },
-];
+import type { AgencyEmployee } from "@/lib/hooks/use-agency-data";
 
-function EmployeeRow({ employee }: { employee: typeof MOCK_EMPLOYEES[0] }) {
-  const completionPct = Math.round((employee.completedSkills / employee.totalSkills) * 100);
+function EmployeeRow({ employee }: { employee: AgencyEmployee }) {
+  const total = employee.competencies?.length ?? 0;
+  const completed = employee.competencies?.filter((c) => c.status === "verified").length ?? 0;
+  const expiring = employee.competencies?.filter((c) => c.status === "expired").length ?? 0;
+  const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <div className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-medium truncate">{employee.name}</p>
-          {employee.status === "inactive" && (
+          <p className="font-medium truncate">{employee.first_name} {employee.last_name}</p>
+          {!employee.is_active && (
             <Badge variant="secondary">Inactive</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">{employee.email}</p>
+        <p className="text-sm text-muted-foreground">{employee.email ?? employee.employee_number ?? "—"}</p>
       </div>
 
       <div className="hidden sm:block w-24 text-center">
-        <Badge variant="outline">{employee.certLevel}</Badge>
+        <Badge variant="outline">{employee.certification_level}</Badge>
       </div>
 
       <div className="hidden md:flex items-center gap-2 w-32">
@@ -101,10 +63,10 @@ function EmployeeRow({ employee }: { employee: typeof MOCK_EMPLOYEES[0] }) {
       </div>
 
       <div className="hidden lg:flex items-center gap-1 w-20">
-        {employee.expiringSkills > 0 ? (
+        {expiring > 0 ? (
           <Badge variant="destructive" className="gap-1">
             <AlertTriangle className="h-3 w-3" />
-            {employee.expiringSkills}
+            {expiring}
           </Badge>
         ) : (
           <Badge variant="outline" className="text-success gap-1">
@@ -128,41 +90,28 @@ export default function EmployeesPage() {
   const filterParam = searchParams.get("filter");
 
   const { isAgencyAdmin } = useAgencyRole();
+  const { employees, isLoading } = useAgencyEmployees();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [certFilter, setCertFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState(filterParam || "all");
-  const [isLoading] = React.useState(false);
 
   // Filter employees based on search and filters
   const filteredEmployees = React.useMemo(() => {
-    return MOCK_EMPLOYEES.filter((emp) => {
-      // Search filter
+    return employees.filter((emp) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        if (
-          !emp.name.toLowerCase().includes(query) &&
-          !emp.email.toLowerCase().includes(query)
-        ) {
+        const name = `${emp.first_name} ${emp.last_name}`.toLowerCase();
+        if (!name.includes(query) && !(emp.email ?? "").toLowerCase().includes(query)) {
           return false;
         }
       }
-
-      // Cert level filter
-      if (certFilter !== "all" && emp.certLevel !== certFilter) {
-        return false;
+      if (certFilter !== "all" && emp.certification_level !== certFilter) return false;
+      if (statusFilter === "active" && !emp.is_active) return false;
+      if (statusFilter === "inactive" && emp.is_active) return false;
+      if (statusFilter === "expiring") {
+        const expiring = emp.competencies?.filter((c) => c.status === "expired").length ?? 0;
+        if (expiring === 0) return false;
       }
-
-      // Status filter
-      if (statusFilter === "active" && emp.status !== "active") {
-        return false;
-      }
-      if (statusFilter === "inactive" && emp.status !== "inactive") {
-        return false;
-      }
-      if (statusFilter === "expiring" && emp.expiringSkills === 0) {
-        return false;
-      }
-
       return true;
     });
   }, [searchQuery, certFilter, statusFilter]);

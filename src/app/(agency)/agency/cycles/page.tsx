@@ -22,45 +22,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
+import { useAgencyCycles } from "@/lib/hooks/use-agency-data";
+import type { VerificationCycle } from "@/lib/hooks/use-agency-data";
 
-// Placeholder data
-const MOCK_CYCLES = [
-  {
-    id: "1",
-    name: "Annual 2025",
-    startDate: "2025-01-01",
-    endDate: "2025-12-31",
-    status: "active",
-    progress: 78,
-    totalSkills: 200,
-    completedSkills: 156,
-    pendingVerifications: 12,
-  },
-  {
-    id: "2",
-    name: "Q1 2025 Skills Update",
-    startDate: "2025-01-01",
-    endDate: "2025-03-31",
-    status: "active",
-    progress: 65,
-    totalSkills: 45,
-    completedSkills: 29,
-    pendingVerifications: 5,
-  },
-  {
-    id: "3",
-    name: "Annual 2024",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    status: "completed",
-    progress: 100,
-    totalSkills: 180,
-    completedSkills: 180,
-    pendingVerifications: 0,
-  },
-];
-
-function CycleCard({ cycle }: { cycle: typeof MOCK_CYCLES[0] }) {
+function CycleCard({ cycle }: { cycle: VerificationCycle }) {
+  const isActive = cycle.is_active && new Date(cycle.end_date) >= new Date();
   const statusColors = {
     active: "bg-success/10 text-success border-success/30",
     completed: "bg-muted text-muted-foreground",
@@ -76,14 +42,14 @@ function CycleCard({ cycle }: { cycle: typeof MOCK_CYCLES[0] }) {
               <h3 className="font-semibold text-lg">{cycle.name}</h3>
               <Badge
                 variant="outline"
-                className={statusColors[cycle.status as keyof typeof statusColors]}
+                className={isActive ? statusColors.active : statusColors.completed}
               >
-                {cycle.status.charAt(0).toUpperCase() + cycle.status.slice(1)}
+                {isActive ? "Active" : "Completed"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {new Date(cycle.startDate).toLocaleDateString()} -{" "}
-              {new Date(cycle.endDate).toLocaleDateString()}
+              {new Date(cycle.start_date).toLocaleDateString()} -{" "}
+              {new Date(cycle.end_date).toLocaleDateString()}
             </p>
           </div>
           <Button variant="ghost" size="sm" asChild>
@@ -124,10 +90,10 @@ function CycleCard({ cycle }: { cycle: typeof MOCK_CYCLES[0] }) {
 
 export default function CyclesPage() {
   const { isAgencyAdmin } = useAgencyRole();
-  const [isLoading] = React.useState(false);
+  const { cycles, isLoading } = useAgencyCycles();
 
-  const activeCycles = MOCK_CYCLES.filter((c) => c.status === "active");
-  const completedCycles = MOCK_CYCLES.filter((c) => c.status === "completed");
+  const activeCycles = cycles.filter((c) => c.is_active && new Date(c.end_date) >= new Date());
+  const completedCycles = cycles.filter((c) => !c.is_active || new Date(c.end_date) < new Date());
 
   if (isLoading) {
     return (

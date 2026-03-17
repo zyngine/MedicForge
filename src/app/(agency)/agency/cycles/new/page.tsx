@@ -15,19 +15,30 @@ import {
   Alert,
   Spinner,
   Checkbox,
+  Select,
 } from "@/components/ui";
 import { ArrowLeft, Calendar, RefreshCw } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
+import { useAgencyCycles } from "@/lib/hooks/use-agency-data";
+
+const CYCLE_TYPES = [
+  { value: "annual", label: "Annual" },
+  { value: "biannual", label: "Bi-Annual" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "custom", label: "Custom" },
+];
 
 export default function NewCyclePage() {
   const router = useRouter();
   const { isAgencyAdmin } = useAgencyRole();
+  const { createCycle } = useAgencyCycles();
 
   const [formData, setFormData] = React.useState({
     name: "",
+    cycleType: "annual",
     startDate: "",
     endDate: "",
-    description: "",
     includeAllEmployees: true,
     includeAllSkills: true,
   });
@@ -54,11 +65,15 @@ export default function NewCyclePage() {
     }
 
     try {
-      // TODO: Implement API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await createCycle({
+        name: formData.name,
+        cycle_type: formData.cycleType,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+      });
       router.push("/agency/cycles");
     } catch (err) {
-      setError("Failed to create cycle. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to create cycle. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,17 +119,30 @@ export default function NewCyclePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name" required>
-                Cycle Name
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                placeholder="e.g., Annual 2025, Q1 Skills Review"
-                required
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name" required>
+                  Cycle Name
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="e.g., Annual 2025, Q1 Skills Review"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cycleType" required>
+                  Cycle Type
+                </Label>
+                <Select
+                  id="cycleType"
+                  value={formData.cycleType}
+                  onChange={(value) => updateField("cycleType", value)}
+                  options={CYCLE_TYPES}
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -142,18 +170,6 @@ export default function NewCyclePage() {
                   required
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">
-                Description
-              </Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => updateField("description", e.target.value)}
-                placeholder="Optional notes about this cycle"
-              />
             </div>
 
             <div className="space-y-4 pt-4 border-t">
