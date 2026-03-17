@@ -31,6 +31,7 @@ import {
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { formatDate } from "@/lib/utils";
+import { CalendarExport } from "@/components/clinical";
 
 interface CalendarEvent {
   id: string;
@@ -360,6 +361,9 @@ export default function InstructorCalendarPage() {
           </Card>
         </div>
       </div>
+
+      {/* Calendar Export */}
+      <CalendarExport />
 
       {/* Selected Date Modal */}
       <Modal
