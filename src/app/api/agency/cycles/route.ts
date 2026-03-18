@@ -36,10 +36,10 @@ export async function GET() {
     const cycles = (data ?? []).map((c) => {
       const total = c.competencies?.length ?? 0;
       const completed = c.competencies?.filter(
-        (ec: { status: string }) => ec.status === "verified"
+        (ec: { status: string | null }) => ec.status === "verified"
       ).length ?? 0;
       const pending = c.competencies?.filter(
-        (ec: { status: string }) => ec.status === "pending_review"
+        (ec: { status: string | null }) => ec.status === "pending_review"
       ).length ?? 0;
       return {
         ...c,
