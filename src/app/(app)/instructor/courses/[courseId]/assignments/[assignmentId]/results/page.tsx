@@ -34,15 +34,156 @@ import {
   EyeOff,
   Users,
   TrendingUp,
-  TrendingDown,
   Calculator,
   Ban,
   Undo,
   ChevronDown,
   ChevronUp,
+  User,
 } from "lucide-react";
-import { useQuizResults, QuestionAnalytics } from "@/lib/hooks/use-quiz-results";
+import { useQuizResults, QuestionAnalytics, StudentAnswer } from "@/lib/hooks/use-quiz-results";
 import { cn } from "@/lib/utils";
+
+// --- Types ---
+
+interface StudentRecord {
+  studentId: string;
+  studentName: string;
+  submissionId: string;
+  submittedAt: string;
+  answers: Map<string, { answer: StudentAnswer["answer"]; isCorrect: boolean }>;
+  correctCount: number;
+  totalCount: number;
+}
+
+// --- Helpers ---
+
+function getAnswerDisplay(
+  answer: StudentAnswer["answer"],
+  options: string[] | null | undefined
+): string {
+  if (answer === null || answer === undefined) return "No answer";
+  if (typeof answer === "boolean") return answer ? "True" : "False";
+  if (typeof answer === "number" && options) return options[answer] ?? String(answer);
+  if (typeof answer === "string" && options && !isNaN(Number(answer))) {
+    return options[Number(answer)] ?? answer;
+  }
+  return String(answer);
+}
+
+function getCorrectDisplay(
+  correctAnswer: string | number | boolean | null | undefined,
+  options: string[] | null | undefined
+): string {
+  if (correctAnswer === null || correctAnswer === undefined) return "—";
+  if (typeof correctAnswer === "boolean") return correctAnswer ? "True" : "False";
+  if (typeof correctAnswer === "number" && options) return options[correctAnswer] ?? String(correctAnswer);
+  return String(correctAnswer);
+}
+
+// --- StudentReviewModal ---
+
+function StudentReviewModal({
+  student,
+  analytics,
+  onClose,
+}: {
+  student: StudentRecord;
+  analytics: QuestionAnalytics[];
+  onClose: () => void;
+}) {
+  const scorePercent =
+    student.totalCount > 0
+      ? Math.round((student.correctCount / student.totalCount) * 100)
+      : 0;
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`${student.studentName} — Quiz Review`}
+    >
+      <div className="space-y-4">
+        {/* Score summary */}
+        <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+          <div className="p-3 rounded-full bg-primary/10 text-primary">
+            <User className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-semibold">{student.studentName}</p>
+            <p className="text-sm text-muted-foreground">
+              {student.correctCount} / {student.totalCount} correct &mdash; {scorePercent}%
+            </p>
+          </div>
+        </div>
+
+        {/* Per-question review */}
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          {analytics.map((a, idx) => {
+            const sa = student.answers.get(a.question.id);
+            const isCorrect = sa?.isCorrect ?? false;
+            const answered = sa !== undefined;
+
+            return (
+              <div
+                key={a.question.id}
+                className={cn(
+                  "p-3 rounded-lg border",
+                  isCorrect
+                    ? "border-success/30 bg-success/5"
+                    : "border-destructive/30 bg-destructive/5"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 shrink-0">
+                    {isCorrect ? (
+                      <CheckCircle className="h-4 w-4 text-success" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-destructive" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      Q{idx + 1}: {a.question.question_text}
+                    </p>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <p className="text-muted-foreground">
+                        <span className="font-medium">Their answer: </span>
+                        {answered
+                          ? getAnswerDisplay(sa!.answer, a.question.options)
+                          : <span className="italic">Not answered</span>}
+                      </p>
+                      {!isCorrect && (
+                        <p className="text-success">
+                          <span className="font-medium">Correct: </span>
+                          {getCorrectDisplay(a.question.correct_answer, a.question.options)}
+                        </p>
+                      )}
+                    </div>
+                    {a.question.explanation && (
+                      <div className="mt-2 p-2 bg-primary/5 border border-primary/10 rounded text-xs text-muted-foreground">
+                        <span className="font-medium text-primary">Explanation: </span>
+                        {a.question.explanation}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <ModalFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </ModalFooter>
+      </div>
+    </Modal>
+  );
+}
+
+// --- StatCard ---
 
 function StatCard({
   title,
@@ -84,6 +225,8 @@ function StatCard({
   );
 }
 
+// --- QuestionCard ---
+
 function QuestionCard({
   analytics,
   index,
@@ -91,6 +234,7 @@ function QuestionCard({
   onInclude,
   isExpanded,
   onToggleExpand,
+  onViewStudent,
 }: {
   analytics: QuestionAnalytics;
   index: number;
@@ -98,10 +242,12 @@ function QuestionCard({
   onInclude: (id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onViewStudent: (studentId: string) => void;
 }) {
   const { question, percentCorrect, correctCount, totalResponses, answerDistribution } = analytics;
   const [showExcludeModal, setShowExcludeModal] = React.useState(false);
   const [excludeReason, setExcludeReason] = React.useState("");
+  const [showMissed, setShowMissed] = React.useState(false);
 
   const performanceColor =
     percentCorrect >= 70 ? "success" :
@@ -112,6 +258,8 @@ function QuestionCard({
     warning: "text-warning",
     error: "text-error",
   }[performanceColor];
+
+  const missedStudents = analytics.studentAnswers.filter((sa) => !sa.isCorrect);
 
   const handleExclude = () => {
     onExclude(question.id, excludeReason);
@@ -264,6 +412,48 @@ function QuestionCard({
                     </div>
                   )}
 
+                  {/* Who missed this? */}
+                  {missedStudents.length > 0 && (
+                    <div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-between px-3"
+                        onClick={() => setShowMissed((v) => !v)}
+                      >
+                        <span className="flex items-center gap-2 text-destructive">
+                          <XCircle className="h-4 w-4" />
+                          {missedStudents.length} student{missedStudents.length !== 1 ? "s" : ""} missed this
+                        </span>
+                        {showMissed ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      {showMissed && (
+                        <div className="mt-2 space-y-1 pl-2">
+                          {missedStudents.map((sa) => (
+                            <div
+                              key={sa.studentId}
+                              className="flex items-center justify-between p-2 rounded hover:bg-muted"
+                            >
+                              <span className="text-sm">{sa.studentName}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => onViewStudent(sa.studentId)}
+                              >
+                                View attempt
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Action buttons */}
                   <div className="flex items-center gap-2 pt-2">
                     {question.is_excluded ? (
@@ -313,7 +503,7 @@ function QuestionCard({
             <AlertTriangle className="h-4 w-4" />
             <span>
               Excluding this question will remove it from score calculations.
-              You'll need to recalculate scores after excluding.
+              You&apos;ll need to recalculate scores after excluding.
             </span>
           </Alert>
 
@@ -347,6 +537,8 @@ function QuestionCard({
   );
 }
 
+// --- QuizResultsPage ---
+
 export default function QuizResultsPage() {
   const params = useParams();
   const courseId = params.courseId as string;
@@ -368,6 +560,40 @@ export default function QuizResultsPage() {
 
   const [expandedQuestions, setExpandedQuestions] = React.useState<Set<string>>(new Set());
   const [showRecalculateModal, setShowRecalculateModal] = React.useState(false);
+  const [selectedStudentId, setSelectedStudentId] = React.useState<string | null>(null);
+
+  // Build per-student records from analytics data
+  const studentRecords = React.useMemo<StudentRecord[]>(() => {
+    const map = new Map<string, StudentRecord>();
+
+    for (const a of analytics) {
+      for (const sa of a.studentAnswers) {
+        if (!map.has(sa.studentId)) {
+          map.set(sa.studentId, {
+            studentId: sa.studentId,
+            studentName: sa.studentName,
+            submissionId: sa.submissionId,
+            submittedAt: sa.submittedAt,
+            answers: new Map(),
+            correctCount: 0,
+            totalCount: 0,
+          });
+        }
+        const record = map.get(sa.studentId)!;
+        record.answers.set(a.question.id, { answer: sa.answer, isCorrect: sa.isCorrect });
+        record.totalCount++;
+        if (sa.isCorrect) record.correctCount++;
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.studentName.localeCompare(b.studentName)
+    );
+  }, [analytics]);
+
+  const selectedStudent = selectedStudentId
+    ? studentRecords.find((s) => s.studentId === selectedStudentId) ?? null
+    : null;
 
   const toggleExpand = (questionId: string) => {
     setExpandedQuestions((prev) => {
@@ -390,9 +616,28 @@ export default function QuizResultsPage() {
   };
 
   const handleRecalculate = async () => {
-    const count = await recalculateScores();
+    await recalculateScores();
     setShowRecalculateModal(false);
   };
+
+  const renderQuestionList = (items: QuestionAnalytics[]) =>
+    items.map((a) => {
+      const originalIndex = analytics.findIndex((x) => x.question.id === a.question.id);
+      return (
+        <QuestionCard
+          key={a.question.id}
+          analytics={a}
+          index={originalIndex}
+          onExclude={excludeQuestion}
+          onInclude={includeQuestion}
+          isExpanded={expandedQuestions.has(a.question.id)}
+          onToggleExpand={() => toggleExpand(a.question.id)}
+          onViewStudent={(id) => {
+            setSelectedStudentId(id);
+          }}
+        />
+      );
+    });
 
   if (isLoading) {
     return (
@@ -485,17 +730,19 @@ export default function QuizResultsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="all">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <TabsList>
             <TabsTrigger value="all">All Questions ({questions.length})</TabsTrigger>
-            <TabsTrigger value="difficulty">
-              By Difficulty
-            </TabsTrigger>
+            <TabsTrigger value="difficulty">By Difficulty</TabsTrigger>
             {problematicQuestions.length > 0 && (
               <TabsTrigger value="problematic">
                 Needs Review ({problematicQuestions.length})
               </TabsTrigger>
             )}
+            <TabsTrigger value="students">
+              <Users className="h-4 w-4 mr-1" />
+              Students ({studentRecords.length})
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex gap-2">
@@ -511,57 +758,83 @@ export default function QuizResultsPage() {
         </div>
 
         <TabsContent value="all" className="mt-6 space-y-4">
-          {analytics.map((a, index) => (
-            <QuestionCard
-              key={a.question.id}
-              analytics={a}
-              index={index}
-              onExclude={excludeQuestion}
-              onInclude={includeQuestion}
-              isExpanded={expandedQuestions.has(a.question.id)}
-              onToggleExpand={() => toggleExpand(a.question.id)}
-            />
-          ))}
+          {renderQuestionList(analytics)}
         </TabsContent>
 
         <TabsContent value="difficulty" className="mt-6 space-y-4">
           <p className="text-sm text-muted-foreground mb-4">
             Questions sorted by difficulty (hardest first)
           </p>
-          {questionsByDifficulty.map((a) => {
-            const originalIndex = analytics.findIndex((x) => x.question.id === a.question.id);
-            return (
-              <QuestionCard
-                key={a.question.id}
-                analytics={a}
-                index={originalIndex}
-                onExclude={excludeQuestion}
-                onInclude={includeQuestion}
-                isExpanded={expandedQuestions.has(a.question.id)}
-                onToggleExpand={() => toggleExpand(a.question.id)}
-              />
-            );
-          })}
+          {renderQuestionList(questionsByDifficulty)}
         </TabsContent>
 
         <TabsContent value="problematic" className="mt-6 space-y-4">
           <p className="text-sm text-muted-foreground mb-4">
             Questions where less than 50% of students answered correctly
           </p>
-          {problematicQuestions.map((a) => {
-            const originalIndex = analytics.findIndex((x) => x.question.id === a.question.id);
-            return (
-              <QuestionCard
-                key={a.question.id}
-                analytics={a}
-                index={originalIndex}
-                onExclude={excludeQuestion}
-                onInclude={includeQuestion}
-                isExpanded={expandedQuestions.has(a.question.id)}
-                onToggleExpand={() => toggleExpand(a.question.id)}
-              />
-            );
-          })}
+          {renderQuestionList(problematicQuestions)}
+        </TabsContent>
+
+        <TabsContent value="students" className="mt-6">
+          {studentRecords.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No submissions yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Student Results</CardTitle>
+                <CardDescription>
+                  Click &ldquo;View Attempt&rdquo; to see a full per-question breakdown for any student.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {studentRecords.map((student) => {
+                    const pct =
+                      student.totalCount > 0
+                        ? Math.round((student.correctCount / student.totalCount) * 100)
+                        : 0;
+                    const color =
+                      pct >= 70 ? "text-success" : pct >= 50 ? "text-warning" : "text-destructive";
+
+                    return (
+                      <div
+                        key={student.studentId}
+                        className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="p-2 rounded-full bg-primary/10 text-primary shrink-0">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{student.studentName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Submitted {new Date(student.submittedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={cn("text-lg font-bold", color)}>{pct}%</p>
+                          <p className="text-xs text-muted-foreground">
+                            {student.correctCount}/{student.totalCount}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedStudentId(student.studentId)}
+                        >
+                          View Attempt
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -616,6 +889,15 @@ export default function QuizResultsPage() {
           </ModalFooter>
         </div>
       </Modal>
+
+      {/* Student Review Modal */}
+      {selectedStudent && (
+        <StudentReviewModal
+          student={selectedStudent}
+          analytics={analytics}
+          onClose={() => setSelectedStudentId(null)}
+        />
+      )}
     </div>
   );
 }
