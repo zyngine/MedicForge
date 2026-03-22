@@ -74,70 +74,80 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email exists in auth (might be in another tenant)
-    const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers?.users?.find(u => u.email === email);
-
     let authUserId: string;
     let inviteLinkUrl: string | undefined;
+    let existingAuthUser = false;
 
-    if (existingAuthUser) {
-      // User exists in auth but not in this tenant - just add them to users table
-      authUserId = existingAuthUser.id;
-    } else {
-      // Create new auth user with invite (sends email)
-      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: {
-          full_name,
-          role,
-          tenant_id,
-        },
-        redirectTo: redirectUrl,
-      });
+    // Try to invite the user — this is fast and handles both new and existing cases
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
+        full_name,
+        role,
+        tenant_id,
+      },
+      redirectTo: redirectUrl,
+    });
 
-      if (inviteError) {
-        const isRateLimit =
-          inviteError.message?.toLowerCase().includes("rate limit") ||
-          (inviteError as any).status === 429;
+    if (inviteError) {
+      const errorMsg = inviteError.message?.toLowerCase() || "";
+      const isRateLimit = errorMsg.includes("rate limit") || (inviteError as any).status === 429;
+      const isAlreadyRegistered = errorMsg.includes("already registered") || errorMsg.includes("already been registered");
 
-        if (isRateLimit) {
-          // Email rate limit hit — generate the invite link without sending email.
-          // The admin can copy and share the link manually.
-          const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-            type: "invite",
-            email,
-            options: {
-              data: { full_name, role, tenant_id },
-              redirectTo: redirectUrl,
-            },
-          });
+      if (isAlreadyRegistered) {
+        // User exists in auth but not in this tenant — look up their ID
+        // Use generateLink which returns the user object without sending an email
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+        });
 
-          if (linkError || !linkData?.user) {
-            console.error("generateLink error:", linkError);
-            return NextResponse.json(
-              { error: linkError?.message || "Failed to generate invite link" },
-              { status: 500 }
-            );
-          }
-
-          authUserId = linkData.user.id;
-          inviteLinkUrl = linkData.properties.action_link;
-        } else {
-          console.error("Invite error:", inviteError);
+        if (linkError || !linkData?.user) {
+          console.error("generateLink lookup error:", linkError);
           return NextResponse.json(
-            { error: inviteError.message },
+            { error: "User exists in another organization. Could not look up their account." },
             { status: 500 }
           );
         }
+
+        authUserId = linkData.user.id;
+        existingAuthUser = true;
+      } else if (isRateLimit) {
+        // Email rate limit hit — generate the invite link without sending email.
+        // The admin can copy and share the link manually.
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: "invite",
+          email,
+          options: {
+            data: { full_name, role, tenant_id },
+            redirectTo: redirectUrl,
+          },
+        });
+
+        if (linkError || !linkData?.user) {
+          console.error("generateLink error:", linkError);
+          return NextResponse.json(
+            { error: linkError?.message || "Failed to generate invite link" },
+            { status: 500 }
+          );
+        }
+
+        authUserId = linkData.user.id;
+        inviteLinkUrl = linkData.properties.action_link;
       } else {
-        if (!inviteData.user) {
-          return NextResponse.json(
-            { error: "Failed to create user invitation" },
-            { status: 500 }
-          );
-        }
-        authUserId = inviteData.user.id;
+        console.error("Invite error:", inviteError);
+        return NextResponse.json(
+          { error: inviteError.message },
+          { status: 500 }
+        );
       }
+    } else {
+      if (!inviteData.user) {
+        return NextResponse.json(
+          { error: "Failed to create user invitation" },
+          { status: 500 }
+        );
+      }
+      authUserId = inviteData.user.id;
     }
 
     // Create user profile in users table
@@ -166,7 +176,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user: newUser,
-      invited: !existingAuthUser && !inviteLinkUrl,
+      invited: !existingAuthUser,
       invite_link: inviteLinkUrl, // present only when email rate limit was hit
     });
   } catch (error) {

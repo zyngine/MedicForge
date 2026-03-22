@@ -139,8 +139,34 @@ export function useUser(): UseUserReturn {
       effectInitialized = true;
 
       try {
-        // Get session from cookies (fast, no network call if token valid)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Race getSession against a 4s timeout — getSession auto-refreshes
+        // expired tokens (a network call), which can hang in Chrome
+        let session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"] = null;
+        let sessionError: Error | null = null;
+
+        try {
+          const result = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("getSession timeout")), 4000)
+            ),
+          ]);
+          session = result.data.session;
+          if (result.error) sessionError = result.error;
+        } catch (timeoutErr) {
+          console.warn("[useUser] getSession timed out, using cached data");
+          // If we have cached data, proceed with it — the onAuthStateChange
+          // listener will update state when the refresh eventually completes
+          if (cachedUser && cachedProfile) {
+            setUser(cachedUser);
+            setProfile(cachedProfile);
+            authInitialized = true;
+            setIsLoading(false);
+            // Kick off a background refresh so the session recovers
+            supabase.auth.refreshSession().catch(() => {});
+            return;
+          }
+        }
 
         // Check if cached user matches current session user
         // If different, clear the cache to prevent showing wrong user data
@@ -236,16 +262,14 @@ export function useUser(): UseUserReturn {
       }
     };
 
-    // Set timeout (15 seconds) to prevent infinite loading states
-    // NOTE: We do NOT clear cookies on timeout - that destroys the user's session
-    // Instead, just log and stop loading to let the user continue with cached data
+    // Safety timeout to prevent infinite loading states
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
-        console.warn("Auth initialization timed out after 8s - proceeding with cached data");
+        console.warn("[useUser] Auth initialization timed out after 8s - proceeding with cached data");
         authInitialized = true;
         setIsLoading(false);
-        // Keep any cached data we have - don't clear user/profile state
-        // The auth listener will update state when the request eventually completes
+        // Kick off a background refresh so the session can recover
+        supabase.auth.refreshSession().catch(() => {});
       }
     }, 8000);
 
@@ -304,9 +328,27 @@ export function useUser(): UseUserReturn {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible" && user) {
         try {
-          await supabase.auth.refreshSession();
+          const { data, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            console.warn("[useUser] Session refresh failed:", refreshError.message);
+            // If refresh token is invalid/expired, clear state so the layout
+            // redirects to login instead of showing a stale UI
+            if (
+              refreshError.message.includes("invalid") ||
+              refreshError.message.includes("expired") ||
+              refreshError.message.includes("Token")
+            ) {
+              clearCachedState();
+              setUser(null);
+              setProfile(null);
+            }
+          } else if (data.session) {
+            // Update cached user from refreshed session
+            cachedUser = data.session.user;
+            setUser(data.session.user);
+          }
         } catch (err) {
-          // Silently ignore refresh errors
+          console.warn("[useUser] Session refresh error:", err);
         }
       }
     };
@@ -330,16 +372,21 @@ export function useUser(): UseUserReturn {
       console.error("Sign out error:", err);
     } finally {
       // Clear all auth-related cookies manually as fallback
+      // Include SameSite and Secure attributes to match how they were set (required by Chrome)
       if (typeof document !== "undefined") {
-        document.cookie = "tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "tenant_slug=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        const expiry = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        const isSecure = window.location.protocol === "https:";
+        const secureSuffix = isSecure ? "; Secure; SameSite=Lax" : "; SameSite=Lax";
+
+        document.cookie = `tenant_id=; path=/; ${expiry}${secureSuffix}`;
+        document.cookie = `tenant_slug=; path=/; ${expiry}${secureSuffix}`;
 
         const cookies = document.cookie.split(";");
         for (const cookie of cookies) {
           const cookieName = cookie.split("=")[0].trim();
           if (cookieName.includes("supabase") || cookieName.includes("sb-")) {
-            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${window.location.hostname}`;
+            document.cookie = `${cookieName}=; path=/; ${expiry}${secureSuffix}`;
+            document.cookie = `${cookieName}=; path=/; ${expiry}; domain=${window.location.hostname}${secureSuffix}`;
           }
         }
       }

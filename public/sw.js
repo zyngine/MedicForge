@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'medicforge-v4';
+const CACHE_NAME = 'medicforge-v5';
 const OFFLINE_URL = '/offline';
 const DATA_CACHE_NAME = 'medicforge-data-v1';
 
@@ -92,8 +92,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip auth-related paths
-  if (url.pathname.includes('/auth/') || url.pathname.includes('/rest/')) {
+  // Skip auth-related paths (login, register, password reset, callbacks)
+  if (url.pathname.includes('/auth/') || url.pathname.includes('/rest/') ||
+      url.pathname.includes('/login') || url.pathname.includes('/register') ||
+      url.pathname.includes('/forgot-password') || url.pathname.includes('/set-password') ||
+      url.pathname.includes('/reset-password')) {
     return;
   }
 
@@ -545,4 +548,4 @@ self.addEventListener('periodicsync', (event) => {
   }
 });
 
-console.log('[SW] Service worker loaded - v4');
+console.log('[SW] Service worker loaded - v5');

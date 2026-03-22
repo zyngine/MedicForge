@@ -36,7 +36,7 @@ import {
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useSubscriptionEnforcement, getLimitMessage } from "@/lib/hooks/use-subscription-enforcement";
 import { LimitWarningBanner, LimitReachedAlert, UpgradeModal } from "@/components/subscription";
-import { createClient } from "@/lib/supabase/client";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface User {
@@ -77,16 +77,30 @@ function useCreateUser() {
       if (!tenant?.id) throw new Error("No tenant");
 
       // Use the invite API which properly creates auth user + profile
-      const response = await fetch("/api/admin/invite-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: userData.email,
-          full_name: userData.full_name,
-          role: userData.role,
-          tenant_id: tenant.id,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      let response: Response;
+      try {
+        response = await fetch("/api/admin/invite-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userData.email,
+            full_name: userData.full_name,
+            role: userData.role,
+            tenant_id: tenant.id,
+          }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          throw new Error("Request timed out. Please try again.");
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const result = await response.json();
 
@@ -98,6 +112,7 @@ function useCreateUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-usage"] });
     },
   });
 }
@@ -156,7 +171,7 @@ function useBulkImportUsers() {
   });
 }
 
-// Hook to update user
+// Hook to update user — uses API route to bypass RLS issues with direct client updates
 function useUpdateUser() {
   const queryClient = useQueryClient();
 
@@ -168,19 +183,22 @@ function useUpdateUser() {
       userId: string;
       updates: Partial<{ full_name: string; role: UserRole; is_active: boolean }>;
     }) => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("users")
-        .update(updates)
-        .eq("id", userId)
-        .select()
-        .single();
+      const response = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, updates }),
+      });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || "Failed to update user");
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-usage"] });
     },
   });
 }
@@ -503,14 +521,15 @@ export default function AdminUsersPage() {
     setIsEditSaving(true);
     try {
       await updateUser({ userId: userToEdit.id, updates: { role: editRole } });
+      const name = userToEdit.full_name || userToEdit.email;
       setShowEditModal(false);
       setUserToEdit(null);
-      setSuccessMessage(`${userToEdit.full_name || userToEdit.email}'s role updated to ${editRole}`);
+      setIsEditSaving(false);
+      setSuccessMessage(`${name}'s role updated to ${editRole}`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update role");
-    } finally {
       setIsEditSaving(false);
+      setError(err instanceof Error ? err.message : "Failed to update role");
     }
   };
 

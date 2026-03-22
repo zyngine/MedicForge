@@ -73,16 +73,16 @@ function LoginFormContent() {
           }
         }
 
-        // Redirect based on user role - use hard redirect for clean state
+        // Redirect based on user role
         if (role === "student") {
-          window.location.href = "/student/dashboard";
+          router.push("/student/dashboard");
         } else if (role === "admin") {
-          window.location.href = "/admin/dashboard";
+          router.push("/admin/dashboard");
         } else {
-          window.location.href = "/instructor/dashboard";
+          router.push("/instructor/dashboard");
         }
       } else {
-        window.location.href = redirect;
+        router.push(redirect);
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

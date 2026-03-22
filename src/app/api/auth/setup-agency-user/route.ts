@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 function generateSlug(name: string): string {
@@ -21,6 +22,7 @@ function generateAgencyCode(): string {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
+    const adminClient = createAdminClient();
     const body = await request.json();
 
     const {
@@ -58,14 +60,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate unique slug
+    // Generate unique slug (use admin client to bypass RLS for slug check)
     let slug = generateSlug(agencyName);
     let slugAttempt = 0;
 
-    // Check for slug uniqueness
     while (true) {
       const testSlug = slugAttempt === 0 ? slug : `${slug}-${slugAttempt}`;
-      const { data: existing } = await supabase
+      const { data: existing } = await adminClient
         .from("tenants")
         .select("id")
         .eq("slug", testSlug)
@@ -78,14 +79,13 @@ export async function POST(request: Request) {
       slugAttempt++;
     }
 
-    // 1. Create the auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 1. Create the auth user via admin client (avoids email confirmation requirement)
+    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          full_name: adminName,
-        },
+      email_confirm: true,
+      user_metadata: {
+        full_name: adminName,
       },
     });
 
@@ -99,9 +99,8 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id;
 
-    // 2. Create the tenant (agency)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: tenant, error: tenantError } = await (supabase as any)
+    // 2. Create the tenant (agency) — admin client bypasses RLS
+    const { data: tenant, error: tenantError } = await adminClient
       .from("tenants")
       .insert({
         name: agencyName,
@@ -117,8 +116,7 @@ export async function POST(request: Request) {
 
     if (tenantError) {
       console.error("Tenant creation error:", tenantError);
-      // Clean up: delete the auth user
-      await supabase.auth.admin.deleteUser(userId);
+      await adminClient.auth.admin.deleteUser(userId);
       return NextResponse.json(
         { error: "Failed to create agency" },
         { status: 500 }
@@ -126,7 +124,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Create the user profile
-    const { error: userError } = await supabase
+    const { error: userError } = await adminClient
       .from("users")
       .insert({
         id: userId,
@@ -140,9 +138,8 @@ export async function POST(request: Request) {
 
     if (userError) {
       console.error("User profile creation error:", userError);
-      // Clean up
-      await supabase.from("tenants").delete().eq("id", tenant.id);
-      await supabase.auth.admin.deleteUser(userId);
+      await adminClient.from("tenants").delete().eq("id", tenant.id);
+      await adminClient.auth.admin.deleteUser(userId);
       return NextResponse.json(
         { error: "Failed to create user profile" },
         { status: 500 }
@@ -150,8 +147,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Create agency settings
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: settingsError } = await (supabase as any)
+    const { error: settingsError } = await adminClient
       .from("agency_settings")
       .insert({
         tenant_id: tenant.id,
@@ -162,6 +158,9 @@ export async function POST(request: Request) {
       console.error("Agency settings creation error:", settingsError);
       // Non-critical, don't fail registration
     }
+
+    // 5. Sign the user in so they have a session for the redirect
+    await supabase.auth.signInWithPassword({ email, password });
 
     return NextResponse.json({
       success: true,
@@ -189,10 +188,10 @@ async function handleMDRegistration(
   }
 ) {
   const { email, password, inviteCode, adminName } = data;
+  const adminClient = createAdminClient();
 
-  // 1. Find the invitation
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: invitation, error: inviteError } = await (supabase as any)
+  // 1. Find the invitation (admin client bypasses RLS)
+  const { data: invitation, error: inviteError } = await adminClient
     .from("medical_director_invitations")
     .select("*")
     .eq("invite_code", inviteCode)
@@ -215,14 +214,13 @@ async function handleMDRegistration(
     );
   }
 
-  // 2. Create the auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // 2. Create the auth user via admin client
+  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: {
-        full_name: adminName || invitation.md_name,
-      },
+    email_confirm: true,
+    user_metadata: {
+      full_name: adminName || invitation.md_name,
     },
   });
 
@@ -236,8 +234,7 @@ async function handleMDRegistration(
   const userId = authData.user.id;
 
   // 3. Create the user profile with medical_director role
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: userError } = await (supabase as any)
+  const { error: userError } = await adminClient
     .from("users")
     .insert({
       id: userId,
@@ -251,7 +248,7 @@ async function handleMDRegistration(
 
   if (userError) {
     console.error("User profile creation error:", userError);
-    await supabase.auth.admin.deleteUser(userId);
+    await adminClient.auth.admin.deleteUser(userId);
     return NextResponse.json(
       { error: "Failed to create user profile" },
       { status: 500 }
@@ -259,8 +256,7 @@ async function handleMDRegistration(
   }
 
   // 4. Create MD assignment
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: mdError } = await (supabase as any)
+  const { error: mdError } = await adminClient
     .from("medical_director_assignments")
     .insert({
       tenant_id: invitation.tenant_id,
@@ -279,8 +275,7 @@ async function handleMDRegistration(
   }
 
   // 5. Mark invitation as accepted
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  await adminClient
     .from("medical_director_invitations")
     .update({
       accepted_at: new Date().toISOString(),
@@ -289,11 +284,14 @@ async function handleMDRegistration(
     .eq("id", invitation.id);
 
   // 6. Get tenant info for redirect
-  const { data: tenant } = await supabase
+  const { data: tenant } = await adminClient
     .from("tenants")
     .select("slug")
     .eq("id", invitation.tenant_id)
     .single();
+
+  // 7. Sign the user in
+  await supabase.auth.signInWithPassword({ email, password });
 
   return NextResponse.json({
     success: true,
