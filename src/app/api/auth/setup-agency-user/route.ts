@@ -100,7 +100,8 @@ export async function POST(request: Request) {
     const userId = authData.user.id;
 
     // 2. Create the tenant (agency) — admin client bypasses RLS
-    const { data: tenant, error: tenantError } = await adminClient
+    // Cast needed: DB has agency tiers but generated types are out of date
+    const { data: tenant, error: tenantError } = await (adminClient as any)
       .from("tenants")
       .insert({
         name: agencyName,
