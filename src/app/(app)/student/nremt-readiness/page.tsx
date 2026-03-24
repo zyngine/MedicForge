@@ -17,10 +17,14 @@ import {
   Info,
 } from "lucide-react";
 import { useNREMTPrediction } from "@/lib/hooks/use-nremt-prediction";
+import { useUser } from "@/lib/hooks/use-user";
 import Link from "next/link";
 
 export default function NREMTReadinessPage() {
-  const { prediction, isLoading, refresh } = useNREMTPrediction(undefined, "EMT");
+  const { profile } = useUser();
+  // Use the student's certification level from their profile, fall back to "EMT" if not set
+  const certificationLevel = (profile as any)?.certification_level || "EMT";
+  const { prediction, isLoading, refresh } = useNREMTPrediction(undefined, certificationLevel);
 
   const getRiskColor = (risk: string) => {
     switch (risk) {

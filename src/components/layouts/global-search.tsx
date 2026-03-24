@@ -92,7 +92,7 @@ export function GlobalSearch({ userRole }: GlobalSearchProps) {
           if (courses) {
             const hrefPrefix =
               userRole === "admin"
-                ? "/admin/courses"
+                ? "/admin/courses/library"
                 : userRole === "instructor"
                 ? "/instructor/courses"
                 : "/student/courses";
@@ -110,10 +110,11 @@ export function GlobalSearch({ userRole }: GlobalSearchProps) {
 
         // Search users for admin only
         if (userRole === "admin") {
+          const safeQuery = query.replace(/[%_\\,()]/g, c => '\\' + c);
           const { data: users } = await (supabase as any)
             .from("users")
             .select("id, full_name, email")
-            .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+            .or(`full_name.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%`)
             .eq("tenant_id", tenantId)
             .limit(5);
 

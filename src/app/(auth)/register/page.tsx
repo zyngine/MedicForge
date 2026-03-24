@@ -9,8 +9,6 @@ import { Button, Input, Label, Select, Alert, Checkbox, Spinner } from "@/compon
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, User, Building, Eye, EyeOff, Key, GraduationCap } from "lucide-react";
 
-const PAID_PLANS = ["professional", "institution", "agency-starter", "agency-pro", "agency-enterprise"];
-
 type RegistrationType = "organization" | "instructor" | "student";
 
 export default function RegisterPage() {
@@ -30,7 +28,6 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const planFromUrl = searchParams.get("plan");
   const typeFromUrl = searchParams.get("type") as RegistrationType | null;
   const agencyCodeFromUrl = searchParams.get("agency_code");
   const enrollmentCodeFromUrl = searchParams.get("enrollment_code");
@@ -105,10 +102,6 @@ function RegisterForm() {
 
       // Check if we have a session (email confirmation is disabled)
       if (data.session && data.user) {
-        console.log("[Register] Session created, setting up user profile...");
-        console.log("[Register] User ID:", data.user.id);
-        console.log("[Register] Metadata being sent:", metadata);
-
         // User is logged in immediately - set up their profile
         // Pass metadata directly since user_metadata might not be immediately available
         try {
@@ -122,32 +115,25 @@ function RegisterForm() {
             }),
           });
 
-          console.log("[Register] Setup API response status:", response.status);
           const result = await response.json();
-          console.log("[Register] Setup API result:", result);
 
           if (!response.ok) {
             setError(result.error || "Failed to set up account");
             return;
           }
 
-          console.log("[Register] Redirecting, role:", result.role, "plan:", planFromUrl);
-
-          // If a paid plan was selected, redirect to checkout
-          if (planFromUrl && PAID_PLANS.includes(planFromUrl)) {
-            router.push(`/admin/billing?plan=${planFromUrl}`);
-          } else if (result.role === "student") {
+          // Always redirect to dashboard after registration
+          // Billing page handles upgrade flows for paid plans
+          if (result.role === "student") {
             router.push("/student/dashboard");
           } else {
             router.push("/instructor/dashboard");
           }
-        } catch (fetchError) {
-          console.error("[Register] Fetch error:", fetchError);
+        } catch {
           setError("Failed to connect to server. Please try again.");
         }
       } else {
         // Email confirmation is required - show success message
-        console.log("[Register] No immediate session, showing email confirmation message");
         setSuccess(true);
       }
     } catch {
@@ -186,9 +172,6 @@ function RegisterForm() {
 
   // Determine description based on plan
   const getDescription = () => {
-    if (planFromUrl && PAID_PLANS.includes(planFromUrl)) {
-      return "Create your account to continue to checkout";
-    }
     return "Get started with MedicForge";
   };
 

@@ -711,8 +711,10 @@ export default function CourseDetailPage() {
                     </div>
                   )}
                   {studentsCount > 0 && (
-                    <Button variant="ghost" size="sm" className="w-full mt-3">
-                      View All Students
+                    <Button variant="ghost" size="sm" className="w-full mt-3" asChild>
+                      <Link href={`/instructor/courses/${courseId}/students`}>
+                        View All Students
+                      </Link>
                     </Button>
                   )}
                 </CardContent>

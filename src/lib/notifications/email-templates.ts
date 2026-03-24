@@ -1,5 +1,14 @@
 // Email template types and generators for MedicForge
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export interface EmailTemplate {
   subject: string;
   html: string;
@@ -80,8 +89,8 @@ export function welcomeEmail(data: {
   role: string;
 }): EmailTemplate {
   const content = `
-    <h1>Welcome to MedicForge, ${data.userName}!</h1>
-    <p>You've been added to <strong>${data.tenantName}</strong> as a${data.role === "instructor" ? "n" : ""} <strong>${data.role}</strong>.</p>
+    <h1>Welcome to MedicForge, ${escapeHtml(data.userName)}!</h1>
+    <p>You've been added to <strong>${escapeHtml(data.tenantName)}</strong> as a${data.role === "instructor" ? "n" : ""} <strong>${escapeHtml(data.role)}</strong>.</p>
     <p>MedicForge is where first responders are forged. Get ready to learn, practice, and excel in your EMS training.</p>
     <div style="text-align: center;">
       <a href="${data.loginUrl}" class="button">Get Started</a>
@@ -90,8 +99,8 @@ export function welcomeEmail(data: {
   `;
 
   return {
-    subject: `Welcome to ${data.tenantName} on MedicForge!`,
-    html: wrapEmail(content, `Welcome to ${data.tenantName}! Get started with MedicForge.`),
+    subject: `Welcome to ${escapeHtml(data.tenantName)} on MedicForge!`,
+    html: wrapEmail(content, `Welcome to ${escapeHtml(data.tenantName)}! Get started with MedicForge.`),
     text: `Welcome to MedicForge, ${data.userName}!\n\nYou've been added to ${data.tenantName} as a ${data.role}.\n\nGet started: ${data.loginUrl}`,
   };
 }
@@ -107,11 +116,11 @@ export function assignmentDueEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Assignment Due Soon</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>This is a reminder that your assignment is due soon:</p>
     <div class="info-box">
-      <p style="margin: 0 0 10px 0;"><strong>${data.assignmentTitle}</strong></p>
-      <p style="margin: 0; font-size: 14px;" class="muted">${data.courseName}</p>
+      <p style="margin: 0 0 10px 0;"><strong>${escapeHtml(data.assignmentTitle)}</strong></p>
+      <p style="margin: 0; font-size: 14px;" class="muted">${escapeHtml(data.courseName)}</p>
     </div>
     <p><strong>Due:</strong> ${data.dueDate} at ${data.dueTime}</p>
     <div style="text-align: center;">
@@ -140,11 +149,11 @@ export function gradePostedEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Grade Posted</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>Your grade has been posted for:</p>
     <div class="info-box">
-      <p style="margin: 0 0 10px 0;"><strong>${data.assignmentTitle}</strong></p>
-      <p style="margin: 0; font-size: 14px;" class="muted">${data.courseName}</p>
+      <p style="margin: 0 0 10px 0;"><strong>${escapeHtml(data.assignmentTitle)}</strong></p>
+      <p style="margin: 0; font-size: 14px;" class="muted">${escapeHtml(data.courseName)}</p>
     </div>
     <div style="text-align: center; padding: 20px;">
       <div style="font-size: 48px; font-weight: bold; color: ${data.percentage >= 70 ? "#16a34a" : "#dc2626"};">
@@ -155,7 +164,7 @@ export function gradePostedEmail(data: {
     ${data.feedback ? `
     <div class="info-box">
       <p style="margin: 0 0 5px 0;"><strong>Instructor Feedback:</strong></p>
-      <p style="margin: 0;">${data.feedback}</p>
+      <p style="margin: 0;">${escapeHtml(data.feedback)}</p>
     </div>
     ` : ""}
     <div style="text-align: center;">
@@ -164,8 +173,8 @@ export function gradePostedEmail(data: {
   `;
 
   return {
-    subject: `Grade Posted: ${data.assignmentTitle} - ${data.percentage}%`,
-    html: wrapEmail(content, `Your grade for ${data.assignmentTitle}: ${data.percentage}%`),
+    subject: `Grade Posted: ${escapeHtml(data.assignmentTitle)} - ${data.percentage}%`,
+    html: wrapEmail(content, `Your grade for ${escapeHtml(data.assignmentTitle)}: ${data.percentage}%`),
     text: `Hi ${data.userName},\n\nYour grade for "${data.assignmentTitle}" in ${data.courseName} has been posted.\n\nScore: ${data.score}/${data.maxScore} (${data.percentage}%)\n\n${data.feedback ? `Feedback: ${data.feedback}\n\n` : ""}View results: ${data.gradesUrl}`,
   };
 }
@@ -181,12 +190,12 @@ export function announcementEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>New Announcement</h1>
-    <p>Hi ${data.userName},</p>
-    <p>A new announcement has been posted in <strong>${data.courseName}</strong>:</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
+    <p>A new announcement has been posted in <strong>${escapeHtml(data.courseName)}</strong>:</p>
     <div class="info-box">
-      <h2 style="margin-top: 0;">${data.announcementTitle}</h2>
-      <p>${data.announcementContent}</p>
-      <p class="muted" style="margin-bottom: 0; font-size: 14px;">— ${data.instructorName}</p>
+      <h2 style="margin-top: 0;">${escapeHtml(data.announcementTitle)}</h2>
+      <p>${escapeHtml(data.announcementContent)}</p>
+      <p class="muted" style="margin-bottom: 0; font-size: 14px;">— ${escapeHtml(data.instructorName)}</p>
     </div>
     <div style="text-align: center;">
       <a href="${data.courseUrl}" class="button">Go to Course</a>
@@ -194,8 +203,8 @@ export function announcementEmail(data: {
   `;
 
   return {
-    subject: `[${data.courseName}] ${data.announcementTitle}`,
-    html: wrapEmail(content, `New announcement in ${data.courseName}: ${data.announcementTitle}`),
+    subject: `[${escapeHtml(data.courseName)}] ${escapeHtml(data.announcementTitle)}`,
+    html: wrapEmail(content, `New announcement in ${escapeHtml(data.courseName)}: ${escapeHtml(data.announcementTitle)}`),
     text: `Hi ${data.userName},\n\nNew announcement in ${data.courseName}:\n\n${data.announcementTitle}\n\n${data.announcementContent}\n\n— ${data.instructorName}\n\nView course: ${data.courseUrl}`,
   };
 }
@@ -212,16 +221,16 @@ export function clinicalShiftReminderEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Clinical Shift Tomorrow</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>This is a reminder about your upcoming clinical shift:</p>
     <div class="info-box">
-      <p style="margin: 0 0 10px 0;"><strong>${data.siteName}</strong></p>
-      <p style="margin: 0 0 5px 0; font-size: 14px;">${data.siteAddress}</p>
+      <p style="margin: 0 0 10px 0;"><strong>${escapeHtml(data.siteName)}</strong></p>
+      <p style="margin: 0 0 5px 0; font-size: 14px;">${escapeHtml(data.siteAddress)}</p>
       <hr style="border: none; border-top: 1px solid ${BRAND_COLORS.border}; margin: 10px 0;">
       <p style="margin: 0;"><strong>Date:</strong> ${data.shiftDate}</p>
       <p style="margin: 5px 0 0 0;"><strong>Time:</strong> ${data.startTime} - ${data.endTime}</p>
     </div>
-    ${data.notes ? `<p><strong>Notes:</strong> ${data.notes}</p>` : ""}
+    ${data.notes ? `<p><strong>Notes:</strong> ${escapeHtml(data.notes)}</p>` : ""}
     <h3>Don't forget to bring:</h3>
     <ul>
       <li>Clinical uniform</li>
@@ -247,7 +256,7 @@ export function passwordResetEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Reset Your Password</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>We received a request to reset your password. Click the button below to create a new password:</p>
     <div style="text-align: center;">
       <a href="${data.resetUrl}" class="button">Reset Password</a>
@@ -275,10 +284,10 @@ export function skillVerifiedEmail(data: {
   const isVerified = data.status === "verified";
   const content = `
     <h1>Skill ${isVerified ? "Verified" : "Needs Practice"}</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>Your skill attempt has been evaluated:</p>
     <div class="info-box">
-      <p style="margin: 0 0 10px 0;"><strong>${data.skillName}</strong></p>
+      <p style="margin: 0 0 10px 0;"><strong>${escapeHtml(data.skillName)}</strong></p>
       <p style="margin: 0; color: ${isVerified ? "#16a34a" : "#dc2626"}; font-weight: bold;">
         ${isVerified ? "✓ Verified" : "○ Needs Practice"}
       </p>
@@ -286,17 +295,17 @@ export function skillVerifiedEmail(data: {
     ${data.feedback ? `
     <div class="info-box">
       <p style="margin: 0 0 5px 0;"><strong>Evaluator Feedback:</strong></p>
-      <p style="margin: 0;">${data.feedback}</p>
+      <p style="margin: 0;">${escapeHtml(data.feedback)}</p>
     </div>
     ` : ""}
-    <p class="muted" style="font-size: 14px;">Evaluated by ${data.evaluatorName}</p>
+    <p class="muted" style="font-size: 14px;">Evaluated by ${escapeHtml(data.evaluatorName)}</p>
     <div style="text-align: center;">
       <a href="${data.competenciesUrl}" class="button">View Competencies</a>
     </div>
   `;
 
   return {
-    subject: `Skill ${isVerified ? "Verified" : "Needs Practice"}: ${data.skillName}`,
+    subject: `Skill ${isVerified ? "Verified" : "Needs Practice"}: ${escapeHtml(data.skillName)}`,
     html: wrapEmail(content, `Your ${data.skillName} skill has been ${isVerified ? "verified" : "marked as needs practice"}`),
     text: `Hi ${data.userName},\n\nYour skill attempt for "${data.skillName}" has been evaluated.\n\nStatus: ${isVerified ? "Verified" : "Needs Practice"}\n\n${data.feedback ? `Feedback: ${data.feedback}\n\n` : ""}Evaluated by ${data.evaluatorName}\n\nView competencies: ${data.competenciesUrl}`,
   };
@@ -319,18 +328,18 @@ export function clinicalShiftRequestEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Clinical Shift Request</h1>
-    <p>Hello ${data.pocName},</p>
-    <p>A student has requested to attend a clinical shift at <strong>${data.siteName}</strong>:</p>
+    <p>Hello ${escapeHtml(data.pocName)},</p>
+    <p>A student has requested to attend a clinical shift at <strong>${escapeHtml(data.siteName)}</strong>:</p>
     <div class="info-box">
-      <p style="margin: 0 0 5px 0;"><strong>Student:</strong> ${data.studentName}</p>
-      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Student:</strong> ${escapeHtml(data.studentName)}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${escapeHtml(data.shiftTitle)}</p>
       <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
       <p style="margin: 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
     </div>
     ${data.requestNotes ? `
     <div class="info-box">
       <p style="margin: 0 0 5px 0;"><strong>Student's note:</strong></p>
-      <p style="margin: 0;">${data.requestNotes}</p>
+      <p style="margin: 0;">${escapeHtml(data.requestNotes)}</p>
     </div>
     ` : ""}
     <p>Please review and respond to this request:</p>
@@ -361,13 +370,13 @@ export function clinicalShiftApprovedEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1 style="color: #16a34a;">Shift Request Approved!</h1>
-    <p>Hi ${data.studentName},</p>
-    <p>Great news! Your clinical shift request has been approved by <strong>${data.siteName}</strong>.</p>
+    <p>Hi ${escapeHtml(data.studentName)},</p>
+    <p>Great news! Your clinical shift request has been approved by <strong>${escapeHtml(data.siteName)}</strong>.</p>
     <div class="info-box">
-      <p style="margin: 0 0 5px 0;"><strong>${data.shiftTitle}</strong></p>
+      <p style="margin: 0 0 5px 0;"><strong>${escapeHtml(data.shiftTitle)}</strong></p>
       <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
       <p style="margin: 0 0 5px 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
-      ${data.address ? `<p style="margin: 0;"><strong>Location:</strong> ${data.address}</p>` : ""}
+      ${data.address ? `<p style="margin: 0;"><strong>Location:</strong> ${escapeHtml(data.address)}</p>` : ""}
     </div>
     <h3>Don't forget to bring:</h3>
     <ul>
@@ -400,16 +409,16 @@ export function clinicalShiftDeniedEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Shift Request Not Approved</h1>
-    <p>Hi ${data.studentName},</p>
-    <p>Unfortunately, your request for a clinical shift at <strong>${data.siteName}</strong> was not approved.</p>
+    <p>Hi ${escapeHtml(data.studentName)},</p>
+    <p>Unfortunately, your request for a clinical shift at <strong>${escapeHtml(data.siteName)}</strong> was not approved.</p>
     <div class="info-box">
-      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${escapeHtml(data.shiftTitle)}</p>
       <p style="margin: 0;"><strong>Date:</strong> ${data.shiftDate}</p>
     </div>
     ${data.pocNotes ? `
     <div class="info-box">
       <p style="margin: 0 0 5px 0;"><strong>Notes from site:</strong></p>
-      <p style="margin: 0;">${data.pocNotes}</p>
+      <p style="margin: 0;">${escapeHtml(data.pocNotes)}</p>
     </div>
     ` : ""}
     <p>Please browse the schedule to find another available shift.</p>
@@ -438,10 +447,10 @@ export function clinicalRequestCancelledEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Shift Request Cancelled</h1>
-    <p>Hello ${data.pocName},</p>
-    <p>This is to let you know that <strong>${data.studentName}</strong> has cancelled their shift request at <strong>${data.siteName}</strong>. No action is required from you.</p>
+    <p>Hello ${escapeHtml(data.pocName)},</p>
+    <p>This is to let you know that <strong>${escapeHtml(data.studentName)}</strong> has cancelled their shift request at <strong>${escapeHtml(data.siteName)}</strong>. No action is required from you.</p>
     <div class="info-box">
-      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${escapeHtml(data.shiftTitle)}</p>
       <p style="margin: 0 0 5px 0;"><strong>Date:</strong> ${data.shiftDate}</p>
       <p style="margin: 0;"><strong>Time:</strong> ${data.startTime} – ${data.endTime}</p>
     </div>
@@ -466,16 +475,16 @@ export function clinicalShiftCancelledByAdminEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Clinical Shift Cancelled</h1>
-    <p>Hi ${data.studentName},</p>
-    <p>Your clinical shift at <strong>${data.siteName}</strong> has been cancelled by your program coordinator.</p>
+    <p>Hi ${escapeHtml(data.studentName)},</p>
+    <p>Your clinical shift at <strong>${escapeHtml(data.siteName)}</strong> has been cancelled by your program coordinator.</p>
     <div class="info-box">
-      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${data.shiftTitle}</p>
+      <p style="margin: 0 0 5px 0;"><strong>Shift:</strong> ${escapeHtml(data.shiftTitle)}</p>
       <p style="margin: 0;"><strong>Date:</strong> ${data.shiftDate}</p>
     </div>
     ${data.reason ? `
     <div class="info-box">
       <p style="margin: 0 0 5px 0;"><strong>Reason:</strong></p>
-      <p style="margin: 0;">${data.reason}</p>
+      <p style="margin: 0;">${escapeHtml(data.reason)}</p>
     </div>
     ` : ""}
     <p>Please check the schedule to find an alternative shift.</p>
@@ -502,11 +511,11 @@ export function enrollmentConfirmationEmail(data: {
 }): EmailTemplate {
   const content = `
     <h1>Enrollment Confirmed!</h1>
-    <p>Hi ${data.userName},</p>
+    <p>Hi ${escapeHtml(data.userName)},</p>
     <p>You've successfully enrolled in:</p>
     <div class="info-box">
-      <h2 style="margin-top: 0;">${data.courseName}</h2>
-      <p style="margin: 0;"><strong>Instructor:</strong> ${data.instructorName}</p>
+      <h2 style="margin-top: 0;">${escapeHtml(data.courseName)}</h2>
+      <p style="margin: 0;"><strong>Instructor:</strong> ${escapeHtml(data.instructorName)}</p>
       <p style="margin: 5px 0 0 0;"><strong>Starts:</strong> ${data.startDate}</p>
     </div>
     <div style="text-align: center;">
@@ -522,8 +531,8 @@ export function enrollmentConfirmationEmail(data: {
   `;
 
   return {
-    subject: `Enrolled: ${data.courseName}`,
-    html: wrapEmail(content, `You're enrolled in ${data.courseName}!`),
+    subject: `Enrolled: ${escapeHtml(data.courseName)}`,
+    html: wrapEmail(content, `You're enrolled in ${escapeHtml(data.courseName)}!`),
     text: `Hi ${data.userName},\n\nYou've successfully enrolled in ${data.courseName}!\n\nInstructor: ${data.instructorName}\nStarts: ${data.startDate}\n\nGo to course: ${data.courseUrl}`,
   };
 }

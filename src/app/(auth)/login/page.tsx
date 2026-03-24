@@ -11,7 +11,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/student/dashboard";
+  const redirect = searchParams.get("redirect");
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -52,7 +52,6 @@ function LoginFormContent() {
         // If no profile exists, call setup-user to create one
         // This handles users who verified email but callback failed
         if (!profile) {
-          console.log("[Login] No profile found, calling setup-user...");
           try {
             const setupResponse = await fetch("/api/auth/setup-user", {
               method: "POST",
@@ -64,17 +63,18 @@ function LoginFormContent() {
               }),
             });
             const setupResult = await setupResponse.json();
-            console.log("[Login] Setup result:", setupResult);
             if (setupResponse.ok && setupResult.role) {
               role = setupResult.role;
             }
-          } catch (setupError) {
-            console.error("[Login] Setup error:", setupError);
+          } catch {
+            // Setup failed silently — user will land on default dashboard
           }
         }
 
-        // Redirect based on user role
-        if (role === "student") {
+        // Use redirect param if present, otherwise route based on role
+        if (redirect) {
+          router.push(redirect);
+        } else if (role === "student") {
           router.push("/student/dashboard");
         } else if (role === "admin") {
           router.push("/admin/dashboard");
@@ -82,7 +82,7 @@ function LoginFormContent() {
           router.push("/instructor/dashboard");
         }
       } else {
-        router.push(redirect);
+        router.push(redirect || "/student/dashboard");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

@@ -69,69 +69,39 @@ export async function POST(request: NextRequest) {
     const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(user_id);
 
     if (authUser?.user?.email_confirmed_at) {
-      // User has already confirmed their email - they can just use "forgot password"
       return NextResponse.json({
         success: false,
-        error: "User has already accepted a previous invitation. They can use 'Forgot Password' to reset their password.",
+        error: "User already confirmed their email. They can use 'Forgot Password' to reset their password.",
         already_confirmed: true,
       }, { status: 400 });
     }
 
-    // Generate a new invite for this user
-    // We need to delete and recreate the auth user to send a fresh invite
-    // First, delete the existing auth user
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-
-    if (deleteError) {
-      console.error("Failed to delete auth user for reinvite:", deleteError);
-      return NextResponse.json(
-        { error: "Failed to prepare new invitation" },
-        { status: 500 }
-      );
-    }
-
-    // Create new auth user with invite
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      userToInvite.email,
-      {
+    // Resend the invitation without deleting the auth user.
+    // generateLink creates a new invite link and sends the invite email.
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: "invite",
+      email: userToInvite.email,
+      options: {
         data: {
           full_name: userToInvite.full_name,
           role: userToInvite.role,
           tenant_id: tenant_id,
         },
         redirectTo: redirectUrl,
-      }
-    );
+      },
+    });
 
-    if (inviteError) {
-      console.error("Reinvite error:", inviteError);
+    if (linkError) {
+      console.error("Reinvite error:", linkError);
       return NextResponse.json(
-        { error: inviteError.message },
+        { error: linkError.message },
         { status: 500 }
       );
     }
 
-    if (!inviteData.user) {
+    if (!linkData?.user) {
       return NextResponse.json(
-        { error: "Failed to create new invitation" },
-        { status: 500 }
-      );
-    }
-
-    // Update the users table with the new auth user ID
-    const { error: updateError } = await supabaseAdmin
-      .from("users")
-      .update({ id: inviteData.user.id })
-      .eq("id", user_id)
-      .eq("tenant_id", tenant_id);
-
-    if (updateError) {
-      console.error("Failed to update user ID:", updateError);
-      // This is problematic - the old user ID is now invalid
-      // Try to clean up
-      await supabaseAdmin.auth.admin.deleteUser(inviteData.user.id);
-      return NextResponse.json(
-        { error: "Failed to update user record" },
+        { error: "Failed to generate new invitation link" },
         { status: 500 }
       );
     }
@@ -139,7 +109,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Invitation resent successfully",
-      new_user_id: inviteData.user.id,
     });
   } catch (error) {
     console.error("Resend invite error:", error);

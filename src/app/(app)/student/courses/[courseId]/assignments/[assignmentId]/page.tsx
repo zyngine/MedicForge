@@ -265,27 +265,29 @@ export default function AssignmentPage() {
       let totalPoints = 0;
 
       if (assignment.type === "quiz") {
+        // Fetch all correct answers in a single query (instead of N+1 per question)
+        const { data: allAnswers } = await supabase
+          .from("quiz_questions")
+          .select("id, correct_answer")
+          .eq("assignment_id", assignmentId);
+
+        const answerMap = new Map(
+          (allAnswers || []).map((a) => [
+            a.id,
+            typeof a.correct_answer === "string"
+              ? JSON.parse(a.correct_answer)
+              : a.correct_answer,
+          ])
+        );
+
         for (const question of questions) {
-          // Default to 1 point if not specified
           const questionPoints = question.points ?? 1;
           totalPoints += questionPoints;
           const userAnswer = answers[question.id];
+          const correctAnswer = answerMap.get(question.id);
 
-          // Fetch correct answer
-          const { data: questionData } = await supabase
-            .from("quiz_questions")
-            .select("correct_answer")
-            .eq("id", question.id)
-            .single();
-
-          if (questionData) {
-            const correctAnswer = typeof questionData.correct_answer === "string"
-              ? JSON.parse(questionData.correct_answer)
-              : questionData.correct_answer;
-
-            if (userAnswer === correctAnswer) {
-              score += questionPoints;
-            }
+          if (correctAnswer !== undefined && userAnswer === correctAnswer) {
+            score += questionPoints;
           }
         }
       }

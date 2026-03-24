@@ -12,6 +12,8 @@ import {
   Label,
   Alert,
   Spinner,
+  Select,
+  Textarea,
 } from "@/components/ui";
 import { ArrowLeft, Send, AlertCircle } from "lucide-react";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
@@ -117,20 +119,17 @@ export default function NewDiscussionPage() {
               <Label htmlFor="course" required>
                 Course
               </Label>
-              <select
+              <Select
                 id="course"
                 value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(value) => setSelectedCourse(value)}
+                placeholder="Select a course"
+                options={courses.map((course) => ({
+                  value: course.id,
+                  label: course.title,
+                }))}
                 required
-              >
-                <option value="">Select a course</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.title}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -150,12 +149,12 @@ export default function NewDiscussionPage() {
               <Label htmlFor="content" required>
                 Content
               </Label>
-              <textarea
+              <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Provide details about your question or start the discussion..."
-                className="w-full min-h-[200px] p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                className="min-h-[200px] resize-none"
                 required
               />
             </div>

@@ -46,6 +46,10 @@ import { useMyPatientContacts } from "@/lib/hooks/use-patient-contacts";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { formatDate } from "@/lib/utils";
 
+// TODO: These should come from course/program configuration
+const REQUIRED_CLINICAL_HOURS = 48;
+const REQUIRED_PATIENT_CONTACTS = 30;
+
 const siteOptions = [
   { value: "hospital_er", label: "Hospital Emergency Room" },
   { value: "ambulance", label: "Ambulance Service" },
@@ -117,9 +121,8 @@ export default function ClinicalTrackerPage() {
   const verifiedContacts = contacts.filter((c) => c.verification_status === "verified").length;
   const teamLeadCount = contacts.filter((c) => c.was_team_lead).length;
 
-  // Requirements (these would ideally come from course settings)
-  const hoursRequired = 48;
-  const contactsRequired = 30;
+  const hoursRequired = REQUIRED_CLINICAL_HOURS;
+  const contactsRequired = REQUIRED_PATIENT_CONTACTS;
 
   const hoursProgress = (totalHours / hoursRequired) * 100;
   const contactsProgress = (patientContactCount / contactsRequired) * 100;

@@ -126,6 +126,16 @@ export default function GradingPage() {
   const { mutateAsync: applyGradeCurve } = useApplyGradeCurve();
   const { data: courses = [], isLoading: coursesLoading } = useInstructorCourses();
 
+  // Build a course lookup map from instructor courses
+  const courseMap = new Map(courses.map(c => [c.id, c.title]));
+
+  // Helper to resolve course name from a submission's assignment -> module -> course_id
+  const getCourseName = (sub: (typeof pendingSubmissionsRaw)[number]) => {
+    const courseId = sub.assignment?.module?.course_id;
+    if (courseId && courseMap.has(courseId)) return courseMap.get(courseId)!;
+    return "Unknown Course";
+  };
+
   // Transform submissions for display
   const pendingSubmissions: SubmissionDisplay[] = pendingSubmissionsRaw.map((sub) => ({
     id: sub.id,
@@ -135,7 +145,7 @@ export default function GradingPage() {
     },
     assignment: sub.assignment?.title || "Unknown Assignment",
     assignmentType: sub.assignment?.type || "quiz",
-    course: "Course", // Would need to join with course data
+    course: getCourseName(sub),
     submittedAt: sub.submitted_at || sub.started_at || "",
     dueDate: sub.assignment?.due_date || undefined,
     autoScore: sub.raw_score,
@@ -150,7 +160,7 @@ export default function GradingPage() {
     },
     assignment: sub.assignment?.title || "Unknown Assignment",
     assignmentType: sub.assignment?.type || "quiz",
-    course: "Course",
+    course: getCourseName(sub),
     submittedAt: sub.submitted_at || sub.started_at || "",
     gradedAt: sub.graded_at,
     rawScore: sub.raw_score,
@@ -372,7 +382,9 @@ export default function GradingPage() {
               <AlertCircle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-bold">3</p>
+              <p className="text-2xl font-bold">
+                {pendingSubmissions.filter((sub) => sub.dueDate && new Date(sub.dueDate) < new Date()).length}
+              </p>
               <p className="text-sm text-muted-foreground">Past Due</p>
             </div>
           </CardContent>

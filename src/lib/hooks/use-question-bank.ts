@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
+import { useTenant } from "./use-tenant";
 import { toast } from "sonner";
 
 // Note: These tables are created by migration 20240310000000_question_bank.sql
@@ -92,8 +93,10 @@ export function useQuestionBankCategories() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { profile } = useUser();
+  const { tenant } = useTenant();
 
   const fetchCategories = useCallback(async () => {
+    if (!tenant?.id) return;
     try {
       setIsLoading(true);
       const supabase = createClient();
@@ -102,6 +105,7 @@ export function useQuestionBankCategories() {
         .from("question_bank_categories")
         .select("*")
         .eq("is_active", true)
+        .eq("tenant_id", tenant.id)
         .order("order_index");
 
       if (fetchError) throw fetchError;
@@ -111,7 +115,7 @@ export function useQuestionBankCategories() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tenant?.id]);
 
   useEffect(() => {
     fetchCategories();
@@ -155,11 +159,13 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { profile } = useUser();
+  const { tenant } = useTenant();
 
   // Serialize filters to stable string for dependency
   const filterKey = JSON.stringify(filters || {});
 
   const fetchQuestions = useCallback(async () => {
+    if (!tenant?.id) return;
     try {
       setIsLoading(true);
       const supabase = createClient();
@@ -167,7 +173,8 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       let query = (supabase as any)
         .from("question_bank")
         .select("*, category:question_bank_categories(*)", { count: "exact" })
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("tenant_id", tenant.id);
 
       if (filters?.categoryId) {
         query = query.eq("category_id", filters.categoryId);
@@ -191,7 +198,9 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
         query = query.ilike("question_text", `%${filters.search}%`);
       }
 
-      const { data, error: fetchError, count } = await query.order("created_at", { ascending: false });
+      const { data, error: fetchError, count } = await query
+        .order("created_at", { ascending: false })
+        .range(0, 99);
 
       if (fetchError) throw fetchError;
       setQuestions(data || []);
@@ -202,7 +211,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey]);
+  }, [filterKey, tenant?.id]);
 
   useEffect(() => {
     fetchQuestions();

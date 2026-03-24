@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -34,7 +33,6 @@ import {
   FileText,
   Image,
   Video,
-  ExternalLink,
   GripVertical,
   Star,
   Clock,
@@ -288,10 +286,8 @@ function PortfolioBuilder({
     setShowShareModal(false);
   };
 
-  const copyShareLink = (token: string) => {
-    const url = `${window.location.origin}/portfolio/view/${token}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
+  const copyShareLink = (_token: string) => {
+    toast.info("Portfolio sharing is coming soon");
   };
 
   if (isLoading) {
@@ -318,18 +314,10 @@ function PortfolioBuilder({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowShareModal(true)}>
+          <Button variant="outline" disabled title="Coming soon">
             <Share2 className="h-4 w-4 mr-2" />
-            Share
+            Share (Coming Soon)
           </Button>
-          {portfolio?.is_published && (
-            <Button variant="outline" asChild>
-              <Link href={`/portfolio/${portfolio.id}`} target="_blank">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Public
-              </Link>
-            </Button>
-          )}
         </div>
       </div>
 

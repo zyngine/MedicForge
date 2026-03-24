@@ -37,11 +37,39 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const formData = new FormData(e.currentTarget);
+      const body = {
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
+        email: formData.get("email"),
+        organization: formData.get("organization"),
+        subject: formData.get("subject"),
+        message: formData.get("message"),
+      };
 
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      setIsSubmitted(true);
+    } catch {
+      // Fall back to mailto if the API is unavailable
+      const formData = new FormData(e.currentTarget);
+      const subject = encodeURIComponent(String(formData.get("subject") || "Contact Form"));
+      const mailBody = encodeURIComponent(
+        `Name: ${formData.get("firstName")} ${formData.get("lastName")}\nEmail: ${formData.get("email")}\nOrganization: ${formData.get("organization") || "N/A"}\n\n${formData.get("message")}`
+      );
+      window.location.href = `mailto:admin@medicforge.net?subject=${subject}&body=${mailBody}`;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,6 +150,7 @@ export default function ContactPage() {
                           First Name
                         </label>
                         <Input
+                          name="firstName"
                           type="text"
                           placeholder="John"
                           required
@@ -132,6 +161,7 @@ export default function ContactPage() {
                           Last Name
                         </label>
                         <Input
+                          name="lastName"
                           type="text"
                           placeholder="Doe"
                           required
@@ -144,6 +174,7 @@ export default function ContactPage() {
                         Email
                       </label>
                       <Input
+                        name="email"
                         type="email"
                         placeholder="john@example.com"
                         required
@@ -155,6 +186,7 @@ export default function ContactPage() {
                         Organization (Optional)
                       </label>
                       <Input
+                        name="organization"
                         type="text"
                         placeholder="Your training program or institution"
                       />
@@ -165,6 +197,7 @@ export default function ContactPage() {
                         Subject
                       </label>
                       <Input
+                        name="subject"
                         type="text"
                         placeholder="How can we help?"
                         required
@@ -176,6 +209,7 @@ export default function ContactPage() {
                         Message
                       </label>
                       <Textarea
+                        name="message"
                         placeholder="Tell us more about your needs..."
                         rows={5}
                         required

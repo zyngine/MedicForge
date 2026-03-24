@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -228,7 +229,7 @@ export default function StudentCertificatesPage() {
                 </p>
                 {!searchTerm && (
                   <Button variant="outline" asChild>
-                    <a href="/student/courses">View My Courses</a>
+                    <Link href="/student/courses">View My Courses</Link>
                   </Button>
                 )}
               </CardContent>

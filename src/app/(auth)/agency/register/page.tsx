@@ -155,7 +155,9 @@ function AgencyRegisterForm() {
       if (result.tenantSlug) {
         // For subdomain-based routing
         const subdomain = result.tenantSlug;
-        window.location.href = `https://${subdomain}.medicforge.net/agency/dashboard`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net";
+        const baseHost = new URL(baseUrl).host;
+        window.location.href = `https://${subdomain}.${baseHost}/agency/dashboard`;
       } else {
         router.push("/agency/dashboard");
       }

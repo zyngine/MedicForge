@@ -29,6 +29,10 @@ import { useStudentClinicalHours } from "@/lib/hooks/use-clinical-logs";
 import { useUser } from "@/lib/hooks/use-user";
 import { formatDate } from "@/lib/utils";
 
+// TODO: These should come from course/program configuration
+const REQUIRED_CLINICAL_HOURS = 48;
+const REQUIRED_PATIENT_CONTACTS = 30;
+
 export default function StudentCompetenciesPage() {
   const { user } = useUser();
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useMyEnrollments();
@@ -102,10 +106,10 @@ export default function StudentCompetenciesPage() {
     : 0;
   const totalCategories = skillProgress?.categories.length || 0;
   const hoursComplete = clinicalHours
-    ? clinicalHours.verifiedHours >= 48
+    ? clinicalHours.verifiedHours >= REQUIRED_CLINICAL_HOURS
     : false;
   const contactsComplete = clinicalHours
-    ? clinicalHours.verifiedContacts >= 30
+    ? clinicalHours.verifiedContacts >= REQUIRED_PATIENT_CONTACTS
     : false;
 
   return (
@@ -175,12 +179,12 @@ export default function StudentCompetenciesPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Clinical Hours</p>
                 <p className="text-2xl font-bold">
-                  {clinicalHours?.verifiedHours || 0}/48
+                  {clinicalHours?.verifiedHours || 0}/{REQUIRED_CLINICAL_HOURS}
                 </p>
               </div>
             </div>
             <Progress
-              value={Math.min(((clinicalHours?.verifiedHours || 0) / 48) * 100, 100)}
+              value={Math.min(((clinicalHours?.verifiedHours || 0) / REQUIRED_CLINICAL_HOURS) * 100, 100)}
               size="md"
               variant={hoursComplete ? "success" : "default"}
             />
@@ -203,12 +207,12 @@ export default function StudentCompetenciesPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Patient Contacts</p>
                 <p className="text-2xl font-bold">
-                  {clinicalHours?.verifiedContacts || 0}/30
+                  {clinicalHours?.verifiedContacts || 0}/{REQUIRED_PATIENT_CONTACTS}
                 </p>
               </div>
             </div>
             <Progress
-              value={Math.min(((clinicalHours?.verifiedContacts || 0) / 30) * 100, 100)}
+              value={Math.min(((clinicalHours?.verifiedContacts || 0) / REQUIRED_PATIENT_CONTACTS) * 100, 100)}
               size="md"
               variant={contactsComplete ? "success" : "warning"}
             />

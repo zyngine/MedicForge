@@ -75,26 +75,26 @@ export function useCourses(options?: {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Get enrollment counts for each course
+      // Get enrollment counts and module counts in parallel
       const courseIds = data?.map((c) => c.id) || [];
       if (courseIds.length === 0) return [];
 
-      const { data: enrollmentCounts } = await supabase
-        .from("enrollments")
-        .select("course_id")
-        .in("course_id", courseIds)
-        .eq("status", "active");
+      const [{ data: enrollmentCounts }, { data: moduleCounts }] = await Promise.all([
+        supabase
+          .from("enrollments")
+          .select("course_id")
+          .in("course_id", courseIds)
+          .eq("status", "active"),
+        supabase
+          .from("modules")
+          .select("course_id")
+          .in("course_id", courseIds),
+      ]);
 
       const countMap = new Map<string, number>();
       enrollmentCounts?.forEach((e) => {
         countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
       });
-
-      // Get module counts
-      const { data: moduleCounts } = await supabase
-        .from("modules")
-        .select("course_id")
-        .in("course_id", courseIds);
 
       const moduleCountMap = new Map<string, number>();
       moduleCounts?.forEach((m) => {
@@ -136,21 +136,22 @@ export function useInstructorCourses() {
         const ids = data.map((c) => c.id);
         if (ids.length === 0) return [];
 
-        const { data: enrollmentCounts } = await supabase
-          .from("enrollments")
-          .select("course_id")
-          .in("course_id", ids)
-          .eq("status", "active");
+        const [{ data: enrollmentCounts }, { data: moduleCounts }] = await Promise.all([
+          supabase
+            .from("enrollments")
+            .select("course_id")
+            .in("course_id", ids)
+            .eq("status", "active"),
+          supabase
+            .from("modules")
+            .select("course_id")
+            .in("course_id", ids),
+        ]);
 
         const countMap = new Map<string, number>();
         enrollmentCounts?.forEach((e) => {
           countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
         });
-
-        const { data: moduleCounts } = await supabase
-          .from("modules")
-          .select("course_id")
-          .in("course_id", ids);
 
         const moduleCountMap = new Map<string, number>();
         moduleCounts?.forEach((m) => {

@@ -4,6 +4,15 @@
 
 import type { EmailTemplate } from "./email-templates";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function mdInviteTemplate(params: {
   mdName: string;
   agencyName: string;
@@ -18,12 +27,12 @@ export function mdInviteTemplate(params: {
   });
 
   return {
-    subject: `You've been invited as Medical Director for ${params.agencyName}`,
+    subject: `You've been invited as Medical Director for ${escapeHtml(params.agencyName)}`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1f2937;">Medical Director Invitation</h2>
-        <p>Hello Dr. ${params.mdName},</p>
-        <p><strong>${params.invitedByName}</strong> has invited you to join <strong>${params.agencyName}</strong> as a Medical Director on MedicForge.</p>
+        <p>Hello Dr. ${escapeHtml(params.mdName)},</p>
+        <p><strong>${escapeHtml(params.invitedByName)}</strong> has invited you to join <strong>${escapeHtml(params.agencyName)}</strong> as a Medical Director on MedicForge.</p>
         <p>As Medical Director, you'll be able to review and verify employee competencies for the agency.</p>
         <p style="margin: 24px 0;">
           <a href="${params.registrationUrl}" style="background: #C53030; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
@@ -53,8 +62,8 @@ export function expiringCertTemplate(params: {
         <h2 style="color: #1f2937;">Certification Expiration Notice</h2>
         <p>The following employee's certification is expiring soon:</p>
         <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-          <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Employee</strong></td><td style="padding: 8px; border: 1px solid #eee;">${params.employeeName}</td></tr>
-          <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Cert Level</strong></td><td style="padding: 8px; border: 1px solid #eee;">${params.certLevel}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Employee</strong></td><td style="padding: 8px; border: 1px solid #eee;">${escapeHtml(params.employeeName)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Cert Level</strong></td><td style="padding: 8px; border: 1px solid #eee;">${escapeHtml(params.certLevel)}</td></tr>
           <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Expiration</strong></td><td style="padding: 8px; border: 1px solid #eee;">${params.expirationDate}</td></tr>
           <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Days Until</strong></td><td style="padding: 8px; border: 1px solid #eee;">${params.daysUntil} days</td></tr>
         </table>
@@ -76,8 +85,8 @@ export function pendingVerificationTemplate(params: {
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1f2937;">Pending Verifications</h2>
-        <p>Hello Dr. ${params.mdName},</p>
-        <p>There are <strong>${params.pendingCount}</strong> employee competencies awaiting your review at <strong>${params.agencyName}</strong>.</p>
+        <p>Hello Dr. ${escapeHtml(params.mdName)},</p>
+        <p>There are <strong>${params.pendingCount}</strong> employee competencies awaiting your review at <strong>${escapeHtml(params.agencyName)}</strong>.</p>
         <p style="margin: 24px 0;">
           <a href="${params.dashboardUrl}" style="background: #C53030; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
             Review Verifications

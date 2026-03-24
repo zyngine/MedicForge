@@ -21,10 +21,6 @@ import { toast } from "sonner";
 export default function OrganizationPage() {
   const { tenant, isLoading: tenantLoading, error: tenantError, refetch } = useTenant();
 
-  // Debug logging
-  console.log("[Organization] tenant:", tenant?.id, tenant?.name);
-  console.log("[Organization] tenantLoading:", tenantLoading);
-  console.log("[Organization] tenantError:", tenantError);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

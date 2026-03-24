@@ -80,6 +80,11 @@ export default function StudentCourseDetailPage() {
   const [expandedModule, setExpandedModule] = React.useState<string | null>(null);
   const [showCertificate, setShowCertificate] = React.useState(false);
 
+  // Get first published module's details to find the first lesson for "Continue Learning"
+  const firstPublishedModule = modules.find(m => m.is_published);
+  const { data: firstModuleDetail } = useModule(firstPublishedModule?.id);
+  const firstLessonId = firstModuleDetail?.lessons?.find((l: any) => l.is_published)?.id;
+
   // Find certificate for this course
   const courseCertificate = certificates.find(c => c.course_id === courseId);
   const isCompleted = progress?.overallProgress === 100;
@@ -162,10 +167,19 @@ export default function StudentCourseDetailPage() {
                   View Certificate
                 </Button>
               )}
-              <Button size="lg">
-                <Play className="h-4 w-4 mr-2" />
-                {isCompleted ? "Review Course" : "Continue Learning"}
-              </Button>
+              {firstLessonId ? (
+                <Button size="lg" asChild>
+                  <Link href={`/student/courses/${courseId}/learn/${firstLessonId}`}>
+                    <Play className="h-4 w-4 mr-2" />
+                    {isCompleted ? "Review Course" : "Continue Learning"}
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="lg" disabled>
+                  <Play className="h-4 w-4 mr-2" />
+                  {isCompleted ? "Review Course" : "Continue Learning"}
+                </Button>
+              )}
             </div>
           </div>
 

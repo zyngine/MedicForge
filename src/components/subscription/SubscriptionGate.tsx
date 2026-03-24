@@ -34,7 +34,7 @@ const GRACE_PERIOD_DAYS = 3;
 
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const { tenant, isLoading: tenantLoading } = useTenant();
-  const { user, isLoading: userLoading } = useUser();
+  const { user, profile, isLoading: userLoading } = useUser();
   const [timedOut, setTimedOut] = React.useState(false);
 
   // Safety timeout — if loading takes more than 8s, unblock the UI.
@@ -104,7 +104,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       <SubscriptionBlockedScreen
         reason={isCanceled ? "canceled" : "expired"}
         tenant={tenant}
-        userRole={user?.role}
+        userRole={profile?.role}
       />
     );
   }
@@ -115,13 +115,13 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       {showTrialWarning && (
         <TrialExpiringBanner
           daysRemaining={daysUntilTrialEnds!}
-          isAdmin={user?.role === "admin"}
+          isAdmin={profile?.role === "admin"}
         />
       )}
       {showGracePeriodWarning && (
         <GracePeriodBanner
           daysRemaining={daysUntilGraceEnds!}
-          isAdmin={user?.role === "admin"}
+          isAdmin={profile?.role === "admin"}
         />
       )}
       {showPastDueWarning && (

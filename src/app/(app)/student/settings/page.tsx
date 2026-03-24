@@ -39,6 +39,52 @@ export default function StudentSettingsPage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Password form state
+  const [currentPassword, setCurrentPassword] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update password");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleSignOutOtherSessions = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut({ scope: "others" });
+      if (error) throw error;
+      toast.success("All other sessions have been signed out");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to sign out other sessions");
+    }
+  };
+
   // Profile form state
   const [profileForm, setProfileForm] = React.useState({
     full_name: profile?.full_name || "",
@@ -278,18 +324,35 @@ export default function StudentSettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="current_password">Current Password</Label>
-                  <Input id="current_password" type="password" />
+                  <Input
+                    id="current_password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new_password">New Password</Label>
-                  <Input id="new_password" type="password" />
+                  <Input
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm_password">Confirm New Password</Label>
-                  <Input id="confirm_password" type="password" />
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                 </div>
                 <div className="flex justify-end">
-                  <Button>Update Password</Button>
+                  <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword}>
+                    {isUpdatingPassword ? "Updating..." : "Update Password"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -306,7 +369,7 @@ export default function StudentSettingsPage() {
                   Two-factor authentication is not yet enabled for your account.
                 </Alert>
                 <div className="mt-4">
-                  <Button variant="outline">Enable 2FA</Button>
+                  <Button variant="outline" disabled>Enable 2FA (Coming Soon)</Button>
                 </div>
               </CardContent>
             </Card>
@@ -331,7 +394,7 @@ export default function StudentSettingsPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <Button variant="outline" className="text-destructive">
+                  <Button variant="outline" className="text-destructive" onClick={handleSignOutOtherSessions}>
                     Sign Out All Other Sessions
                   </Button>
                 </div>

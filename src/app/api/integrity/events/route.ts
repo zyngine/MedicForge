@@ -21,6 +21,17 @@ interface RequestBody {
 
 export async function POST(req: NextRequest) {
   try {
+    // Authenticate the requesting user
+    const supabase = await getDb();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body: RequestBody = await req.json();
     const { attemptId, tenantId, userId, events } = body;
 
@@ -31,7 +42,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = await getDb();
+    // Ensure the authenticated user matches the userId in the request
+    if (authUser.id !== userId) {
+      return NextResponse.json(
+        { error: "Forbidden - user mismatch" },
+        { status: 403 }
+      );
+    }
 
     // Process each event
     const results = await Promise.all(

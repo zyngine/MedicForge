@@ -60,6 +60,7 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
           student:users!submissions_student_id_fkey(id, full_name, email),
           grader:users!submissions_graded_by_fkey(id, full_name, email)
         `)
+        .eq("tenant_id", tenant!.id)
         .order("submitted_at", { ascending: false });
 
       if (options.assignmentId) {

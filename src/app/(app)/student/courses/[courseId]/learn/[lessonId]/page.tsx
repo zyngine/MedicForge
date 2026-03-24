@@ -33,6 +33,15 @@ import {
 } from "@/lib/hooks/use-progress";
 import { useCourse } from "@/lib/hooks/use-courses";
 
+function sanitizeHTML(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/on\w+\s*=\s*[^\s>]*/gi, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/data\s*:/gi, "data-blocked:");
+}
+
 function getLessonIcon(type: string) {
   switch (type) {
     case "video":
@@ -235,9 +244,9 @@ export default function StudentLessonPage() {
           {lesson.content && (
             <div className="prose prose-sm dark:prose-invert max-w-none">
               {typeof lesson.content === "string" ? (
-                <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(lesson.content || "") }} />
               ) : typeof lesson.content === "object" && lesson.content !== null && "html" in lesson.content ? (
-                <div dangerouslySetInnerHTML={{ __html: String((lesson.content as { html: string }).html) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(String((lesson.content as { html: string }).html)) }} />
               ) : typeof lesson.content === "object" && lesson.content !== null && "text" in lesson.content ? (
                 <p className="whitespace-pre-wrap">{String((lesson.content as { text: string }).text)}</p>
               ) : (

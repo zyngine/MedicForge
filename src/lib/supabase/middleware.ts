@@ -101,14 +101,18 @@ export async function updateSession(request: NextRequest) {
       supabaseResponse.headers.set("x-tenant-id", tenantInfo.id)
       supabaseResponse.headers.set("x-tenant-slug", tenantInfo.slug)
       supabaseResponse.cookies.set("tenant_id", tenantInfo.id, {
-        httpOnly: false, // Must be false so client-side JS can read it
+        // httpOnly: false — intentional. Client-side tenant resolution reads this cookie.
+        // Data access is secured by RLS using get_user_tenant_id(), not this cookie.
+        httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 86400, // 24 hours - persist across sessions
       })
       supabaseResponse.cookies.set("tenant_slug", tenantInfo.slug, {
-        httpOnly: false, // Allow client-side access
+        // httpOnly: false — intentional. Client-side tenant resolution reads this cookie.
+        // Data access is secured by RLS using get_user_tenant_id(), not this cookie.
+        httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
@@ -154,7 +158,11 @@ export async function updateSession(request: NextRequest) {
   // Route type detection - check BEFORE making network call
   const isAuthRoute = pathname.startsWith("/login") ||
                       pathname.startsWith("/register") ||
-                      pathname.startsWith("/forgot-password");
+                      pathname.startsWith("/forgot-password") ||
+                      pathname.startsWith("/set-password") ||
+                      pathname.startsWith("/accept-invite") ||
+                      pathname.startsWith("/auth/callback") ||
+                      pathname.startsWith("/poc");
                       
 
   const isPlatformAdminRoute = pathname.startsWith("/platform-admin") &&

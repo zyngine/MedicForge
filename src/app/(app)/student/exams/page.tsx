@@ -50,8 +50,8 @@ export default function StudentExamsPage() {
 
   // Calculate stats
   const passedCount = completedAttempts.filter((a) => {
-    // Would need results to determine, for now just show count
-    return true; // Placeholder
+    const result = a.result?.[0];
+    return result?.passed === true;
   }).length;
 
   if (isLoading) {

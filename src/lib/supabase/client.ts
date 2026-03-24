@@ -9,9 +9,24 @@ export function createClient() {
     return browserClient;
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // During Next.js static generation, env vars may not be available.
+    // Return a dummy client that will fail gracefully at runtime.
+    if (typeof window === "undefined") {
+      return createBrowserClient<Database>(
+        "https://placeholder.supabase.co",
+        "placeholder-key"
+      ) as ReturnType<typeof createBrowserClient<Database>>;
+    }
+    throw new Error("Missing Supabase environment variables. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+  }
+
   browserClient = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       auth: {
         flowType: 'pkce',

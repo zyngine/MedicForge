@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import crypto from "crypto";
 
 export interface APIContext {
   tenantId: string;
@@ -62,30 +63,17 @@ export async function validateAPIKey(request: NextRequest): Promise<APIContext |
 }
 
 /**
- * Hash API key for storage comparison
- * In production, use a proper hashing algorithm like SHA-256
+ * Hash API key for storage comparison using SHA-256
  */
 function hashAPIKey(key: string): string {
-  // Simple hash for demo - in production use crypto.subtle.digest
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    const char = key.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16).padStart(16, "0");
+  return crypto.createHash("sha256").update(key).digest("hex");
 }
 
 /**
- * Generate a new API key
+ * Generate a new API key using cryptographically secure random bytes
  */
 export function generateAPIKey(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let key = "mf_"; // MedicForge prefix
-  for (let i = 0; i < 40; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return key;
+  return "mf_" + crypto.randomBytes(32).toString("hex");
 }
 
 /**

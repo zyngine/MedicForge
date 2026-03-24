@@ -70,27 +70,43 @@ export function useNotifications(): UseNotificationsReturn {
     mountedRef.current = true;
     fetchNotifications();
 
-    // Subscribe to real-time notifications
-    const channel = supabase
-      .channel("notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-        },
-        (payload) => {
-          if (mountedRef.current) {
-            setNotifications((prev) => [payload.new as Notification, ...prev]);
+    // Subscribe to real-time notifications for this user only
+    const setupSubscription = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || !mountedRef.current) return null;
+
+      return supabase
+        .channel(`notifications:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (mountedRef.current) {
+              setNotifications((prev) => [payload.new as Notification, ...prev]);
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    };
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    setupSubscription().then((ch) => {
+      channel = ch;
+    });
 
     return () => {
       mountedRef.current = false;
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [fetchNotifications]);
 

@@ -1,12 +1,15 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 // Generate a unique 8-character agency code
 function generateAgencyCode(): string {
+  const bytes = crypto.randomBytes(5);
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
   for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(bytes[i % bytes.length] % chars.length);
   }
   return code;
 }
@@ -15,10 +18,23 @@ export async function POST(request: Request) {
   console.log("[Setup User] ========== START ==========");
 
   try {
+    // Authenticate the requesting user
+    const supabase = await createServerClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, email, metadata } = body;
 
     console.log("[Setup User] Request:", { userId, email, metadata });
+
+    // The authenticated user must be setting up their own account
+    if (userId !== authUser.id) {
+      return NextResponse.json({ error: "Forbidden - can only set up your own account" }, { status: 403 });
+    }
 
     if (!userId || !email) {
       return NextResponse.json({ error: "Missing userId or email" }, { status: 400 });

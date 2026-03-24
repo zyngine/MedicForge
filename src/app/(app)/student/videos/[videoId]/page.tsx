@@ -245,9 +245,23 @@ export default function StudentVideoPlayerPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   You must complete the associated assignment to receive virtual attendance.
                 </p>
-                <Button variant="outline" size="sm" className="w-full">
-                  View Assignment
-                </Button>
+                {(video as any).coursework_assignment_id ? (
+                  <Link href={`/student/assignments/${(video as any).coursework_assignment_id}`}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      View Assignment
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled
+                    title="No assignment linked"
+                  >
+                    View Assignment
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}

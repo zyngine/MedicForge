@@ -22,6 +22,7 @@ export default function AdaptiveTestPage() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false);
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
+  const [correctAnswerId, setCorrectAnswerId] = useState<string | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -69,34 +70,31 @@ export default function AdaptiveTestPage() {
   const handleSubmitAnswer = async () => {
     if (!selectedAnswer || !currentQuestion) return;
 
-    // Check if correct
-    const correctAnswer = currentQuestion.correct_answer as { answerId?: string };
-    const isCorrect = correctAnswer.answerId === selectedAnswer;
-    setLastAnswerCorrect(isCorrect);
-
     // Stop timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
-    // Show explanation
-    setShowExplanation(true);
+    // Submit to hook which checks correctness server-side
+    const result = await submitAnswer(selectedAnswer, timeSpent);
+    setLastAnswerCorrect(result.isCorrect ?? null);
+    setCorrectAnswerId(result.correctAnswerId ?? null);
+
+    if (result.finished) {
+      setShowResult(true);
+    } else {
+      // Show explanation before moving to next question
+      setShowExplanation(true);
+    }
   };
 
   const handleNextQuestion = async () => {
-    if (!selectedAnswer) return;
-
-    const { finished, passFail } = await submitAnswer(selectedAnswer, timeSpent);
-
-    if (finished) {
-      setShowResult(true);
-    } else {
-      // Reset for next question
-      setSelectedAnswer(null);
-      setTimeSpent(0);
-      setShowExplanation(false);
-      setLastAnswerCorrect(null);
-    }
+    // Reset for next question
+    setSelectedAnswer(null);
+    setTimeSpent(0);
+    setShowExplanation(false);
+    setLastAnswerCorrect(null);
+    setCorrectAnswerId(null);
   };
 
   const progress = getProgress();
@@ -290,7 +288,7 @@ export default function AdaptiveTestPage() {
         <div className="space-y-3 mb-6">
           {currentQuestion.options?.map((option) => {
             const isSelected = selectedAnswer === option.id;
-            const isCorrect = option.isCorrect;
+            const isCorrect = correctAnswerId === option.id;
             const showCorrectness = showExplanation;
 
             let optionClass = "border rounded-lg p-4 cursor-pointer transition-all ";

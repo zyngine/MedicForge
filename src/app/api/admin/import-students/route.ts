@@ -89,8 +89,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if email exists in auth (might be in another tenant)
-        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const existingAuthUser = authUsers?.users?.find(
+        const { data: { users: filteredUsers } } = await supabaseAdmin.auth.admin.listUsers({
+          filter: email,
+        });
+        const existingAuthUser = filteredUsers?.find(
           (u: any) => u.email?.toLowerCase() === email
         );
 

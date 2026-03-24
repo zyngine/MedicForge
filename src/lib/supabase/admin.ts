@@ -8,12 +8,12 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
-    console.error("[Admin Client] NEXT_PUBLIC_SUPABASE_URL is not set!");
+    console.error("Failed to initialize admin client: missing server configuration");
     throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
   }
 
   if (!serviceRoleKey) {
-    console.error("[Admin Client] SUPABASE_SERVICE_ROLE_KEY is not set!");
+    console.error("Failed to initialize admin client: missing server configuration");
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
 
@@ -34,12 +34,12 @@ export function createCEAdminClient(): any {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
-    console.error("[CE Admin Client] NEXT_PUBLIC_SUPABASE_URL is not set!");
+    console.error("Failed to initialize admin client: missing server configuration");
     throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
   }
 
   if (!serviceRoleKey) {
-    console.error("[CE Admin Client] SUPABASE_SERVICE_ROLE_KEY is not set!");
+    console.error("Failed to initialize admin client: missing server configuration");
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
 

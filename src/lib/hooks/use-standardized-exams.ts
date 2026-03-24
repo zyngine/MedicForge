@@ -77,6 +77,7 @@ export interface ExamAttempt {
   questions_answered: number;
   created_at: string;
   template?: ExamTemplate;
+  result?: ExamResult[];
 }
 
 export interface ExamResponse {
@@ -432,7 +433,7 @@ export function useMyExamAttempts() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("exam_attempts")
-          .select("*, template:standardized_exam_templates(*)")
+          .select("*, template:standardized_exam_templates(*), result:exam_results(*)")
           .eq("student_id", user.id)
           .order("started_at", { ascending: false });
 

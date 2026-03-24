@@ -8,7 +8,7 @@ const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/types/database.types";
 
 type UserProfile = Database["public"]["Tables"]["users"]["Row"];
 

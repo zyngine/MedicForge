@@ -359,7 +359,7 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
   const submitAnswer = useCallback(async (
     answerId: string,
     timeSpent: number
-  ): Promise<{ finished: boolean; passFail?: "pass" | "fail" }> => {
+  ): Promise<{ finished: boolean; passFail?: "pass" | "fail"; isCorrect?: boolean; correctAnswerId?: string }> => {
     if (!session || !currentQuestion) {
       return { finished: true };
     }
@@ -450,7 +450,7 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
         console.error("Failed to save CAT session:", err);
       }
 
-      return { finished: true, passFail };
+      return { finished: true, passFail, isCorrect, correctAnswerId: correctAnswer.answerId };
     }
 
     setSession(updatedSession);
@@ -468,11 +468,11 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
         pass_fail: passFail,
       });
       setCurrentQuestion(null);
-      return { finished: true, passFail };
+      return { finished: true, passFail, isCorrect, correctAnswerId: correctAnswer.answerId };
     }
 
     setCurrentQuestion(nextQuestion);
-    return { finished: false };
+    return { finished: false, isCorrect, correctAnswerId: correctAnswer.answerId };
   }, [session, currentQuestion, questionPool, catConfig, supabase]);
 
   // Abandon session
@@ -511,9 +511,18 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
     };
   }, [session, catConfig]);
 
+  // Return a sanitized question that does not expose correct_answer or isCorrect
+  const safeQuestion = currentQuestion
+    ? {
+        ...currentQuestion,
+        correct_answer: undefined,
+        options: currentQuestion.options?.map(({ isCorrect, ...opt }) => opt),
+      }
+    : null;
+
   return {
     session,
-    currentQuestion,
+    currentQuestion: safeQuestion,
     isLoading,
     startSession,
     submitAnswer,

@@ -37,6 +37,10 @@ import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
 import { useStudentLinks } from "@/lib/hooks/use-program-links";
 import { formatDate } from "@/lib/utils";
 
+// TODO: These should come from course/program configuration
+const REQUIRED_CLINICAL_HOURS = 48;
+const REQUIRED_PATIENT_CONTACTS = 30;
+
 function getAssignmentIcon(type: string) {
   switch (type) {
     case "quiz":
@@ -461,7 +465,7 @@ export default function StudentDashboardPage() {
                       </span>
                     </div>
                     <Progress
-                      value={Math.min(((clinicalHours?.totalHours || 0) / 48) * 100, 100)}
+                      value={Math.min(((clinicalHours?.totalHours || 0) / REQUIRED_CLINICAL_HOURS) * 100, 100)}
                       size="sm"
                     />
                   </div>
@@ -473,7 +477,7 @@ export default function StudentDashboardPage() {
                       </span>
                     </div>
                     <Progress
-                      value={Math.min(((clinicalHours?.patientContacts || 0) / 30) * 100, 100)}
+                      value={Math.min(((clinicalHours?.patientContacts || 0) / REQUIRED_PATIENT_CONTACTS) * 100, 100)}
                       size="sm"
                     />
                   </div>
