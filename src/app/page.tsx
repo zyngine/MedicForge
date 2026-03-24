@@ -15,6 +15,9 @@ import {
   Building2,
   UserCog,
   CalendarClock,
+  BookOpen,
+  Award,
+  Shield,
 } from "lucide-react";
 
 const features = [
@@ -80,6 +83,33 @@ const agencyFeatures = [
     title: "State Compliance",
     description:
       "PA state competency library with full audit trail for regulatory compliance.",
+  },
+];
+
+const ceFeatures = [
+  {
+    icon: <BookOpen className="h-6 w-6" />,
+    title: "Unlimited CE Courses",
+    description:
+      "Self-paced online courses covering all NREMT topic categories. Learn on your schedule, 24/7.",
+  },
+  {
+    icon: <Award className="h-6 w-6" />,
+    title: "Verified Certificates",
+    description:
+      "Every completion generates a verifiable certificate with a unique QR code accepted by state EMS offices.",
+  },
+  {
+    icon: <Shield className="h-6 w-6" />,
+    title: "CAPCE-Ready Content",
+    description:
+      "Evidence-based, committee-reviewed curriculum built to CAPCE standards. Accreditation coming 2027.",
+  },
+  {
+    icon: <Users className="h-6 w-6" />,
+    title: "Agency CE Management",
+    description:
+      "Compliance dashboards, training assignments, and NREMT reporting for your entire department.",
   },
 ];
 
@@ -302,6 +332,96 @@ export default function HomePage() {
                   <Link href="/pricing#agency">View Agency Plans</Link>
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Continuing Education Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="secondary" className="mb-4">Continuing Education</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                Affordable CE for Every Provider
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Quality continuing education shouldn&apos;t break the bank. Individual providers start
+                at $69/year for unlimited access. Agencies get flat-rate pricing with no per-seat fees —
+                so every member of your team stays current.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {ceFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{feature.title}</h4>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 flex items-center gap-4">
+                <Button size="lg" asChild>
+                  <Link href="/ce">
+                    Explore CE Platform <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/ce/catalog">Browse Courses</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="relative">
+              <Card className="p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-semibold mb-1">CE Pricing at a Glance</h3>
+                  <p className="text-sm text-muted-foreground">No per-seat fees. No hidden costs.</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <div className="font-medium">Individual</div>
+                      <div className="text-sm text-muted-foreground">Unlimited courses</div>
+                    </div>
+                    <div className="text-xl font-bold">$69<span className="text-sm font-normal text-muted-foreground">/yr</span></div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <div className="font-medium">Starter Agency</div>
+                      <div className="text-sm text-muted-foreground">Up to 25 employees</div>
+                    </div>
+                    <div className="text-xl font-bold">$1,000<span className="text-sm font-normal text-muted-foreground">/yr</span></div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <div className="font-medium">Team Agency</div>
+                      <div className="text-sm text-muted-foreground">Up to 75 employees</div>
+                    </div>
+                    <div className="text-xl font-bold">$2,000<span className="text-sm font-normal text-muted-foreground">/yr</span></div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <div className="font-medium">Department</div>
+                      <div className="text-sm text-muted-foreground">Up to 200 employees</div>
+                    </div>
+                    <div className="text-xl font-bold">$4,000<span className="text-sm font-normal text-muted-foreground">/yr</span></div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <div className="font-medium">Enterprise</div>
+                      <div className="text-sm text-muted-foreground">Unlimited employees</div>
+                    </div>
+                    <div className="text-xl font-bold">$7,000<span className="text-sm font-normal text-muted-foreground">/yr</span></div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-4">
+                  Free courses available. Per-course purchases from $10.
+                </p>
+              </Card>
             </div>
           </div>
         </div>
