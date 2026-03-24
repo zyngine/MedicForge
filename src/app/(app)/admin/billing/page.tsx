@@ -34,23 +34,9 @@ interface Tenant {
 
 const LMS_TIERS = [
   {
-    id: "free",
-    name: "Starter",
-    price: "Free",
-    description: "For small programs getting started",
-    features: [
-      "1 instructor",
-      "Up to 25 students",
-      "2 active courses",
-      "Basic assignment types",
-      "1GB storage",
-    ],
-    icon: <Zap className="h-6 w-6" />,
-  },
-  {
     id: "professional",
     name: "Professional",
-    price: "$149/mo",
+    price: "$1,499/yr",
     description: "For growing training programs",
     features: [
       "Up to 5 instructors",
@@ -67,7 +53,7 @@ const LMS_TIERS = [
   {
     id: "institution",
     name: "Institution",
-    price: "$399/mo",
+    price: "$3,999/yr",
     description: "For colleges and large academies",
     features: [
       "Unlimited instructors",
@@ -79,6 +65,19 @@ const LMS_TIERS = [
       "Priority support",
     ],
     icon: <Crown className="h-6 w-6" />,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    description: "For large institutions with custom needs",
+    features: [
+      "Unlimited students",
+      "Custom integrations",
+      "SSO integration",
+      "Dedicated account manager",
+    ],
+    icon: <Zap className="h-6 w-6" />,
   },
 ];
 
