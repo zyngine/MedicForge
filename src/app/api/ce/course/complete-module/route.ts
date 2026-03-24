@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
           if (user.email) {
             try {
-              await sendCourseCompletionEmail(user.email, user.first_name, course.title, course.ceh_hours, certNumber, expiresAt);
+              await sendCourseCompletionEmail(user.email, user.first_name, course.title, course.ceh_hours, certNumber, expiresAt, ceUserId);
             } catch (e) {
               console.error("[CE Email] Completion email failed:", e);
             }

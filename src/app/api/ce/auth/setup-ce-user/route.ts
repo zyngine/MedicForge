@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     console.log("[CE Setup User] CE user created successfully:", callerUserId);
 
     try {
-      await sendWelcomeEmail(email, firstName || "there");
+      await sendWelcomeEmail(email, firstName || "there", callerUserId);
     } catch (e) {
       console.error("[CE Email] Welcome email failed:", e);
     }

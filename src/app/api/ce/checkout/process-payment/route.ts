@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       });
 
       try {
-        await sendSubscriptionReceipt(ceUser.email, ceUser.first_name, amountCents / 100, expires.toISOString());
+        await sendSubscriptionReceipt(ceUser.email, ceUser.first_name, amountCents / 100, expires.toISOString(), ceUser.id);
       } catch (e) {
         console.error("[CE Email] Subscription receipt failed:", e);
       }
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       });
 
       try {
-        await sendCoursePurchaseReceipt(ceUser.email, ceUser.first_name, note.replace("MedicForge CE: ", ""), amountCents / 100, courseId!);
+        await sendCoursePurchaseReceipt(ceUser.email, ceUser.first_name, note.replace("MedicForge CE: ", ""), amountCents / 100, courseId!, ceUser.id);
       } catch (e) {
         console.error("[CE Email] Course receipt failed:", e);
       }

@@ -4,33 +4,74 @@
  * If the key is missing, emails are logged to console and skipped gracefully.
  */
 
+import { createCEAdminClient } from "@/lib/supabase/admin";
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.CE_FROM_EMAIL || "noreply@medicforge.net";
 const ADMIN_EMAIL = process.env.CE_ADMIN_EMAIL || "ce@medicforge.net";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://medicforge.net";
 
 // ---------------------------------------------------------------------------
+// Email log metadata passed by each caller
+// ---------------------------------------------------------------------------
+
+interface EmailLogMeta {
+  emailType: string;
+  userId?: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Base sender
 // ---------------------------------------------------------------------------
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  meta: EmailLogMeta
+): Promise<void> {
   if (!RESEND_API_KEY) {
     console.warn("[CE Email] RESEND_API_KEY not configured — skipping:", subject, "→", to);
     return;
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
-  });
+  let status: string = "failed";
+  let resendMessageId: string | null = null;
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.error("[CE Email] Failed to send:", subject, err);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      resendMessageId = data.id ?? null;
+      status = "sent";
+    } else {
+      const err = await res.json().catch(() => ({}));
+      console.error("[CE Email] Failed to send:", subject, err);
+    }
+  } catch (err) {
+    console.error("[CE Email] Network error sending:", subject, err);
+  }
+
+  // Log to ce_email_log
+  try {
+    const supabase = createCEAdminClient();
+    await supabase.from("ce_email_log").insert({
+      user_id: meta.userId ?? null,
+      email_type: meta.emailType,
+      subject,
+      status,
+      resend_message_id: resendMessageId,
+    });
+  } catch (logErr) {
+    console.error("[CE Email] Failed to log email to ce_email_log:", logErr);
   }
 }
 
@@ -80,7 +121,7 @@ function table(rows: string): string {
 // Welcome email — sent after CE account creation
 // ---------------------------------------------------------------------------
 
-export async function sendWelcomeEmail(to: string, firstName: string): Promise<void> {
+export async function sendWelcomeEmail(to: string, firstName: string, userId?: string): Promise<void> {
   const html = layout(`
     <h2 style="margin:0 0 8px;font-size:20px">Welcome, ${firstName}!</h2>
     <p style="color:#4b5563;line-height:1.6;margin:0 0 16px">
@@ -94,7 +135,10 @@ export async function sendWelcomeEmail(to: string, firstName: string): Promise<v
     </p>
   `);
 
-  await sendEmail(to, "Welcome to MedicForge CE", html);
+  await sendEmail(to, "Welcome to MedicForge CE", html, {
+    emailType: "welcome",
+    userId,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +150,8 @@ export async function sendCoursePurchaseReceipt(
   firstName: string,
   courseTitle: string,
   amount: number,
-  courseId: string
+  courseId: string,
+  userId?: string
 ): Promise<void> {
   const html = layout(`
     <h2 style="margin:0 0 8px;font-size:20px">Purchase Confirmed</h2>
@@ -120,7 +165,10 @@ export async function sendCoursePurchaseReceipt(
     ${btn(`${BASE_URL}/ce/course/${courseId}`, "Start Course")}
   `);
 
-  await sendEmail(to, `Purchase Confirmed — ${courseTitle}`, html);
+  await sendEmail(to, `Purchase Confirmed — ${courseTitle}`, html, {
+    emailType: "purchase_receipt",
+    userId,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +179,8 @@ export async function sendSubscriptionReceipt(
   to: string,
   firstName: string,
   amount: number,
-  expiresAt: string
+  expiresAt: string,
+  userId?: string
 ): Promise<void> {
   const expires = new Date(expiresAt).toLocaleDateString("en-US", {
     year: "numeric",
@@ -154,7 +203,10 @@ export async function sendSubscriptionReceipt(
     ${btn(`${BASE_URL}/ce/catalog`, "Browse All Courses")}
   `);
 
-  await sendEmail(to, "Annual CE Subscription Confirmed", html);
+  await sendEmail(to, "Annual CE Subscription Confirmed", html, {
+    emailType: "subscription_receipt",
+    userId,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +219,8 @@ export async function sendCourseCompletionEmail(
   courseTitle: string,
   cehHours: number,
   certNumber: string,
-  expiresAt: string | null
+  expiresAt: string | null,
+  userId?: string
 ): Promise<void> {
   const expiryRow = expiresAt
     ? row("Certificate expires", new Date(expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))
@@ -191,7 +244,10 @@ export async function sendCourseCompletionEmail(
     ${btn(`${BASE_URL}/ce/transcript`, "View Certificate")}
   `);
 
-  await sendEmail(to, `Certificate Issued — ${courseTitle}`, html);
+  await sendEmail(to, `Certificate Issued — ${courseTitle}`, html, {
+    emailType: "course_completion",
+    userId,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -217,5 +273,7 @@ export async function sendContactFormEmail(
     <p style="font-size:13px;color:#6b7280;margin-top:16px">Reply directly to this email to respond to ${name}.</p>
   `);
 
-  await sendEmail(ADMIN_EMAIL, `CE Contact: ${topic || "General inquiry"} — ${name}`, html);
+  await sendEmail(ADMIN_EMAIL, `CE Contact: ${topic || "General inquiry"} — ${name}`, html, {
+    emailType: "contact_form",
+  });
 }
