@@ -125,6 +125,11 @@ export async function updateSession(request: NextRequest) {
   // ROUTE PROTECTION (existing logic)
   // ============================================
 
+  // Certificate verification is public on ALL domains (main + subdomains)
+  if (pathname.startsWith("/verify")) {
+    return supabaseResponse
+  }
+
   // Skip auth check for public routes (faster response - no network calls)
   // BUT only on the main marketing domain - subdomains should NOT show marketing pages
   const isMarketingRoute = pathname === "/" ||

@@ -199,6 +199,9 @@ export function useVerifyCertificate(verificationCode: string | undefined) {
       if (!verificationCode) return null;
 
       const db = getDb();
+      const code = verificationCode.toUpperCase();
+
+      // Try LMS certificates first
       const { data, error } = await db
         .from("certificates")
         .select(`
@@ -207,36 +210,100 @@ export function useVerifyCertificate(verificationCode: string | undefined) {
           course:courses(id, title, course_type),
           tenant:tenants(id, name, logo_url)
         `)
-        .eq("verification_code", verificationCode.toUpperCase())
+        .eq("verification_code", code)
         .single();
 
-      if (error) {
-        if (error.code === "PGRST116") {
-          return { valid: false, message: "Certificate not found" };
-        }
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
 
-      if (data.is_revoked) {
+      // If found in LMS certificates
+      if (data) {
+        if (data.is_revoked) {
+          return {
+            valid: false,
+            message: "This certificate has been revoked",
+            revokedAt: data.revoked_at,
+            reason: data.revoked_reason,
+          };
+        }
+
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          return {
+            valid: false,
+            message: "This certificate has expired",
+            expiredAt: data.expires_at,
+          };
+        }
+
         return {
-          valid: false,
-          message: "This certificate has been revoked",
-          revokedAt: data.revoked_at,
-          reason: data.revoked_reason,
+          valid: true,
+          certificate: data as Certificate & { tenant: { id: string; name: string; logo_url: string } },
         };
       }
 
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      // Not found in LMS — try CE certificates
+      const { data: ceData, error: ceError } = await (db as any)
+        .from("ce_certificates")
+        .select(`
+          *,
+          student:ce_users!ce_certificates_user_id_fkey(id, full_name, email),
+          course:ce_courses!ce_certificates_course_id_fkey(id, title, ce_hours)
+        `)
+        .eq("verification_code", code)
+        .single();
+
+      if (ceError) {
+        if (ceError.code === "PGRST116") {
+          return { valid: false, message: "Certificate not found" };
+        }
+        throw ceError;
+      }
+
+      if (ceData.expires_at && new Date(ceData.expires_at) < new Date()) {
         return {
           valid: false,
           message: "This certificate has expired",
-          expiredAt: data.expires_at,
+          expiredAt: ceData.expires_at,
         };
       }
 
+      // Map CE certificate data to the same shape as LMS certificates
+      const mappedCertificate: Certificate & { tenant: { id: string; name: string; logo_url: string } } = {
+        id: ceData.id,
+        tenant_id: "",
+        student_id: ceData.user_id,
+        course_id: ceData.course_id,
+        certificate_number: ceData.certificate_number,
+        certificate_type: "ce_completion",
+        title: `CE Certificate - ${ceData.course_title}`,
+        issued_at: ceData.issued_at,
+        expires_at: ceData.expires_at || null,
+        completion_date: ceData.completion_date,
+        final_grade: null,
+        hours_completed: Number(ceData.ceh_hours),
+        template_id: null,
+        custom_data: {},
+        verification_code: ceData.verification_code,
+        is_revoked: false,
+        revoked_at: null,
+        revoked_reason: null,
+        issued_by: null,
+        pdf_url: ceData.pdf_url || null,
+        created_at: ceData.issued_at,
+        updated_at: ceData.issued_at,
+        student: ceData.student
+          ? { id: ceData.student.id, full_name: ceData.student.full_name, email: ceData.student.email }
+          : { id: ceData.user_id, full_name: ceData.user_name, email: "" },
+        course: ceData.course
+          ? { id: ceData.course.id, title: ceData.course.title, course_type: "ce" }
+          : { id: ceData.course_id, title: ceData.course_title, course_type: "ce" },
+        tenant: { id: "", name: ceData.provider_name || "MedicForge", logo_url: "" },
+      };
+
       return {
         valid: true,
-        certificate: data as Certificate & { tenant: { id: string; name: string; logo_url: string } },
+        certificate: mappedCertificate,
       };
     },
     enabled: !!verificationCode,

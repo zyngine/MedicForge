@@ -36,7 +36,6 @@ interface CreateVideoSessionParams {
   scheduledStart: string;
   scheduledEnd: string;
   timezone?: string;
-  useZoom?: boolean;
   manualLink?: string;
   videoPlatform?: string;
 }
@@ -131,70 +130,5 @@ export function useVideoSessions(options: UseVideoSessionsOptions = {}) {
     refetch: fetchSessions,
     createSession,
     deleteSession,
-  };
-}
-
-// Hook for Zoom connection status
-export function useZoomConnection() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [zoomEmail, setZoomEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
-
-        const { data } = await (supabase as any)
-          .from("zoom_connections")
-          .select("zoom_email, is_active")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .single();
-
-        setIsConnected(!!data);
-        setZoomEmail(data?.zoom_email || null);
-      } catch {
-        setIsConnected(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkConnection();
-  }, [supabase]);
-
-  const disconnect = async (): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { error } = await (supabase as any)
-        .from("zoom_connections")
-        .update({ is_active: false })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setIsConnected(false);
-      setZoomEmail(null);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    isConnected,
-    zoomEmail,
-    isLoading,
-    disconnect,
-    connectUrl: "/api/zoom/auth",
   };
 }

@@ -152,7 +152,7 @@ export default function StudentVideoSessionsPage() {
             const startDate = new Date(session.scheduled_start);
             const endDate = new Date(session.scheduled_end);
             const isLive = isSessionLive(session);
-            const joinUrl = session.join_url || session.manual_link;
+            const joinUrl = session.manual_link || session.join_url;
 
             return (
               <Card key={session.id} className={isLive ? "border-green-500 border-2" : ""}>
