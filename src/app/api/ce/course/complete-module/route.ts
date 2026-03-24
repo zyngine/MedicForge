@@ -20,6 +20,16 @@ export async function POST(request: Request) {
 
     const supabase = createCEAdminClient();
 
+    // Verify enrollment belongs to this user
+    const { data: enrollment } = await supabase
+      .from("ce_enrollments")
+      .select("user_id")
+      .eq("id", enrollmentId)
+      .single();
+    if (!enrollment || enrollment.user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Upsert module progress
     const now = new Date().toISOString();
     await supabase.from("ce_module_progress").upsert({

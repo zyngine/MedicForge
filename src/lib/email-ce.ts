@@ -125,7 +125,7 @@ export async function sendWelcomeEmail(to: string, firstName: string, userId?: s
   const html = layout(`
     <h2 style="margin:0 0 8px;font-size:20px">Welcome, ${firstName}!</h2>
     <p style="color:#4b5563;line-height:1.6;margin:0 0 16px">
-      Your MedicForge CE account is ready. Browse our CAPCE-approved continuing education courses
+      Your MedicForge CE account is ready. Browse our quality continuing education courses
       and start earning CEH hours toward your NREMT recertification.
     </p>
     ${btn(`${BASE_URL}/ce/catalog`, "Browse Courses")}

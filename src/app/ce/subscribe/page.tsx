@@ -44,7 +44,7 @@ export default function CESubscribePage() {
       const { data: priceSetting } = await supabase
         .from("ce_platform_settings")
         .select("value")
-        .eq("key", "subscription_price")
+        .eq("key", "annual_subscription_price")
         .maybeSingle();
       setPrice(priceSetting?.value ? parseFloat(priceSetting.value) : 69.00);
 

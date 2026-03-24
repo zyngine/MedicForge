@@ -25,14 +25,32 @@ export async function POST(request: Request) {
       agencyInviteCode,
     } = body;
 
-    // Require authenticated user — no fallback to body userId
-    if (!user) {
+    // If there's an active session, use it. Otherwise, fall back to the
+    // userId from the request body and verify the user exists in Supabase
+    // Auth via the admin client. This is needed when email confirmation is
+    // enabled because signUp() does not create a session in that case.
+    let callerUserId: string;
+
+    if (user) {
+      callerUserId = user.id;
+    } else if (userId) {
+      const adminAuth = createCEAdminClient();
+      const { data: authUser, error: authError } =
+        await adminAuth.auth.admin.getUserById(userId);
+      if (authError || !authUser?.user) {
+        return NextResponse.json(
+          { error: "Unauthorized — user not found" },
+          { status: 401 }
+        );
+      }
+      callerUserId = authUser.user.id;
+    } else {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
-    const callerUserId = user.id;
+
     if (!email) {
       return NextResponse.json(
         { error: "Missing required fields" },

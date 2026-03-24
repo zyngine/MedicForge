@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       .select("id, completion_status, progress_percentage")
       .eq("user_id", ceUser.id)
       .eq("course_id", courseId)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json(existing);

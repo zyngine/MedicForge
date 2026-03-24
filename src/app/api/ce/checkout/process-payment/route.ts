@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const { paymentId } = await chargeCard({
       sourceId,
       amountCents,
-      idempotencyKey: crypto.createHash("sha256").update(user.id + courseId + type).digest("hex").slice(0, 32),
+      idempotencyKey: crypto.createHash("sha256").update(user.id + (courseId || "subscription") + type + Math.floor(Date.now() / 3600000)).digest("hex").slice(0, 32),
       note,
     });
 
