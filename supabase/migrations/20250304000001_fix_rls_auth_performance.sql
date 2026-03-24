@@ -447,54 +447,69 @@ CREATE POLICY "Admins can delete patient contacts"
     );
 
 -- ============================================
--- 15. PUSH SUBSCRIPTIONS
+-- 15. PUSH SUBSCRIPTIONS (skip if tables don't exist)
 -- ============================================
 
-DROP POLICY IF EXISTS "Users can view own push subscriptions" ON push_subscriptions;
-CREATE POLICY "Users can view own push subscriptions"
-    ON push_subscriptions FOR SELECT
-    USING (user_id = (SELECT auth.uid()));
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'push_subscriptions' AND table_schema = 'public') THEN
+        DROP POLICY IF EXISTS "Users can view own push subscriptions" ON push_subscriptions;
+        CREATE POLICY "Users can view own push subscriptions"
+            ON push_subscriptions FOR SELECT
+            USING (user_id = (SELECT auth.uid()));
 
-DROP POLICY IF EXISTS "Users can insert own push subscriptions" ON push_subscriptions;
-CREATE POLICY "Users can insert own push subscriptions"
-    ON push_subscriptions FOR INSERT
-    WITH CHECK (user_id = (SELECT auth.uid()));
+        DROP POLICY IF EXISTS "Users can insert own push subscriptions" ON push_subscriptions;
+        CREATE POLICY "Users can insert own push subscriptions"
+            ON push_subscriptions FOR INSERT
+            WITH CHECK (user_id = (SELECT auth.uid()));
 
-DROP POLICY IF EXISTS "Users can update own push subscriptions" ON push_subscriptions;
-CREATE POLICY "Users can update own push subscriptions"
-    ON push_subscriptions FOR UPDATE
-    USING (user_id = (SELECT auth.uid()));
+        DROP POLICY IF EXISTS "Users can update own push subscriptions" ON push_subscriptions;
+        CREATE POLICY "Users can update own push subscriptions"
+            ON push_subscriptions FOR UPDATE
+            USING (user_id = (SELECT auth.uid()));
 
-DROP POLICY IF EXISTS "Users can delete own push subscriptions" ON push_subscriptions;
-CREATE POLICY "Users can delete own push subscriptions"
-    ON push_subscriptions FOR DELETE
-    USING (user_id = (SELECT auth.uid()));
+        DROP POLICY IF EXISTS "Users can delete own push subscriptions" ON push_subscriptions;
+        CREATE POLICY "Users can delete own push subscriptions"
+            ON push_subscriptions FOR DELETE
+            USING (user_id = (SELECT auth.uid()));
+    END IF;
+END $$;
 
 -- Also fix push_notification_logs and notification_preferences while we're here
-DROP POLICY IF EXISTS "Users can view own push notification logs" ON push_notification_logs;
-CREATE POLICY "Users can view own push notification logs"
-    ON push_notification_logs FOR SELECT
-    USING (
-        user_id = (SELECT auth.uid())
-        OR EXISTS (
-            SELECT 1 FROM users u
-            WHERE u.id = (SELECT auth.uid())
-            AND u.tenant_id = push_notification_logs.tenant_id
-            AND u.role IN ('admin', 'instructor')
-        )
-    );
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'push_notification_logs' AND table_schema = 'public') THEN
+        DROP POLICY IF EXISTS "Users can view own push notification logs" ON push_notification_logs;
+        CREATE POLICY "Users can view own push notification logs"
+            ON push_notification_logs FOR SELECT
+            USING (
+                user_id = (SELECT auth.uid())
+                OR EXISTS (
+                    SELECT 1 FROM users u
+                    WHERE u.id = (SELECT auth.uid())
+                    AND u.tenant_id = push_notification_logs.tenant_id
+                    AND u.role IN ('admin', 'instructor')
+                )
+            );
+    END IF;
+END $$;
 
-DROP POLICY IF EXISTS "Users can view own notification preferences" ON notification_preferences;
-CREATE POLICY "Users can view own notification preferences"
-    ON notification_preferences FOR SELECT
-    USING (user_id = (SELECT auth.uid()));
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'notification_preferences' AND table_schema = 'public') THEN
+        DROP POLICY IF EXISTS "Users can view own notification preferences" ON notification_preferences;
+        CREATE POLICY "Users can view own notification preferences"
+            ON notification_preferences FOR SELECT
+            USING (user_id = (SELECT auth.uid()));
 
-DROP POLICY IF EXISTS "Users can insert own notification preferences" ON notification_preferences;
-CREATE POLICY "Users can insert own notification preferences"
-    ON notification_preferences FOR INSERT
-    WITH CHECK (user_id = (SELECT auth.uid()));
+        DROP POLICY IF EXISTS "Users can insert own notification preferences" ON notification_preferences;
+        CREATE POLICY "Users can insert own notification preferences"
+            ON notification_preferences FOR INSERT
+            WITH CHECK (user_id = (SELECT auth.uid()));
 
-DROP POLICY IF EXISTS "Users can update own notification preferences" ON notification_preferences;
-CREATE POLICY "Users can update own notification preferences"
-    ON notification_preferences FOR UPDATE
-    USING (user_id = (SELECT auth.uid()));
+        DROP POLICY IF EXISTS "Users can update own notification preferences" ON notification_preferences;
+        CREATE POLICY "Users can update own notification preferences"
+            ON notification_preferences FOR UPDATE
+            USING (user_id = (SELECT auth.uid()));
+    END IF;
+END $$;
