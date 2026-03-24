@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -23,31 +24,33 @@ import type { AgencySkill } from "@/lib/hooks/use-agency-data";
 
 function SkillCard({ skill }: { skill: AgencySkill }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold">{skill.name}</h3>
-          {skill.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {skill.description}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-1 mt-3">
-            {skill.certification_levels.map((level) => (
-              <Badge key={level} variant="secondary" className="text-xs">
-                {level}
-              </Badge>
-            ))}
+    <Link href={`/agency/skills/${skill.id}`} className="block">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+        <CardContent className="p-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold">{skill.name}</h3>
+            {skill.description && (
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                {skill.description}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-1 mt-3">
+              {skill.certification_levels.map((level) => (
+                <Badge key={level} variant="secondary" className="text-xs">
+                  {level}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-between mt-4 pt-4 border-t text-sm text-muted-foreground">
-          <span>{skill.category}</span>
-          {skill.requires_annual_verification && (
-            <span className="text-warning text-xs">Annual verification</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex items-center justify-between mt-4 pt-4 border-t text-sm text-muted-foreground">
+            <span>{skill.category}</span>
+            {skill.requires_annual_verification && (
+              <span className="text-warning text-xs">Annual verification</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 
@@ -85,9 +88,11 @@ export default function SkillsPage() {
           </p>
         </div>
         {isAgencyAdmin && (
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Skill
+          <Button asChild>
+            <Link href="/agency/skills/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Skill
+            </Link>
           </Button>
         )}
       </div>

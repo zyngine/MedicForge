@@ -65,13 +65,29 @@ export default function NewCyclePage() {
     }
 
     try {
-      await createCycle({
+      const result = await createCycle({
         name: formData.name,
         cycle_type: formData.cycleType,
         start_date: formData.startDate,
         end_date: formData.endDate,
       });
-      router.push("/agency/cycles");
+
+      const cycleId = result?.cycle?.id;
+
+      // Auto-generate competencies if scope checkboxes are checked
+      if (cycleId && (formData.includeAllEmployees || formData.includeAllSkills)) {
+        try {
+          await fetch(`/api/agency/cycles/${cycleId}/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+        } catch {
+          // Generation failure is non-fatal — user can regenerate from cycle detail page
+        }
+      }
+
+      router.push(cycleId ? `/agency/cycles/${cycleId}` : "/agency/cycles");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create cycle. Please try again.");
     } finally {

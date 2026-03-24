@@ -25,6 +25,7 @@ import {
   X,
   Building2,
   ChevronDown,
+  BarChart3,
 } from "lucide-react";
 
 // Logo component with error fallback
@@ -69,6 +70,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Medical Directors", href: "/agency/medical-directors", icon: Stethoscope, adminOnly: true },
   { label: "Pending Verifications", href: "/agency/medical-directors/pending", icon: ClipboardCheck, mdOnly: true },
   { label: "Audit Log", href: "/agency/audit-log", icon: FileText, adminOnly: true },
+  { label: "Reports", href: "/agency/reports", icon: BarChart3, adminOnly: true },
   { label: "Settings", href: "/agency/settings", icon: Settings, adminOnly: true },
 ];
 

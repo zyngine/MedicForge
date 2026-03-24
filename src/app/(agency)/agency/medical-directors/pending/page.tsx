@@ -12,6 +12,9 @@ import {
   Input,
   Label,
   Alert,
+  Checkbox,
+  Select,
+  Textarea,
 } from "@/components/ui";
 import {
   ClipboardCheck,
@@ -20,30 +23,48 @@ import {
   User,
   Calendar,
   Award,
+  ListChecks,
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
 import { useAgencyVerifications } from "@/lib/hooks/use-agency-data";
+import { useBatchVerify } from "@/lib/hooks/use-batch-verify";
 import type { PendingVerification } from "@/lib/hooks/use-agency-data";
+
+const VERIFICATION_METHOD_OPTIONS = [
+  { value: "in_person", label: "In Person" },
+  { value: "video", label: "Video" },
+  { value: "documentation_review", label: "Documentation Review" },
+];
 
 function VerificationCard({
   verification,
+  isSelected,
+  onToggleSelect,
   onApprove,
   onReject,
 }: {
   verification: PendingVerification;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
   onApprove: () => void;
   onReject: () => void;
 }) {
   return (
-    <Card>
+    <Card className={isSelected ? "ring-2 ring-primary" : ""}>
       <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            checked={isSelected}
+            onChange={() => onToggleSelect(verification.id)}
+            aria-label={`Select ${verification.skill?.name ?? "verification"}`}
+            className="mt-0.5"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold">{verification.skill?.name ?? "—"}</h3>
               <Badge variant="outline">{verification.employee?.certification_level}</Badge>
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1">
                 <User className="h-4 w-4" />
                 {verification.employee
@@ -88,9 +109,11 @@ function VerificationCard({
 
 export default function PendingVerificationsPage() {
   const { isMedicalDirector, isAgencyAdmin } = useAgencyRole();
-  const { verifications, isLoading, approveVerification, denyVerification } =
+  const { verifications, isLoading, approveVerification, denyVerification, refetch } =
     useAgencyVerifications();
+  const batchVerify = useBatchVerify();
 
+  // ── Single-action state ───────────────────────────────────────────────────
   const [selectedVerification, setSelectedVerification] =
     React.useState<PendingVerification | null>(null);
   const [actionType, setActionType] = React.useState<"approve" | "reject" | null>(null);
@@ -98,6 +121,14 @@ export default function PendingVerificationsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
+  // ── Batch-approve state ───────────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [batchModalOpen, setBatchModalOpen] = React.useState(false);
+  const [batchMethod, setBatchMethod] = React.useState("in_person");
+  const [batchNotes, setBatchNotes] = React.useState("");
+  const [batchError, setBatchError] = React.useState<string | null>(null);
+
+  // ── Single-action handlers ────────────────────────────────────────────────
   const handleAction = (verification: PendingVerification, action: "approve" | "reject") => {
     setSelectedVerification(verification);
     setActionType(action);
@@ -132,6 +163,60 @@ export default function PendingVerificationsPage() {
     setActionError(null);
   };
 
+  // ── Batch-approve handlers ────────────────────────────────────────────────
+  const allIds = verifications.map((v) => v.id);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
+  const someSelected = allIds.some((id) => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const openBatchModal = () => {
+    setBatchMethod("in_person");
+    setBatchNotes("");
+    setBatchError(null);
+    setBatchModalOpen(true);
+  };
+
+  const closeBatchModal = () => {
+    setBatchModalOpen(false);
+    setBatchError(null);
+  };
+
+  const confirmBatchApprove = async () => {
+    setBatchError(null);
+    try {
+      await batchVerify.mutateAsync({
+        competency_ids: [...selectedIds],
+        verification_method: batchMethod,
+        notes: batchNotes || undefined,
+      });
+      setSelectedIds(new Set());
+      setBatchModalOpen(false);
+      await refetch();
+    } catch (err) {
+      setBatchError(err instanceof Error ? err.message : "Batch approval failed");
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -150,9 +235,17 @@ export default function PendingVerificationsPage() {
             Review and approve employee competency submissions
           </p>
         </div>
-        <Badge variant="outline" className="w-fit">
-          {verifications.length} pending
-        </Badge>
+        <div className="flex items-center gap-3 flex-wrap">
+          {selectedIds.size > 0 && (
+            <Button onClick={openBatchModal}>
+              <ListChecks className="h-4 w-4 mr-2" />
+              Approve Selected ({selectedIds.size})
+            </Button>
+          )}
+          <Badge variant="outline" className="w-fit">
+            {verifications.length} pending
+          </Badge>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -183,16 +276,29 @@ export default function PendingVerificationsPage() {
 
       {/* Pending Verifications */}
       {verifications.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {verifications.map((verification) => (
-            <VerificationCard
-              key={verification.id}
-              verification={verification}
-              onApprove={() => handleAction(verification, "approve")}
-              onReject={() => handleAction(verification, "reject")}
+        <>
+          {/* Select All Row */}
+          <div className="flex items-center gap-3 px-1">
+            <Checkbox
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              label={someSelected && !allSelected ? "Deselect All" : "Select All"}
             />
-          ))}
-        </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {verifications.map((verification) => (
+              <VerificationCard
+                key={verification.id}
+                verification={verification}
+                isSelected={selectedIds.has(verification.id)}
+                onToggleSelect={toggleSelectOne}
+                onApprove={() => handleAction(verification, "approve")}
+                onReject={() => handleAction(verification, "reject")}
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
@@ -203,7 +309,7 @@ export default function PendingVerificationsPage() {
         </Card>
       )}
 
-      {/* Confirmation Modal */}
+      {/* Single-Action Confirmation Modal */}
       <Modal
         isOpen={!!selectedVerification && !!actionType}
         onClose={closeModal}
@@ -276,6 +382,67 @@ export default function PendingVerificationsPage() {
             </ModalFooter>
           </div>
         )}
+      </Modal>
+
+      {/* Batch Approve Modal */}
+      <Modal
+        isOpen={batchModalOpen}
+        onClose={closeBatchModal}
+        title={`Approve Selected (${selectedIds.size})`}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            You are about to approve{" "}
+            <span className="font-semibold text-foreground">{selectedIds.size}</span>{" "}
+            verification{selectedIds.size === 1 ? "" : "s"}. Choose a verification method and
+            optionally add notes.
+          </p>
+
+          {batchError && (
+            <Alert variant="error" onClose={() => setBatchError(null)}>
+              {batchError}
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="batchMethod">Verification Method</Label>
+            <Select
+              id="batchMethod"
+              options={VERIFICATION_METHOD_OPTIONS}
+              value={batchMethod}
+              onChange={(val) => setBatchMethod(val)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="batchNotes">Notes (optional)</Label>
+            <Textarea
+              id="batchNotes"
+              value={batchNotes}
+              onChange={(e) => setBatchNotes(e.target.value)}
+              placeholder="Add any notes for these approvals..."
+              rows={3}
+            />
+          </div>
+
+          <ModalFooter>
+            <Button variant="outline" onClick={closeBatchModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmBatchApprove}
+              disabled={batchVerify.isPending}
+            >
+              {batchVerify.isPending ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              Confirm Approval
+            </Button>
+          </ModalFooter>
+        </div>
       </Modal>
     </div>
   );

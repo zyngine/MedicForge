@@ -24,6 +24,7 @@ import {
   Clock,
   AlertTriangle,
   ChevronRight,
+  Upload,
 } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
 import { useAgencyEmployees } from "@/lib/hooks/use-agency-data";
@@ -135,12 +136,20 @@ export default function EmployeesPage() {
           </p>
         </div>
         {isAgencyAdmin && (
-          <Button asChild>
-            <Link href="/agency/employees/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Employee
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/agency/employees/import">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/agency/employees/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Employee
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

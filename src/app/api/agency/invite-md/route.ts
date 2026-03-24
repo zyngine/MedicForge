@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { sendEmail } from "@/lib/notifications/email-service";
+import { mdInviteTemplate } from "@/lib/notifications/agency-templates";
 
 function generateInviteCode(): string {
   return crypto.randomBytes(16).toString("hex");
@@ -127,8 +129,23 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net";
     const registrationUrl = `${baseUrl}/agency/register?invite=${inviteCode}`;
 
-    // TODO: Send email to the invited MD
-    // For now, we'll return the invite details so the admin can share the link
+    // Send invitation email to the MD
+    const inviterProfile = await supabase
+      .from("users")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    await sendEmail({
+      to: email.toLowerCase(),
+      template: mdInviteTemplate({
+        mdName,
+        agencyName: tenant?.name || "Your Agency",
+        registrationUrl,
+        invitedByName: inviterProfile.data?.full_name || "An administrator",
+        expiresAt: expiresAt.toISOString(),
+      }),
+    });
 
     return NextResponse.json({
       success: true,
