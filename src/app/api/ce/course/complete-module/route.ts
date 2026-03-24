@@ -1,4 +1,5 @@
 import { createCEAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { sendCourseCompletionEmail } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
@@ -10,6 +11,12 @@ export async function POST(request: Request) {
     if (!enrollmentId || !moduleId || !courseId || !ceUserId) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
+
+    // Auth check
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (ceUserId !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const supabase = createCEAdminClient();
 
@@ -35,7 +42,7 @@ export async function POST(request: Request) {
     const progressPercentage = Math.round((completed / total) * 100);
 
     // Check if there's a quiz for this course — if not, completing all modules = completion
-    const { data: quiz } = await supabase.from("ce_quizzes").select("id").eq("course_id", courseId).limit(1).single();
+    const { data: quiz } = await supabase.from("ce_quizzes").select("id").eq("course_id", courseId).limit(1).maybeSingle();
     const allDone = completed >= total;
     const completionStatus = allDone && !quiz ? "completed" : "in_progress";
 
@@ -52,7 +59,7 @@ export async function POST(request: Request) {
         .select("id")
         .eq("enrollment_id", enrollmentId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!existingCert) {
         const [courseRes, userRes] = await Promise.all([
@@ -65,8 +72,7 @@ export async function POST(request: Request) {
 
         if (course && user) {
           const year = new Date().getFullYear();
-          const rand = String(Math.floor(10000 + Math.random() * 90000));
-          const certNumber = `MF-${year}-${rand}`;
+          const certNumber = `MF-${year}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
           const expiresAt = course.expiration_months
             ? new Date(Date.now() + course.expiration_months * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : null;

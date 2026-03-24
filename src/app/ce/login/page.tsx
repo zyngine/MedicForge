@@ -118,7 +118,7 @@ function CELoginContent() {
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">Password</label>
                   <Link
-                    href="/forgot-password"
+                    href="/ce/forgot-password"
                     className="text-xs text-red-700 hover:underline"
                   >
                     Forgot password?

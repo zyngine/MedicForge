@@ -3,7 +3,7 @@ import { createCEAdminClient } from "@/lib/supabase/admin";
 import { chargeCard } from "@/lib/square-ce";
 import { sendCoursePurchaseReceipt, sendSubscriptionReceipt } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const { paymentId } = await chargeCard({
       sourceId,
       amountCents,
-      idempotencyKey: randomUUID(),
+      idempotencyKey: crypto.createHash("sha256").update(user.id + courseId + type).digest("hex").slice(0, 32),
       note,
     });
 
@@ -131,6 +131,6 @@ export async function POST(request: Request) {
 
   } catch (err: any) {
     console.error("[CE process-payment]", err);
-    return NextResponse.json({ error: err.message || "Payment processing failed" }, { status: 500 });
+    return NextResponse.json({ error: "Payment processing failed. Please try again." }, { status: 500 });
   }
 }

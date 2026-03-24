@@ -1,4 +1,5 @@
 import { createCEAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { sendCourseCompletionEmail } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
@@ -10,6 +11,12 @@ export async function POST(request: Request) {
     if (!enrollmentId || !quizId || !courseId || !ceUserId || !answers) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
+
+    // Auth check
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (ceUserId !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const supabase = createCEAdminClient();
 
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
       started_at: now,
       completed_at: now,
       score,
-      passed,
+      is_passing: passed,
       answers,
     });
 
@@ -82,8 +89,7 @@ export async function POST(request: Request) {
       if (course && user) {
         // Generate certificate number: MF-YEAR-XXXXX
         const year = new Date().getFullYear();
-        const rand = String(Math.floor(10000 + Math.random() * 90000));
-        const certNumber = `MF-${year}-${rand}`;
+        const certNumber = `MF-${year}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 
         const expiresAt = course.expiration_months
           ? new Date(Date.now() + course.expiration_months * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]

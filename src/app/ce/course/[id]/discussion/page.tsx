@@ -82,6 +82,10 @@ export default function CECourseDiscussionPage() {
 
   const postDiscussion = async () => {
     if (!newTitle.trim() || !newBody.trim()) return;
+    if (!currentUserId) {
+      alert("You must be signed in to post a discussion.");
+      return;
+    }
     setPosting(true);
     const supabase = createCEClient();
     await supabase.from("ce_discussions").insert({
@@ -99,6 +103,10 @@ export default function CECourseDiscussionPage() {
 
   const postReply = async (discussionId: string) => {
     if (!replyBody.trim()) return;
+    if (!currentUserId) {
+      alert("You must be signed in to reply.");
+      return;
+    }
     setPosting(true);
     const supabase = createCEClient();
     await supabase.from("ce_discussion_replies").insert({

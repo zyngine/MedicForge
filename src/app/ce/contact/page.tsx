@@ -28,11 +28,15 @@ export default function CEContactPage() {
     setError("");
     setSending(true);
     try {
-      await fetch("/api/ce/contact", {
+      const response = await fetch("/api/ce/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      if (!response.ok) {
+        setError("Failed to send message. Please email us directly at ce@medicforge.net.");
+        return;
+      }
       setSent(true);
     } catch {
       setError("Failed to send message. Please email us directly at ce@medicforge.net.");
