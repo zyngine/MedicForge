@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
 
 interface GradeImportRow {
   student_email: string;
@@ -43,6 +37,8 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabaseAdmin: any = createAdminClient();
 
     const { data: requesterProfile } = await supabaseAdmin
       .from("users")
@@ -93,7 +89,7 @@ export async function POST(request: NextRequest) {
       .eq("course_id", course_id);
 
     if (modules && modules.length > 0) {
-      const moduleIds = modules.map((m) => m.id);
+      const moduleIds = modules.map((m: any) => m.id);
       const { data: assignments } = await supabaseAdmin
         .from("assignments")
         .select("id, title")

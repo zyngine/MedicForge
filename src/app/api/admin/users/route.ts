@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-
-// Service-role client bypasses RLS — only used after verifying the requester is an admin
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
 
 export async function GET(_request: NextRequest) {
   try {
@@ -17,6 +10,8 @@ export async function GET(_request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabaseAdmin: any = createAdminClient();
 
     // Verify the requester is an admin of their tenant
     const { data: requesterProfile, error: profileError } = await supabaseAdmin
@@ -63,6 +58,8 @@ export async function PATCH(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabaseAdmin: any = createAdminClient();
 
     // Verify the requester is an admin
     const { data: requesterProfile, error: profileError } = await supabaseAdmin

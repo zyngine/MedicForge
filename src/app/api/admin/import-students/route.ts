@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-
-// Use service role for admin operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
 
 interface StudentImportRow {
   first_name: string;
@@ -54,6 +47,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabaseAdmin: any = createAdminClient();
+
     // Check if requester is admin of this tenant
     const { data: requesterProfile } = await supabaseAdmin
       .from("users")
@@ -96,7 +91,7 @@ export async function POST(request: NextRequest) {
         // Check if email exists in auth (might be in another tenant)
         const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
         const existingAuthUser = authUsers?.users?.find(
-          (u) => u.email?.toLowerCase() === email
+          (u: any) => u.email?.toLowerCase() === email
         );
 
         let authUserId: string;
