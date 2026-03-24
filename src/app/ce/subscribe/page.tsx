@@ -16,7 +16,7 @@ declare global {
 
 const PERKS = [
   "Unlimited access to all CE courses",
-  "CAPCE-approved continuing education",
+  "CAPCE accreditation coming 2027",
   "Digital certificates for every completed course",
   "Track CEH hours toward NREMT recertification",
   "New courses added throughout the year at no extra cost",
@@ -40,8 +40,13 @@ export default function CESubscribePage() {
     const load = async () => {
       const supabase = createCEClient();
 
-      // Load price
-      setPrice(69.00);
+      // Load price from platform settings
+      const { data: priceSetting } = await supabase
+        .from("ce_platform_settings")
+        .select("value")
+        .eq("key", "subscription_price")
+        .maybeSingle();
+      setPrice(priceSetting?.value ? parseFloat(priceSetting.value) : 69.00);
 
       // Check auth + subscription
       const { data: { user } } = await supabase.auth.getUser();
@@ -92,7 +97,10 @@ export default function CESubscribePage() {
       return;
     }
     const s = document.createElement("script");
-    s.src = "https://web.squarecdn.com/v1/square.js";
+    s.src =
+      process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT === "sandbox"
+        ? "https://sandbox.web.squarecdn.com/v1/square.js"
+        : "https://web.squarecdn.com/v1/square.js";
     s.onload = () => setScriptLoaded(true);
     s.onerror = () => setError("Failed to load payment SDK. Please refresh.");
     document.head.appendChild(s);

@@ -5,6 +5,11 @@ import { jsPDF } from "jspdf";
 import fs from "fs";
 import path from "path";
 
+// ─── Cache certificate assets at module load time ─────────────────────────
+const publicDir = path.join(process.cwd(), "public");
+const logoB64 = fs.readFileSync(path.join(publicDir, "logo-cert.png")).toString("base64");
+const sigB64 = fs.readFileSync(path.join(publicDir, "signature.jpg")).toString("base64");
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -37,11 +42,6 @@ export async function GET(req: NextRequest) {
     if (cert.user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
-    // ─── Load assets ───────────────────────────────────────────────────────
-    const publicDir = path.join(process.cwd(), "public");
-    const logoB64 = fs.readFileSync(path.join(publicDir, "logo-cert.png")).toString("base64");
-    const sigB64 = fs.readFileSync(path.join(publicDir, "signature.jpg")).toString("base64");
 
     // ─── Generate PDF ────────────────────────────────────────────────────────
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });

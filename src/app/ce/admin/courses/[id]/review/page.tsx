@@ -14,8 +14,8 @@ interface Course {
   passing_score: number | null;
   capce_number: string | null;
   description: string | null;
-  ce_course_objectives: { objective: string }[];
-  ce_course_references: { reference: string }[];
+  ce_course_objectives: { objective_text: string }[];
+  ce_course_references: { citation: string }[];
   ce_course_instructors: { ce_instructors: { cv_url: string | null; coi_expires_at: string | null } | null }[];
 }
 
@@ -46,8 +46,8 @@ export default function CEAdminCourseReviewSubmitPage() {
         .from("ce_courses")
         .select(`
           id, title, status, ceh_hours, passing_score, capce_number, description,
-          ce_course_objectives(objective),
-          ce_course_references(reference),
+          ce_course_objectives(objective_text),
+          ce_course_references(citation),
           ce_course_instructors(ce_instructors(cv_url, coi_expires_at))
         `)
         .eq("id", courseId)

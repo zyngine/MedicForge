@@ -43,7 +43,10 @@ export function SquarePaymentModal({
       return;
     }
     const s = document.createElement("script");
-    s.src = "https://web.squarecdn.com/v1/square.js";
+    s.src =
+      process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT === "sandbox"
+        ? "https://sandbox.web.squarecdn.com/v1/square.js"
+        : "https://web.squarecdn.com/v1/square.js";
     s.onload = () => setScriptLoaded(true);
     s.onerror = () => setError("Failed to load payment SDK. Please refresh.");
     document.head.appendChild(s);

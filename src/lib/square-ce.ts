@@ -1,4 +1,7 @@
-const SQUARE_BASE = "https://connect.squareup.com";
+const SQUARE_BASE =
+  process.env.SQUARE_ENVIRONMENT === "sandbox" || process.env.NODE_ENV === "development"
+    ? "https://connect.squareupsandbox.com"
+    : "https://connect.squareup.com";
 const SQUARE_VERSION = "2025-01-23";
 
 export async function chargeCard(params: {

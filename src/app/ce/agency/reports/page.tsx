@@ -30,15 +30,15 @@ export default function CEAgencyReportsPage() {
 
     let q = supabase
       .from("ce_enrollments")
-      .select("completed_at, ce_users(first_name, last_name, nremt_id, certification_level, agency_id), ce_courses(title, capce_number, ceh_hours)")
-      .eq("completion_status", "completed");
+      .select("completed_at, ce_users!inner(first_name, last_name, nremt_id, certification_level, agency_id), ce_courses(title, capce_number, ceh_hours)")
+      .eq("completion_status", "completed")
+      .eq("ce_users.agency_id", aId);
 
     if (dateFrom) q = q.gte("completed_at", dateFrom);
     if (dateTo) q = q.lte("completed_at", dateTo + "T23:59:59");
 
     const { data } = await q;
-    const all = (data || []) as any[];
-    const agencyOnly = all.filter((r) => r.ce_users?.agency_id === aId);
+    const agencyOnly = (data || []) as any[];
 
     setRows(agencyOnly.map((r) => ({
       employee: `${r.ce_users?.first_name} ${r.ce_users?.last_name}`,
