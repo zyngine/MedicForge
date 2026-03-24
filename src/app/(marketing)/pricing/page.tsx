@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MarketingLayout } from "@/components/layouts";
 import { Button, Badge, Card, CardContent } from "@/components/ui";
-import { CheckCircle, HelpCircle, BookOpen } from "lucide-react";
+import { CheckCircle, HelpCircle, BookOpen, Flame } from "lucide-react";
 
 const pricingTiers = [
   {
@@ -209,12 +209,12 @@ const faqs = [
   {
     question: "Can I try MedicForge before committing?",
     answer:
-      "Yes! We offer a free Starter plan for training programs that you can use indefinitely. Start with the free plan to explore all core features.",
+      "Yes! Contact us for a guided demo of the LMS or Agency Portal. For Continuing Education, we offer free courses so you can experience the platform before subscribing.",
   },
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept all major credit cards (Visa, Mastercard, American Express) and can arrange invoicing for Institution and Enterprise plans.",
+      "LMS and Agency Portal plans are billed via invoice. CE individual subscriptions and course purchases are processed through Square. We can also arrange ACH transfers for annual plans.",
   },
   {
     question: "Can I change plans later?",
@@ -227,9 +227,9 @@ const faqs = [
       "Your data remains accessible for 30 days after cancellation. You can export all your data during this period. After 30 days, data is permanently deleted.",
   },
   {
-    question: "Do you offer discounts for annual billing?",
+    question: "What is Founders Pricing?",
     answer:
-      "LMS plans offer a 20% discount for annual billing. Agency Portal and CE Agency plans are already priced annually with built-in savings. Contact us for multi-year agreements.",
+      "We're offering our first 10 LMS customers a discounted rate that's locked in for the life of their account. Once all 10 founders spots are taken, pricing increases by $1,000 per tier. 6 spots remain.",
   },
   {
     question: "What is MedicForge CE?",
@@ -239,7 +239,7 @@ const faqs = [
   {
     question: "Is there a limit on file uploads?",
     answer:
-      "Individual file uploads are limited to 100MB. Your total storage depends on your plan (1GB for Starter, 25GB for Professional, 100GB for Institution).",
+      "Individual file uploads are limited to 100MB. Your total storage depends on your plan (25GB for Professional, 100GB for Institution).",
   },
 ];
 
@@ -273,6 +273,18 @@ export default function PricingPage() {
             <h2 className="text-2xl font-bold">Learning Management System</h2>
             <p className="text-muted-foreground mt-2">
               For EMS schools, academies, and training programs
+            </p>
+          </div>
+
+          {/* Founders Pricing Banner */}
+          <div className="max-w-3xl mx-auto mb-8 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Flame className="h-5 w-5 text-primary" />
+              <span className="font-bold text-lg">Founders Pricing — 6 spots remaining</span>
+              <Flame className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Lock in these rates before they increase by $1,000. Founders pricing is guaranteed for the life of your account.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">

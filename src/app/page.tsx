@@ -4,6 +4,7 @@ import { Button, Badge, Card, CardContent } from "@/components/ui";
 import {
   Stethoscope,
   GraduationCap,
+  Flame,
   ClipboardCheck,
   BarChart3,
   Users,
@@ -461,7 +462,19 @@ export default function HomePage() {
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Start free and scale as you grow. No hidden fees.
+              Annual plans billed via invoice. No hidden fees.
+            </p>
+          </div>
+
+          {/* Founders Banner */}
+          <div className="max-w-3xl mx-auto mb-10 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Flame className="h-5 w-5 text-primary" />
+              <span className="font-bold text-lg">Founders Pricing — 6 spots remaining</span>
+              <Flame className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Lock in these rates before they increase by $1,000. Guaranteed for the life of your account.
             </p>
           </div>
 
