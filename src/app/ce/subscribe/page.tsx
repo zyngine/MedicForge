@@ -40,13 +40,8 @@ export default function CESubscribePage() {
     const load = async () => {
       const supabase = createCEClient();
 
-      // Load price (public)
-      const { data: setting } = await supabase
-        .from("ce_platform_settings")
-        .select("value")
-        .eq("key", "annual_subscription_price")
-        .single();
-      setPrice(parseFloat(setting?.value || "99.00"));
+      // Load price
+      setPrice(69.00);
 
       // Check auth + subscription
       const { data: { user } } = await supabase.auth.getUser();

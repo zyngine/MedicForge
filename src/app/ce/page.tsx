@@ -1,23 +1,7 @@
 import Link from "next/link";
-import { BookOpen, Award, Shield, Clock, Users, CheckCircle } from "lucide-react";
-import { createCEAdminClient } from "@/lib/supabase/admin";
-
-async function getSubscriptionPrice(): Promise<string> {
-  try {
-    const admin = createCEAdminClient();
-    const { data } = await admin
-      .from("ce_platform_settings")
-      .select("value")
-      .eq("key", "annual_subscription_price")
-      .single();
-    return data?.value || "99.00";
-  } catch {
-    return "99.00";
-  }
-}
+import { BookOpen, Award, Shield, Clock, Users, CheckCircle, Building2 } from "lucide-react";
 
 export default async function CELandingPage() {
-  const annualPrice = await getSubscriptionPrice();
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Nav */}
@@ -130,42 +114,110 @@ export default async function CELandingPage() {
         </div>
       </section>
 
-      {/* Pricing Preview */}
+      {/* Pricing — Individual */}
       <section className="px-6 py-16 max-w-5xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">Simple, transparent pricing</h2>
         <p className="text-center text-gray-600 mb-12">
-          Individual providers or entire departments — we have a plan for you.
+          No per-seat fees. No hidden costs. Individual providers or entire departments.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">For Individual Providers</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <div className="border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-1 text-gray-900">Per Course</h3>
-            <div className="text-3xl font-bold mb-4">$25–50</div>
+            <h4 className="font-semibold text-lg mb-1 text-gray-900">Free Courses</h4>
+            <div className="text-3xl font-bold mb-4">$0</div>
+            <p className="text-sm text-gray-600 mb-4">Try before you commit</p>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Select free courses</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Verified certificates</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> CE transcript</li>
+            </ul>
+          </div>
+          <div className="border rounded-lg p-6">
+            <h4 className="font-semibold text-lg mb-1 text-gray-900">Per Course</h4>
+            <div className="text-3xl font-bold mb-4">$10–25</div>
+            <p className="text-sm text-gray-600 mb-4">Pay as you go</p>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Single course access</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Verified certificate</li>
-              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Transcript record</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> CE transcript</li>
             </ul>
           </div>
           <div className="border-2 border-red-700 rounded-lg p-6 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-700 text-white text-xs px-3 py-1 rounded-full">
-              Most Popular
+              Best Value
             </div>
-            <h3 className="font-semibold text-lg mb-1 text-gray-900">Annual Unlimited</h3>
-            <div className="text-3xl font-bold mb-1">${annualPrice}<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-green-600 mb-4">All courses included</p>
+            <h4 className="font-semibold text-lg mb-1 text-gray-900">Annual Unlimited</h4>
+            <div className="text-3xl font-bold mb-1">$69<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-green-600 mb-4">Every course included</p>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Unlimited course access</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> All certificates included</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Full CE transcript</li>
             </ul>
           </div>
+        </div>
+
+        {/* Pricing — Agency */}
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">For Agencies &amp; Departments</h3>
+        <p className="text-sm text-gray-600 mb-6">
+          Flat annual pricing — no per-seat fees, no surprise invoices. Every employee gets full access.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-1 text-gray-900">Agency</h3>
-            <div className="text-3xl font-bold mb-4">From $1,000<span className="text-base font-normal">/yr</span></div>
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="h-5 w-5 text-red-700" />
+              <h4 className="font-semibold text-gray-900">Starter</h4>
+            </div>
+            <div className="text-3xl font-bold mb-1">$1,000<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-gray-500 mb-4">Up to 25 employees</p>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> All provider features</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Unlimited CE for all staff</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Compliance dashboard</li>
-              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Custom training upload</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Training assignments</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> NREMT reporting</li>
+            </ul>
+          </div>
+          <div className="border-2 border-red-700 rounded-lg p-6 relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-700 text-white text-xs px-3 py-1 rounded-full">
+              Most Popular
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="h-5 w-5 text-red-700" />
+              <h4 className="font-semibold text-gray-900">Team</h4>
+            </div>
+            <div className="text-3xl font-bold mb-1">$2,000<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-gray-500 mb-4">Up to 75 employees</p>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Starter</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Custom course uploads</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Advanced reporting</li>
+            </ul>
+          </div>
+          <div className="border rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="h-5 w-5 text-red-700" />
+              <h4 className="font-semibold text-gray-900">Department</h4>
+            </div>
+            <div className="text-3xl font-bold mb-1">$4,000<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-gray-500 mb-4">Up to 200 employees</p>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Team</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Dedicated onboarding</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Priority support</li>
+            </ul>
+          </div>
+          <div className="border rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="h-5 w-5 text-red-700" />
+              <h4 className="font-semibold text-gray-900">Enterprise</h4>
+            </div>
+            <div className="text-3xl font-bold mb-1">$7,000<span className="text-base font-normal">/yr</span></div>
+            <p className="text-sm text-gray-500 mb-4">Unlimited employees</p>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Department</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Custom integrations</li>
+              <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Account manager</li>
             </ul>
           </div>
         </div>
