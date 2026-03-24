@@ -30,8 +30,6 @@ interface Subscription {
   subscription_tier: string | null;
   subscription_status: string | null;
   trial_ends_at: string | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
   created_at: string | null;
 }
 
@@ -58,7 +56,7 @@ export default function SubscriptionsPage() {
 
       const { data, error } = await supabase
         .from("tenants")
-        .select("id, name, slug, subscription_tier, subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id, created_at")
+        .select("id, name, slug, subscription_tier, subscription_status, trial_ends_at, created_at")
         .order("created_at", { ascending: false });
 
       if (!error && data) {

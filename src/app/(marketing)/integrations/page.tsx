@@ -18,8 +18,8 @@ const integrations = [
   },
   {
     icon: <CreditCard className="h-8 w-8" />,
-    title: "Stripe",
-    description: "Accept payments and manage subscriptions with Stripe.",
+    title: "Square Payments",
+    description: "Secure payment processing for CE courses and subscriptions via Square.",
     status: "Available",
   },
   {

@@ -60,9 +60,9 @@ const SUBSCRIPTION_STATUSES = [
 ];
 
 const PAYMENT_METHODS = [
-  { value: "stripe", label: "Credit Card (Stripe)" },
   { value: "invoice", label: "Invoice / Check" },
   { value: "ach", label: "ACH Bank Transfer" },
+  { value: "square", label: "Square" },
   { value: "free", label: "Free Tier (No Payment)" },
 ];
 
@@ -135,7 +135,7 @@ export default function TenantsPage() {
     setEditingTenant(tenant);
     setEditTier(tenant.subscription_tier || "free");
     setEditStatus(tenant.subscription_status || "active");
-    setEditPaymentMethod(tenant.payment_method || "stripe");
+    setEditPaymentMethod(tenant.payment_method || "invoice");
     setEditNotes(tenant.subscription_notes || "");
     setEditSlug(tenant.slug || "");
     setSlugError(null);
@@ -443,7 +443,7 @@ export default function TenantsPage() {
                   options={PAYMENT_METHODS}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Use "Invoice / Check" for customers not paying via Stripe
+                  Select how this customer will be billed
                 </p>
               </div>
 
@@ -458,11 +458,7 @@ export default function TenantsPage() {
 
               <div className="bg-muted p-3 rounded-lg text-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  {editPaymentMethod === "stripe" ? (
-                    <CreditCard className="h-4 w-4" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
+                  <FileText className="h-4 w-4" />
                   <span className="font-medium">Summary</span>
                 </div>
                 <p>
@@ -470,9 +466,9 @@ export default function TenantsPage() {
                   <strong>{SUBSCRIPTION_TIERS.find(t => t.value === editTier)?.label}</strong>{" "}
                   with status <strong>{editStatus}</strong>.
                 </p>
-                {editPaymentMethod !== "stripe" && (
+                {editPaymentMethod === "invoice" && (
                   <p className="text-warning mt-1">
-                    This customer is NOT on Stripe auto-billing. Remember to send invoices manually.
+                    Remember to send invoices manually for this customer.
                   </p>
                 )}
               </div>
