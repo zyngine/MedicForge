@@ -153,7 +153,7 @@ const pricingTiers = [
       "Custom subdomain",
     ],
     cta: "Get Started",
-    highlighted: true,
+    highlighted: false,
   },
   {
     name: "Institution",
@@ -169,7 +169,7 @@ const pricingTiers = [
       "Priority support",
     ],
     cta: "Get Started",
-    highlighted: false,
+    highlighted: true,
   },
   {
     name: "Enterprise",

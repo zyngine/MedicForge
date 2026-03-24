@@ -48,7 +48,6 @@ const LMS_TIERS = [
       "Email support",
     ],
     icon: <Building2 className="h-6 w-6" />,
-    popular: true,
   },
   {
     id: "institution",
@@ -65,6 +64,7 @@ const LMS_TIERS = [
       "Priority support",
     ],
     icon: <Crown className="h-6 w-6" />,
+    popular: true,
   },
   {
     id: "enterprise",

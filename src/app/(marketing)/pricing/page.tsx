@@ -26,7 +26,7 @@ const pricingTiers = [
     limitations: [],
     cta: "Get Started",
     href: "/contact?plan=professional",
-    highlighted: true,
+    highlighted: false,
   },
   {
     name: "Institution",
@@ -49,7 +49,7 @@ const pricingTiers = [
     limitations: [],
     cta: "Get Started",
     href: "/contact?plan=institution",
-    highlighted: false,
+    highlighted: true,
   },
   {
     name: "Enterprise",
