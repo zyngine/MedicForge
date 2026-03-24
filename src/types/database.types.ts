@@ -687,6 +687,7 @@ export type Database = {
           status: string
           student_id: string
           tenant_id: string
+          was_late: boolean | null
         }
         Insert: {
           check_in_time?: string | null
@@ -700,6 +701,7 @@ export type Database = {
           status?: string
           student_id: string
           tenant_id: string
+          was_late?: boolean | null
         }
         Update: {
           check_in_time?: string | null
@@ -713,6 +715,7 @@ export type Database = {
           status?: string
           student_id?: string
           tenant_id?: string
+          was_late?: boolean | null
         }
         Relationships: [
           {
@@ -733,49 +736,67 @@ export type Database = {
       }
       attendance_sessions: {
         Row: {
+          allow_late_checkin: boolean | null
           course_id: string
           created_at: string | null
           created_by: string
           end_time: string
           id: string
+          is_generated: boolean | null
           is_mandatory: boolean
           location: string | null
           notes: string | null
+          program_id: string | null
+          schedule_id: string | null
           scheduled_date: string
+          session_status: string | null
           session_type: string
           start_time: string
+          tardy_window_minutes: number | null
           tenant_id: string
           title: string
           updated_at: string | null
         }
         Insert: {
+          allow_late_checkin?: boolean | null
           course_id: string
           created_at?: string | null
           created_by: string
           end_time: string
           id?: string
+          is_generated?: boolean | null
           is_mandatory?: boolean
           location?: string | null
           notes?: string | null
+          program_id?: string | null
+          schedule_id?: string | null
           scheduled_date: string
+          session_status?: string | null
           session_type?: string
           start_time: string
+          tardy_window_minutes?: number | null
           tenant_id: string
           title: string
           updated_at?: string | null
         }
         Update: {
+          allow_late_checkin?: boolean | null
           course_id?: string
           created_at?: string | null
           created_by?: string
           end_time?: string
           id?: string
+          is_generated?: boolean | null
           is_mandatory?: boolean
           location?: string | null
           notes?: string | null
+          program_id?: string | null
+          schedule_id?: string | null
           scheduled_date?: string
+          session_status?: string | null
           session_type?: string
           start_time?: string
+          tardy_window_minutes?: number | null
           tenant_id?: string
           title?: string
           updated_at?: string | null
@@ -789,10 +810,166 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_sessions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_sessions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "program_schedules"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "attendance_sessions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blueprint_courses: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          sync_enabled: boolean
+          sync_settings: Json | null
+          template_id: string
+          tenant_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          sync_enabled?: boolean
+          sync_settings?: Json | null
+          template_id: string
+          tenant_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          sync_enabled?: boolean
+          sync_settings?: Json | null
+          template_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blueprint_courses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "course_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blueprint_courses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blueprint_sync_history: {
+        Row: {
+          blueprint_id: string
+          changes_applied: Json | null
+          id: string
+          sync_type: string
+          synced_at: string
+          synced_by: string
+        }
+        Insert: {
+          blueprint_id: string
+          changes_applied?: Json | null
+          id?: string
+          sync_type: string
+          synced_at?: string
+          synced_by: string
+        }
+        Update: {
+          blueprint_id?: string
+          changes_applied?: Json | null
+          id?: string
+          sync_type?: string
+          synced_at?: string
+          synced_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_sync_history_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "blueprint_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blueprint_sync_history_synced_by_fkey"
+            columns: ["synced_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_subscriptions: {
+        Row: {
+          calendar_type: string
+          created_at: string | null
+          id: string
+          last_accessed_at: string | null
+          tenant_id: string
+          token: string | null
+          user_id: string
+        }
+        Insert: {
+          calendar_type?: string
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          tenant_id: string
+          token?: string | null
+          user_id: string
+        }
+        Update: {
+          calendar_type?: string
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          tenant_id?: string
+          token?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -903,6 +1080,2268 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_agencies: {
+        Row: {
+          address: string | null
+          admin_user_id: string | null
+          city: string | null
+          created_at: string | null
+          id: string
+          invite_code: string | null
+          name: string
+          phone: string | null
+          state: string | null
+          subscription_end: string | null
+          subscription_start: string | null
+          subscription_tier: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          admin_user_id?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          invite_code?: string | null
+          name: string
+          phone?: string | null
+          state?: string | null
+          subscription_end?: string | null
+          subscription_start?: string | null
+          subscription_tier?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          admin_user_id?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          invite_code?: string | null
+          name?: string
+          phone?: string | null
+          state?: string | null
+          subscription_end?: string | null
+          subscription_start?: string | null
+          subscription_tier?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      ce_agency_invite_codes: {
+        Row: {
+          agency_id: string
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          uses_count: number | null
+        }
+        Insert: {
+          agency_id: string
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Update: {
+          agency_id?: string
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_agency_invite_codes_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "ce_agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_agency_subscriptions: {
+        Row: {
+          agency_id: string
+          created_at: string | null
+          employee_count: number | null
+          expires_at: string
+          id: string
+          notes: string | null
+          payment_received_at: string | null
+          payment_status: string | null
+          plan_type: string | null
+          price: number
+          starts_at: string
+          tier: string
+          wave_invoice_id: string | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string | null
+          employee_count?: number | null
+          expires_at: string
+          id?: string
+          notes?: string | null
+          payment_received_at?: string | null
+          payment_status?: string | null
+          plan_type?: string | null
+          price: number
+          starts_at: string
+          tier: string
+          wave_invoice_id?: string | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string | null
+          employee_count?: number | null
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          payment_received_at?: string | null
+          payment_status?: string | null
+          plan_type?: string | null
+          price?: number
+          starts_at?: string
+          tier?: string
+          wave_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_agency_subscriptions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "ce_agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_capce_submission_records: {
+        Row: {
+          ceh_hours: number
+          completion_date: string
+          course_number: string
+          course_title: string
+          enrollment_id: string
+          error_message: string | null
+          id: string
+          status: string | null
+          submission_id: string
+          user_name: string
+          user_nremt_id: string
+        }
+        Insert: {
+          ceh_hours: number
+          completion_date: string
+          course_number: string
+          course_title: string
+          enrollment_id: string
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          submission_id: string
+          user_name: string
+          user_nremt_id: string
+        }
+        Update: {
+          ceh_hours?: number
+          completion_date?: string
+          course_number?: string
+          course_title?: string
+          enrollment_id?: string
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          submission_id?: string
+          user_name?: string
+          user_nremt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_capce_submission_records_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "ce_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_capce_submission_records_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ce_capce_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_capce_submissions: {
+        Row: {
+          confirmation_number: string | null
+          created_at: string | null
+          error_message: string | null
+          file_url: string | null
+          id: string
+          period_end: string
+          period_start: string
+          status: string | null
+          submission_date: string
+          submission_type: string | null
+          submitted_by: string | null
+          total_records: number | null
+        }
+        Insert: {
+          confirmation_number?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_url?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          status?: string | null
+          submission_date: string
+          submission_type?: string | null
+          submitted_by?: string | null
+          total_records?: number | null
+        }
+        Update: {
+          confirmation_number?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_url?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          status?: string | null
+          submission_date?: string
+          submission_type?: string | null
+          submitted_by?: string | null
+          total_records?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_capce_submissions_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_certificates: {
+        Row: {
+          capce_course_number: string | null
+          ceh_hours: number
+          certificate_number: string
+          completion_date: string
+          course_id: string
+          course_number: string
+          course_title: string
+          enrollment_id: string
+          expires_at: string | null
+          id: string
+          is_capce_accredited: boolean | null
+          issued_at: string | null
+          last_verified_at: string | null
+          medical_director_name: string | null
+          pdf_url: string | null
+          provider_address: string | null
+          provider_name: string | null
+          user_id: string
+          user_name: string
+          user_nremt_id: string | null
+          verification_code: string
+          verified_count: number | null
+        }
+        Insert: {
+          capce_course_number?: string | null
+          ceh_hours: number
+          certificate_number: string
+          completion_date: string
+          course_id: string
+          course_number: string
+          course_title: string
+          enrollment_id: string
+          expires_at?: string | null
+          id?: string
+          is_capce_accredited?: boolean | null
+          issued_at?: string | null
+          last_verified_at?: string | null
+          medical_director_name?: string | null
+          pdf_url?: string | null
+          provider_address?: string | null
+          provider_name?: string | null
+          user_id: string
+          user_name: string
+          user_nremt_id?: string | null
+          verification_code: string
+          verified_count?: number | null
+        }
+        Update: {
+          capce_course_number?: string | null
+          ceh_hours?: number
+          certificate_number?: string
+          completion_date?: string
+          course_id?: string
+          course_number?: string
+          course_title?: string
+          enrollment_id?: string
+          expires_at?: string | null
+          id?: string
+          is_capce_accredited?: boolean | null
+          issued_at?: string | null
+          last_verified_at?: string | null
+          medical_director_name?: string | null
+          pdf_url?: string | null
+          provider_address?: string | null
+          provider_name?: string | null
+          user_id?: string
+          user_name?: string
+          user_nremt_id?: string | null
+          verification_code?: string
+          verified_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_certificates_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "ce_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_action_items: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          description: string
+          due_date: string | null
+          id: string
+          meeting_id: string
+          notes: string | null
+          status: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          description: string
+          due_date?: string | null
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          status?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          description?: string
+          due_date?: string | null
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_action_items_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_action_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_course_reviews: {
+        Row: {
+          committee_decision: string | null
+          committee_notes: string | null
+          committee_vote_abstain: number | null
+          committee_vote_against: number | null
+          committee_vote_for: number | null
+          course_id: string
+          created_at: string | null
+          id: string
+          medical_director_approved: boolean | null
+          medical_director_id: string | null
+          medical_director_notes: string | null
+          medical_director_reviewed_at: string | null
+          meeting_id: string | null
+          review_type: string | null
+          reviewed_by_medical_director: boolean | null
+          revisions_required: string | null
+        }
+        Insert: {
+          committee_decision?: string | null
+          committee_notes?: string | null
+          committee_vote_abstain?: number | null
+          committee_vote_against?: number | null
+          committee_vote_for?: number | null
+          course_id: string
+          created_at?: string | null
+          id?: string
+          medical_director_approved?: boolean | null
+          medical_director_id?: string | null
+          medical_director_notes?: string | null
+          medical_director_reviewed_at?: string | null
+          meeting_id?: string | null
+          review_type?: string | null
+          reviewed_by_medical_director?: boolean | null
+          revisions_required?: string | null
+        }
+        Update: {
+          committee_decision?: string | null
+          committee_notes?: string | null
+          committee_vote_abstain?: number | null
+          committee_vote_against?: number | null
+          committee_vote_for?: number | null
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          medical_director_approved?: boolean | null
+          medical_director_id?: string | null
+          medical_director_notes?: string | null
+          medical_director_reviewed_at?: string | null
+          meeting_id?: string | null
+          review_type?: string | null
+          reviewed_by_medical_director?: boolean | null
+          revisions_required?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_course_reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_course_reviews_medical_director_id_fkey"
+            columns: ["medical_director_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_course_reviews_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_documents: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          document_url: string
+          effective_date: string | null
+          id: string
+          review_date: string | null
+          title: string
+          uploaded_by: string | null
+          version: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          document_url: string
+          effective_date?: string | null
+          id?: string
+          review_date?: string | null
+          title: string
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          document_url?: string
+          effective_date?: string | null
+          id?: string
+          review_date?: string | null
+          title?: string
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      ce_committee_meeting_attendance: {
+        Row: {
+          id: string
+          meeting_id: string
+          member_id: string
+          notes: string | null
+          present: boolean | null
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          member_id: string
+          notes?: string | null
+          present?: boolean | null
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          member_id?: string
+          notes?: string | null
+          present?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_meeting_attendance_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_meeting_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_meeting_motions: {
+        Row: {
+          created_at: string | null
+          id: string
+          meeting_id: string
+          motion_text: string
+          motion_type: string | null
+          moved_by: string | null
+          notes: string | null
+          passed: boolean | null
+          related_course_id: string | null
+          seconded_by: string | null
+          votes_abstain: number | null
+          votes_against: number | null
+          votes_for: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          meeting_id: string
+          motion_text: string
+          motion_type?: string | null
+          moved_by?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          related_course_id?: string | null
+          seconded_by?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          meeting_id?: string
+          motion_text?: string
+          motion_type?: string | null
+          moved_by?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          related_course_id?: string | null
+          seconded_by?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_meeting_motions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_meeting_motions_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_meeting_motions_related_course_id_fkey"
+            columns: ["related_course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_committee_meeting_motions_seconded_by_fkey"
+            columns: ["seconded_by"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_meetings: {
+        Row: {
+          adjourned_at: string | null
+          created_at: string | null
+          created_by: string | null
+          end_time: string | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_type: string | null
+          minutes_approved: boolean | null
+          minutes_approved_date: string | null
+          needs_assessment_notes: string | null
+          new_business: string | null
+          next_meeting_date: string | null
+          old_business: string | null
+          previous_minutes_approved: boolean | null
+          quorum_present: boolean | null
+          start_time: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          adjourned_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_type?: string | null
+          minutes_approved?: boolean | null
+          minutes_approved_date?: string | null
+          needs_assessment_notes?: string | null
+          new_business?: string | null
+          next_meeting_date?: string | null
+          old_business?: string | null
+          previous_minutes_approved?: boolean | null
+          quorum_present?: boolean | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          adjourned_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_type?: string | null
+          minutes_approved?: boolean | null
+          minutes_approved_date?: string | null
+          needs_assessment_notes?: string | null
+          new_business?: string | null
+          next_meeting_date?: string | null
+          old_business?: string | null
+          previous_minutes_approved?: boolean | null
+          quorum_present?: boolean | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_meetings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_members: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          credentials: string | null
+          cv_url: string | null
+          email: string
+          employer: string | null
+          id: string
+          name: string
+          role: string
+          status: string | null
+          term_end: string | null
+          term_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          cv_url?: string | null
+          email: string
+          employer?: string | null
+          id?: string
+          name: string
+          role?: string
+          status?: string | null
+          term_end?: string | null
+          term_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          cv_url?: string | null
+          email?: string
+          employer?: string | null
+          id?: string
+          name?: string
+          role?: string
+          status?: string | null
+          term_end?: string | null
+          term_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_committee_reviews: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          decision: string | null
+          id: string
+          medical_director_approved: boolean | null
+          notes: string | null
+          reviewed_at: string | null
+          revisions_required: string | null
+          votes_abstain: number | null
+          votes_against: number | null
+          votes_for: number | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          decision?: string | null
+          id?: string
+          medical_director_approved?: boolean | null
+          notes?: string | null
+          reviewed_at?: string | null
+          revisions_required?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          decision?: string | null
+          id?: string
+          medical_director_approved?: boolean | null
+          notes?: string | null
+          reviewed_at?: string | null
+          revisions_required?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_committee_reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_conflict_of_interest: {
+        Row: {
+          attestation_date: string | null
+          attestation_signed: boolean | null
+          competing_ce_details: string | null
+          conflict_status: string | null
+          created_at: string | null
+          disclosure_date: string
+          expires_at: string | null
+          has_competing_ce_interest: boolean | null
+          has_other_conflict: boolean | null
+          has_ownership_interest: boolean | null
+          has_pharma_relationship: boolean | null
+          has_royalties: boolean | null
+          id: string
+          instructor_id: string | null
+          member_id: string | null
+          other_conflict_details: string | null
+          ownership_details: string | null
+          pharma_details: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          royalties_details: string | null
+        }
+        Insert: {
+          attestation_date?: string | null
+          attestation_signed?: boolean | null
+          competing_ce_details?: string | null
+          conflict_status?: string | null
+          created_at?: string | null
+          disclosure_date: string
+          expires_at?: string | null
+          has_competing_ce_interest?: boolean | null
+          has_other_conflict?: boolean | null
+          has_ownership_interest?: boolean | null
+          has_pharma_relationship?: boolean | null
+          has_royalties?: boolean | null
+          id?: string
+          instructor_id?: string | null
+          member_id?: string | null
+          other_conflict_details?: string | null
+          ownership_details?: string | null
+          pharma_details?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          royalties_details?: string | null
+        }
+        Update: {
+          attestation_date?: string | null
+          attestation_signed?: boolean | null
+          competing_ce_details?: string | null
+          conflict_status?: string | null
+          created_at?: string | null
+          disclosure_date?: string
+          expires_at?: string | null
+          has_competing_ce_interest?: boolean | null
+          has_other_conflict?: boolean | null
+          has_ownership_interest?: boolean | null
+          has_pharma_relationship?: boolean | null
+          has_royalties?: boolean | null
+          id?: string
+          instructor_id?: string | null
+          member_id?: string | null
+          other_conflict_details?: string | null
+          ownership_details?: string | null
+          pharma_details?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          royalties_details?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_conflict_of_interest_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "ce_instructors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_conflict_of_interest_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "ce_committee_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_conflict_of_interest_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_course_instructors: {
+        Row: {
+          compensation_details: string | null
+          compensation_received: boolean | null
+          course_id: string
+          id: string
+          instructor_id: string
+          role: string | null
+        }
+        Insert: {
+          compensation_details?: string | null
+          compensation_received?: boolean | null
+          course_id: string
+          id?: string
+          instructor_id: string
+          role?: string | null
+        }
+        Update: {
+          compensation_details?: string | null
+          compensation_received?: boolean | null
+          course_id?: string
+          id?: string
+          instructor_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_course_instructors_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_course_instructors_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "ce_instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_course_modules: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          module_number: number
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          module_number: number
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          module_number?: number
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_course_objectives: {
+        Row: {
+          bloom_level: string | null
+          course_id: string
+          created_at: string | null
+          id: string
+          objective_text: string
+          sort_order: number | null
+        }
+        Insert: {
+          bloom_level?: string | null
+          course_id: string
+          created_at?: string | null
+          id?: string
+          objective_text: string
+          sort_order?: number | null
+        }
+        Update: {
+          bloom_level?: string | null
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          objective_text?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_course_objectives_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_course_references: {
+        Row: {
+          accessed_date: string | null
+          citation: string
+          course_id: string
+          id: string
+          reference_type: string | null
+          sort_order: number | null
+          url: string | null
+        }
+        Insert: {
+          accessed_date?: string | null
+          citation: string
+          course_id: string
+          id?: string
+          reference_type?: string | null
+          sort_order?: number | null
+          url?: string | null
+        }
+        Update: {
+          accessed_date?: string | null
+          citation?: string
+          course_id?: string
+          id?: string
+          reference_type?: string | null
+          sort_order?: number | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_course_references_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_courses: {
+        Row: {
+          archive_reason: string | null
+          archived_at: string | null
+          beta_feedback_enabled: boolean | null
+          capce_course_number: string | null
+          category: string | null
+          ceh_hours: number
+          certification_levels: Json | null
+          commercial_support_disclosure: string | null
+          commercial_supporter_name: string | null
+          committee_decision: string | null
+          committee_notes: string | null
+          committee_reviewed_at: string | null
+          course_number: string | null
+          course_type: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_agency_id: string | null
+          delivery_method: string | null
+          description: string | null
+          disclosure_statement: string | null
+          evidence_basis: string | null
+          expiration_months: number | null
+          has_commercial_support: boolean | null
+          id: string
+          is_agency_custom: boolean | null
+          is_beta: boolean | null
+          is_capce_accredited: boolean | null
+          is_free: boolean | null
+          language: string | null
+          medical_director_approved: boolean | null
+          medical_director_approved_at: string | null
+          medical_director_notes: string | null
+          nremt_category: string | null
+          off_label_use_disclosure: string | null
+          passing_score: number | null
+          prerequisites: string | null
+          previous_version_id: string | null
+          price: number | null
+          published_at: string | null
+          requires_retake_on_update: boolean | null
+          status: string | null
+          subcategory: string | null
+          submitted_for_review_at: string | null
+          target_audience: string | null
+          title: string
+          translated_from_course_id: string | null
+          updated_at: string | null
+          version: number | null
+          version_notes: string | null
+        }
+        Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          beta_feedback_enabled?: boolean | null
+          capce_course_number?: string | null
+          category?: string | null
+          ceh_hours?: number
+          certification_levels?: Json | null
+          commercial_support_disclosure?: string | null
+          commercial_supporter_name?: string | null
+          committee_decision?: string | null
+          committee_notes?: string | null
+          committee_reviewed_at?: string | null
+          course_number?: string | null
+          course_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_by_agency_id?: string | null
+          delivery_method?: string | null
+          description?: string | null
+          disclosure_statement?: string | null
+          evidence_basis?: string | null
+          expiration_months?: number | null
+          has_commercial_support?: boolean | null
+          id?: string
+          is_agency_custom?: boolean | null
+          is_beta?: boolean | null
+          is_capce_accredited?: boolean | null
+          is_free?: boolean | null
+          language?: string | null
+          medical_director_approved?: boolean | null
+          medical_director_approved_at?: string | null
+          medical_director_notes?: string | null
+          nremt_category?: string | null
+          off_label_use_disclosure?: string | null
+          passing_score?: number | null
+          prerequisites?: string | null
+          previous_version_id?: string | null
+          price?: number | null
+          published_at?: string | null
+          requires_retake_on_update?: boolean | null
+          status?: string | null
+          subcategory?: string | null
+          submitted_for_review_at?: string | null
+          target_audience?: string | null
+          title: string
+          translated_from_course_id?: string | null
+          updated_at?: string | null
+          version?: number | null
+          version_notes?: string | null
+        }
+        Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          beta_feedback_enabled?: boolean | null
+          capce_course_number?: string | null
+          category?: string | null
+          ceh_hours?: number
+          certification_levels?: Json | null
+          commercial_support_disclosure?: string | null
+          commercial_supporter_name?: string | null
+          committee_decision?: string | null
+          committee_notes?: string | null
+          committee_reviewed_at?: string | null
+          course_number?: string | null
+          course_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_by_agency_id?: string | null
+          delivery_method?: string | null
+          description?: string | null
+          disclosure_statement?: string | null
+          evidence_basis?: string | null
+          expiration_months?: number | null
+          has_commercial_support?: boolean | null
+          id?: string
+          is_agency_custom?: boolean | null
+          is_beta?: boolean | null
+          is_capce_accredited?: boolean | null
+          is_free?: boolean | null
+          language?: string | null
+          medical_director_approved?: boolean | null
+          medical_director_approved_at?: string | null
+          medical_director_notes?: string | null
+          nremt_category?: string | null
+          off_label_use_disclosure?: string | null
+          passing_score?: number | null
+          prerequisites?: string | null
+          previous_version_id?: string | null
+          price?: number | null
+          published_at?: string | null
+          requires_retake_on_update?: boolean | null
+          status?: string | null
+          subcategory?: string | null
+          submitted_for_review_at?: string | null
+          target_audience?: string | null
+          title?: string
+          translated_from_course_id?: string | null
+          updated_at?: string | null
+          version?: number | null
+          version_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_courses_created_by_agency_id_fkey"
+            columns: ["created_by_agency_id"]
+            isOneToOne: false
+            referencedRelation: "ce_agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_courses_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_courses_translated_from_course_id_fkey"
+            columns: ["translated_from_course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_discussion_likes: {
+        Row: {
+          created_at: string | null
+          discussion_id: string | null
+          id: string
+          reply_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discussion_id?: string | null
+          id?: string
+          reply_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discussion_id?: string | null
+          id?: string
+          reply_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_discussion_likes_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "ce_discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_discussion_likes_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "ce_discussion_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_discussion_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_discussion_replies: {
+        Row: {
+          body: string
+          created_at: string | null
+          discussion_id: string
+          id: string
+          is_instructor_response: boolean | null
+          like_count: number | null
+          parent_reply_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          discussion_id: string
+          id?: string
+          is_instructor_response?: boolean | null
+          like_count?: number | null
+          parent_reply_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          discussion_id?: string
+          id?: string
+          is_instructor_response?: boolean | null
+          like_count?: number | null
+          parent_reply_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_discussion_replies_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "ce_discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_discussion_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "ce_discussion_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_discussion_replies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_discussions: {
+        Row: {
+          body: string
+          course_id: string
+          created_at: string | null
+          id: string
+          is_locked: boolean | null
+          is_pinned: boolean | null
+          like_count: number | null
+          reply_count: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          course_id: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          reply_count?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          reply_count?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_discussions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_discussions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_email_log: {
+        Row: {
+          email_type: string
+          id: string
+          resend_message_id: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          email_type: string
+          id?: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          email_type?: string
+          id?: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_email_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_enrollments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          completed_at: string | null
+          completion_status: string | null
+          course_id: string
+          due_date: string | null
+          enrolled_at: string | null
+          id: string
+          progress_percentage: number | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          completion_status?: string | null
+          course_id: string
+          due_date?: string | null
+          enrolled_at?: string | null
+          id?: string
+          progress_percentage?: number | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          completion_status?: string | null
+          course_id?: string
+          due_date?: string | null
+          enrolled_at?: string | null
+          id?: string
+          progress_percentage?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_enrollments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_evaluation_summary: {
+        Row: {
+          avg_assessment_appropriate: number | null
+          avg_content_current: number | null
+          avg_content_relevant: number | null
+          avg_instructor_effective: number | null
+          avg_materials_quality: number | null
+          avg_objectives_met: number | null
+          avg_overall_rating: number | null
+          avg_would_recommend: number | null
+          bias_reports_count: number | null
+          commercial_influence_reports_count: number | null
+          course_id: string
+          generated_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          total_responses: number | null
+        }
+        Insert: {
+          avg_assessment_appropriate?: number | null
+          avg_content_current?: number | null
+          avg_content_relevant?: number | null
+          avg_instructor_effective?: number | null
+          avg_materials_quality?: number | null
+          avg_objectives_met?: number | null
+          avg_overall_rating?: number | null
+          avg_would_recommend?: number | null
+          bias_reports_count?: number | null
+          commercial_influence_reports_count?: number | null
+          course_id: string
+          generated_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          total_responses?: number | null
+        }
+        Update: {
+          avg_assessment_appropriate?: number | null
+          avg_content_current?: number | null
+          avg_content_relevant?: number | null
+          avg_instructor_effective?: number | null
+          avg_materials_quality?: number | null
+          avg_objectives_met?: number | null
+          avg_overall_rating?: number | null
+          avg_would_recommend?: number | null
+          bias_reports_count?: number | null
+          commercial_influence_reports_count?: number | null
+          course_id?: string
+          generated_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          total_responses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_evaluation_summary_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_evaluations: {
+        Row: {
+          additional_topics: string | null
+          assessment_appropriate: number | null
+          bias_description: string | null
+          comments: string | null
+          commercial_influence_description: string | null
+          commercial_influence_perceived: boolean | null
+          content_current: number | null
+          content_relevant: number | null
+          course_id: string
+          created_at: string | null
+          enrollment_id: string
+          id: string
+          instructor_effective: number | null
+          materials_quality: number | null
+          most_valuable: string | null
+          objectives_met: number | null
+          overall_rating: number | null
+          perceived_bias: boolean | null
+          submitted_at: string | null
+          suggestions: string | null
+          user_id: string
+          would_recommend: number | null
+        }
+        Insert: {
+          additional_topics?: string | null
+          assessment_appropriate?: number | null
+          bias_description?: string | null
+          comments?: string | null
+          commercial_influence_description?: string | null
+          commercial_influence_perceived?: boolean | null
+          content_current?: number | null
+          content_relevant?: number | null
+          course_id: string
+          created_at?: string | null
+          enrollment_id: string
+          id?: string
+          instructor_effective?: number | null
+          materials_quality?: number | null
+          most_valuable?: string | null
+          objectives_met?: number | null
+          overall_rating?: number | null
+          perceived_bias?: boolean | null
+          submitted_at?: string | null
+          suggestions?: string | null
+          user_id: string
+          would_recommend?: number | null
+        }
+        Update: {
+          additional_topics?: string | null
+          assessment_appropriate?: number | null
+          bias_description?: string | null
+          comments?: string | null
+          commercial_influence_description?: string | null
+          commercial_influence_perceived?: boolean | null
+          content_current?: number | null
+          content_relevant?: number | null
+          course_id?: string
+          created_at?: string | null
+          enrollment_id?: string
+          id?: string
+          instructor_effective?: number | null
+          materials_quality?: number | null
+          most_valuable?: string | null
+          objectives_met?: number | null
+          overall_rating?: number | null
+          perceived_bias?: boolean | null
+          submitted_at?: string | null
+          suggestions?: string | null
+          user_id?: string
+          would_recommend?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_evaluations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_evaluations_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "ce_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_evaluations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_instructors: {
+        Row: {
+          bio: string | null
+          coi_expires_at: string | null
+          coi_form_id: string | null
+          created_at: string | null
+          credentials: string | null
+          cv_url: string | null
+          email: string
+          employer: string | null
+          expertise_areas: Json | null
+          headshot_url: string | null
+          id: string
+          is_medical_director: boolean | null
+          name: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          bio?: string | null
+          coi_expires_at?: string | null
+          coi_form_id?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          cv_url?: string | null
+          email: string
+          employer?: string | null
+          expertise_areas?: Json | null
+          headshot_url?: string | null
+          id?: string
+          is_medical_director?: boolean | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          bio?: string | null
+          coi_expires_at?: string | null
+          coi_form_id?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          cv_url?: string | null
+          email?: string
+          employer?: string | null
+          expertise_areas?: Json | null
+          headshot_url?: string | null
+          id?: string
+          is_medical_director?: boolean | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_instructors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_module_content: {
+        Row: {
+          body: string | null
+          content_order: number | null
+          content_type: string
+          id: string
+          image_url: string | null
+          module_id: string
+          pdf_url: string | null
+          title: string | null
+          transcript: string | null
+          video_url: string | null
+        }
+        Insert: {
+          body?: string | null
+          content_order?: number | null
+          content_type: string
+          id?: string
+          image_url?: string | null
+          module_id: string
+          pdf_url?: string | null
+          title?: string | null
+          transcript?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          body?: string | null
+          content_order?: number | null
+          content_type?: string
+          id?: string
+          image_url?: string | null
+          module_id?: string
+          pdf_url?: string | null
+          title?: string | null
+          transcript?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_module_content_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "ce_course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_module_progress: {
+        Row: {
+          completed_at: string | null
+          enrollment_id: string
+          id: string
+          last_accessed_at: string | null
+          module_id: string
+          progress_percentage: number | null
+          started_at: string | null
+          time_spent_minutes: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          enrollment_id: string
+          id?: string
+          last_accessed_at?: string | null
+          module_id: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          time_spent_minutes?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          enrollment_id?: string
+          id?: string
+          last_accessed_at?: string | null
+          module_id?: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          time_spent_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_module_progress_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "ce_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_module_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "ce_course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_needs_assessments: {
+        Row: {
+          addressed_by_courses: Json | null
+          assessment_date: string
+          assessment_type: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          findings: string | null
+          id: string
+          methodology: string | null
+          priority: string | null
+          recommended_topics: Json | null
+          sample_size: number | null
+          title: string
+        }
+        Insert: {
+          addressed_by_courses?: Json | null
+          assessment_date: string
+          assessment_type: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          findings?: string | null
+          id?: string
+          methodology?: string | null
+          priority?: string | null
+          recommended_topics?: Json | null
+          sample_size?: number | null
+          title: string
+        }
+        Update: {
+          addressed_by_courses?: Json | null
+          assessment_date?: string
+          assessment_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          findings?: string | null
+          id?: string
+          methodology?: string | null
+          priority?: string | null
+          recommended_topics?: Json | null
+          sample_size?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_needs_assessments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          link: string | null
+          message: string
+          read: boolean | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_purchases: {
+        Row: {
+          amount: number
+          course_id: string
+          id: string
+          purchased_at: string | null
+          refund_reason: string | null
+          refunded: boolean | null
+          refunded_at: string | null
+          square_payment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          course_id: string
+          id?: string
+          purchased_at?: string | null
+          refund_reason?: string | null
+          refunded?: boolean | null
+          refunded_at?: string | null
+          square_payment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          course_id?: string
+          id?: string
+          purchased_at?: string | null
+          refund_reason?: string | null
+          refunded?: boolean | null
+          refunded_at?: string | null
+          square_payment_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_purchases_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_quiz_attempts: {
+        Row: {
+          answers: Json | null
+          attempt_number: number
+          completed_at: string | null
+          enrollment_id: string
+          id: string
+          is_passing: boolean | null
+          quiz_id: string
+          score: number | null
+          started_at: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          attempt_number: number
+          completed_at?: string | null
+          enrollment_id: string
+          id?: string
+          is_passing?: boolean | null
+          quiz_id: string
+          score?: number | null
+          started_at?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          attempt_number?: number
+          completed_at?: string | null
+          enrollment_id?: string
+          id?: string
+          is_passing?: boolean | null
+          quiz_id?: string
+          score?: number | null
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_quiz_attempts_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "ce_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "ce_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_quiz_question_options: {
+        Row: {
+          id: string
+          option_order: number | null
+          option_text: string
+          question_id: string
+        }
+        Insert: {
+          id?: string
+          option_order?: number | null
+          option_text: string
+          question_id: string
+        }
+        Update: {
+          id?: string
+          option_order?: number | null
+          option_text?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_quiz_question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "ce_quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_quiz_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string | null
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          question_text: string
+          question_type: string | null
+          quiz_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          question_text: string
+          question_type?: string | null
+          quiz_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          question_text?: string
+          question_type?: string | null
+          quiz_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "ce_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_quizzes: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          max_attempts: number | null
+          passing_score: number | null
+          quiz_type: string | null
+          randomize_questions: boolean | null
+          show_answers_after: string | null
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_attempts?: number | null
+          passing_score?: number | null
+          quiz_type?: string | null
+          randomize_questions?: boolean | null
+          show_answers_after?: string | null
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_attempts?: number | null
+          passing_score?: number | null
+          quiz_type?: string | null
+          randomize_questions?: boolean | null
+          show_answers_after?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "ce_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_user_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          plan: string
+          price: number
+          square_subscription_id: string | null
+          starts_at: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          plan: string
+          price: number
+          square_subscription_id?: string | null
+          starts_at: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          plan?: string
+          price?: number
+          square_subscription_id?: string | null
+          starts_at?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_users: {
+        Row: {
+          agency_id: string | null
+          certification_level: string | null
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          nremt_id: string | null
+          preferred_language: string | null
+          privacy_accepted_at: string | null
+          role: string
+          state: string | null
+          terms_accepted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          certification_level?: string | null
+          created_at?: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          nremt_id?: string | null
+          preferred_language?: string | null
+          privacy_accepted_at?: string | null
+          role?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          certification_level?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          nremt_id?: string | null
+          preferred_language?: string | null
+          privacy_accepted_at?: string | null
+          role?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_users_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "ce_agencies"
             referencedColumns: ["id"]
           },
         ]
@@ -1091,6 +3530,64 @@ export type Database = {
           },
           {
             foreignKeyName: "certificates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_booking_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string | null
+          booking_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type?: string | null
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string | null
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_booking_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_booking_audit_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shift_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_booking_audit_log_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1391,23 +3888,75 @@ export type Database = {
           },
         ]
       }
+      clinical_poc_tokens: {
+        Row: {
+          action_taken: string | null
+          action_taken_at: string | null
+          booking_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          tenant_id: string
+          token: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          action_taken_at?: string | null
+          booking_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          tenant_id: string
+          token?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          action_taken_at?: string | null
+          booking_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          tenant_id?: string
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_poc_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shift_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_poc_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_shift_bookings: {
         Row: {
           booked_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           check_in_time: string | null
           check_out_time: string | null
           created_at: string | null
           hours_completed: number | null
           id: string
           notes: string | null
+          poc_response_notes: string | null
           preceptor_name: string | null
           preceptor_signature: string | null
           preceptor_signature_credentials: string | null
           preceptor_signature_data: string | null
           preceptor_signature_name: string | null
           preceptor_signed_at: string | null
+          request_notes: string | null
+          requested_at: string | null
           shift_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           student_id: string
@@ -1418,18 +3967,22 @@ export type Database = {
           booked_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           created_at?: string | null
           hours_completed?: number | null
           id?: string
           notes?: string | null
+          poc_response_notes?: string | null
           preceptor_name?: string | null
           preceptor_signature?: string | null
           preceptor_signature_credentials?: string | null
           preceptor_signature_data?: string | null
           preceptor_signature_name?: string | null
           preceptor_signed_at?: string | null
+          request_notes?: string | null
+          requested_at?: string | null
           shift_id: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           student_id: string
@@ -1440,18 +3993,22 @@ export type Database = {
           booked_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           created_at?: string | null
           hours_completed?: number | null
           id?: string
           notes?: string | null
+          poc_response_notes?: string | null
           preceptor_name?: string | null
           preceptor_signature?: string | null
           preceptor_signature_credentials?: string | null
           preceptor_signature_data?: string | null
           preceptor_signature_name?: string | null
           preceptor_signed_at?: string | null
+          request_notes?: string | null
+          requested_at?: string | null
           shift_id?: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           student_id?: string
@@ -1964,6 +4521,65 @@ export type Database = {
           },
         ]
       }
+      course_clones: {
+        Row: {
+          cloned_at: string | null
+          cloned_by_tenant_id: string
+          cloned_by_user_id: string
+          cloned_course_id: string
+          id: string
+          original_course_id: string
+          original_tenant_id: string
+        }
+        Insert: {
+          cloned_at?: string | null
+          cloned_by_tenant_id: string
+          cloned_by_user_id: string
+          cloned_course_id: string
+          id?: string
+          original_course_id: string
+          original_tenant_id: string
+        }
+        Update: {
+          cloned_at?: string | null
+          cloned_by_tenant_id?: string
+          cloned_by_user_id?: string
+          cloned_course_id?: string
+          id?: string
+          original_course_id?: string
+          original_tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_clones_cloned_by_tenant_id_fkey"
+            columns: ["cloned_by_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_clones_cloned_by_user_id_fkey"
+            columns: ["cloned_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_clones_cloned_course_id_fkey"
+            columns: ["cloned_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_clones_original_course_id_fkey"
+            columns: ["original_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_instructors: {
         Row: {
           added_at: string | null
@@ -2022,8 +4638,63 @@ export type Database = {
           },
         ]
       }
+      course_templates: {
+        Row: {
+          course_type: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_shared: boolean
+          template_data: Json | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_type?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          template_data?: Json | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_type?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          template_data?: Json | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
+          clone_count: number | null
           course_code: string | null
           course_type: Database["public"]["Enums"]["course_type"] | null
           created_at: string | null
@@ -2034,13 +4705,26 @@ export type Database = {
           instructor_id: string
           is_active: boolean | null
           is_archived: boolean | null
+          is_official: boolean | null
+          is_shareable: boolean | null
           max_students: number | null
+          original_course_id: string | null
+          original_tenant_id: string | null
+          original_tenant_name: string | null
+          required_clinical_hours: number | null
+          required_patient_contacts: number | null
           settings: Json | null
+          share_description: string | null
+          share_preview_enabled: boolean | null
+          share_tags: string[] | null
+          shared_at: string | null
           start_date: string | null
           tenant_id: string
           title: string
+          updated_at: string | null
         }
         Insert: {
+          clone_count?: number | null
           course_code?: string | null
           course_type?: Database["public"]["Enums"]["course_type"] | null
           created_at?: string | null
@@ -2051,13 +4735,26 @@ export type Database = {
           instructor_id: string
           is_active?: boolean | null
           is_archived?: boolean | null
+          is_official?: boolean | null
+          is_shareable?: boolean | null
           max_students?: number | null
+          original_course_id?: string | null
+          original_tenant_id?: string | null
+          original_tenant_name?: string | null
+          required_clinical_hours?: number | null
+          required_patient_contacts?: number | null
           settings?: Json | null
+          share_description?: string | null
+          share_preview_enabled?: boolean | null
+          share_tags?: string[] | null
+          shared_at?: string | null
           start_date?: string | null
           tenant_id: string
           title: string
+          updated_at?: string | null
         }
         Update: {
+          clone_count?: number | null
           course_code?: string | null
           course_type?: Database["public"]["Enums"]["course_type"] | null
           created_at?: string | null
@@ -2068,11 +4765,23 @@ export type Database = {
           instructor_id?: string
           is_active?: boolean | null
           is_archived?: boolean | null
+          is_official?: boolean | null
+          is_shareable?: boolean | null
           max_students?: number | null
+          original_course_id?: string | null
+          original_tenant_id?: string | null
+          original_tenant_name?: string | null
+          required_clinical_hours?: number | null
+          required_patient_contacts?: number | null
           settings?: Json | null
+          share_description?: string | null
+          share_preview_enabled?: boolean | null
+          share_tags?: string[] | null
+          shared_at?: string | null
           start_date?: string | null
           tenant_id?: string
           title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -3955,6 +6664,316 @@ export type Database = {
           },
         ]
       }
+      program_excluded_dates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          excluded_date: string
+          id: string
+          program_id: string
+          reason: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          excluded_date: string
+          id?: string
+          program_id: string
+          reason?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          excluded_date?: string
+          id?: string
+          program_id?: string
+          reason?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_excluded_dates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_excluded_dates_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_excluded_dates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_links: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          program_id: string
+          sort_order: number | null
+          tenant_id: string
+          title: string
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          program_id: string
+          sort_order?: number | null
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          program_id?: string
+          sort_order?: number | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_links_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_schedules: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          instructor_id: string | null
+          is_active: boolean | null
+          location: string | null
+          program_id: string
+          session_type: string | null
+          start_time: string
+          tenant_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          instructor_id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          program_id: string
+          session_type?: string | null
+          start_time: string
+          tenant_id: string
+          title?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          instructor_id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          program_id?: string
+          session_type?: string | null
+          start_time?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_schedules_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_schedules_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_videos: {
+        Row: {
+          coursework_assignment_id: string | null
+          created_at: string | null
+          description: string | null
+          duration_seconds: number | null
+          grants_virtual_attendance: boolean | null
+          id: string
+          is_active: boolean | null
+          minimum_watch_percentage: number | null
+          prevent_skipping: boolean | null
+          program_id: string
+          requires_coursework: boolean | null
+          session_id: string | null
+          sort_order: number | null
+          tenant_id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          uploaded_by: string | null
+          video_source: string | null
+          video_url: string
+        }
+        Insert: {
+          coursework_assignment_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          grants_virtual_attendance?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          minimum_watch_percentage?: number | null
+          prevent_skipping?: boolean | null
+          program_id: string
+          requires_coursework?: boolean | null
+          session_id?: string | null
+          sort_order?: number | null
+          tenant_id: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          video_source?: string | null
+          video_url: string
+        }
+        Update: {
+          coursework_assignment_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          grants_virtual_attendance?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          minimum_watch_percentage?: number | null
+          prevent_skipping?: boolean | null
+          program_id?: string
+          requires_coursework?: boolean | null
+          session_id?: string | null
+          sort_order?: number | null
+          tenant_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          video_source?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_videos_coursework_assignment_id_fkey"
+            columns: ["coursework_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_videos_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_videos_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_videos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_videos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -4271,6 +7290,200 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_integrity_events: {
+        Row: {
+          attempt_id: string
+          created_at: string | null
+          event_data: Json | null
+          event_type: Database["public"]["Enums"]["integrity_event_type"]
+          id: string
+          question_id: string | null
+          question_number: number | null
+          suspicion_level: Database["public"]["Enums"]["suspicion_level"] | null
+          tenant_id: string
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: Database["public"]["Enums"]["integrity_event_type"]
+          id?: string
+          question_id?: string | null
+          question_number?: number | null
+          suspicion_level?:
+            | Database["public"]["Enums"]["suspicion_level"]
+            | null
+          tenant_id: string
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: Database["public"]["Enums"]["integrity_event_type"]
+          id?: string
+          question_id?: string | null
+          question_number?: number | null
+          suspicion_level?:
+            | Database["public"]["Enums"]["suspicion_level"]
+            | null
+          tenant_id?: string
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_integrity_events_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "exam_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_integrity_summary: {
+        Row: {
+          attempt_id: string
+          auto_flagged: boolean | null
+          blur_count: number | null
+          copy_count: number | null
+          created_at: string | null
+          devtools_count: number | null
+          flagged: boolean | null
+          flagged_at: string | null
+          flagged_reason: string | null
+          high_suspicion_events: number | null
+          id: string
+          low_suspicion_events: number | null
+          medium_suspicion_events: number | null
+          paste_count: number | null
+          review_decision:
+            | Database["public"]["Enums"]["integrity_review_decision"]
+            | null
+          review_notes: string | null
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          right_click_count: number | null
+          shortcut_count: number | null
+          tenant_id: string
+          total_events: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          auto_flagged?: boolean | null
+          blur_count?: number | null
+          copy_count?: number | null
+          created_at?: string | null
+          devtools_count?: number | null
+          flagged?: boolean | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
+          high_suspicion_events?: number | null
+          id?: string
+          low_suspicion_events?: number | null
+          medium_suspicion_events?: number | null
+          paste_count?: number | null
+          review_decision?:
+            | Database["public"]["Enums"]["integrity_review_decision"]
+            | null
+          review_notes?: string | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          right_click_count?: number | null
+          shortcut_count?: number | null
+          tenant_id: string
+          total_events?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          auto_flagged?: boolean | null
+          blur_count?: number | null
+          copy_count?: number | null
+          created_at?: string | null
+          devtools_count?: number | null
+          flagged?: boolean | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
+          high_suspicion_events?: number | null
+          id?: string
+          low_suspicion_events?: number | null
+          medium_suspicion_events?: number | null
+          paste_count?: number | null
+          review_decision?:
+            | Database["public"]["Enums"]["integrity_review_decision"]
+            | null
+          review_notes?: string | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          right_click_count?: number | null
+          shortcut_count?: number | null
+          tenant_id?: string
+          total_events?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_integrity_summary_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "exam_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_summary_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_summary_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_integrity_summary_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -5374,6 +8587,8 @@ export type Database = {
       standardized_exam_templates: {
         Row: {
           allow_review: boolean | null
+          auto_flag_threshold: number | null
+          block_right_click: boolean | null
           cat_settings: Json | null
           category_weights: Json
           certification_level: string
@@ -5383,12 +8598,15 @@ export type Database = {
           description: string | null
           exam_type: Database["public"]["Enums"]["standardized_exam_type"]
           id: string
+          integrity_monitoring_enabled: boolean | null
           is_active: boolean | null
           is_system_template: boolean | null
+          lockdown_mode: boolean | null
           max_questions: number | null
           min_questions: number | null
           name: string
           passing_score: number
+          prevent_copy_paste: boolean | null
           security_level: Database["public"]["Enums"]["exam_security_level"]
           show_correct_answers: boolean | null
           show_results_immediately: boolean | null
@@ -5398,9 +8616,12 @@ export type Database = {
           time_limit_minutes: number | null
           total_questions: number | null
           updated_at: string | null
+          warn_on_blur: boolean | null
         }
         Insert: {
           allow_review?: boolean | null
+          auto_flag_threshold?: number | null
+          block_right_click?: boolean | null
           cat_settings?: Json | null
           category_weights?: Json
           certification_level: string
@@ -5410,12 +8631,15 @@ export type Database = {
           description?: string | null
           exam_type: Database["public"]["Enums"]["standardized_exam_type"]
           id?: string
+          integrity_monitoring_enabled?: boolean | null
           is_active?: boolean | null
           is_system_template?: boolean | null
+          lockdown_mode?: boolean | null
           max_questions?: number | null
           min_questions?: number | null
           name: string
           passing_score?: number
+          prevent_copy_paste?: boolean | null
           security_level?: Database["public"]["Enums"]["exam_security_level"]
           show_correct_answers?: boolean | null
           show_results_immediately?: boolean | null
@@ -5425,9 +8649,12 @@ export type Database = {
           time_limit_minutes?: number | null
           total_questions?: number | null
           updated_at?: string | null
+          warn_on_blur?: boolean | null
         }
         Update: {
           allow_review?: boolean | null
+          auto_flag_threshold?: number | null
+          block_right_click?: boolean | null
           cat_settings?: Json | null
           category_weights?: Json
           certification_level?: string
@@ -5437,12 +8664,15 @@ export type Database = {
           description?: string | null
           exam_type?: Database["public"]["Enums"]["standardized_exam_type"]
           id?: string
+          integrity_monitoring_enabled?: boolean | null
           is_active?: boolean | null
           is_system_template?: boolean | null
+          lockdown_mode?: boolean | null
           max_questions?: number | null
           min_questions?: number | null
           name?: string
           passing_score?: number
+          prevent_copy_paste?: boolean | null
           security_level?: Database["public"]["Enums"]["exam_security_level"]
           show_correct_answers?: boolean | null
           show_results_immediately?: boolean | null
@@ -5452,6 +8682,7 @@ export type Database = {
           time_limit_minutes?: number | null
           total_questions?: number | null
           updated_at?: string | null
+          warn_on_blur?: boolean | null
         }
         Relationships: [
           {
@@ -5465,15 +8696,19 @@ export type Database = {
       }
       standardized_exams: {
         Row: {
+          auto_flag_threshold: number | null
           available_from: string | null
           available_until: string | null
+          block_right_click: boolean | null
           course_id: string | null
           created_at: string | null
           created_by: string
           description: string | null
           id: string
           instructions: string | null
+          integrity_monitoring_enabled: boolean | null
           is_published: boolean | null
+          prevent_copy_paste: boolean | null
           question_ids: string[] | null
           security_level_override:
             | Database["public"]["Enums"]["exam_security_level"]
@@ -5483,17 +8718,22 @@ export type Database = {
           time_limit_override: number | null
           title: string
           updated_at: string | null
+          warn_on_blur: boolean | null
         }
         Insert: {
+          auto_flag_threshold?: number | null
           available_from?: string | null
           available_until?: string | null
+          block_right_click?: boolean | null
           course_id?: string | null
           created_at?: string | null
           created_by: string
           description?: string | null
           id?: string
           instructions?: string | null
+          integrity_monitoring_enabled?: boolean | null
           is_published?: boolean | null
+          prevent_copy_paste?: boolean | null
           question_ids?: string[] | null
           security_level_override?:
             | Database["public"]["Enums"]["exam_security_level"]
@@ -5503,17 +8743,22 @@ export type Database = {
           time_limit_override?: number | null
           title: string
           updated_at?: string | null
+          warn_on_blur?: boolean | null
         }
         Update: {
+          auto_flag_threshold?: number | null
           available_from?: string | null
           available_until?: string | null
+          block_right_click?: boolean | null
           course_id?: string | null
           created_at?: string | null
           created_by?: string
           description?: string | null
           id?: string
           instructions?: string | null
+          integrity_monitoring_enabled?: boolean | null
           is_published?: boolean | null
+          prevent_copy_paste?: boolean | null
           question_ids?: string[] | null
           security_level_override?:
             | Database["public"]["Enums"]["exam_security_level"]
@@ -5523,6 +8768,7 @@ export type Database = {
           time_limit_override?: number | null
           title?: string
           updated_at?: string | null
+          warn_on_blur?: boolean | null
         }
         Relationships: [
           {
@@ -5908,6 +9154,66 @@ export type Database = {
           },
         ]
       }
+      tenant_links: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          tenant_id: string
+          title: string
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           agency_code: string
@@ -6129,6 +9435,76 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          last_position_seconds: number | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string
+          video_id: string
+          virtual_attendance_granted: boolean | null
+          virtual_attendance_granted_at: string | null
+          watch_percentage: number | null
+          watch_time_seconds: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          last_position_seconds?: number | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id: string
+          video_id: string
+          virtual_attendance_granted?: boolean | null
+          virtual_attendance_granted_at?: string | null
+          watch_percentage?: number | null
+          watch_time_seconds?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          last_position_seconds?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string
+          video_id?: string
+          virtual_attendance_granted?: boolean | null
+          virtual_attendance_granted_at?: string | null
+          watch_percentage?: number | null
+          watch_time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_progress_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_progress_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "program_videos"
             referencedColumns: ["id"]
           },
         ]
@@ -6457,18 +9833,22 @@ export type Database = {
           booked_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           check_in_time: string | null
           check_out_time: string | null
           created_at: string | null
           hours_completed: number | null
           id: string
           notes: string | null
+          poc_response_notes: string | null
           preceptor_name: string | null
           preceptor_signature: string | null
           preceptor_signature_credentials: string | null
           preceptor_signature_data: string | null
           preceptor_signature_name: string | null
           preceptor_signed_at: string | null
+          request_notes: string | null
+          requested_at: string | null
           shift_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           student_id: string
@@ -6514,18 +9894,22 @@ export type Database = {
           booked_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           check_in_time: string | null
           check_out_time: string | null
           created_at: string | null
           hours_completed: number | null
           id: string
           notes: string | null
+          poc_response_notes: string | null
           preceptor_name: string | null
           preceptor_signature: string | null
           preceptor_signature_credentials: string | null
           preceptor_signature_data: string | null
           preceptor_signature_name: string | null
           preceptor_signed_at: string | null
+          request_notes: string | null
+          requested_at: string | null
           shift_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           student_id: string
@@ -6544,6 +9928,15 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_sso_sessions: { Args: never; Returns: number }
+      clone_course: {
+        Args: {
+          p_cloned_by_user_id: string
+          p_new_title?: string
+          p_source_course_id: string
+          p_target_tenant_id: string
+        }
+        Returns: string
+      }
       create_md_invitation: {
         Args: {
           p_email: string
@@ -6576,6 +9969,16 @@ export type Database = {
         }
       }
       generate_agency_code: { Args: never; Returns: string }
+      generate_attendance_sessions: {
+        Args: {
+          p_created_by: string
+          p_end_date: string
+          p_program_id: string
+          p_start_date: string
+          p_tenant_id: string
+        }
+        Returns: number
+      }
       generate_invite_code: { Args: never; Returns: string }
       get_accreditation_compliance_summary: {
         Args: { p_tenant_id: string }
@@ -6585,6 +9988,30 @@ export type Database = {
           expiring_soon: number
           pending_documents: number
           total_documents: number
+        }[]
+      }
+      get_ce_user_agency_id: { Args: never; Returns: string }
+      get_ce_user_id: { Args: never; Returns: string }
+      get_ce_user_role: { Args: never; Returns: string }
+      get_course_preview: {
+        Args: { p_course_id: string }
+        Returns: {
+          clone_count: number
+          course_description: string
+          course_id: string
+          course_title: string
+          is_official: boolean
+          lesson_id: string
+          lesson_order: number
+          lesson_title: string
+          lesson_type: string
+          module_description: string
+          module_id: string
+          module_order: number
+          module_title: string
+          share_description: string
+          share_tags: string[]
+          tenant_name: string
         }[]
       }
       get_employee_cycle_completion: {
@@ -6621,6 +10048,29 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_flagged_attempts: {
+        Args: { p_exam_id?: string; p_reviewed?: boolean; p_tenant_id: string }
+        Returns: {
+          attempt_id: string
+          auto_flagged: boolean
+          exam_id: string
+          exam_name: string
+          flagged_at: string
+          flagged_reason: string
+          high_suspicion_events: number
+          medium_suspicion_events: number
+          review_decision: string
+          reviewed: boolean
+          reviewed_at: string
+          reviewed_by_name: string
+          started_at: string
+          student_email: string
+          student_id: string
+          student_name: string
+          submitted_at: string
+          total_events: number
+        }[]
       }
       get_instructor_course_ids: {
         Args: { p_user_id?: string }
@@ -6671,7 +10121,88 @@ export type Database = {
         Args: { p_tenant_id: string; p_user1_id: string; p_user2_id: string }
         Returns: Json
       }
+      get_shared_courses: {
+        Args: {
+          p_certification_level?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort_by?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          clone_count: number
+          course_code: string
+          course_type: string
+          description: string
+          id: string
+          is_official: boolean
+          lesson_count: number
+          module_count: number
+          share_description: string
+          share_tags: string[]
+          shared_at: string
+          tenant_id: string
+          tenant_name: string
+          title: string
+        }[]
+      }
       get_storage_usage: { Args: { p_tenant_id: string }; Returns: Json }
+      get_student_links: {
+        Args: { p_student_id: string; p_tenant_id: string }
+        Returns: {
+          category: string
+          description: string
+          icon: string
+          id: string
+          is_required: boolean
+          link_type: string
+          program_name: string
+          sort_order: number
+          title: string
+          url: string
+        }[]
+      }
+      get_student_videos: {
+        Args: { p_student_id: string; p_tenant_id: string }
+        Returns: {
+          completed: boolean
+          completed_at: string
+          description: string
+          duration_seconds: number
+          grants_virtual_attendance: boolean
+          id: string
+          last_position_seconds: number
+          minimum_watch_percentage: number
+          program_id: string
+          program_name: string
+          requires_coursework: boolean
+          session_id: string
+          thumbnail_url: string
+          title: string
+          video_source: string
+          video_url: string
+          virtual_attendance_granted: boolean
+          watch_percentage: number
+        }[]
+      }
+      get_todays_sessions: {
+        Args: { p_instructor_id?: string; p_tenant_id: string }
+        Returns: {
+          check_in_count: number
+          end_time: string
+          has_active_code: boolean
+          id: string
+          location: string
+          program_id: string
+          program_name: string
+          scheduled_date: string
+          session_status: string
+          session_type: string
+          start_time: string
+          title: string
+        }[]
+      }
       get_user_agency_role: {
         Args: never
         Returns: Database["public"]["Enums"]["agency_role"]
@@ -6694,6 +10225,15 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      get_video_statistics: {
+        Args: { p_tenant_id: string; p_video_id: string }
+        Returns: {
+          average_watch_percentage: number
+          completed_count: number
+          total_viewers: number
+          virtual_attendance_count: number
+        }[]
+      }
       increment_quiz_template_usage: {
         Args: { template_id: string }
         Returns: undefined
@@ -6706,9 +10246,25 @@ export type Database = {
       }
       is_medical_director: { Args: { tenant_uuid: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      qr_check_in: {
+        Args: { p_code: string; p_student_id: string; p_tenant_id: string }
+        Returns: Json
+      }
       recalculate_quiz_scores: {
         Args: { p_assignment_id: string }
         Returns: number
+      }
+      record_integrity_event: {
+        Args: {
+          p_attempt_id: string
+          p_event_data?: Json
+          p_event_type: string
+          p_question_id?: string
+          p_question_number?: number
+          p_tenant_id: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       record_signature_verification: {
         Args: {
@@ -6742,6 +10298,55 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      request_clinical_shift: {
+        Args: {
+          p_request_notes?: string
+          p_shift_id: string
+          p_student_id: string
+          p_tenant_id: string
+        }
+        Returns: {
+          booked_at: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string | null
+          hours_completed: number | null
+          id: string
+          notes: string | null
+          poc_response_notes: string | null
+          preceptor_name: string | null
+          preceptor_signature: string | null
+          preceptor_signature_credentials: string | null
+          preceptor_signature_data: string | null
+          preceptor_signature_name: string | null
+          preceptor_signed_at: string | null
+          request_notes: string | null
+          requested_at: string | null
+          shift_id: string
+          status: Database["public"]["Enums"]["booking_status"] | null
+          student_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clinical_shift_bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      review_integrity_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_decision: string
+          p_notes?: string
+          p_reviewer_id: string
+        }
+        Returns: Json
       }
       send_direct_message: {
         Args: {
@@ -6791,6 +10396,26 @@ export type Database = {
         }
         Returns: Json
       }
+      toggle_course_sharing: {
+        Args: {
+          p_course_id: string
+          p_share: boolean
+          p_share_description?: string
+          p_share_tags?: string[]
+        }
+        Returns: boolean
+      }
+      update_video_progress: {
+        Args: {
+          p_duration_seconds: number
+          p_last_position_seconds: number
+          p_tenant_id: string
+          p_user_id: string
+          p_video_id: string
+          p_watch_time_seconds: number
+        }
+        Returns: Json
+      }
       validate_md_invite_code: {
         Args: { p_invite_code: string }
         Returns: {
@@ -6829,8 +10454,15 @@ export type Database = {
         | "abandoned"
         | "graded"
         | "invalidated"
-      attendance_status: "present" | "absent" | "late" | "excused"
-      booking_status: "booked" | "completed" | "cancelled" | "no_show"
+      attendance_status: "present" | "absent" | "late" | "excused" | "virtual"
+      booking_status:
+        | "booked"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+        | "pending_poc_approval"
+        | "poc_approved"
+        | "poc_denied"
       certification_level: "EMR" | "EMT" | "AEMT" | "Paramedic" | "All"
       clinical_site_type:
         | "hospital"
@@ -6859,6 +10491,22 @@ export type Database = {
       exam_delivery_mode: "standard" | "adaptive"
       exam_security_level: "low" | "medium" | "high"
       file_context: "course" | "assignment" | "submission" | "profile"
+      integrity_event_type:
+        | "blur"
+        | "focus"
+        | "copy"
+        | "paste"
+        | "cut"
+        | "right_click"
+        | "print"
+        | "screenshot"
+        | "shortcut"
+        | "selection"
+        | "resize"
+        | "devtools"
+        | "tab_hidden"
+        | "tab_visible"
+      integrity_review_decision: "cleared" | "warning" | "violation"
       log_type: "hours" | "patient_contact"
       notification_type: "assignment" | "grade" | "announcement" | "reminder"
       outcome_type: "course" | "program" | "institutional"
@@ -6888,6 +10536,7 @@ export type Database = {
       submission_status: "in_progress" | "submitted" | "graded" | "returned"
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
       subscription_tier: "free" | "pro" | "institution" | "enterprise"
+      suspicion_level: "low" | "medium" | "high"
       user_role: "admin" | "instructor" | "student"
       verification_cycle_type: "initial" | "annual" | "remedial"
       verification_status: "pending" | "verified" | "rejected"
@@ -7048,8 +10697,16 @@ export const Constants = {
         "graded",
         "invalidated",
       ],
-      attendance_status: ["present", "absent", "late", "excused"],
-      booking_status: ["booked", "completed", "cancelled", "no_show"],
+      attendance_status: ["present", "absent", "late", "excused", "virtual"],
+      booking_status: [
+        "booked",
+        "completed",
+        "cancelled",
+        "no_show",
+        "pending_poc_approval",
+        "poc_approved",
+        "poc_denied",
+      ],
       certification_level: ["EMR", "EMT", "AEMT", "Paramedic", "All"],
       clinical_site_type: [
         "hospital",
@@ -7081,6 +10738,23 @@ export const Constants = {
       exam_delivery_mode: ["standard", "adaptive"],
       exam_security_level: ["low", "medium", "high"],
       file_context: ["course", "assignment", "submission", "profile"],
+      integrity_event_type: [
+        "blur",
+        "focus",
+        "copy",
+        "paste",
+        "cut",
+        "right_click",
+        "print",
+        "screenshot",
+        "shortcut",
+        "selection",
+        "resize",
+        "devtools",
+        "tab_hidden",
+        "tab_visible",
+      ],
+      integrity_review_decision: ["cleared", "warning", "violation"],
       log_type: ["hours", "patient_contact"],
       notification_type: ["assignment", "grade", "announcement", "reminder"],
       outcome_type: ["course", "program", "institutional"],
@@ -7113,6 +10787,7 @@ export const Constants = {
       submission_status: ["in_progress", "submitted", "graded", "returned"],
       subscription_status: ["active", "canceled", "past_due", "trialing"],
       subscription_tier: ["free", "pro", "institution", "enterprise"],
+      suspicion_level: ["low", "medium", "high"],
       user_role: ["admin", "instructor", "student"],
       verification_cycle_type: ["initial", "annual", "remedial"],
       verification_status: ["pending", "verified", "rejected"],
