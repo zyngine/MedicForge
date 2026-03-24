@@ -697,6 +697,60 @@ export interface CEEmailLogUpdate {
 }
 
 // ---------------------------------------------------------------------------
+// ce_platform_settings
+// ---------------------------------------------------------------------------
+export interface CEPlatformSettingsRow {
+  key: string;
+  value: string;
+  updated_at: string | null;
+}
+
+export interface CEPlatformSettingsInsert {
+  key: string;
+  value: string;
+  updated_at?: string | null;
+}
+
+export interface CEPlatformSettingsUpdate {
+  key?: string;
+  value?: string;
+  updated_at?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// ce_agency_invite_codes
+// ---------------------------------------------------------------------------
+export interface CEAgencyInviteCodesRow {
+  id: string;
+  agency_id: string;
+  code: string;
+  expires_at: string | null;
+  max_uses: number | null;
+  uses_count: number | null;
+  created_at: string | null;
+}
+
+export interface CEAgencyInviteCodesInsert {
+  id?: string;
+  agency_id: string;
+  code: string;
+  expires_at?: string | null;
+  max_uses?: number | null;
+  uses_count?: number | null;
+  created_at?: string | null;
+}
+
+export interface CEAgencyInviteCodesUpdate {
+  id?: string;
+  agency_id?: string;
+  code?: string;
+  expires_at?: string | null;
+  max_uses?: number | null;
+  uses_count?: number | null;
+  created_at?: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // CEDatabase — Supabase-style schema type
 // ---------------------------------------------------------------------------
 export interface CEDatabase {
@@ -778,6 +832,18 @@ export interface CEDatabase {
         Row: CEEmailLogRow;
         Insert: CEEmailLogInsert;
         Update: CEEmailLogUpdate;
+        Relationships: [];
+      };
+      ce_platform_settings: {
+        Row: CEPlatformSettingsRow;
+        Insert: CEPlatformSettingsInsert;
+        Update: CEPlatformSettingsUpdate;
+        Relationships: [];
+      };
+      ce_agency_invite_codes: {
+        Row: CEAgencyInviteCodesRow;
+        Insert: CEAgencyInviteCodesInsert;
+        Update: CEAgencyInviteCodesUpdate;
         Relationships: [];
       };
     };
