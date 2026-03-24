@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -63,7 +63,7 @@ export default function CERegisterPage() {
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
+      const supabase = createCEClient();
 
       // Sign up with Supabase auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({

@@ -25,9 +25,15 @@ export async function POST(request: Request) {
       agencyInviteCode,
     } = body;
 
-    // Validate caller — must be the user themselves or a service call with valid userId
-    const callerUserId = user?.id || userId;
-    if (!callerUserId || !email) {
+    // Require authenticated user — no fallback to body userId
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const callerUserId = user.id;
+    if (!email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

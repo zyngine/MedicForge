@@ -50,6 +50,17 @@ interface Enrollment {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function sanitizeHTML(html: string): string {
+  // Remove <script> tags and their contents
+  let clean = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+  // Remove event handler attributes (onclick, onerror, onload, etc.)
+  clean = clean.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  // Remove javascript: URLs
+  clean = clean.replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, 'href="#"');
+  clean = clean.replace(/src\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, 'src=""');
+  return clean;
+}
+
 function isYoutubeUrl(url: string) {
   return url.includes("youtube.com") || url.includes("youtu.be");
 }
@@ -419,7 +430,7 @@ export default function CECourseLearnPage() {
                       {block.content_type === "text" && block.body && (
                         <div
                           className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: block.body }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHTML(block.body) }}
                         />
                       )}
 

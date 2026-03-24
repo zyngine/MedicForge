@@ -201,7 +201,7 @@ export default function CESubscribePage() {
 
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2">
               <Star className="h-3.5 w-3.5 shrink-0" />
-              CAPCE-approved courses included. Certificates issued automatically upon completion.
+              Certificates issued automatically upon completion. CAPCE accreditation coming 2027.
             </p>
           </div>
 
