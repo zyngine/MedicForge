@@ -128,21 +128,21 @@ export function UpgradeModal({
   const benefitsMap: Record<string, string[]> = {
     free: [
       "5 instructors (vs 1)",
-      "100 students (vs 25)",
+      "25 students (vs limited)",
       "Unlimited courses (vs 2)",
       "Custom subdomain",
       "Remove MedicForge branding",
     ],
     pro: [
       "Unlimited instructors (vs 5)",
-      "500 students (vs 100)",
+      "100 students (vs 25)",
       "Custom domain support",
       "API access",
       "Priority support",
     ],
     professional: [
       "Unlimited instructors (vs 5)",
-      "500 students (vs 100)",
+      "100 students (vs 25)",
       "Custom domain support",
       "API access",
       "Priority support",

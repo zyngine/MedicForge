@@ -168,14 +168,14 @@ function SubscriptionBlockedScreen({
                 <div className="grid gap-3">
                   <PlanOption
                     name="Professional"
-                    price="$149/month"
-                    features={["5 instructors", "100 students", "Unlimited courses"]}
+                    price="$1,499/year"
+                    features={["5 instructors", "25 students", "Unlimited courses"]}
                     recommended
                   />
                   <PlanOption
                     name="Institution"
-                    price="$399/month"
-                    features={["Unlimited instructors", "500 students", "Custom domain"]}
+                    price="$3,999/year"
+                    features={["Unlimited instructors", "100 students", "Custom domain"]}
                   />
                 </div>
               </div>

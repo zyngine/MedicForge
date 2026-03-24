@@ -40,7 +40,7 @@ const LMS_TIERS = [
     description: "For growing training programs",
     features: [
       "Up to 5 instructors",
-      "Up to 100 students",
+      "Up to 25 students",
       "Unlimited courses",
       "All assignment types",
       "Full NREMT tracking",
@@ -56,7 +56,7 @@ const LMS_TIERS = [
     description: "For colleges and large academies",
     features: [
       "Unlimited instructors",
-      "Up to 500 students",
+      "Up to 100 students",
       "Everything in Professional",
       "100GB storage",
       "Custom domain",
