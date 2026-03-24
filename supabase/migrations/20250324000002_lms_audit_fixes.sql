@@ -81,8 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_clinical_logs_student_course
 CREATE INDEX IF NOT EXISTS idx_enrollments_tenant_status
     ON enrollments(tenant_id, status);
 
-CREATE INDEX IF NOT EXISTS idx_courses_tenant_published
-    ON courses(tenant_id, is_published);
+-- Note: courses.is_published does not exist; skipping that index.
 
 -- ---------------------------------------------------------------------------
 -- 5. Add updated_at column to courses with auto-update trigger
