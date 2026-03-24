@@ -16,7 +16,7 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
+  apiVersion: "2026-02-25.clover",
 });
 
 interface ProductConfig {
