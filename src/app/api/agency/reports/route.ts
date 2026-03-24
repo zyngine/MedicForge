@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === "expiring") {
-      const daysAhead = parseInt(request.nextUrl.searchParams.get("days") || "90");
+      const daysAhead = Math.min(365, Math.max(1, parseInt(request.nextUrl.searchParams.get("days") || "90")));
       const cutoff = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
       const { data: expiring } = await adminClient

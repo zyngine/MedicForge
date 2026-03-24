@@ -258,7 +258,9 @@ export async function updateSession(request: NextRequest) {
           const url = request.nextUrl.clone()
 
           // Check if user's tenant is an agency tenant
-          if (profile.tenant_id && profile.agency_role) {
+          // Only redirect to agency dashboard if tenant is actually an agency or combined type
+          if (profile.tenant_id && profile.agency_role &&
+              (tenantInfo?.tenant_type === 'agency' || tenantInfo?.tenant_type === 'combined')) {
             // Agency user - redirect to agency dashboard
             url.pathname = "/agency/dashboard"
           } else if (profile.role === "student") {

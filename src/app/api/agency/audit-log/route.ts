@@ -17,9 +17,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const VALID_ACTIONS = [
+      "verification_approved", "verification_rejected",
+      "employee_added", "employee_deactivated",
+      "skill_updated", "skill_created",
+      "cycle_created", "settings_updated",
+    ];
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "100"), 500);
+
+    if (action && !VALID_ACTIONS.includes(action)) {
+      return NextResponse.json({ error: "Invalid action filter" }, { status: 400 });
+    }
 
     let query = supabase
       .from("agency_audit_log")

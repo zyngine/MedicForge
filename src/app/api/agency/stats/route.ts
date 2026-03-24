@@ -19,7 +19,7 @@ export async function GET() {
 
     const tid = profile.tenant_id;
 
-    const [empResult, compResult, auditResult] = await Promise.all([
+    const [empResult, compResult, auditResult] = await Promise.allSettled([
       supabase
         .from("agency_employees")
         .select("id, is_active, certification_expiration")
@@ -36,8 +36,8 @@ export async function GET() {
         .limit(10),
     ]);
 
-    const employees = empResult.data ?? [];
-    const competencies = compResult.data ?? [];
+    const employees = empResult.status === "fulfilled" ? empResult.value.data ?? [] : [];
+    const competencies = compResult.status === "fulfilled" ? compResult.value.data ?? [] : [];
     const now = new Date();
     const soon = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
@@ -56,7 +56,8 @@ export async function GET() {
       }).length,
     };
 
-    return NextResponse.json({ stats, recentActivity: auditResult.data ?? [] });
+    const recentActivity = auditResult.status === "fulfilled" ? auditResult.value.data ?? [] : [];
+    return NextResponse.json({ stats, recentActivity });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Error" }, { status: 500 });
   }

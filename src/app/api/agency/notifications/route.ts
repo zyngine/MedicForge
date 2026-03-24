@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const type = body.type || "all"; // "expiring" | "pending_verifications" | "all"
 
+    const validTypes = ["expiring", "pending_verifications", "all"];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({ error: "Invalid notification type" }, { status: 400 });
+    }
+
     const results: { type: string; sent: number; errors: number }[] = [];
 
     // Get tenant info

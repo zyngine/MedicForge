@@ -91,6 +91,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   const [agencySettings, setAgencySettings] = React.useState({
     name: "",
@@ -309,8 +310,17 @@ export default function SettingsPage() {
                 <code className="text-2xl font-mono font-bold tracking-wider bg-muted px-4 py-2 rounded-lg">
                   {tenant?.id?.slice(0, 6).toUpperCase() || "------"}
                 </code>
-                <Button variant="outline" size="sm">
-                  Copy
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const code = tenant?.id?.slice(0, 6).toUpperCase() || "";
+                    navigator.clipboard.writeText(code);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy"}
                 </Button>
               </div>
             </CardContent>

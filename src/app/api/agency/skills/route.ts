@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
     if (!name || !category) {
       return NextResponse.json({ error: "Name and category are required" }, { status: 400 });
     }
+    if (name.length > 200) return NextResponse.json({ error: "Skill name too long" }, { status: 400 });
+    if (description && description.length > 2000) return NextResponse.json({ error: "Description too long" }, { status: 400 });
 
     const { data: skill, error } = await adminClient
       .from("skill_library")
@@ -87,8 +89,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ skill });
-  } catch (error) {
-    console.error("POST /api/agency/skills error:", error);
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -83,7 +83,8 @@ export default function NewCyclePage() {
             body: JSON.stringify({}),
           });
         } catch {
-          // Generation failure is non-fatal — user can regenerate from cycle detail page
+          // Generation failure is non-fatal — notify user they can add manually
+          setError("Cycle created, but auto-generating competencies failed. You can add them manually from the cycle detail page.");
         }
       }
 

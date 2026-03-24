@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     if (!employees?.length) {
       return NextResponse.json({ error: "No employees provided" }, { status: 400 });
     }
+    if (employees.length > 500) {
+      return NextResponse.json({ error: "Maximum 500 employees per import" }, { status: 400 });
+    }
 
     const results: Array<{ row: number; name: string; success: boolean; error?: string }> = [];
     const validLevels = ["EMR", "EMT", "AEMT", "Paramedic", "Other"];

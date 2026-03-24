@@ -81,6 +81,7 @@ function AgencyRegisterForm() {
     email: string;
     tenant_id: string;
   } | null>(null);
+  const [inviteError, setInviteError] = React.useState<string | null>(null);
 
   // Fetch invite data if invite code is present
   React.useEffect(() => {
@@ -92,17 +93,23 @@ function AgencyRegisterForm() {
   const fetchInviteData = async () => {
     try {
       const response = await fetch(`/api/agency/invite/${inviteCode}`);
-      if (response.ok) {
-        const data = await response.json();
-        setInviteData(data);
-        setFormData((prev) => ({
-          ...prev,
-          adminName: data.md_name,
-          email: data.email,
-        }));
+      if (!response.ok) {
+        setInviteError("Invalid or expired invite link. Please contact your agency administrator.");
+        return;
       }
-    } catch (err) {
-      console.error("Failed to fetch invite data:", err);
+      const data = await response.json();
+      if (!data?.email || !data?.md_name) {
+        setInviteError("Invalid invite data. Please contact your agency administrator.");
+        return;
+      }
+      setInviteData(data);
+      setFormData((prev) => ({
+        ...prev,
+        adminName: data.md_name,
+        email: data.email,
+      }));
+    } catch {
+      setInviteError("Failed to validate invite link. Please try again or contact your agency administrator.");
     }
   };
 
@@ -178,7 +185,13 @@ function AgencyRegisterForm() {
         </Alert>
       )}
 
-      {isMDInvite && (
+      {inviteError && (
+        <Alert variant="error">
+          {inviteError}
+        </Alert>
+      )}
+
+      {isMDInvite && !inviteError && (
         <Alert variant="info">
           <Stethoscope className="h-4 w-4" />
           <span>You have been invited to join as a Medical Director. Complete the form below to create your account.</span>

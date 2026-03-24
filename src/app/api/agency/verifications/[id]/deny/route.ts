@@ -25,6 +25,10 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const reason: string = body.reason || "";
 
+    if (reason && reason.length > 1000) {
+      return NextResponse.json({ error: "Reason must be 1000 characters or less" }, { status: 400 });
+    }
+
     const admin = createAdminClient();
 
     const { data: competency } = await admin

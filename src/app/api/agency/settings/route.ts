@@ -46,6 +46,19 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { agency_license_number, state_code, county, verification_reminder_days, annual_cycle_month } = body;
 
+    if (verification_reminder_days !== undefined) {
+      const days = Number(verification_reminder_days);
+      if (isNaN(days) || days < 1 || days > 365) {
+        return NextResponse.json({ error: "Reminder days must be between 1 and 365" }, { status: 400 });
+      }
+    }
+    if (annual_cycle_month !== undefined) {
+      const month = Number(annual_cycle_month);
+      if (isNaN(month) || month < 1 || month > 12) {
+        return NextResponse.json({ error: "Cycle month must be between 1 and 12" }, { status: 400 });
+      }
+    }
+
     const { data, error } = await supabase
       .from("agency_settings")
       .upsert(

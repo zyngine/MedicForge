@@ -52,6 +52,11 @@ const ACTION_LABELS: Record<string, string> = {
   cycle_created: "Cycle Created",
 };
 
+const truncate = (val: any) => {
+  const str = String(val ?? "");
+  return str.length > 100 ? str.slice(0, 100) + "..." : str;
+};
+
 function AuditLogRow({ entry }: { entry: AuditLogEntry }) {
   const Icon = ACTION_ICONS[entry.action] || FileText;
   const colorClass = ACTION_COLORS[entry.action] || "text-muted-foreground bg-muted";
@@ -78,7 +83,7 @@ function AuditLogRow({ entry }: { entry: AuditLogEntry }) {
           <p className="text-sm text-muted-foreground mt-1 italic">
             {Object.entries(entry.new_values)
               .slice(0, 3)
-              .map(([k, v]) => `${k}: ${v}`)
+              .map(([k, v]) => `${k}: ${truncate(v)}`)
               .join(", ")}
           </p>
         )}

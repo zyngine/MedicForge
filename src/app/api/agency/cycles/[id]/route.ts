@@ -19,7 +19,8 @@ export async function GET(
       .eq("id", user.id)
       .single();
 
-    if (!profile?.tenant_id || !profile.agency_role) {
+    if (!profile?.tenant_id || !profile.agency_role ||
+        !["agency_admin", "medical_director"].includes(profile.agency_role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
