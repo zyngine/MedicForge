@@ -148,7 +148,7 @@ export function useUser(): UseUserReturn {
           const result = await Promise.race([
             supabase.auth.getSession(),
             new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error("getSession timeout")), 4000)
+              setTimeout(() => reject(new Error("getSession timeout")), 8000)
             ),
           ]);
           session = result.data.session;

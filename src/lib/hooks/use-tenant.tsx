@@ -273,15 +273,21 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         // Check if user changed
         const newUserId = session?.user?.id || null;
         if (cachedTenantUserId && newUserId && cachedTenantUserId !== newUserId) {
-          console.log("User changed via tenant auth event, clearing tenant cache");
           clearTenantCache();
           fetchAttemptedRef.current = false;
           fetchTenant();
-        } else if (!cachedTenant && !tenantInitialized) {
-          // Only re-fetch if we don't have a tenant AND haven't finished initializing yet.
-          // This prevents re-fetching on every TOKEN_REFRESHED for main-site users (no tenant).
-          fetchAttemptedRef.current = false;
-          fetchTenant();
+        } else if (!cachedTenant) {
+          // Re-fetch if we don't have a tenant yet. This handles the case where
+          // the initial fetch failed due to expired tokens (getSession timeout)
+          // and the background refresh just completed with fresh tokens.
+          // For main-site users (no subdomain), finalize(null) already ran and
+          // this will resolve quickly via the cache check at the top of fetchTenant.
+          const isOnSubdomain = !!getTenantSlugFromHostname() || !!getTenantSlugFromCookie();
+          if (isOnSubdomain || !tenantInitialized) {
+            tenantInitialized = false;
+            fetchAttemptedRef.current = false;
+            fetchTenant();
+          }
         }
       }
     });
