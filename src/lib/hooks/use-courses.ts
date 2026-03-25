@@ -288,7 +288,7 @@ export function useCourse(courseId: string | null | undefined) {
  * Create a new course
  */
 export function useCreateCourse() {
-  const { tenant } = useTenant();
+  const { tenant, refetch: refetchTenant } = useTenant();
   const { user } = useUser();
   const queryClient = useQueryClient();
 
@@ -301,8 +301,22 @@ export function useCreateCourse() {
       if (!user?.id) {
         throw new Error("Not logged in. Please sign in again.");
       }
-      if (!tenant?.id) {
-        throw new Error("No organization found. Your account may not be set up correctly. Please contact support or try logging in again.");
+
+      // If tenant is missing, try one refresh before giving up
+      let resolvedTenantId = tenant?.id;
+      if (!resolvedTenantId) {
+        await refetchTenant();
+        // Re-read from module cache after refresh
+        // (React state may not have updated yet, but the cache is synchronous)
+        const freshCookie = typeof document !== "undefined"
+          ? document.cookie.split(";").find(c => c.trim().startsWith("tenant_id="))
+          : null;
+        if (freshCookie) {
+          resolvedTenantId = decodeURIComponent(freshCookie.split("=")[1]);
+        }
+      }
+      if (!resolvedTenantId) {
+        throw new Error("No organization found. Please try refreshing the page. If this continues, contact support.");
       }
 
       const supabase = createClient();
@@ -317,7 +331,7 @@ export function useCreateCourse() {
         const { data: existing } = await supabase
           .from("courses")
           .select("id")
-          .eq("tenant_id", tenant.id)
+          .eq("tenant_id", resolvedTenantId)
           .eq("enrollment_code", enrollmentCode)
           .single();
 
@@ -337,7 +351,7 @@ export function useCreateCourse() {
         .from("courses")
         .insert({
           ...input,
-          tenant_id: tenant.id,
+          tenant_id: resolvedTenantId,
           instructor_id: user.id,
           enrollment_code: enrollmentCode,
         })

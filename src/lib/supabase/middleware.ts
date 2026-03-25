@@ -96,28 +96,13 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(mainUrl)
     }
 
-    // Set tenant info in response headers/cookies for the app to use
+    // Set tenant info in response headers for the app to use.
+    // Cookies are applied via applyTenantCookies() before each return
+    // to survive supabaseResponse recreation from setAll.
     if (tenantInfo) {
       supabaseResponse.headers.set("x-tenant-id", tenantInfo.id)
       supabaseResponse.headers.set("x-tenant-slug", tenantInfo.slug)
-      supabaseResponse.cookies.set("tenant_id", tenantInfo.id, {
-        // httpOnly: false — intentional. Client-side tenant resolution reads this cookie.
-        // Data access is secured by RLS using get_user_tenant_id(), not this cookie.
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 86400, // 24 hours - persist across sessions
-      })
-      supabaseResponse.cookies.set("tenant_slug", tenantInfo.slug, {
-        // httpOnly: false — intentional. Client-side tenant resolution reads this cookie.
-        // Data access is secured by RLS using get_user_tenant_id(), not this cookie.
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 86400, // 24 hours - persist across sessions
-      })
+      applyTenantCookies()
     }
   }
 
@@ -127,6 +112,7 @@ export async function updateSession(request: NextRequest) {
 
   // Certificate verification is public on ALL domains (main + subdomains)
   if (pathname.startsWith("/verify")) {
+    applyTenantCookies()
     return supabaseResponse
   }
 
@@ -157,6 +143,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isMarketingRoute) {
+    applyTenantCookies()
     return supabaseResponse
   }
 
@@ -214,17 +201,45 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // ============================================
+  // HELPER: Re-apply tenant cookies on the current supabaseResponse.
+  // The Supabase SSR setAll callback recreates supabaseResponse whenever
+  // auth tokens are refreshed (e.g. inside getUser()), which wipes any
+  // tenant cookies that were set earlier. Call this before every return
+  // that should carry tenant context.
+  // ============================================
+  function applyTenantCookies() {
+    if (tenantInfo) {
+      supabaseResponse.cookies.set("tenant_id", tenantInfo.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 86400,
+      })
+      supabaseResponse.cookies.set("tenant_slug", tenantInfo.slug, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 86400,
+      })
+    }
+  }
+
   // For auth routes, allow users to access them freely
   // They might want to switch accounts or log in as a different user
   if (isAuthRoute) {
     // Platform admin login page - always allow
     if (pathname === "/platform-admin" || pathname.startsWith("/platform-admin/login")) {
+      applyTenantCookies()
       return supabaseResponse
     }
 
     // For login/register pages, allow users through
     // The login page will handle signing out stale sessions before new login
     if (pathname === "/login" || pathname === "/register") {
+      applyTenantCookies()
       return supabaseResponse
     }
 
@@ -234,6 +249,7 @@ export async function updateSession(request: NextRequest) {
     )
 
     if (!hasAuthCookies) {
+      applyTenantCookies()
       return supabaseResponse
     }
 
@@ -280,6 +296,7 @@ export async function updateSession(request: NextRequest) {
     } catch {
       // If auth check fails, just let them through to the auth page
     }
+    applyTenantCookies()
     return supabaseResponse
   }
 
@@ -330,9 +347,11 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set("redirect", pathname)
       return NextResponse.redirect(url)
     }
+    applyTenantCookies()
     return supabaseResponse
   }
 
+  applyTenantCookies()
   return supabaseResponse
 }
 

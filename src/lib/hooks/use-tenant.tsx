@@ -122,6 +122,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (fetchAttemptedRef.current) return;
     fetchAttemptedRef.current = true;
 
+    // Helper to finalize tenant state (always sets tenantInitialized)
+    const finalize = (tenantData: Tenant | null) => {
+      if (!mountedRef.current) return;
+      cachedTenant = tenantData;
+      tenantInitialized = true;
+      setTenant(tenantData);
+      setIsLoading(false);
+      if (tenantData && typeof document !== "undefined") {
+        document.cookie = `tenant_id=${encodeURIComponent(tenantData.id)}; path=/; samesite=lax; max-age=86400`;
+        document.cookie = `tenant_slug=${encodeURIComponent(tenantData.slug)}; path=/; samesite=lax; max-age=86400`;
+      }
+    };
+
     try {
       // STRATEGY 1: Try to get tenant ID from cookie (fastest)
       let tenantId = getTenantIdFromCookie();
@@ -141,22 +154,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (!slugError && tenantBySlug) {
-          tenantId = tenantBySlug.id;
-          // Set cookies for future loads
-          if (typeof document !== "undefined" && tenantId && tenantSlug) {
-            document.cookie = `tenant_id=${encodeURIComponent(tenantId)}; path=/; samesite=lax; max-age=86400`;
-            document.cookie = `tenant_slug=${encodeURIComponent(tenantSlug)}; path=/; samesite=lax; max-age=86400`;
-          }
-
-          // We already have the tenant data, use it directly
-          if (mountedRef.current) {
-            const tenantData = transformTenantData(tenantBySlug);
-            cachedTenant = tenantData;
-            tenantInitialized = true;
-            setTenant(tenantData);
-            setIsLoading(false);
-          }
+          finalize(transformTenantData(tenantBySlug));
           return;
+        }
+        // Strategy 3 failed — log and continue to auth-based fallback
+        if (slugError) {
+          console.warn("[useTenant] Slug lookup failed:", slugError.message);
         }
       }
 
@@ -170,20 +173,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         if (!mountedRef.current) return;
 
-        if (fetchError) {
-          console.error("Error fetching tenant by ID:", fetchError);
-          // Don't give up yet - try auth-based lookup
-        } else if (data) {
-          const tenantData = transformTenantData(data);
-          cachedTenant = tenantData;
-          tenantInitialized = true;
-          setTenant(tenantData);
-          setIsLoading(false);
-          // Update cookie with correct slug
-          if (typeof document !== "undefined" && data.slug) {
-            document.cookie = `tenant_slug=${encodeURIComponent(data.slug)}; path=/; samesite=lax; max-age=86400`;
-          }
+        if (!fetchError && data) {
+          finalize(transformTenantData(data));
           return;
+        }
+        if (fetchError) {
+          console.warn("[useTenant] ID lookup failed:", fetchError.message);
         }
       }
 
@@ -191,35 +186,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await (supabase as any).auth.getUser();
       if (!user) {
         // No user, no cookies, no subdomain = main marketing site
-        if (mountedRef.current) {
-          clearTenantCache();
-          tenantInitialized = true;
-          setTenant(null);
-          setIsLoading(false);
-        }
+        clearTenantCache();
+        finalize(null);
         return;
       }
 
       // Check if user changed - if so, clear cached tenant
       if (cachedTenantUserId && cachedTenantUserId !== user.id) {
-        console.log("User changed, clearing tenant cache");
         clearTenantCache();
       }
       cachedTenantUserId = user.id;
 
-      // Check if platform admin
+      // Check if platform admin (they have no tenant)
       const { data: isPlatformAdmin } = await (supabase as any).rpc("is_platform_admin");
       if (isPlatformAdmin) {
-        if (mountedRef.current) {
-          cachedTenant = null;
-          tenantInitialized = true;
-          setTenant(null);
-          setIsLoading(false);
-        }
+        finalize(null);
         return;
       }
 
-      // Get user's tenant
+      // Get user's tenant_id from their profile
       const { data: userProfile } = await (supabase as any)
         .from("users")
         .select("tenant_id")
@@ -227,32 +212,24 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (!userProfile?.tenant_id) {
-        if (mountedRef.current) {
-          cachedTenant = null;
-          tenantInitialized = true;
-          setTenant(null);
-          setIsLoading(false);
-        }
+        console.warn("[useTenant] User has no tenant_id in profile:", user.id);
+        finalize(null);
         return;
       }
 
-      // Fetch tenant details
-      const { data: tenantData } = await (supabase as any)
+      // Fetch tenant details by user's tenant_id
+      const { data: tenantData, error: tenantError } = await (supabase as any)
         .from("tenants")
         .select("*")
         .eq("id", userProfile.tenant_id)
         .single();
 
-      if (mountedRef.current && tenantData) {
-        const transformed = transformTenantData(tenantData);
-        cachedTenant = transformed;
-        tenantInitialized = true;
-        setTenant(transformed);
-        // Set cookies for future loads
-        if (typeof document !== "undefined" && tenantData.id && tenantData.slug) {
-          document.cookie = `tenant_id=${encodeURIComponent(tenantData.id)}; path=/; samesite=lax; max-age=86400`;
-          document.cookie = `tenant_slug=${encodeURIComponent(tenantData.slug)}; path=/; samesite=lax; max-age=86400`;
-        }
+      if (tenantData) {
+        finalize(transformTenantData(tenantData));
+      } else {
+        // All strategies exhausted — log details for debugging
+        console.error("[useTenant] All strategies failed. tenant_id:", userProfile.tenant_id, "error:", tenantError?.message);
+        finalize(null);
       }
     } catch (err) {
       // Ignore AbortErrors
@@ -260,9 +237,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (mountedRef.current) {
-        console.error("Tenant fetch error:", err);
+        console.error("[useTenant] Fetch error:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
-        // Still mark as initialized to prevent infinite loading
+        // Always mark as initialized to prevent infinite loading
         tenantInitialized = true;
       }
     } finally {
