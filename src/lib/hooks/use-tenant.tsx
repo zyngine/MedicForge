@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useRef, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 // Singleton supabase client
@@ -17,6 +17,7 @@ function clearTenantCache() {
   cachedTenant = null;
   tenantInitialized = false;
   cachedTenantUserId = null;
+  clearCachedBranding();
 }
 
 export interface Tenant {
@@ -387,15 +388,89 @@ export function useSubscriptionLimits() {
   };
 }
 
+// useLayoutEffect on client, useEffect on server (avoids SSR warning)
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Load cached branding from localStorage for instant display on hard refresh
+function loadCachedBranding(): {
+  primaryColor: string;
+  logoUrl: string | null;
+  tenantName: string;
+  whiteLabel: boolean;
+  hideVendorBranding: boolean;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem("tenant_branding_cache");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Cache valid for 24 hours
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 86400000) {
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+function saveCachedBranding(tenant: Tenant) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("tenant_branding_cache", JSON.stringify({
+      primaryColor: tenant.primary_color,
+      logoUrl: tenant.logo_url,
+      tenantName: tenant.name,
+      whiteLabel: !!tenant.logo_url,
+      hideVendorBranding: tenant.white_label_enabled || false,
+      timestamp: Date.now(),
+    }));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function clearCachedBranding() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("tenant_branding_cache");
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // Hook to apply tenant branding
 export function useTenantBranding() {
   const { tenant, isMainSite } = useTenant();
+
+  // Apply cached branding BEFORE paint so hard refresh doesn't flash default colors
+  useIsomorphicLayoutEffect(() => {
+    if (isMainSite) return;
+    // If tenant is already loaded, it will be applied in the useEffect below.
+    // This only bridges the gap on hard refresh before tenant query resolves.
+    if (!tenant) {
+      const cached = loadCachedBranding();
+      if (cached?.primaryColor) {
+        document.documentElement.style.setProperty("--primary", cached.primaryColor);
+        document.documentElement.style.setProperty("--ring", cached.primaryColor);
+      }
+    }
+  }, [isMainSite, tenant]);
 
   useEffect(() => {
     if (tenant?.primary_color && !isMainSite) {
       // Apply tenant's primary color as CSS variable
       document.documentElement.style.setProperty("--primary", tenant.primary_color);
       document.documentElement.style.setProperty("--ring", tenant.primary_color);
+      // Cache for next hard refresh
+      saveCachedBranding(tenant);
+    }
+
+    if (isMainSite) {
+      // Main site — clear any stale tenant branding
+      clearCachedBranding();
     }
 
     return () => {
@@ -405,11 +480,14 @@ export function useTenantBranding() {
     };
   }, [tenant?.primary_color, isMainSite]);
 
+  // Use cached branding as fallback while tenant loads
+  const cached = typeof window !== "undefined" && !tenant && !isMainSite ? loadCachedBranding() : null;
+
   return {
-    logoUrl: tenant?.logo_url || "/logo.svg",
-    primaryColor: tenant?.primary_color || "#C53030",
-    tenantName: tenant?.name || "MedicForge",
-    isWhiteLabeled: !!tenant?.logo_url,
-    hideVendorBranding: tenant?.white_label_enabled || false,
+    logoUrl: tenant?.logo_url || cached?.logoUrl || "/logo.svg",
+    primaryColor: tenant?.primary_color || cached?.primaryColor || "#C53030",
+    tenantName: tenant?.name || cached?.tenantName || "MedicForge",
+    isWhiteLabeled: !!tenant?.logo_url || cached?.whiteLabel || false,
+    hideVendorBranding: tenant?.white_label_enabled || cached?.hideVendorBranding || false,
   };
 }
