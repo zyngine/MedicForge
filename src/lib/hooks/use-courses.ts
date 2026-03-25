@@ -188,28 +188,32 @@ export function useInstructorCourses() {
         return withCounts(data || []);
       }
 
-      if (!courseInstructors || courseInstructors.length === 0) {
-        // Also check legacy instructor_id field
-        const { data, error } = await supabase
-          .from("courses")
-          .select(`*, instructor:users!courses_instructor_id_fkey(id, full_name, email)`)
-          .eq("tenant_id", tenant.id)
-          .eq("instructor_id", user.id)
-          .eq("is_archived", false)
-          .order("created_at", { ascending: false });
+      // Get courses from junction table
+      const junctionCourseIds = (courseInstructors || []).map((ci: any) => ci.course_id);
 
-        if (error) throw error;
-        return withCounts(data || []);
-      }
+      // Also get courses where user is the direct instructor (legacy field)
+      // This catches courses created without a junction table entry
+      const { data: legacyCourses } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("tenant_id", tenant.id)
+        .eq("instructor_id", user.id)
+        .eq("is_archived", false);
 
-      const courseIds = courseInstructors.map((ci: any) => ci.course_id);
+      // Merge both sources (deduplicate)
+      const allCourseIds = [...new Set([
+        ...junctionCourseIds,
+        ...(legacyCourses || []).map((c: any) => c.id),
+      ])];
 
-      // Now get the actual courses
+      if (allCourseIds.length === 0) return [];
+
+      // Fetch the actual courses
       const { data: courses, error } = await supabase
         .from("courses")
         .select(`*, instructor:users!courses_instructor_id_fkey(id, full_name, email)`)
         .eq("tenant_id", tenant.id)
-        .in("id", courseIds)
+        .in("id", allCourseIds)
         .eq("is_archived", false)
         .order("created_at", { ascending: false });
 
@@ -362,10 +366,30 @@ export function useCreateCourse() {
         .single();
 
       if (error) throw error;
+
+      // Also add to course_instructors junction table so the course
+      // appears in My Courses (which checks both sources)
+      if (data?.id) {
+        const { error: ciError } = await (supabase as any)
+          .from("course_instructors")
+          .insert({
+            course_id: data.id,
+            instructor_id: user.id,
+            role: "lead",
+            can_edit: true,
+            can_grade: true,
+            can_manage_students: true,
+          });
+        if (ciError) {
+          console.warn("Failed to add course_instructors entry:", ciError.message);
+        }
+      }
+
       return data as CourseWithDetails;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["instructor-courses"] });
     },
   });
 }
