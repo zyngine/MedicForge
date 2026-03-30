@@ -105,7 +105,7 @@ export function useQuestionBankCategories() {
         .from("question_bank_categories")
         .select("*")
         .eq("is_active", true)
-        .eq("tenant_id", tenant.id)
+        .or(`tenant_id.eq.${tenant.id},tenant_id.is.null`)
         .order("order_index");
 
       if (fetchError) throw fetchError;
@@ -174,7 +174,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
         .from("question_bank")
         .select("*, category:question_bank_categories(*)", { count: "exact" })
         .eq("is_active", true)
-        .eq("tenant_id", tenant.id);
+        .or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
 
       if (filters?.categoryId) {
         query = query.eq("category_id", filters.categoryId);
