@@ -55,14 +55,14 @@ export async function updateSession(request: NextRequest) {
   const hostname = request.headers.get("host") || ""
 
   // ============================================
-  // REDIRECT www → bare domain
-  // Auth cookies are scoped to the exact host, so www.medicforge.net
-  // and medicforge.net have separate cookie jars. Canonicalize to
-  // the bare domain so sessions are never lost.
+  // REDIRECT bare domain → www
+  // The hosting platform (Vercel) canonical domain is www.medicforge.net.
+  // Auth cookies are scoped to the exact host, so we must canonicalize
+  // to a single domain so sessions are never lost across navigations.
   // ============================================
-  if (hostname === "www.medicforge.net") {
+  if (hostname === "medicforge.net") {
     const url = request.nextUrl.clone()
-    url.host = "medicforge.net"
+    url.host = "www.medicforge.net"
     return NextResponse.redirect(url, 301)
   }
 
