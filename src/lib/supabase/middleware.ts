@@ -55,6 +55,18 @@ export async function updateSession(request: NextRequest) {
   const hostname = request.headers.get("host") || ""
 
   // ============================================
+  // REDIRECT www → bare domain
+  // Auth cookies are scoped to the exact host, so www.medicforge.net
+  // and medicforge.net have separate cookie jars. Canonicalize to
+  // the bare domain so sessions are never lost.
+  // ============================================
+  if (hostname === "www.medicforge.net") {
+    const url = request.nextUrl.clone()
+    url.host = "medicforge.net"
+    return NextResponse.redirect(url, 301)
+  }
+
+  // ============================================
   // MULTI-TENANT SUBDOMAIN DETECTION
   // ============================================
 
