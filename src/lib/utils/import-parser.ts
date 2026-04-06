@@ -4,8 +4,7 @@
  */
 
 import Papa from "papaparse";
-// @ts-expect-error -- read-excel-file types use subpath exports not resolved by tsc
-import readXlsxFile from "read-excel-file";
+import readXlsxFile from "read-excel-file/browser";
 
 export type ValidationSeverity = "error" | "warning" | "info";
 
@@ -106,18 +105,19 @@ async function parseExcel(file: File): Promise<{
   error?: string;
 }> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows: any[][] = await readXlsxFile(file);
+    const result = await readXlsxFile(file);
 
-    if (!rows || rows.length === 0) {
+    if (!result || result.length === 0 || !result[0].data || result[0].data.length === 0) {
       return { data: [], headers: [], error: "Excel file is empty or has no data rows" };
     }
 
+    const rows = result[0].data;
+
     // First row is headers
-    const originalHeaders: string[] = rows[0].map((h: unknown) =>
+    const originalHeaders: string[] = rows[0].map((h) =>
       h !== null && h !== undefined ? String(h) : ""
     );
-    const normalizedHeaders = originalHeaders.map((h: string) =>
+    const normalizedHeaders = originalHeaders.map((h) =>
       h.trim().toLowerCase().replace(/\s+/g, "_")
     );
 
@@ -126,9 +126,9 @@ async function parseExcel(file: File): Promise<{
     }
 
     // Parse data rows (skip header)
-    const data = rows.slice(1).map((row: unknown[]) => {
+    const data = rows.slice(1).map((row) => {
       const rowData: Record<string, string> = {};
-      normalizedHeaders.forEach((header: string, i: number) => {
+      normalizedHeaders.forEach((header, i) => {
         const value = row[i];
         rowData[header] = value !== null && value !== undefined ? String(value) : "";
       });
