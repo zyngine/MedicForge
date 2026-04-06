@@ -54,6 +54,7 @@ export interface UserCheckin {
   checkout_time: string | null;
   checkout_distance_meters: number | null;
   status: "on_time" | "late" | "absent" | "excused";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   device_info: Record<string, any> | null;
   ip_address: string | null;
   notes: string | null;
@@ -139,7 +140,7 @@ export function useCheckinZones() {
       setZones((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       toast.success("Check-in zone created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create zone");
       return null;
     }
@@ -157,7 +158,7 @@ export function useCheckinZones() {
       setZones((prev) => prev.map((z) => (z.id === id ? { ...z, ...updates } : z)));
       toast.success("Zone updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update zone");
       return false;
     }
@@ -175,7 +176,7 @@ export function useCheckinZones() {
       setZones((prev) => prev.filter((z) => z.id !== id));
       toast.success("Zone deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete zone");
       return false;
     }
@@ -279,7 +280,7 @@ export function useCheckinEvents(courseId?: string) {
       setEvents((prev) => [data, ...prev]);
       toast.success("Check-in event created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create event");
       return null;
     }
@@ -297,7 +298,7 @@ export function useCheckinEvents(courseId?: string) {
       setEvents((prev) => prev.filter((e) => e.id !== id));
       toast.success("Event deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete event");
       return false;
     }
@@ -534,7 +535,7 @@ export function useUserCheckin(eventId: string) {
 
       toast.success("Checked out successfully!");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Check-out failed");
       return false;
     } finally {
@@ -633,7 +634,7 @@ export function useEventCheckins(eventId: string) {
       );
       toast.success("Status updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update status");
       return false;
     }

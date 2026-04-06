@@ -346,7 +346,7 @@ export function useMyAffectiveEvaluations(courseId?: string) {
       );
       toast.success("Evaluation acknowledged");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to acknowledge evaluation");
       return false;
     }
@@ -502,7 +502,7 @@ export function useAffectiveIncidents(options?: {
       );
       toast.success("Incident resolved");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to resolve incident");
       return false;
     }

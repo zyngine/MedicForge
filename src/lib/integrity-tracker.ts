@@ -32,6 +32,7 @@ export type IntegrityEventType =
 
 export interface IntegrityEvent {
   event_type: IntegrityEventType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event_data: Record<string, any>;
   question_id?: string;
   question_number?: number;
@@ -144,6 +145,7 @@ export class IntegrityTracker {
    */
   private recordEvent(
     eventType: IntegrityEventType,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventData: Record<string, any> = {},
     _preventDefault = false
   ): void {

@@ -175,7 +175,7 @@ export function useSurveys(courseId?: string) {
       setSurveys((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
       toast.success("Survey updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update survey");
       return false;
     }
@@ -201,7 +201,7 @@ export function useSurveys(courseId?: string) {
       setSurveys((prev) => prev.filter((s) => s.id !== id));
       toast.success("Survey deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete survey");
       return false;
     }
@@ -315,7 +315,7 @@ export function useSurveyQuestions(surveyId: string) {
       if (error) throw error;
       setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...updates } : q)));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update question");
       return false;
     }
@@ -332,7 +332,7 @@ export function useSurveyQuestions(surveyId: string) {
       if (error) throw error;
       setQuestions((prev) => prev.filter((q) => q.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete question");
       return false;
     }
@@ -357,7 +357,7 @@ export function useSurveyQuestions(surveyId: string) {
         [...prev].sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to reorder questions");
       return false;
     }

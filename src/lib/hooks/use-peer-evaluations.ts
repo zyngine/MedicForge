@@ -158,7 +158,7 @@ export function usePeerEvalTemplates() {
       setTemplates((prev) => [...prev, data]);
       toast.success("Template created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create template");
       return null;
     }
@@ -181,7 +181,7 @@ export function usePeerEvalTemplates() {
       );
       toast.success("Template updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update template");
       return false;
     }
@@ -276,7 +276,7 @@ export function usePeerEvalAssignments(courseId?: string) {
       setAssignments((prev) => [data, ...prev]);
       toast.success("Peer evaluation created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create peer evaluation");
       return null;
     }
@@ -301,7 +301,7 @@ export function usePeerEvalAssignments(courseId?: string) {
       if (error) throw error;
       toast.success("Evaluation pairs created");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create evaluation pairs");
       return false;
     }
@@ -372,7 +372,7 @@ export function usePeerEvalSubmission(pairId: string) {
   const [existingResponse, setExistingResponse] = useState<PeerEvalResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { profile } = useUser();
+  const { profile: _profile } = useUser();
   const supabase = createClient();
 
   useEffect(() => {
@@ -440,7 +440,7 @@ export function usePeerEvalSubmission(pairId: string) {
       if (error) throw error;
       toast.success("Evaluation submitted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to submit evaluation");
       return false;
     } finally {
@@ -518,7 +518,7 @@ export function usePeerEvalResults(assignmentId?: string, studentId?: string) {
       toast.success("Results calculated");
       await fetchResults();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to calculate results");
       return false;
     }

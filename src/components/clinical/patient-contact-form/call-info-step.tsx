@@ -96,7 +96,7 @@ export function CallInfoStep() {
           Chief Complaint <span className="text-red-500">*</span>
         </Label>
         <p className="text-sm text-muted-foreground">
-          Patient's stated reason for calling or primary complaint
+          Patient&apos;s stated reason for calling or primary complaint
         </p>
         <Textarea
           id="chief_complaint"

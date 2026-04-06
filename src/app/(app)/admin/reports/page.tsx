@@ -156,7 +156,7 @@ export default function AdminReportsPage() {
         <div>
           <h1 className="text-2xl font-bold">Organization Reports</h1>
           <p className="text-muted-foreground">
-            Overview of your organization's activity and metrics
+            Overview of your organization&apos;s activity and metrics
           </p>
         </div>
         <Button variant="outline" onClick={exportToCSV}>
@@ -332,6 +332,7 @@ export default function AdminReportsPage() {
               <p className="text-muted-foreground text-center py-4">No users yet</p>
             ) : (
               <div className="space-y-3">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {stats.recentUsers.map((user: any) => (
                   <div key={user.id} className="flex items-center justify-between py-2 border-b last:border-0">
                     <div>
@@ -358,6 +359,7 @@ export default function AdminReportsPage() {
               <p className="text-muted-foreground text-center py-4">No courses yet</p>
             ) : (
               <div className="space-y-3">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {stats.recentCourses.map((course: any) => (
                   <div key={course.id} className="flex items-center justify-between py-2 border-b last:border-0">
                     <div>

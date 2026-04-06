@@ -377,7 +377,7 @@ interface ApplyGradeCurveParams {
  */
 export function useApplyGradeCurve() {
   const { user } = useUser();
-  const { tenant } = useTenant();
+  const { tenant: _tenant } = useTenant();
   const queryClient = useQueryClient();
 
   return useMutation({

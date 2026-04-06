@@ -88,6 +88,22 @@ interface ProgressOverTimeProps {
   yAxisLabel?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ProgressTooltip({ active, payload, label, yAxisLabel }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="font-semibold">
+          {payload[0].value}
+          {yAxisLabel === "%" ? "%" : ""}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function ProgressOverTime({
   data,
   className,
@@ -96,22 +112,6 @@ export function ProgressOverTime({
   showArea = true,
   yAxisLabel,
 }: ProgressOverTimeProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="font-semibold">
-            {payload[0].value}
-            {yAxisLabel === "%" ? "%" : ""}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   const ChartComponent = showArea ? AreaChart : LineChart;
 
   return (
@@ -136,7 +136,7 @@ export function ProgressOverTime({
             domain={[0, 100]}
             tickFormatter={(value) => `${value}${yAxisLabel || ""}`}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<ProgressTooltip yAxisLabel={yAxisLabel} />} />
           {showArea ? (
             <Area
               type="monotone"

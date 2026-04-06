@@ -72,7 +72,7 @@ export function QuestionBankBrowser({
     search: debouncedSearch || undefined,
   };
 
-  const { questions, total, isLoading } = useQuestionBank(activeFilters);
+  const { questions, total: _total, isLoading } = useQuestionBank(activeFilters);
   const { categories } = useQuestionBankCategories();
 
   // Filter out already-used questions

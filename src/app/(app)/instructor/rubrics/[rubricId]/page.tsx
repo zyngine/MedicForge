@@ -46,7 +46,7 @@ export default function RubricBuilderPage() {
     addRating,
     updateRating,
     deleteRating,
-    reorderCriteria,
+    reorderCriteria: _reorderCriteria,
   } = useRubricBuilder(rubricId);
 
   const [criterionModal, setCriterionModal] = React.useState<{
@@ -259,7 +259,7 @@ export default function RubricBuilderPage() {
             <Grid3x3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No criteria yet</h3>
             <p className="text-muted-foreground mb-4">
-              Add criteria to define what you'll evaluate
+              Add criteria to define what you&apos;ll evaluate
             </p>
             <Button onClick={() => openCriterionModal("create")}>
               <Plus className="h-4 w-4 mr-2" />

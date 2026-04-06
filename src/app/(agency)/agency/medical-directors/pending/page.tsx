@@ -108,7 +108,7 @@ function VerificationCard({
 }
 
 export default function PendingVerificationsPage() {
-  const { isMedicalDirector, isAgencyAdmin } = useAgencyRole();
+  const { isMedicalDirector: _isMedicalDirector, isAgencyAdmin: _isAgencyAdmin } = useAgencyRole();
   const { verifications, isLoading, approveVerification, denyVerification, refetch } =
     useAgencyVerifications();
   const batchVerify = useBatchVerify();

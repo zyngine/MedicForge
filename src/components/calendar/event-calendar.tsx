@@ -29,6 +29,7 @@ export interface CalendarEvent {
   type?: "class" | "assignment" | "exam" | "clinical" | "other";
   description?: string;
   location?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
 }
 

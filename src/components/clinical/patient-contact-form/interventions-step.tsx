@@ -33,7 +33,7 @@ export function InterventionsStep() {
     control,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors: _errors },
   } = useFormContext<PatientContactFormData>();
 
   const { fields: medicationFields, append: appendMedication, remove: removeMedication } = useFieldArray({
@@ -144,7 +144,7 @@ export function InterventionsStep() {
 
         {medicationFields.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">
-            No medications documented. Click "Add Medication" if medications were administered.
+            No medications documented. Click &quot;Add Medication&quot; if medications were administered.
           </p>
         ) : (
           <div className="space-y-3">

@@ -59,6 +59,7 @@ export function CourseInstructorsManager({ courseId, isReadOnly = false }: Cours
 
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
   const [selectedRole, setSelectedRole] = React.useState<CourseInstructorRole>("instructor");

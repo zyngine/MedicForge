@@ -304,6 +304,7 @@ export function useRunPlagiarismCheck() {
       }
 
       // Update with results
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         status: "completed",
         similarity_score: result.overallSimilarity,

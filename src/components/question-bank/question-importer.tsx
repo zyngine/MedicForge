@@ -72,6 +72,7 @@ export function QuestionImporter({ categories, onImport, onCancel, importFn, def
     const data = JSON.parse(text);
     const questions = Array.isArray(data) ? data : data.questions || [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return questions.map((q: Record<string, any>, i: number) => {
       try {
         // Validate required fields
@@ -95,6 +96,7 @@ export function QuestionImporter({ categories, onImport, onCancel, importFn, def
                 isCorrect: correctAnswer === opt || correctAnswer === idx || correctAnswer === String.fromCharCode(97 + idx),
               };
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const optObj = opt as Record<string, any>;
             return {
               id: (optObj.id as string) || String.fromCharCode(97 + idx),

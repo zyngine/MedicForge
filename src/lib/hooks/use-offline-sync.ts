@@ -27,6 +27,7 @@ export interface OfflineRecord {
   id: string;
   localId: string;
   type: keyof typeof STORES;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
   syncStatus: SyncStatus;
   createdAt: string;
@@ -42,6 +43,7 @@ export interface SyncQueueItem {
   table: string;
   recordId: string;
   localId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
   createdAt: string;
   status: SyncStatus;
@@ -158,6 +160,7 @@ export function useOfflineSync() {
     operation: SyncQueueItem["operation"],
     table: string,
     localId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: Record<string, any>,
     recordId?: string
   ): Promise<void> => {
@@ -416,6 +419,7 @@ export function useOfflinePatientContacts() {
   }, [loadLocalContacts]);
 
   // Save contact (works offline)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveContact = async (data: Record<string, any>): Promise<OfflineRecord | null> => {
     if (!db || !profile?.tenant_id || !profile?.id) {
       toast.error("Unable to save contact");
@@ -468,6 +472,7 @@ export function useOfflinePatientContacts() {
   // Update contact
   const updateContact = async (
     localId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Record<string, any>
   ): Promise<boolean> => {
     if (!db) return false;
@@ -499,7 +504,7 @@ export function useOfflinePatientContacts() {
       setContacts((prev) => prev.map((c) => (c.localId === localId ? updated : c)));
       toast.success("Contact updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update contact");
       return false;
     }
@@ -527,7 +532,7 @@ export function useOfflinePatientContacts() {
       setContacts((prev) => prev.filter((c) => c.localId !== localId));
       toast.success("Contact deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete contact");
       return false;
     }

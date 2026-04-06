@@ -179,6 +179,7 @@ function ModuleCard({
             </p>
           ) : (
             <div className="space-y-2">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {lessons.map((lesson: any) => (
                 <div
                   key={lesson.id}
@@ -298,7 +299,7 @@ export default function CourseDetailPage() {
       <div className="flex flex-col items-center justify-center py-12">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Course Not Found</h2>
-        <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist.</p>
+        <p className="text-muted-foreground mb-4">The course you&apos;re looking for doesn&apos;t exist.</p>
         <Button asChild>
           <Link href="/instructor/courses">Back to Courses</Link>
         </Button>

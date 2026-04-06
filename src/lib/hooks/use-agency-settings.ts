@@ -16,6 +16,7 @@ export interface AgencySettings {
   notification_email: string | null;
   notification_days_before_expiry: number[];
   custom_skill_categories: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -31,6 +32,7 @@ export interface UpdateAgencySettingsInput {
   notification_email?: string;
   notification_days_before_expiry?: number[];
   custom_skill_categories?: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: Record<string, any>;
 }
 

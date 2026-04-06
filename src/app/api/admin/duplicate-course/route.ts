@@ -132,30 +132,30 @@ export async function POST(request: NextRequest) {
         .order("position");
 
       if (sourceModules && sourceModules.length > 0) {
-        for (const module of sourceModules) {
+        for (const sourceModule of sourceModules) {
           const { data: newModule, error: _moduleError } = await supabaseAdmin
             .from("modules")
             .insert({
               tenant_id,
               course_id: newCourse.id,
-              title: module.title,
-              description: module.description,
-              position: module.position,
+              title: sourceModule.title,
+              description: sourceModule.description,
+              position: sourceModule.position,
               is_published: false,
-              unlock_at: adjustDate(module.unlock_at),
-              lock_at: adjustDate(module.lock_at),
+              unlock_at: adjustDate(sourceModule.unlock_at),
+              lock_at: adjustDate(sourceModule.lock_at),
             })
             .select()
             .single();
 
           if (newModule) {
-            moduleIdMap.set(module.id, newModule.id);
+            moduleIdMap.set(sourceModule.id, newModule.id);
 
             // Duplicate lessons
             const { data: sourceLessons } = await supabaseAdmin
               .from("lessons")
               .select("*")
-              .eq("module_id", module.id)
+              .eq("module_id", sourceModule.id)
               .order("position");
 
             if (sourceLessons && sourceLessons.length > 0) {
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
               const { data: sourceAssignments } = await supabaseAdmin
                 .from("assignments")
                 .select("*")
-                .eq("module_id", module.id)
+                .eq("module_id", sourceModule.id)
                 .order("position");
 
               if (sourceAssignments && sourceAssignments.length > 0) {

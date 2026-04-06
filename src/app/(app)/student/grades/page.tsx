@@ -38,6 +38,7 @@ export default function StudentGradesPage() {
   }, [enrollments]);
 
   // Calculate grades by course
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const courseGrades = React.useMemo(() => {
     const grades: Record<
       string,
@@ -82,6 +83,7 @@ export default function StudentGradesPage() {
   }, [enrollments, submissions]);
 
   // Overall GPA calculation
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const overallStats = React.useMemo(() => {
     const totalPoints = submissions.reduce(
       (sum, s) => sum + (s.assignment?.points_possible || 0),

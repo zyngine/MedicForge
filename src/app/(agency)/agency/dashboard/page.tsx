@@ -72,7 +72,7 @@ function StatCard({
 }
 
 export default function AgencyDashboardPage() {
-  const { tenant } = useTenant();
+  const { tenant: _tenant } = useTenant();
   const { isAgencyAdmin, isMedicalDirector } = useAgencyRole();
   const { stats, recentActivity, isLoading } = useAgencyStats();
 

@@ -56,6 +56,7 @@ export interface AuditLogEntry {
   event_type: AuditEventType;
   resource_type: string;
   resource_id?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: Record<string, any>;
   ip_address?: string;
   user_agent?: string;
@@ -93,6 +94,7 @@ export function createAuditLogger(tenantId: string, userId: string, userEmail?: 
       eventType: AuditEventType,
       resourceType: string,
       resourceId?: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       details?: Record<string, any>
     ) => {
       return logAuditEvent({

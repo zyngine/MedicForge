@@ -141,7 +141,7 @@ export default function POCResponsePage() {
 
                 {data.booking.request_notes && (
                   <div style={{ background: "#eff6ff", borderRadius: "6px", padding: "12px 16px", marginBottom: "20px", borderLeft: "3px solid #3b82f6" }}>
-                    <p style={{ margin: "0 0 4px 0", fontWeight: "600", fontSize: "14px", color: "#1d4ed8" }}>Student's note:</p>
+                    <p style={{ margin: "0 0 4px 0", fontWeight: "600", fontSize: "14px", color: "#1d4ed8" }}>Student&apos;s note:</p>
                     <p style={{ margin: 0, color: "#374151" }}>{data.booking.request_notes}</p>
                   </div>
                 )}

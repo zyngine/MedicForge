@@ -48,6 +48,7 @@ export interface SSOSession {
   sso_config_id: string;
   session_id: string;
   provider_user_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attributes: Record<string, any>;
   created_at: string;
   expires_at: string;
@@ -495,6 +496,7 @@ export function useSSOProvisioning() {
   // Provision or update user from SSO attributes
   const provisionUser = async (
     config: SSOConfig,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     attributes: Record<string, any>
   ): Promise<{ userId: string; isNew: boolean } | null> => {
     if (!profile?.tenant_id) return null;

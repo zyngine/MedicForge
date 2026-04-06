@@ -404,7 +404,7 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
     };
 
     // Check stopping rule
-    const { stop, reason } = shouldStop(
+    const { stop, reason: _reason } = shouldStop(
       updatedSession.questions_answered,
       ability,
       se,
@@ -519,7 +519,7 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
     ? {
         ...currentQuestion,
         correct_answer: undefined,
-        options: currentQuestion.options?.map(({ isCorrect, ...opt }) => opt),
+        options: currentQuestion.options?.map(({ isCorrect: _isCorrect, ...opt }) => opt),
       }
     : null;
 

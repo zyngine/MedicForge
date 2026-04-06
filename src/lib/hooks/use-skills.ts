@@ -206,6 +206,7 @@ export function useUpdateSkillCategory() {
     }) => {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {};
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
@@ -352,6 +353,7 @@ export function useUpdateSkill() {
     }) => {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {};
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
@@ -562,6 +564,7 @@ export function useStudentSkillProgress(studentId: string | null | undefined, co
       if (attError) throw attError;
 
       // Build progress data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const attemptsMap = new Map<string, any[]>();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (attempts || []).forEach((attempt: any) => {

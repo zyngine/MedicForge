@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Award,
   Search,
@@ -110,10 +111,10 @@ export default function InstructorCertificatesPage() {
           </p>
         </div>
         <Button asChild>
-          <a href="/instructor/courses">
+          <Link href="/instructor/courses">
             <Users className="h-4 w-4 mr-2" />
             Issue from Course
-          </a>
+          </Link>
         </Button>
       </div>
 

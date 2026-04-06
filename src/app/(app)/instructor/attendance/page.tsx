@@ -392,6 +392,7 @@ export default function InstructorAttendancePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {todaysSessions.map((ts: any) => (
                 <div
                   key={ts.id}
@@ -617,7 +618,7 @@ export default function InstructorAttendancePage() {
               ]}
             />
             <p className="text-xs text-muted-foreground">
-              How long students can check in as "Present"
+              How long students can check in as &quot;Present&quot;
             </p>
           </div>
 
@@ -640,7 +641,7 @@ export default function InstructorAttendancePage() {
                   ]}
                 />
                 <p className="text-xs text-muted-foreground">
-                  After code expires, students can still check in as "Tardy" within this window
+                  After code expires, students can still check in as &quot;Tardy&quot; within this window
                 </p>
               </div>
 
@@ -714,6 +715,7 @@ function LiveCheckIns({ sessionId }: { sessionId: string }) {
         </p>
       ) : (
         <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {checkIns.map((checkin: any) => (
             <div
               key={checkin.id}
@@ -834,6 +836,7 @@ function SessionDetails({
           </p>
         ) : (
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {checkIns.map((checkin: any) => (
               <div
                 key={checkin.id}

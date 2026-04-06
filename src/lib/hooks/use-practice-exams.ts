@@ -15,6 +15,7 @@ export interface PracticeExamSession {
   title: string;
   mode: PracticeExamMode;
   question_source: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   source_filters: Record<string, any> | null;
   question_count: number;
   time_limit_minutes: number | null;
@@ -101,6 +102,7 @@ export function usePracticeExams() {
     title: string;
     mode: PracticeExamMode;
     question_source: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     source_filters?: Record<string, any>;
     question_count: number;
     time_limit_minutes?: number;
@@ -254,7 +256,7 @@ export function usePracticeExams() {
       if (error) throw error;
       setSessions((prev) => prev.filter((s) => s.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete session");
       return false;
     }
@@ -446,7 +448,7 @@ export function usePracticeExamSession(sessionId: string) {
         prev.map((q) => (q.id === questionId ? { ...q, flagged: !q.flagged } : q))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

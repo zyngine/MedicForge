@@ -57,7 +57,7 @@ export default function CEForgotPasswordPage() {
             {submitted ? (
               <div className="text-center space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  If an account exists with that email, you'll receive a password reset link.
+                  If an account exists with that email, you&apos;ll receive a password reset link.
                 </p>
                 <Link
                   href="/ce/login"
@@ -75,7 +75,7 @@ export default function CEForgotPasswordPage() {
                 )}
 
                 <p className="text-sm text-muted-foreground mb-4">
-                  Enter your email address and we'll send you a link to reset your password.
+                  Enter your email address and we&apos;ll send you a link to reset your password.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">

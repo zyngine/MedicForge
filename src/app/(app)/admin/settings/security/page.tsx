@@ -53,6 +53,7 @@ export default function SecuritySettingsPage() {
 
   useEffect(() => {
     if (tenant?.settings) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tenantSettings = tenant.settings as Record<string, any>;
       const security = (tenantSettings.security || {}) as Partial<SecuritySettings>;
       setSettings({ ...defaultSettings, ...security });

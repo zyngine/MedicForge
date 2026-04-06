@@ -476,7 +476,7 @@ function AnswerReviewItem({ response, questionNumber }: AnswerReviewItemProps) {
                       {isCorrect && <CheckCircle className="h-4 w-4" />}
                       {wasSelected && !isCorrect && <XCircle className="h-4 w-4" />}
                       <span>{option.text}</span>
-                      {wasSelected && <Badge variant="outline" className="ml-auto">Student's answer</Badge>}
+                      {wasSelected && <Badge variant="outline" className="ml-auto">Student&apos;s answer</Badge>}
                       {isCorrect && <Badge variant="success" className="ml-auto">Correct</Badge>}
                     </div>
                   </div>

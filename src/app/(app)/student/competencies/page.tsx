@@ -266,7 +266,7 @@ export default function StudentCompetenciesPage() {
               <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No Skill Requirements</h3>
               <p className="text-muted-foreground">
-                This course doesn't have skill competency requirements configured yet.
+                This course doesn&apos;t have skill competency requirements configured yet.
               </p>
             </div>
           ) : (

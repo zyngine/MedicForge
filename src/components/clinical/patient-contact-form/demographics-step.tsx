@@ -20,7 +20,7 @@ const GENDERS = ["Male", "Female", "Other", "Unknown"];
 
 export function DemographicsStep() {
   const {
-    register,
+    register: _register,
     watch,
     setValue,
     formState: { errors },

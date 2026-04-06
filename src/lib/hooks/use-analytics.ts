@@ -10,6 +10,7 @@ export interface AnalyticsEvent {
   user_id: string;
   event_type: string;
   event_category: "navigation" | "engagement" | "assessment" | "content" | "system";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event_data: Record<string, any> | null;
   course_id: string | null;
   session_id: string | null;
@@ -53,9 +54,11 @@ export function useAnalyticsTracker() {
   const { profile } = useUser();
   const supabase = createClient();
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const trackEvent = useCallback(async (
     eventType: string,
     eventCategory: AnalyticsEvent["event_category"],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventData?: Record<string, any>,
     courseId?: string
   ): Promise<void> => {

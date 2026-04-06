@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Alert } from "@/components/ui";
 import {
@@ -461,7 +462,7 @@ export default function CECourseLearnPage() {
                       )}
 
                       {block.content_type === "image" && block.image_url && (
-                        <img src={block.image_url} alt={block.title || "Course image"} className="rounded-lg max-w-full" />
+                        <NextImage src={block.image_url} alt={block.title || "Course image"} className="rounded-lg max-w-full" width={800} height={400} unoptimized />
                       )}
                     </div>
                   ))}

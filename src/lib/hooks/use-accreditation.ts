@@ -226,7 +226,7 @@ export function useAccreditationDocuments() {
       if (error) throw error;
       setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update document");
       return false;
     }
@@ -320,7 +320,7 @@ export function useComplianceTracking(courseId?: string) {
       await fetchCompliance();
       toast.success("Compliance status updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update compliance");
       return false;
     }
@@ -411,7 +411,7 @@ export function useProgramOutcomes() {
       await fetchOutcomes();
       toast.success("Outcome data saved");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save outcome data");
       return false;
     }

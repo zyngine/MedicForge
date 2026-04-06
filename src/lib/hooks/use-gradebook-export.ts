@@ -142,7 +142,7 @@ export function useGradebookExportTemplates() {
       setTemplates((prev) => [...prev, data]);
       toast.success("Template created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create template");
       return null;
     }
@@ -165,7 +165,7 @@ export function useGradebookExportTemplates() {
       );
       toast.success("Template updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update template");
       return false;
     }
@@ -183,7 +183,7 @@ export function useGradebookExportTemplates() {
       setTemplates((prev) => prev.filter((t) => t.id !== id));
       toast.success("Template deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete template");
       return false;
     }
@@ -212,7 +212,7 @@ export function useGradebookExportTemplates() {
       );
       toast.success("Default template set");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to set default template");
       return false;
     }

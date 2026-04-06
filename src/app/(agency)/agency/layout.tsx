@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { useTenant, useTenantBranding } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";
@@ -38,10 +39,13 @@ function AgencyLogo({ logoUrl, tenantName }: { logoUrl: string | null; tenantNam
 
   if (logoUrl && !hasError) {
     return (
-      <img
+      <NextImage
         src={logoUrl}
         alt={tenantName}
+        width={120}
+        height={32}
         className="h-8 w-auto"
+        unoptimized
         onError={() => setHasError(true)}
       />
     );
@@ -83,7 +87,7 @@ function AgencySidebar({
 }) {
   const pathname = usePathname();
   const { tenant, isLoading: tenantLoading } = useTenant();
-  const { logoUrl, tenantName } = useTenantBranding();
+  const { logoUrl: _logoUrl, tenantName } = useTenantBranding();
   const { isAgencyAdmin, isMedicalDirector } = useAgencyRole();
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
@@ -164,8 +168,8 @@ function AgencySidebar({
 }
 
 function AgencyHeader({ onMenuClick }: { onMenuClick: () => void }) {
-  const { user, profile, signOut } = useUser();
-  const { isAgencyAdmin, isMedicalDirector, agencyRole } = useAgencyRole();
+  const { user: _user, profile, signOut } = useUser();
+  const { isAgencyAdmin, isMedicalDirector, agencyRole: _agencyRole } = useAgencyRole();
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
 
   const roleLabel = isAgencyAdmin
@@ -251,7 +255,7 @@ export default function AgencyLayout({
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { profile, isLoading: userLoading } = useUser();
-  const { hasAgencyAccess, isLoading: roleLoading } = useAgencyRole();
+  const { hasAgencyAccess: _hasAgencyAccess, isLoading: roleLoading } = useAgencyRole();
 
   // Show loading while checking access
   if (tenantLoading || userLoading || roleLoading) {

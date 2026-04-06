@@ -245,7 +245,7 @@ export default function StudentOutcomesPage() {
                 <Award className="h-12 w-12 mx-auto text-success mb-4" />
                 <h3 className="text-lg font-medium mb-2">Great progress!</h3>
                 <p className="text-muted-foreground">
-                  You've started working on all your learning outcomes
+                  You&apos;ve started working on all your learning outcomes
                 </p>
               </CardContent>
             </Card>

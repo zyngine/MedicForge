@@ -96,6 +96,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only allow updating safe fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allowedUpdates: Record<string, any> = {};
     if (updates.role && ["admin", "instructor", "student"].includes(updates.role)) {
       allowedUpdates.role = updates.role;

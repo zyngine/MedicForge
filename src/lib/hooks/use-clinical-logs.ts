@@ -322,6 +322,7 @@ export function useUpdateClinicalLog() {
     }) => {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {};
 
       if (updates.date !== undefined) updateData.date = updates.date;
@@ -418,6 +419,7 @@ export function useVerifyClinicalLog() {
           : `Verification note: ${notes}`;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         verification_status: status,
         verified_by: user.id,

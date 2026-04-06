@@ -152,7 +152,7 @@ export function usePodcastSeries(courseId?: string) {
       setSeries((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
       toast.success("Series updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update series");
       return false;
     }
@@ -170,7 +170,7 @@ export function usePodcastSeries(courseId?: string) {
       setSeries((prev) => prev.filter((s) => s.id !== id));
       toast.success("Series deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete series");
       return false;
     }
@@ -280,7 +280,7 @@ export function usePodcastEpisodes(seriesId: string) {
       setEpisodes((prev) => [...prev, data]);
       toast.success("Episode added");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add episode");
       return null;
     }
@@ -297,7 +297,7 @@ export function usePodcastEpisodes(seriesId: string) {
       if (error) throw error;
       setEpisodes((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update episode");
       return false;
     }
@@ -314,7 +314,7 @@ export function usePodcastEpisodes(seriesId: string) {
       if (error) throw error;
       setEpisodes((prev) => prev.filter((e) => e.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete episode");
       return false;
     }
@@ -369,7 +369,7 @@ export function usePodcastPlayer(episodeId: string) {
           .eq("id", episodeId);
 
         // Fetch or create progress
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, prefer-const -- progressData is reassigned below
         let { data: progressData, error: progressError } = await (supabase as any)
           .from("podcast_progress")
           .select("*")

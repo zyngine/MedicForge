@@ -394,7 +394,7 @@ export function useGradingComments() {
       setComments((prev) => [data, ...prev]);
       toast.success("Comment saved to library");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save comment");
       return null;
     }
@@ -429,7 +429,7 @@ export function useGradingComments() {
       if (error) throw error;
       setComments((prev) => prev.filter((c) => c.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete comment");
       return false;
     }

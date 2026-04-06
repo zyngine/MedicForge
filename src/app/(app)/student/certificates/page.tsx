@@ -281,6 +281,7 @@ function CertificateCard({
   getTypeIcon: (type: string) => React.ReactNode;
   getTypeBadge: (type: string) => React.ReactNode;
 }) {
+  /* eslint-disable react-hooks/purity -- Date.now() for display-only expiration check */
   const isExpiringSoon = certificate.expires_at
     ? new Date(certificate.expires_at) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     : false;
@@ -288,6 +289,7 @@ function CertificateCard({
   const isExpired = certificate.expires_at
     ? new Date(certificate.expires_at) < new Date()
     : false;
+  /* eslint-enable react-hooks/purity */
 
   return (
     <Card className="overflow-hidden">

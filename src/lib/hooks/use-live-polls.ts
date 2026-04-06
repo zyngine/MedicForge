@@ -172,7 +172,7 @@ export function useLivePolls(courseId: string) {
 
       if (error) throw error;
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update poll");
       return false;
     }
@@ -193,7 +193,7 @@ export function useLivePolls(courseId: string) {
       if (error) throw error;
       toast.success("Poll started");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to start poll");
       return false;
     }
@@ -214,7 +214,7 @@ export function useLivePolls(courseId: string) {
       if (error) throw error;
       toast.success("Poll closed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to close poll");
       return false;
     }
@@ -231,7 +231,7 @@ export function useLivePolls(courseId: string) {
       if (error) throw error;
       toast.success("Poll deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete poll");
       return false;
     }

@@ -24,6 +24,7 @@ export async function PUT(
     }
 
     const updates = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allowed: Record<string, any> = {};
     for (const f of ["name", "description", "category", "skill_code", "certification_levels", "is_required", "is_active"]) {
       if (updates[f] !== undefined) allowed[f] = updates[f];

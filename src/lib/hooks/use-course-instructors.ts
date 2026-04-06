@@ -173,7 +173,7 @@ export function useUpdateCourseInstructor() {
   return useMutation({
     mutationFn: async ({
       id,
-      courseId,
+      courseId: _courseId,
       role,
       canEdit,
       canGrade,
@@ -189,6 +189,7 @@ export function useUpdateCourseInstructor() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: Record<string, any> = {};
       if (role !== undefined) updates.role = role;
       if (canEdit !== undefined) updates.can_edit = canEdit;
@@ -222,7 +223,7 @@ export function useRemoveCourseInstructor() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, courseId }: { id: string; courseId: string }) => {
+    mutationFn: async ({ id, courseId: _courseId }: { id: string; courseId: string }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 

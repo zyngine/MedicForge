@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import NextImage from "next/image";
 import { format, isToday, isYesterday } from "date-fns";
 import { Send, Paperclip, Smile, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -167,7 +168,7 @@ export function MessageThread({
                   {!isOwn && (
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       {message.senderAvatar ? (
-                        <img src={message.senderAvatar} alt={message.senderName} />
+                        <NextImage src={message.senderAvatar} alt={message.senderName} width={32} height={32} className="rounded-full" unoptimized />
                       ) : (
                         <div className="bg-primary/10 w-full h-full flex items-center justify-center text-sm font-medium">
                           {message.senderName.charAt(0)}
@@ -317,7 +318,7 @@ export function ConversationItem({
       <div className="relative">
         <Avatar className="h-12 w-12">
           {avatar ? (
-            <img src={avatar} alt={name} />
+            <NextImage src={avatar} alt={name} width={48} height={48} className="rounded-full" unoptimized />
           ) : (
             <div className="bg-primary/10 w-full h-full flex items-center justify-center text-lg font-medium">
               {name.charAt(0)}

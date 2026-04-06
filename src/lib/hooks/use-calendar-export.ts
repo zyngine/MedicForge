@@ -96,8 +96,8 @@ export function useAssignmentCalendar(courseId?: string) {
       const events: CalendarEvent[] = [];
 
       for (const assignment of assignments || []) {
-        const module = assignment.module as { course: { id: string; title: string } } | null;
-        if (!module?.course || !courseIds.includes(module.course.id)) continue;
+        const courseModule = assignment.module as { course: { id: string; title: string } } | null;
+        if (!courseModule?.course || !courseIds.includes(courseModule.course.id)) continue;
         if (!assignment.due_date) continue;
 
         const dueDate = new Date(assignment.due_date);
@@ -105,10 +105,10 @@ export function useAssignmentCalendar(courseId?: string) {
         events.push({
           id: assignment.id,
           title: `Due: ${assignment.title}`,
-          description: `${assignment.type || "Assignment"} for ${module.course.title}`,
+          description: `${assignment.type || "Assignment"} for ${courseModule.course.title}`,
           start: dueDate,
           end: new Date(dueDate.getTime() + 60 * 60 * 1000), // 1 hour after due date
-          url: `/student/courses/${module.course.id}/assignments/${assignment.id}`,
+          url: `/student/courses/${courseModule.course.id}/assignments/${assignment.id}`,
         });
       }
 

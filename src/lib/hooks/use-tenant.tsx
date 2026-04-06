@@ -29,6 +29,7 @@ export interface Tenant {
   logo_url: string | null;
   primary_color: string;
   custom_domain: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   subscription_tier: "free" | "pro" | "professional" | "institution" | "enterprise" | "agency-starter" | "agency-pro" | "agency-enterprise";
   subscription_status: "active" | "canceled" | "past_due" | "trialing";
@@ -342,6 +343,7 @@ function transformTenantData(data: any): Tenant {
     logo_url: data.logo_url,
     primary_color: data.primary_color || "#C53030",
     custom_domain: data.custom_domain,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings: (data.settings as Record<string, any>) || {},
     subscription_tier: data.subscription_tier as Tenant["subscription_tier"],
     subscription_status: data.subscription_status as Tenant["subscription_status"],

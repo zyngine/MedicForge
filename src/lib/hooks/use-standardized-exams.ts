@@ -336,7 +336,7 @@ export function useStandardizedExams(courseId?: string) {
       setExams((prev) => [data, ...prev]);
       toast.success("Exam created successfully");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create exam");
       return null;
     }
@@ -354,7 +354,7 @@ export function useStandardizedExams(courseId?: string) {
       await fetchExams();
       toast.success("Exam updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update exam");
       return false;
     }
@@ -372,7 +372,7 @@ export function useStandardizedExams(courseId?: string) {
       setExams((prev) => prev.filter((e) => e.id !== id));
       toast.success("Exam deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete exam");
       return false;
     }

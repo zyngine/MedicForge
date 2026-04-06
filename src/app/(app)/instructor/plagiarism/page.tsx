@@ -108,6 +108,7 @@ export default function InstructorPlagiarismPage() {
     if (!submission) return;
 
     // Extract text content from submission
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const submissionContent = submission.content as Record<string, any> | string | null;
     const content =
       typeof submissionContent === "string"
@@ -789,6 +790,7 @@ export default function InstructorPlagiarismPage() {
             {selectedCheck.matches && selectedCheck.matches.length > 0 ? (
               <div className="space-y-3">
                 <h4 className="font-medium">Matching Sources</h4>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {selectedCheck.matches.map((match: any, idx: number) => (
                   <Card key={idx}>
                     <CardContent className="p-3">

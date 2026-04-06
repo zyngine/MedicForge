@@ -24,6 +24,7 @@ export interface IntegrityEvent {
   tenant_id: string;
   user_id: string;
   event_type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event_data: Record<string, any>;
   question_id: string | null;
   question_number: number | null;

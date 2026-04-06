@@ -108,11 +108,13 @@ export function IssueCertificateForm({
 
         <div className="space-y-2">
           <Label htmlFor="certificate_type">Certificate Type</Label>
+          {/* eslint-disable react-hooks/incompatible-library -- React Hook Form's watch() is intentionally used here */}
           <Select
             options={typeOptions}
             value={form.watch("certificate_type")}
             onChange={(value) => form.setValue("certificate_type", value)}
           />
+          {/* eslint-enable react-hooks/incompatible-library */}
         </div>
 
         <div className="space-y-2">

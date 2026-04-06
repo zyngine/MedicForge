@@ -125,7 +125,7 @@ export function usePrerequisites(targetType?: string, targetId?: string) {
       setPrerequisites((prev) => [...prev, data]);
       toast.success("Prerequisite added");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add prerequisite");
       return null;
     }
@@ -143,7 +143,7 @@ export function usePrerequisites(targetType?: string, targetId?: string) {
       setPrerequisites((prev) => prev.filter((p) => p.id !== id));
       toast.success("Prerequisite removed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to remove prerequisite");
       return false;
     }
@@ -166,7 +166,7 @@ export function usePrerequisites(targetType?: string, targetId?: string) {
       );
       toast.success("Prerequisite updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update prerequisite");
       return false;
     }
@@ -252,7 +252,7 @@ export function useReleaseConditions(targetType?: string, targetId?: string) {
       setConditions((prev) => [...prev, data]);
       toast.success("Release condition added");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add release condition");
       return null;
     }
@@ -270,7 +270,7 @@ export function useReleaseConditions(targetType?: string, targetId?: string) {
       setConditions((prev) => prev.filter((c) => c.id !== id));
       toast.success("Release condition removed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to remove release condition");
       return false;
     }
@@ -293,7 +293,7 @@ export function useReleaseConditions(targetType?: string, targetId?: string) {
       );
       toast.success("Release condition updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update release condition");
       return false;
     }

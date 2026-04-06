@@ -100,6 +100,7 @@ function LinkCard({ link }: { link: StudentLink }) {
   );
 }
 
+/* eslint-disable react-hooks/static-components -- CategoryIcon is a static Lucide component reference, not dynamically created */
 function CategorySection({
   category,
   links,
@@ -107,7 +108,7 @@ function CategorySection({
   category: string;
   links: StudentLink[];
 }) {
-  const Icon = getCategoryIcon(category);
+  const CategoryIcon = getCategoryIcon(category);
   const colorClass = getCategoryColor(category);
 
   // Separate required and optional links
@@ -119,7 +120,7 @@ function CategorySection({
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${colorClass}`}>
-            <Icon className="h-5 w-5" />
+            <CategoryIcon className="h-5 w-5" />
           </div>
           <div>
             <CardTitle className="text-lg">{getCategoryLabel(category)}</CardTitle>
@@ -207,7 +208,7 @@ export default function StudentResourcesPage() {
             <Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No resources yet</h3>
             <p className="text-muted-foreground">
-              Your program administrator hasn't added any resource links yet.
+              Your program administrator hasn&apos;t added any resource links yet.
               Check back later!
             </p>
           </CardContent>

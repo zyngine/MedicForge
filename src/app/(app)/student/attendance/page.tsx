@@ -205,7 +205,7 @@ export default function StudentAttendancePage() {
       setCode("");
       // Clear success after 8 seconds
       setTimeout(() => setCheckInResult(null), 8000);
-    } catch (error) {
+    } catch (_error) {
       // Error is handled by mutation
     }
   };
@@ -222,7 +222,7 @@ export default function StudentAttendancePage() {
       <div>
         <h1 className="text-2xl font-bold">Attendance</h1>
         <p className="text-muted-foreground">
-          Check in to class with your instructor's code
+          Check in to class with your instructor&apos;s code
         </p>
       </div>
 
@@ -405,6 +405,7 @@ export default function StudentAttendancePage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {history.map((record: any) => (
                 <div
                   key={record.id}

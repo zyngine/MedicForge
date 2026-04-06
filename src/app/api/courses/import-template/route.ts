@@ -60,15 +60,15 @@ export async function POST(request: Request) {
 
     // Create modules and lessons from template
     if (templateData.modules && Array.isArray(templateData.modules)) {
-      for (const module of templateData.modules) {
+      for (const templateModule of templateData.modules) {
         const { data: newModule, error: moduleError } = await supabase
           .from("modules")
           .insert({
             tenant_id: profile.tenant_id,
             course_id: course.id,
-            title: module.title,
-            description: module.description || null,
-            order_index: module.order_index || 0,
+            title: templateModule.title,
+            description: templateModule.description || null,
+            order_index: templateModule.order_index || 0,
             is_published: false,
           })
           .select()
@@ -80,8 +80,8 @@ export async function POST(request: Request) {
         }
 
         // Create lessons within the module
-        if (module.lessons && Array.isArray(module.lessons) && newModule) {
-          for (const lesson of module.lessons) {
+        if (templateModule.lessons && Array.isArray(templateModule.lessons) && newModule) {
+          for (const lesson of templateModule.lessons) {
             await supabase
               .from("lessons")
               .insert({

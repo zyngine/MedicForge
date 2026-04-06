@@ -21,6 +21,7 @@ interface PushNotificationPayload {
   body: string;
   icon?: string;
   badge?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
   notificationId?: string;
 }

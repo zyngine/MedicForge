@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
+import NextImage from "next/image";
 import { QrCode, RefreshCw, Clock, CheckCircle, Users, Loader2 } from "lucide-react";
 import {
   Card,
@@ -120,10 +121,13 @@ export function QRCodeDisplay({ eventId, eventTitle }: QRCodeDisplayProps) {
             {/* Active QR Code */}
             <div className="flex flex-col items-center">
               {qrCodeUrl ? (
-                <img
+                <NextImage
                   src={qrCodeUrl}
                   alt="Attendance QR Code"
-                  className="w-64 h-64 border rounded-lg"
+                  width={256}
+                  height={256}
+                  className="border rounded-lg"
+                  unoptimized
                 />
               ) : (
                 <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center">

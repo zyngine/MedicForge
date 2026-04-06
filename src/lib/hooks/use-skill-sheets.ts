@@ -262,7 +262,7 @@ export function useSkillSheetAttempts(options?: {
       if (insertError) throw insertError;
       setAttempts((prev) => [data, ...prev]);
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to start skill sheet attempt");
       return null;
     }
@@ -290,7 +290,7 @@ export function useSkillSheetAttempts(options?: {
         prev.map((a) => (a.id === attemptId ? { ...a, ...updates } : a))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update attempt");
       return false;
     }
@@ -319,7 +319,7 @@ export function useSkillSheetAttempts(options?: {
       );
       toast.success("Skill sheet submitted for evaluation");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to submit attempt");
       return false;
     }
@@ -354,7 +354,7 @@ export function useSkillSheetAttempts(options?: {
       toast.success(`Skill sheet marked as ${grading.status}`);
       fetchAttempts();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to grade attempt");
       return false;
     }

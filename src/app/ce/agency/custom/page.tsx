@@ -36,7 +36,7 @@ export default function CEAgencyCustomPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Custom Training</h1>
-        <p className="text-muted-foreground text-sm mt-1">Upload and manage your agency's proprietary training materials</p>
+        <p className="text-muted-foreground text-sm mt-1">Upload and manage your agency&apos;s proprietary training materials</p>
       </div>
 
       {!isPro ? (
@@ -47,12 +47,12 @@ export default function CEAgencyCustomPage() {
           <div>
             <p className="font-semibold">Custom Training requires a Pro or Enterprise subscription</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Upload your agency's SOPs, protocols, department-specific training videos, and custom assessments.
+              Upload your agency&apos;s SOPs, protocols, department-specific training videos, and custom assessments.
               Upgrade your plan to access this feature.
             </p>
           </div>
           <div className="bg-gray-50 border rounded-lg p-4 text-sm text-left max-w-md w-full space-y-2">
-            <p className="font-medium text-sm">What's included:</p>
+            <p className="font-medium text-sm">What&apos;s included:</p>
             <ul className="space-y-1 text-muted-foreground text-xs">
               <li>• Upload PDF, video, and document materials</li>
               <li>• Create custom quizzes and assessments</li>

@@ -39,6 +39,25 @@ const DEFAULT_COLORS = {
   F: "#ef4444", // red-500
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function GradeTooltip({ active, payload, label, showPercentage }: any) {
+  if (active && payload && payload.length) {
+    const item = payload[0].payload;
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3">
+        <p className="font-semibold">{label}</p>
+        <p className="text-sm text-muted-foreground">
+          {item.count} student{item.count !== 1 ? "s" : ""}
+          {showPercentage && item.percentage !== undefined && (
+            <span> ({item.percentage.toFixed(1)}%)</span>
+          )}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function GradeDistribution({
   data,
   className,
@@ -52,25 +71,6 @@ export function GradeDistribution({
     if (range.startsWith("C") || range.includes("70")) return colors.C;
     if (range.startsWith("D") || range.includes("60")) return colors.D;
     return colors.F;
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const item = payload[0].payload;
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="font-semibold">{label}</p>
-          <p className="text-sm text-muted-foreground">
-            {item.count} student{item.count !== 1 ? "s" : ""}
-            {showPercentage && item.percentage !== undefined && (
-              <span> ({item.percentage.toFixed(1)}%)</span>
-            )}
-          </p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -88,7 +88,7 @@ export function GradeDistribution({
             tickLine={{ stroke: "currentColor" }}
             allowDecimals={false}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<GradeTooltip showPercentage={showPercentage} />} />
           <Bar
             dataKey="count"
             radius={[4, 4, 0, 0]}

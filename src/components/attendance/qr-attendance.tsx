@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import NextImage from "next/image";
 import { Button, Card } from "@/components/ui";
 import { QrCode, Camera, Check, X, RefreshCw, Copy, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -131,7 +132,7 @@ export function QRCodeGenerator({
         {qrCodeUrl ? (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-lg inline-block">
-              <img src={qrCodeUrl} alt="Check-in QR Code" className="mx-auto" />
+              <NextImage src={qrCodeUrl} alt="Check-in QR Code" width={256} height={256} className="mx-auto" unoptimized />
             </div>
 
             <div className="flex items-center justify-center gap-2">
@@ -242,7 +243,7 @@ export function QRCodeScanner({ onScan, onCancel }: QRCodeScannerProps) {
       try {
         // Use BarcodeDetector API if available
         if ("BarcodeDetector" in window) {
-          // @ts-ignore - BarcodeDetector is not in TypeScript types yet
+          // @ts-expect-error BarcodeDetector is not in TypeScript types yet
           const barcodeDetector = new BarcodeDetector({ formats: ["qr_code"] });
           const barcodes = await barcodeDetector.detect(canvas);
 

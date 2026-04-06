@@ -99,7 +99,7 @@ interface PatientContactFormProps {
 }
 
 export function PatientContactFormWizard({
-  bookingId,
+  bookingId: _bookingId,
   onSubmit,
   onCancel,
 }: PatientContactFormProps) {

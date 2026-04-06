@@ -304,6 +304,7 @@ export default function AgencyDashboardPage() {
                     </p>
                   </div>
                   <Badge variant="outline" className="border-amber-500 text-amber-700">
+                    {/* eslint-disable-next-line react-hooks/purity -- Date.now() for display */}
                     {Math.ceil((new Date(employee.certification_expiration!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
                   </Badge>
                 </div>

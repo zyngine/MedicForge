@@ -141,6 +141,7 @@ export function useUpdateQuizQuestion() {
     }) => {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {};
       if (data.question_text !== undefined) updateData.question_text = data.question_text;
       if (data.question_type !== undefined) updateData.question_type = data.question_type;

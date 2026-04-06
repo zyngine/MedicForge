@@ -362,7 +362,7 @@ export default function NREMTReadinessPage() {
           </div>
         ) : (
           <p className="text-muted-foreground">
-            You're doing great! Continue with your current study plan.
+            You&apos;re doing great! Continue with your current study plan.
           </p>
         )}
       </Card>

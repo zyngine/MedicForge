@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -41,6 +41,7 @@ import {
 } from "date-fns";
 
 export default function InstructorShiftsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const siteFilter = searchParams.get("site");
 
@@ -52,7 +53,7 @@ export default function InstructorShiftsPage() {
   // Fetch real data from hooks
   const { sites, isLoading: sitesLoading } = useClinicalSites();
   const { shifts, isLoading: shiftsLoading, deleteShift, refetch: refetchShifts } = useClinicalShifts();
-  const { bookings, isLoading: bookingsLoading } = useShiftBookings();
+  const { bookings: _bookings, isLoading: bookingsLoading } = useShiftBookings();
 
   const isLoading = sitesLoading || shiftsLoading || bookingsLoading;
 
@@ -78,7 +79,7 @@ export default function InstructorShiftsPage() {
   };
 
   const handleEditShift = (shiftId: string) => {
-    window.location.href = `/instructor/clinical/shifts/${shiftId}/edit`;
+    router.push(`/instructor/clinical/shifts/${shiftId}/edit`);
   };
 
   const handleDeleteShift = async (shiftId: string) => {
@@ -88,7 +89,7 @@ export default function InstructorShiftsPage() {
   };
 
   const handleViewBookings = (shiftId: string) => {
-    window.location.href = `/instructor/clinical/shifts/${shiftId}`;
+    router.push(`/instructor/clinical/shifts/${shiftId}`);
   };
 
   if (isLoading) {

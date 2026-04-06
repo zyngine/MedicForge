@@ -97,6 +97,7 @@ export default function CEAdminInstructorsPage() {
     return i.name.toLowerCase().includes(s) || i.email.toLowerCase().includes(s);
   });
 
+  /* eslint-disable react-hooks/purity -- Date.now() for display calculations */
   const coiExpiringSoon = instructors.filter((i) => {
     if (!i.coi_expires_at) return false;
     return (new Date(i.coi_expires_at).getTime() - Date.now()) / 86400000 < 90;

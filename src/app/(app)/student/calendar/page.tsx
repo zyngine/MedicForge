@@ -159,12 +159,15 @@ export default function CalendarPage() {
 
         if (assignmentsData) {
           // Transform assignments to match our interface
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const transformedAssignments = assignmentsData.map((a: Record<string, any>) => ({
             id: a.id as string,
             title: a.title as string,
             due_date: a.due_date as string,
             type: a.type as string | null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             course_id: ((a.module as Record<string, any>)?.course as Record<string, any>)?.id as string,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             course: (a.module as Record<string, any>)?.course as { id: string; title: string } | null,
           }));
           setAssignments(transformedAssignments);

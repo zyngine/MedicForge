@@ -90,7 +90,7 @@ export default async function CELandingPage() {
               <Users className="h-8 w-8 text-red-700 mb-4" />
               <h3 className="font-semibold text-lg mb-2 text-gray-900">Agency Solutions</h3>
               <p className="text-gray-600 text-sm">
-                Manage your entire department's CE from one dashboard. Assign training,
+                Manage your entire department&apos;s CE from one dashboard. Assign training,
                 track compliance, and export reports.
               </p>
             </div>
@@ -98,7 +98,7 @@ export default async function CELandingPage() {
               <BookOpen className="h-8 w-8 text-red-700 mb-4" />
               <h3 className="font-semibold text-lg mb-2 text-gray-900">Custom Training</h3>
               <p className="text-gray-600 text-sm">
-                Upload your agency's own protocols and training materials. Host custom
+                Upload your agency&apos;s own protocols and training materials. Host custom
                 courses alongside our catalog content.
               </p>
             </div>

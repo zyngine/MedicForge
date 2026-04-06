@@ -222,6 +222,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     try {
       const supabase = createClient();
       // Only include valid columns for the question_bank table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const insertData: Record<string, any> = {
         question_text: input.question_text,
         question_type: input.question_type,
@@ -263,6 +264,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     try {
       const supabase = createClient();
       // Only include valid columns for the question_bank table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         updated_at: new Date().toISOString(),
       };
@@ -322,7 +324,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       setTotal((prev) => prev - 1);
       toast.success("Question deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete question");
       return false;
     }
@@ -351,7 +353,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       );
       toast.success("Question validated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to validate question");
       return false;
     }

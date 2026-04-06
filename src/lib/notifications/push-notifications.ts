@@ -16,6 +16,7 @@ export interface NotificationPayload {
   icon?: string;
   badge?: string;
   tag?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
   actions?: Array<{
     action: string;

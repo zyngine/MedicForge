@@ -65,6 +65,7 @@ interface TemplateForImport {
       points_possible: number;
       module_index?: number;
     }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings?: Record<string, any>;
   } | null;
 }
@@ -348,8 +349,8 @@ const SYSTEM_TEMPLATES: (TemplateForImport & { is_official: boolean; usage_count
 
 export default function CourseTemplatesPage() {
   const router = useRouter();
-  const { profile } = useUser();
-  const { templates, isLoading, createFromCourse, deleteTemplate, duplicateTemplate, toggleShared, updateFromCourse } = useCourseTemplates();
+  const { profile: _profile } = useUser();
+  const { templates, isLoading, createFromCourse: _createFromCourse, deleteTemplate, duplicateTemplate, toggleShared, updateFromCourse } = useCourseTemplates();
   const { applyTemplate } = useApplyTemplate();
   const { data: courses = [] } = useCourses();
 

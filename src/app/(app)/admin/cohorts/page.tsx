@@ -49,7 +49,7 @@ export default function AdminCohortsPage() {
     updateCohort,
     deleteCohort,
     isCreating,
-    isDeleting,
+    isDeleting: _isDeleting,
   } = useCohorts();
 
   const [searchQuery, setSearchQuery] = useState("");

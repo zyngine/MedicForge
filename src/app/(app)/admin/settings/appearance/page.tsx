@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useRef, useEffect } from "react";
+import NextImage from "next/image";
 import {
   Card,
   CardHeader,
@@ -43,10 +44,13 @@ function LogoPreview({ url }: { url: string | null }) {
   }
 
   return (
-    <img
+    <NextImage
       src={url}
       alt="Organization logo"
+      width={200}
+      height={200}
       className="max-w-full max-h-full object-contain"
+      unoptimized
       onError={() => setHasError(true)}
     />
   );
@@ -186,6 +190,7 @@ export default function AppearanceSettingsPage() {
     try {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         primary_color: primaryColor,
         logo_url: logoUrl,

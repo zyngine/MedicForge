@@ -35,7 +35,7 @@ const SESSION_TYPES = [
 ];
 
 export default function VideoSessionsPage() {
-  const { sessions, isLoading, error, createSession, deleteSession, refetch } = useVideoSessions({ upcoming: true });
+  const { sessions, isLoading, error: _error, createSession, deleteSession, refetch: _refetch } = useVideoSessions({ upcoming: true });
   const { data: courses = [] } = useCourses();
 
   const [showCreateModal, setShowCreateModal] = useState(false);

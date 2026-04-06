@@ -110,7 +110,7 @@ export function useUserSignatures() {
       setSignatures((prev) => [data, ...prev]);
       toast.success("Signature saved");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save signature");
       return null;
     }
@@ -128,7 +128,7 @@ export function useUserSignatures() {
       setSignatures((prev) => prev.filter((s) => s.id !== signatureId));
       toast.success("Signature deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete signature");
       return false;
     }

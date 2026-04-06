@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = questions.map((q: Record<string, any>) => ({
       question_text: q.question_text as string,
       question_type: q.question_type as string,

@@ -189,6 +189,7 @@ export default function CECourseDiscussionPage() {
                     <p className="font-medium text-sm">{d.title}</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {d.ce_users ? `${(d.ce_users as any).first_name} ${(d.ce_users as any).last_name}` : "Unknown"} · {new Date(d.created_at).toLocaleDateString()} · {d.replies_count} replies · {d.likes_count} likes
                   </p>
                 </div>
@@ -209,6 +210,7 @@ export default function CECourseDiscussionPage() {
                   {(replies[d.id] || []).map((r) => (
                     <div key={r.id} className="px-5 py-3 border-t ml-6">
                       <p className="text-xs text-muted-foreground mb-1">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {r.ce_users ? `${(r.ce_users as any).first_name} ${(r.ce_users as any).last_name}` : "Unknown"} · {new Date(r.created_at).toLocaleDateString()}
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{r.body}</p>

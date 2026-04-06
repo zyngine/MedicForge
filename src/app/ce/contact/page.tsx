@@ -57,7 +57,7 @@ export default function CEContactPage() {
           <div>
             <p className="font-semibold text-green-800">Message sent</p>
             <p className="text-sm text-green-700 mt-1">
-              Thanks for reaching out. We'll reply to <strong>{form.email}</strong> within one business day.
+              Thanks for reaching out. We&apos;ll reply to <strong>{form.email}</strong> within one business day.
             </p>
           </div>
         </div>

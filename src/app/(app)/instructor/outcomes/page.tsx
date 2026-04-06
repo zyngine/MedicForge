@@ -45,7 +45,7 @@ import {
 import { useCourses } from "@/lib/hooks/use-courses";
 
 export default function InstructorOutcomesPage() {
-  const { outcomes, flatOutcomes, isLoading, createOutcome, updateOutcome, deleteOutcome } =
+  const { outcomes: _outcomes, flatOutcomes, isLoading, createOutcome, updateOutcome, deleteOutcome } =
     useLearningOutcomes();
   const { data: courses = [] } = useCourses();
 

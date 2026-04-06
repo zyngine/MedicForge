@@ -429,7 +429,7 @@ export default function TenantsPage() {
                   options={SUBSCRIPTION_STATUSES}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Set to "Active" to grant full access immediately
+                  Set to &quot;Active&quot; to grant full access immediately
                 </p>
               </div>
 

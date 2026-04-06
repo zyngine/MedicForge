@@ -287,7 +287,7 @@ export function QuestionProgress({
   answered,
   unanswered,
   flagged,
-  total,
+  total: _total,
   className,
 }: {
   answered: number;

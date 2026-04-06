@@ -52,6 +52,7 @@ export interface LTILaunch {
   return_url: string | null;
   outcome_service_url: string | null;
   result_sourcedid: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   session_data: Record<string, any> | null;
   created_at: string;
 }
@@ -166,7 +167,7 @@ export function useLTITools() {
       setTools((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       toast.success("LTI tool created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create LTI tool");
       return null;
     }
@@ -184,7 +185,7 @@ export function useLTITools() {
       setTools((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
       toast.success("Tool updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update tool");
       return false;
     }
@@ -202,7 +203,7 @@ export function useLTITools() {
       setTools((prev) => prev.filter((t) => t.id !== id));
       toast.success("Tool deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete tool");
       return false;
     }

@@ -82,6 +82,7 @@ export default function CECommitteeDocumentsPage() {
   const categories = ["All", ...new Set(documents.map((d) => d.category))];
   const filtered = filterCategory === "All" ? documents : documents.filter((d) => d.category === filterCategory);
 
+  /* eslint-disable react-hooks/purity -- Date.now() for display calculations */
   const needsReview = documents.filter((d) => {
     if (!d.review_date) return false;
     const diff = (new Date(d.review_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);

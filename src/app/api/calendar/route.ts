@@ -71,15 +71,15 @@ export async function GET(request: NextRequest) {
         .eq("is_published", true);
 
       for (const assignment of assignments || []) {
-        const module = assignment.module as { course: { id: string; title: string } } | null;
-        if (!module?.course || !courseIds.includes(module.course.id)) continue;
+        const courseModule = assignment.module as { course: { id: string; title: string } } | null;
+        if (!courseModule?.course || !courseIds.includes(courseModule.course.id)) continue;
         if (!assignment.due_date) continue;
 
         const dueDate = new Date(assignment.due_date);
         events.push({
           id: assignment.id,
           title: `Due: ${assignment.title}`,
-          description: `${assignment.type || "Assignment"} for ${module.course.title}`,
+          description: `${assignment.type || "Assignment"} for ${courseModule.course.title}`,
           start: dueDate,
           end: new Date(dueDate.getTime() + 60 * 60 * 1000),
         });

@@ -47,6 +47,7 @@ export default function NotificationSettingsPage() {
 
   useEffect(() => {
     if (tenant?.settings) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tenantSettings = tenant.settings as Record<string, any>;
       const notifications = (tenantSettings.notifications || {}) as Partial<NotificationSettings>;
       setSettings({ ...defaultSettings, ...notifications });

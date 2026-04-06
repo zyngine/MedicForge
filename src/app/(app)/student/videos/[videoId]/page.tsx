@@ -243,7 +243,9 @@ export default function StudentVideoPlayerPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   You must complete the associated assignment to receive virtual attendance.
                 </p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(video as any).coursework_assignment_id ? (
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   <Link href={`/student/assignments/${(video as any).coursework_assignment_id}`}>
                     <Button variant="outline" size="sm" className="w-full">
                       View Assignment

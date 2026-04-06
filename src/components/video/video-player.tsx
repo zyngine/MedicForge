@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import NextImage from "next/image";
 import { Badge, Button, Progress } from "@/components/ui";
 import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, CheckCircle, Clock } from "lucide-react";
 import {
@@ -446,10 +447,12 @@ export function VideoThumbnail({
   return (
     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
       {thumbnailUrl ? (
-        <img
+        <NextImage
           src={thumbnailUrl}
           alt={title}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
+          unoptimized
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">

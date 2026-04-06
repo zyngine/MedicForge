@@ -170,7 +170,7 @@ export function HorizontalBarChart({
   className,
   height,
   maxValue,
-  showValues = true,
+  showValues: _showValues = true,
 }: HorizontalBarChartProps) {
   const chartHeight = height || Math.max(200, data.length * 40);
   const max = maxValue || Math.max(...data.map((d) => d.value));

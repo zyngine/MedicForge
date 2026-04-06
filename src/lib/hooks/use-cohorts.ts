@@ -45,6 +45,7 @@ export interface Cohort {
   expected_graduation: string | null;
   is_active: boolean;
   max_students: number | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -323,6 +324,7 @@ export function useCohortMembers(cohortId: string | null) {
 
   const updateMemberStatusMutation = useMutation({
     mutationFn: async ({ memberId, status, notes }: { memberId: string; status: string; notes?: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = { status };
       if (notes !== undefined) updateData.notes = notes;
       if (status === "graduated" || status === "withdrawn" || status === "transferred") {

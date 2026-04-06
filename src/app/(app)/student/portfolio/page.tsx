@@ -31,7 +31,7 @@ import {
   Link as LinkIcon,
   Copy,
   FileText,
-  Image,
+  Image as ImageIcon,
   Video,
   GripVertical,
   Star,
@@ -46,8 +46,8 @@ export default function StudentPortfolioPage() {
     portfolios,
     isLoading,
     createPortfolio,
-    updatePortfolio,
-    deletePortfolio,
+    updatePortfolio: _updatePortfolio,
+    deletePortfolio: _deletePortfolio,
     publishPortfolio,
     unpublishPortfolio,
   } = usePortfolios();
@@ -249,9 +249,9 @@ function PortfolioBuilder({
     portfolio,
     isLoading,
     addSection,
-    updateSection,
+    updateSection: _updateSection,
     deleteSection,
-    addArtifact,
+    addArtifact: _addArtifact,
     deleteArtifact,
     toggleFeatured,
   } = usePortfolioBuilder(portfolioId);
@@ -380,7 +380,7 @@ function PortfolioBuilder({
                               <div className="flex items-start justify-between mb-2">
                                 <div className="p-2 rounded bg-muted">
                                   {artifact.artifact_type === "image" ? (
-                                    <Image className="h-4 w-4" />
+                                    <ImageIcon className="h-4 w-4" />
                                   ) : artifact.artifact_type === "video" ? (
                                     <Video className="h-4 w-4" />
                                   ) : (

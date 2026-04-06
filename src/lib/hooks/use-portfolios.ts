@@ -23,6 +23,7 @@ export interface Portfolio {
   theme: string;
   custom_css: string | null;
   cover_image_url: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   layout_config: Record<string, any>;
   view_count: number;
   created_at: string;
@@ -156,7 +157,7 @@ export function usePortfolios(ownerId?: string) {
       setPortfolios((prev) => [data, ...prev]);
       toast.success("Portfolio created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create portfolio");
       return null;
     }
@@ -174,7 +175,7 @@ export function usePortfolios(ownerId?: string) {
       setPortfolios((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
       toast.success("Portfolio updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update portfolio");
       return false;
     }
@@ -192,7 +193,7 @@ export function usePortfolios(ownerId?: string) {
       setPortfolios((prev) => prev.filter((p) => p.id !== id));
       toast.success("Portfolio deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete portfolio");
       return false;
     }
@@ -241,7 +242,7 @@ export function usePortfolios(ownerId?: string) {
       await fetchPortfolios();
       toast.success("Portfolio duplicated");
       return newPortfolio;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to duplicate portfolio");
       return null;
     }
@@ -347,7 +348,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add section");
       return null;
     }
@@ -364,7 +365,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update section");
       return false;
     }
@@ -381,7 +382,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete section");
       return false;
     }
@@ -398,7 +399,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       }
       await fetchPortfolio();
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -451,7 +452,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add artifact");
       return null;
     }
@@ -471,7 +472,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update artifact");
       return false;
     }
@@ -488,7 +489,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       if (error) throw error;
       await fetchPortfolio();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete artifact");
       return false;
     }
@@ -535,7 +536,7 @@ export function usePortfolioBuilder(portfolioId: string) {
       });
 
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

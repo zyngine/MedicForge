@@ -215,6 +215,7 @@ export default function CEAdminAgenciesPage() {
             </thead>
             <tbody>
               {agencies.map((agency) => {
+                // eslint-disable-next-line react-hooks/purity -- Date.now() for display
                 const expiringSoon = agency.subscription_end && (new Date(agency.subscription_end).getTime() - Date.now()) / 86400000 < 30;
                 return (
                   <tr key={agency.id} className="border-b last:border-0 hover:bg-gray-50">

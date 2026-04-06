@@ -153,6 +153,7 @@ export default function CECommitteeCourseReviewDetailPage() {
           <div>
             <p className="text-muted-foreground text-xs">Author</p>
             <p className="font-medium">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {course.ce_users ? `${(course.ce_users as any).first_name} ${(course.ce_users as any).last_name}` : "—"}
             </p>
           </div>

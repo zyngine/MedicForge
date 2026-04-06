@@ -89,7 +89,7 @@ export default function CEHelpPage() {
       <div>
         <h1 className="text-2xl font-bold">Help & FAQ</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Common questions about MedicForge CE. Can't find your answer?{" "}
+          Common questions about MedicForge CE. Can&apos;t find your answer?{" "}
           <a href="/ce/contact" className="text-blue-700 hover:underline">Contact us.</a>
         </p>
       </div>

@@ -29,7 +29,9 @@ export interface AuditLogEntry {
   action: AuditAction;
   entity_type: string;
   entity_id: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   old_values: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new_values: Record<string, any> | null;
   ip_address: string | null;
   user_agent: string | null;
@@ -195,7 +197,9 @@ export function useLogAuditAction() {
       action: AuditAction;
       entityType: string;
       entityId?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       oldValues?: Record<string, any>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       newValues?: Record<string, any>;
     }) => {
       if (!tenant?.id) throw new Error("No tenant");

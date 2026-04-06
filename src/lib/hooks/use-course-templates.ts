@@ -30,6 +30,7 @@ export interface CourseTemplate {
       points_possible: number;
       module_index?: number;
     }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings?: Record<string, any>;
   } | null;
   is_shared: boolean;
@@ -63,6 +64,7 @@ export interface BlueprintSyncHistory {
   id: string;
   blueprint_id: string;
   sync_type: "full" | "partial" | "manual";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   changes_applied: Record<string, any> | null;
   synced_by: string;
   synced_at: string;
@@ -383,7 +385,7 @@ export function useCourseTemplates() {
         description: course.description,
         course_type: course.course_type,
       });
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update template from course");
       return false;
     }
@@ -578,6 +580,7 @@ export function useBlueprintCourses(templateId?: string) {
 
       if (templateError) throw templateError;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const changes: Record<string, any> = {};
       const settings = blueprint.sync_settings || {};
 
@@ -647,7 +650,7 @@ export function useBlueprintCourses(templateId?: string) {
       await fetchBlueprints();
       toast.success("Blueprint synced successfully");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to sync blueprint");
       return false;
     }

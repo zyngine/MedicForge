@@ -139,7 +139,7 @@ export function PlagiarismResult({ check }: PlagiarismResultProps) {
                         key={snippetIndex}
                         className="text-xs p-2 bg-yellow-50 border border-yellow-200 rounded"
                       >
-                        <p className="text-yellow-800">"{snippet.original}"</p>
+                        <p className="text-yellow-800">&quot;{snippet.original}&quot;</p>
                       </div>
                     ))}
                     {match.matchedSnippets.length > 5 && (

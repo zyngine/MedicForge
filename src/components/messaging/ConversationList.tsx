@@ -24,7 +24,7 @@ export function ConversationList({
   onNewMessage,
 }: ConversationListProps) {
   const { conversations, isLoading } = useConversations();
-  const { user } = useUser();
+  const { user: _user } = useUser();
   const [search, setSearch] = useState("");
 
   const filteredConversations = conversations?.filter((conv: Conversation) => {

@@ -32,7 +32,7 @@ import { formatRelativeTime } from "@/lib/utils";
 
 export default function StudentPeerReviewsPage() {
   const {
-    assignedReviews,
+    assignedReviews: _assignedReviews,
     receivedReviews,
     pendingReviews,
     inProgressReviews,
@@ -101,7 +101,7 @@ export default function StudentPeerReviewsPage() {
           Peer Reviews
         </h1>
         <p className="text-muted-foreground">
-          Review your peers' work and receive feedback on yours
+          Review your peers&apos; work and receive feedback on yours
         </p>
       </div>
 

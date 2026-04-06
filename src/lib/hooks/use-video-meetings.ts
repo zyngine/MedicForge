@@ -27,6 +27,7 @@ export interface VideoMeeting {
   recording_url: string | null;
   waiting_room_enabled: boolean;
   max_participants: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   created_at: string;
   // Joined
@@ -44,6 +45,7 @@ export interface MeetingParticipant {
   left_at: string | null;
   duration_minutes: number | null;
   is_presenter: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   device_info: Record<string, any> | null;
   user?: { id: string; full_name: string; email: string };
 }
@@ -125,6 +127,7 @@ export function useVideoMeetings(courseId?: string) {
     recording_enabled?: boolean;
     waiting_room_enabled?: boolean;
     max_participants?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings?: Record<string, any>;
   }): Promise<VideoMeeting | null> => {
     if (!profile?.tenant_id || !profile?.id) {
@@ -182,7 +185,7 @@ export function useVideoMeetings(courseId?: string) {
       setMeetings((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
       toast.success("Meeting updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update meeting");
       return false;
     }
@@ -209,7 +212,7 @@ export function useVideoMeetings(courseId?: string) {
       setMeetings((prev) => prev.map((m) => (m.id === id ? data : m)));
       toast.success("Meeting started");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to start meeting");
       return null;
     }
@@ -232,7 +235,7 @@ export function useVideoMeetings(courseId?: string) {
       ));
       toast.success("Meeting ended");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to end meeting");
       return false;
     }
@@ -252,7 +255,7 @@ export function useVideoMeetings(courseId?: string) {
       ));
       toast.success("Meeting cancelled");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to cancel meeting");
       return false;
     }
@@ -344,6 +347,7 @@ export function useMeetingParticipants(meetingId: string) {
     };
   }, [meetingId, supabase, fetchParticipants]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const joinMeeting = async (deviceInfo?: Record<string, any>): Promise<boolean> => {
     if (!profile?.tenant_id || !profile?.id) return false;
 
@@ -406,7 +410,7 @@ export function useMeetingParticipants(meetingId: string) {
 
       if (error) throw error;
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

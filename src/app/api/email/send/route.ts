@@ -24,6 +24,7 @@ type EmailType =
 interface SendEmailRequest {
   type: EmailType;
   to: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
 }
 

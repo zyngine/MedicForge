@@ -176,7 +176,7 @@ export function useRubrics(options?: { templateOnly?: boolean }) {
       setRubrics((prev) => [{ ...data, criteria: [] }, ...prev]);
       toast.success("Rubric created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create rubric");
       return null;
     }
@@ -194,7 +194,7 @@ export function useRubrics(options?: { templateOnly?: boolean }) {
       setRubrics((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
       toast.success("Rubric updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update rubric");
       return false;
     }
@@ -212,7 +212,7 @@ export function useRubrics(options?: { templateOnly?: boolean }) {
       setRubrics((prev) => prev.filter((r) => r.id !== id));
       toast.success("Rubric deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete rubric");
       return false;
     }
@@ -281,7 +281,7 @@ export function useRubrics(options?: { templateOnly?: boolean }) {
       await fetchRubrics();
       toast.success("Rubric duplicated");
       return newRubric;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to duplicate rubric");
       return null;
     }
@@ -392,7 +392,7 @@ export function useRubricBuilder(rubricId: string) {
 
       await fetchRubric();
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add criterion");
       return null;
     }
@@ -412,7 +412,7 @@ export function useRubricBuilder(rubricId: string) {
       if (error) throw error;
       await fetchRubric();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update criterion");
       return false;
     }
@@ -429,7 +429,7 @@ export function useRubricBuilder(rubricId: string) {
       if (error) throw error;
       await fetchRubric();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete criterion");
       return false;
     }
@@ -467,7 +467,7 @@ export function useRubricBuilder(rubricId: string) {
       if (error) throw error;
       await fetchRubric();
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add rating");
       return null;
     }
@@ -487,7 +487,7 @@ export function useRubricBuilder(rubricId: string) {
       if (error) throw error;
       await fetchRubric();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update rating");
       return false;
     }
@@ -504,7 +504,7 @@ export function useRubricBuilder(rubricId: string) {
       if (error) throw error;
       await fetchRubric();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete rating");
       return false;
     }
@@ -522,7 +522,7 @@ export function useRubricBuilder(rubricId: string) {
       }
       await fetchRubric();
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

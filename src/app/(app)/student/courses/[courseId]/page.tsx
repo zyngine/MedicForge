@@ -118,7 +118,7 @@ export default function StudentCourseDetailPage() {
       <div className="flex flex-col items-center justify-center py-12">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Course Not Found</h2>
-        <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or you're not enrolled.</p>
+        <p className="text-muted-foreground mb-4">The course you&apos;re looking for doesn&apos;t exist or you&apos;re not enrolled.</p>
         <Button asChild>
           <Link href="/student/courses">Back to Courses</Link>
         </Button>

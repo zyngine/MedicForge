@@ -18,7 +18,7 @@ export function FileDropzone({
   onFileSelect,
   selectedFile,
   onClear,
-  accept = ".csv,.xlsx,.xls",
+  accept: _accept = ".csv,.xlsx,.xls",
   disabled = false,
 }: FileDropzoneProps) {
   const onDrop = useCallback(

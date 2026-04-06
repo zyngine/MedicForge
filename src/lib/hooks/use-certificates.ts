@@ -19,6 +19,7 @@ export interface Certificate {
   final_grade: number | null;
   hours_completed: number | null;
   template_id: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   custom_data: Record<string, any>;
   verification_code: string;
   is_revoked: boolean;
@@ -78,6 +79,7 @@ export interface IssueCertificateInput {
   final_grade?: number;
   hours_completed?: number;
   template_id?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   custom_data?: Record<string, any>;
   expires_at?: string;
 }

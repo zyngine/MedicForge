@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import NextImage from "next/image";
 import { Award, CheckCircle, XCircle, AlertTriangle, Calendar, GraduationCap, Clock, Shield } from "lucide-react";
 import { Card, CardContent, Button, Badge } from "@/components/ui";
 import { useVerifyCertificate } from "@/lib/hooks/use-certificates";
@@ -115,10 +116,13 @@ export default function VerifyCertificatePage({
             {/* Header with Logo */}
             <div className="text-center mb-8">
               {certificate.tenant?.logo_url ? (
-                <img
+                <NextImage
                   src={certificate.tenant.logo_url}
                   alt={certificate.tenant.name}
-                  className="h-12 mx-auto mb-4"
+                  width={200}
+                  height={48}
+                  className="h-12 w-auto mx-auto mb-4"
+                  unoptimized
                 />
               ) : (
                 <div className="flex items-center justify-center gap-2 mb-4">
@@ -216,9 +220,9 @@ export default function VerifyCertificatePage({
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>
             Verified by{" "}
-            <a href="/" className="text-primary hover:underline">
+            <Link href="/" className="text-primary hover:underline">
               MedicForge
-            </a>
+            </Link>
           </p>
         </div>
       </div>

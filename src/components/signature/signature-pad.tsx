@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
+import NextImage from "next/image";
 import { Button } from "@/components/ui";
 import { Trash2, Check, Undo } from "lucide-react";
 
@@ -266,10 +267,13 @@ export function SignatureDisplay({
     <div className={`space-y-2 ${className}`}>
       <label className="block text-sm font-medium text-muted-foreground">{label}</label>
       <div className="border rounded-lg overflow-hidden bg-white">
-        <img
+        <NextImage
           src={signature}
           alt="Signature"
+          width={300}
+          height={100}
           className="w-full max-w-[300px] h-auto"
+          unoptimized
         />
         {(signedBy || signedAt) && (
           <div className="px-3 py-2 border-t bg-muted/30 text-xs text-muted-foreground">

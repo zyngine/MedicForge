@@ -146,7 +146,7 @@ export function usePeerReviewAssignments(assignmentId?: string) {
       setPeerReviewAssignments((prev) => [data, ...prev]);
       toast.success("Peer review enabled");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to enable peer review");
       return null;
     }
@@ -169,7 +169,7 @@ export function usePeerReviewAssignments(assignmentId?: string) {
       );
       toast.success("Settings updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update settings");
       return false;
     }
@@ -185,7 +185,7 @@ export function usePeerReviewAssignments(assignmentId?: string) {
       await fetchAssignments();
       toast.success(`Distributed ${data} peer reviews`);
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to distribute peer reviews");
       return 0;
     }
@@ -207,7 +207,7 @@ export function usePeerReviewAssignments(assignmentId?: string) {
       setPeerReviewAssignments((prev) => prev.filter((p) => p.id !== id));
       toast.success("Peer review disabled");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to disable peer review");
       return false;
     }
@@ -302,7 +302,7 @@ export function useMyPeerReviews() {
         )
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -352,7 +352,7 @@ export function useMyPeerReviews() {
       await fetchReviews();
       toast.success("Review submitted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to submit review");
       return false;
     }
@@ -371,7 +371,7 @@ export function useMyPeerReviews() {
         prev.map((r) => (r.id === pairId ? { ...r, status: "skipped" } : r))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -394,7 +394,7 @@ export function useMyPeerReviews() {
       if (error) throw error;
       toast.success("Feedback submitted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

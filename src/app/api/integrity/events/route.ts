@@ -6,6 +6,7 @@ const getDb = async () => (await createClient()) as any;
 
 interface IntegrityEvent {
   event_type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event_data: Record<string, any>;
   question_id?: string;
   question_number?: number;

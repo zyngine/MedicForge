@@ -168,7 +168,7 @@ export function useLearningOutcomes(courseId?: string) {
       await fetchOutcomes();
       toast.success("Outcome created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create outcome");
       return null;
     }
@@ -186,7 +186,7 @@ export function useLearningOutcomes(courseId?: string) {
       await fetchOutcomes();
       toast.success("Outcome updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update outcome");
       return false;
     }
@@ -205,7 +205,7 @@ export function useLearningOutcomes(courseId?: string) {
       await fetchOutcomes();
       toast.success("Outcome deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete outcome");
       return false;
     }
@@ -302,7 +302,7 @@ export function useOutcomeAlignments(alignableType: string, alignableId: string)
       await fetchAlignments();
       toast.success("Outcome aligned");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to align outcome");
       return false;
     }
@@ -324,7 +324,7 @@ export function useOutcomeAlignments(alignableType: string, alignableId: string)
         prev.map((a) => (a.id === alignmentId ? { ...a, alignment_strength: strength } : a))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -341,7 +341,7 @@ export function useOutcomeAlignments(alignableType: string, alignableId: string)
       setAlignments((prev) => prev.filter((a) => a.id !== alignmentId));
       toast.success("Alignment removed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to remove alignment");
       return false;
     }

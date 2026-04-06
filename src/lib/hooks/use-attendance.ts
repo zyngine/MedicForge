@@ -121,7 +121,7 @@ export function useAttendanceSessions(courseId: string) {
       setSessions((prev) => [data, ...prev]);
       toast.success("Session created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create session");
       return null;
     }
@@ -144,7 +144,7 @@ export function useAttendanceSessions(courseId: string) {
       );
       toast.success("Session updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update session");
       return false;
     }
@@ -162,7 +162,7 @@ export function useAttendanceSessions(courseId: string) {
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
       toast.success("Session deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete session");
       return false;
     }

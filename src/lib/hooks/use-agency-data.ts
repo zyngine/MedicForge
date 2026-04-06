@@ -48,7 +48,9 @@ export interface AuditLogEntry {
   entity_id: string | null;
   performed_by: string | null;
   performed_by_name: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new_values: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   old_values: Record<string, any> | null;
   created_at: string;
 }
@@ -207,8 +209,10 @@ export function useAgencyStats() {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 export function useAgencySettings() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, isLoading, error, refetch } = useFetch<Record<string, any>>("/api/agency/settings");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveSettings = async (payload: Record<string, any>) => {
     const res = await fetch("/api/agency/settings", {
       method: "PUT",

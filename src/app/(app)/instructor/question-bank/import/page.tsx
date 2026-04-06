@@ -356,7 +356,7 @@ export default function ImportQuestionsPage() {
                 <p className="font-medium">Question Types:</p>
                 <ul className="list-disc list-inside text-muted-foreground">
                   <li><code>multiple_choice</code> - Single correct answer (A, B, C, D, or E)</li>
-                  <li><code>multi_select</code> - Multiple correct answers (e.g., "A,C,D")</li>
+                  <li><code>multi_select</code> - Multiple correct answers (e.g., &quot;A,C,D&quot;)</li>
                   <li><code>true_false</code> - True or False</li>
                 </ul>
                 <p className="font-medium mt-3">Difficulty Levels:</p>

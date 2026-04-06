@@ -116,7 +116,7 @@ export function useQuestionTags() {
       setTags((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
       toast.success("Tag updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update tag");
       return false;
     }
@@ -134,7 +134,7 @@ export function useQuestionTags() {
       setTags((prev) => prev.filter((t) => t.id !== id));
       toast.success("Tag deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete tag");
       return false;
     }
@@ -203,7 +203,7 @@ export function useQuestionTags() {
       if (error) throw error;
       toast.success(`Tagged ${questionIds.length} questions`);
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to tag questions");
       return false;
     }
@@ -305,7 +305,7 @@ export function useQuestionMetadata(questionId: string) {
 
   const updateMetadata = async (updates: Partial<QuestionMetadata>): Promise<boolean> => {
     try {
-      const { tags, ...dbUpdates } = updates;
+      const { tags: _tags, ...dbUpdates } = updates;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)

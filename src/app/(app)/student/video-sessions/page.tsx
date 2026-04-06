@@ -18,7 +18,7 @@ import { useVideoSessions } from "@/lib/hooks/use-video-sessions";
 import { format, formatDistanceToNow, isPast, isFuture } from "date-fns";
 
 export default function StudentVideoSessionsPage() {
-  const { sessions, isLoading, error } = useVideoSessions({ upcoming: true });
+  const { sessions, isLoading, error: _error } = useVideoSessions({ upcoming: true });
 
   if (isLoading) {
     return (

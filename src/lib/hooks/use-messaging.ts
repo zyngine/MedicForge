@@ -175,7 +175,7 @@ export function useConversations() {
 
 // Hook for a single conversation with messages
 export function useConversation(conversationId: string | undefined) {
-  const { tenant } = useTenant();
+  const { tenant: _tenant } = useTenant();
   const { user } = useUser();
   const queryClient = useQueryClient();
 

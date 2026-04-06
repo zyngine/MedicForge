@@ -192,7 +192,7 @@ export function useFlashcardDecks(options?: { courseId?: string; myDecksOnly?: b
       setDecks((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
       toast.success("Deck updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update deck");
       return false;
     }
@@ -210,7 +210,7 @@ export function useFlashcardDecks(options?: { courseId?: string; myDecksOnly?: b
       setDecks((prev) => prev.filter((d) => d.id !== id));
       toast.success("Deck deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete deck");
       return false;
     }
@@ -296,7 +296,7 @@ export function useFlashcards(deckId: string) {
       if (error) throw error;
       setCards((prev) => [...prev, data]);
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create card");
       return null;
     }
@@ -313,7 +313,7 @@ export function useFlashcards(deckId: string) {
       if (error) throw error;
       setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update card");
       return false;
     }
@@ -330,7 +330,7 @@ export function useFlashcards(deckId: string) {
       if (error) throw error;
       setCards((prev) => prev.filter((c) => c.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete card");
       return false;
     }
@@ -361,7 +361,7 @@ export function useFlashcards(deckId: string) {
       });
 
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to reorder cards");
       return false;
     }
@@ -393,7 +393,7 @@ export function useFlashcards(deckId: string) {
       setCards((prev) => [...prev, ...(data || [])]);
       toast.success(`Imported ${data?.length || 0} cards`);
       return data?.length || 0;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to import cards");
       return 0;
     }

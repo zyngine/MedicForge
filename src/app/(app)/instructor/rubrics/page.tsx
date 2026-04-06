@@ -464,7 +464,7 @@ export default function InstructorRubricsPage() {
 // Rubric Card Component
 function RubricCard({
   rubric,
-  onEdit,
+  onEdit: _onEdit,
   onDelete,
   onDuplicate,
 }: {

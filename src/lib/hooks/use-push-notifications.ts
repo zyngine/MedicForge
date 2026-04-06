@@ -59,7 +59,7 @@ export function usePushSubscription() {
   const {
     isSupported,
     isRegistered,
-    registration,
+    registration: _registration,
     requestNotificationPermission,
     subscribeToPush,
     unsubscribeFromPush,
@@ -193,6 +193,7 @@ export function useNotificationPreferences() {
 
       const db = getDb();
       // Try to get existing preferences
+      // eslint-disable-next-line prefer-const -- data is reassigned below
       let { data, error } = await db
         .from("notification_preferences")
         .select("*")

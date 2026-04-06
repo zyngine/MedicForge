@@ -151,7 +151,7 @@ export function CalendarSyncDropdown({ event, className }: CalendarSyncDropdownP
 // Full calendar sync settings component
 export function CalendarSyncSettings() {
   const {
-    isLoading,
+    isLoading: _isLoading,
     fetchUpcomingEvents,
     downloadICalFile,
     copySubscriptionUrl,

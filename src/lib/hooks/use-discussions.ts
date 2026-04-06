@@ -289,6 +289,7 @@ export function useUpdateThread() {
     }) => {
       const supabase = createClient();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         updated_at: new Date().toISOString(),
       };

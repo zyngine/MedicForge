@@ -20,7 +20,7 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const pathname = usePathname();
   const { logoUrl, tenantName, isWhiteLabeled } = useTenantBranding();
-  const { isMainSite } = useTenant();
+  const { isMainSite: _isMainSite } = useTenant();
 
   return (
     <div className="min-h-screen flex flex-col">

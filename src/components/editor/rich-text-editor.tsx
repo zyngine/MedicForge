@@ -40,6 +40,37 @@ interface MenuBarProps {
   editor: Editor | null;
 }
 
+function MenuButton({
+  onClick,
+  isActive,
+  disabled,
+  children,
+  title,
+}: {
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "h-8 w-8 p-0",
+        isActive && "bg-muted text-foreground"
+      )}
+      title={title}
+    >
+      {children}
+    </Button>
+  );
+}
+
 function MenuBar({ editor }: MenuBarProps) {
   if (!editor) return null;
 
@@ -56,35 +87,6 @@ function MenuBar({ editor }: MenuBarProps) {
       editor.chain().focus().setImage({ src: url }).run();
     }
   };
-
-  const MenuButton = ({
-    onClick,
-    isActive,
-    disabled,
-    children,
-    title,
-  }: {
-    onClick: () => void;
-    isActive?: boolean;
-    disabled?: boolean;
-    children: React.ReactNode;
-    title: string;
-  }) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "h-8 w-8 p-0",
-        isActive && "bg-muted text-foreground"
-      )}
-      title={title}
-    >
-      {children}
-    </Button>
-  );
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b p-2 bg-muted/30">

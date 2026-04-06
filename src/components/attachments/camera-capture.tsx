@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import NextImage from "next/image";
 import { Button, Card } from "@/components/ui";
-import { Camera, X, RotateCcw, Check, Upload, Image, Trash2 } from "lucide-react";
+import { Camera, X, RotateCcw, Check, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/use-user";
 import { useStorageQuota } from "@/lib/hooks/use-storage-quota";
@@ -19,7 +20,7 @@ interface CameraCaptureProps {
 export function CameraCapture({
   onCapture,
   onCancel,
-  maxImages = 5,
+  maxImages: _maxImages = 5,
   storageFolder = "attachments",
   documentId,
 }: CameraCaptureProps) {
@@ -114,7 +115,7 @@ export function CameraCapture({
       const filename = `${profile.tenant_id}/${storageFolder}/${documentId || "general"}/${timestamp}.jpg`;
 
       // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
+      const { data: _data, error: uploadError } = await supabase.storage
         .from("attachments")
         .upload(filename, blob, {
           contentType: "image/jpeg",
@@ -150,10 +151,12 @@ export function CameraCapture({
             className="w-full h-full object-cover"
           />
         ) : (
-          <img
+          <NextImage
             src={capturedImage}
             alt="Captured"
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
         )}
         <canvas ref={canvasRef} className="hidden" />
@@ -253,7 +256,7 @@ export function ImageUpload({
       const filename = `${profile.tenant_id}/${storageFolder}/${documentId || "general"}/${timestamp}.${ext}`;
 
       // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
+      const { data: _uploadData, error: uploadError } = await supabase.storage
         .from("attachments")
         .upload(filename, file, {
           contentType: file.type,
@@ -301,7 +304,7 @@ export function ImageUpload({
       </Button>
       {preview && (
         <div className="mt-3 relative">
-          <img src={preview} alt="Preview" className="rounded-lg max-h-48 mx-auto" />
+          <NextImage src={preview} alt="Preview" className="rounded-lg max-h-48 mx-auto" width={300} height={192} unoptimized />
         </div>
       )}
     </div>
@@ -325,7 +328,7 @@ export function AttachmentGallery({
   if (attachments.length === 0) {
     return (
       <div className="text-center py-4 text-muted-foreground">
-        <Image className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No attachments</p>
       </div>
     );
@@ -340,7 +343,7 @@ export function AttachmentGallery({
             className="relative aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer group"
             onClick={() => setSelectedImage(url)}
           >
-            <img src={url} alt={`Attachment ${index + 1}`} className="w-full h-full object-cover" />
+            <NextImage src={url} alt={`Attachment ${index + 1}`} fill className="object-cover" unoptimized />
             {editable && onRemove && (
               <button
                 onClick={(e) => {
@@ -368,10 +371,12 @@ export function AttachmentGallery({
           >
             <X className="h-8 w-8" />
           </button>
-          <img
+          <NextImage
             src={selectedImage}
             alt="Full size"
-            className="max-w-full max-h-full object-contain"
+            fill
+            className="object-contain"
+            unoptimized
           />
         </div>
       )}

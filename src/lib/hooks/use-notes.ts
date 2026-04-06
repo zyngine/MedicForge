@@ -146,7 +146,7 @@ export function useNotes(options?: {
       setNotes((prev) => [data, ...prev]);
       toast.success("Note saved");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save note");
       return null;
     }
@@ -172,7 +172,7 @@ export function useNotes(options?: {
         prev.map((n) => (n.id === id ? { ...n, ...updates, updated_at: new Date().toISOString() } : n))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update note");
       return false;
     }
@@ -191,7 +191,7 @@ export function useNotes(options?: {
       setNotes((prev) => prev.filter((n) => n.id !== id));
       toast.success("Note deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete note");
       return false;
     }

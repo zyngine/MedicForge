@@ -162,7 +162,7 @@ export default function ThreadDetailPage() {
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-semibold mb-2">Discussion Not Found</h3>
           <p className="text-muted-foreground">
-            This discussion may have been deleted or you don't have access to it.
+            This discussion may have been deleted or you don&apos;t have access to it.
           </p>
         </CardContent>
       </Card>

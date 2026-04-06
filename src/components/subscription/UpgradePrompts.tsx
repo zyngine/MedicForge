@@ -244,6 +244,7 @@ export function UsageBadge({
 /**
  * Subscription status pill for headers/navigation
  */
+/* eslint-disable react-hooks/purity -- Date.now() for display */
 export function SubscriptionStatusBadge({
   tier,
   status,

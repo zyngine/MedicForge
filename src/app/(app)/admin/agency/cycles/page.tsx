@@ -210,6 +210,7 @@ function CycleCard({
           <div className="flex-1 cursor-pointer" onClick={onToggle}>
             <div className="flex items-center gap-3">
               <h3 className="font-semibold text-lg">{cycle.name}</h3>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Badge variant={getStatusColor(cycle.status) as any}>
                 {cycle.status}
               </Badge>

@@ -91,7 +91,7 @@ export default function InstructorSettingsPage() {
 
       await refreshProfile();
       toast.success("Profile updated successfully");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
