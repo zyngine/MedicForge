@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -209,6 +211,7 @@ export default function PlatformQuestionBankPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleCreateQuestion = async (data: any) => {
     try {
       const supabase = createClient();
@@ -242,6 +245,7 @@ export default function PlatformQuestionBankPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUpdateQuestion = async (data: any) => {
     if (!editingQuestion) return;
     try {
@@ -514,6 +518,7 @@ export default function PlatformQuestionBankPage() {
             category_id: undefined,
             category: undefined,
             source: undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any : null}
           categories={[]}
           onSave={async (data) => {

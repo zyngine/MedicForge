@@ -32,7 +32,7 @@ export type IntegrityEventType =
 
 export interface IntegrityEvent {
   event_type: IntegrityEventType;
-  event_data: Record<string, unknown>;
+  event_data: Record<string, any>;
   question_id?: string;
   question_number?: number;
   timestamp: string;
@@ -144,8 +144,8 @@ export class IntegrityTracker {
    */
   private recordEvent(
     eventType: IntegrityEventType,
-    eventData: Record<string, unknown> = {},
-    preventDefault = false
+    eventData: Record<string, any> = {},
+    _preventDefault = false
   ): void {
     if (this.isDestroyed) return;
 

@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { useTenant } from "./use-tenant";
 import type { DiscussionThread, DiscussionPost, User } from "@/types";
 
 export interface ThreadWithAuthor extends DiscussionThread {
@@ -73,6 +72,7 @@ async function fetchDiscussionThreads(
 
   if (error) throw error;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data || []).map((thread: any) => ({
     ...thread,
     author: thread.author || undefined,
@@ -119,6 +119,7 @@ async function fetchDiscussionThread(threadId: string): Promise<{
   const postMap = new Map<string, PostWithAuthor>();
   const rootPosts: PostWithAuthor[] = [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (postsData || []).forEach((post: any) => {
     const transformedPost: PostWithAuthor = {
       ...post,
@@ -208,10 +209,12 @@ export function useSearchDiscussions(courseId: string | null, searchQuery: strin
       if (postsError) throw postsError;
 
       return {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         threads: (threadsData || []).map((t: any) => ({
           ...t,
           author: t.author || undefined,
         })) as ThreadWithAuthor[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         posts: (postsData || []).map((p: any) => ({
           ...p,
           author: p.author || undefined,
@@ -621,6 +624,7 @@ export function useMyDiscussionThreads() {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (threadsData || []).map((thread: any) => ({
         ...thread,
         author: thread.author || undefined,

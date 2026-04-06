@@ -17,6 +17,7 @@ type ContentType = "video" | "document" | "text" | "embed";
 interface LessonForm {
   title: string;
   content_type?: ContentType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content?: any;
   video_url?: string;
   document_url?: string;
@@ -46,6 +47,7 @@ export function useLessons(moduleId: string | null | undefined) {
       if (error) throw error;
 
       // Transform data to ensure required fields have defaults
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((lesson: any) => ({
         ...lesson,
         content_type: lesson.content_type ?? "text",

@@ -13,7 +13,7 @@ import {
   Alert,
   Spinner,
 } from "@/components/ui";
-import { Building2, Save, Upload } from "lucide-react";
+import { Building2, Save } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -78,6 +78,7 @@ export default function OrganizationPage() {
         website,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("tenants")
         .update({

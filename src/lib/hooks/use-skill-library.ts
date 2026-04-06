@@ -59,6 +59,7 @@ export function useSkillLibrary(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("skill_library")
         .select("*")
@@ -103,6 +104,7 @@ export function useSkill(skillId: string | null | undefined) {
       if (!skillId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .select("*")
@@ -133,6 +135,7 @@ export function useSkillsByCategory(options?: {
 
       const supabase = createClient();
       // Get both system defaults and tenant-specific skills
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("skill_library")
         .select("*")
@@ -182,6 +185,7 @@ export function useSkillCategories() {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .select("category")
@@ -191,6 +195,7 @@ export function useSkillCategories() {
       if (error) throw error;
 
       // Get unique categories
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const categories = [...new Set((data || []).map((d: any) => d.category))];
       return categories.sort() as string[];
     },
@@ -210,6 +215,7 @@ export function useCreateSkill() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .insert({
@@ -246,6 +252,7 @@ export function useUpdateSkill() {
       updates: Partial<CreateSkillInput> & { is_active?: boolean };
     }) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .update(updates)
@@ -274,6 +281,7 @@ export function useDeactivateSkill() {
   return useMutation({
     mutationFn: async (skillId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .update({ is_active: false })
@@ -300,6 +308,7 @@ export function useReactivateSkill() {
   return useMutation({
     mutationFn: async (skillId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .update({ is_active: true })
@@ -326,6 +335,7 @@ export function useDeleteSkill() {
   return useMutation({
     mutationFn: async (skillId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("skill_library")
         .delete()
@@ -353,6 +363,7 @@ export function useImportSkills() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .insert(
@@ -388,6 +399,7 @@ export function useSkillLibraryStats() {
 
       const supabase = createClient();
       // Get both system defaults and tenant-specific skills
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: skills, error } = await (supabase as any)
         .from("skill_library")
         .select("id, category, certification_levels, is_required, requires_annual_verification, is_active, is_system_default")
@@ -395,16 +407,19 @@ export function useSkillLibraryStats() {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activeSkills = skills?.filter((s: any) => s.is_active) || [];
 
       // Count by category
       const byCategory: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       activeSkills.forEach((s: any) => {
         byCategory[s.category] = (byCategory[s.category] || 0) + 1;
       });
 
       // Count by certification level
       const byCertLevel: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       activeSkills.forEach((s: any) => {
         (s.certification_levels || []).forEach((level: string) => {
           byCertLevel[level] = (byCertLevel[level] || 0) + 1;
@@ -416,6 +431,7 @@ export function useSkillLibraryStats() {
         active: activeSkills.length,
         inactive: (skills?.length || 0) - activeSkills.length,
         requiresMdVerification: 0, // Not tracked in this schema
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateRequired: activeSkills.filter((s: any) => s.is_required).length,
         byCategory,
         byCertificationLevel: byCertLevel,
@@ -438,6 +454,7 @@ export function useSkillsForCertification(certificationLevel: CertificationLevel
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("skill_library")
         .select("*")

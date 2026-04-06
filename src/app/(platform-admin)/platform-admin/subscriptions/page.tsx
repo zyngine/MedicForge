@@ -8,13 +8,10 @@ import {
   CardContent,
   CardTitle,
   Badge,
-  Button,
   Spinner,
 } from "@/components/ui";
 import {
-  CreditCard,
   Building2,
-  TrendingUp,
   DollarSign,
   Calendar,
   CheckCircle,

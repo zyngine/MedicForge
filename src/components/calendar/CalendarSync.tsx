@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Calendar, Download, Link2, Copy, Check, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Calendar, Download, Link2, Copy, Check, Loader2, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -33,7 +33,7 @@ export function CalendarSync() {
   } = useCalendarTokens();
 
   const [copied, setCopied] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const [_selectedEvent, _setSelectedEvent] = useState<number | null>(null);
 
   const handleCopyUrl = async (url: string) => {
     try {
@@ -220,7 +220,7 @@ export function CalendarSync() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {events.slice(0, 10).map((event, index) => (
+              {events.slice(0, 10).map((event, _index) => (
                 <div
                   key={event.id}
                   className="flex items-center justify-between p-3 border rounded-lg"

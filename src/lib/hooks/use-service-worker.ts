@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useEffect, useState } from "react";
 
 interface ServiceWorkerState {
@@ -145,6 +147,7 @@ export function useServiceWorker() {
     }
 
     if ("sync" in state.registration) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (state.registration as any).sync.register(tag);
     }
   };

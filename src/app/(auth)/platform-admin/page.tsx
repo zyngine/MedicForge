@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, Eye, EyeOff, Shield } from "lucide-react";
 
 export default function PlatformAdminLoginPage() {
-  const router = useRouter();
+  const _router = useRouter();
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");

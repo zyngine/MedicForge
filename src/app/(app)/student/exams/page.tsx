@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Badge,
   Tabs,
@@ -49,7 +47,7 @@ export default function StudentExamsPage() {
   const inProgressAttempts = attempts.filter((a) => a.status === "in_progress");
 
   // Calculate stats
-  const passedCount = completedAttempts.filter((a) => {
+  const _passedCount = completedAttempts.filter((a) => {
     const result = a.result?.[0];
     return result?.passed === true;
   }).length;
@@ -324,7 +322,7 @@ interface AttemptHistoryCardProps {
 
 function AttemptHistoryCard({ attempt }: AttemptHistoryCardProps) {
   const template = attempt.template;
-  const isCAT = template?.exam_type === "cat";
+  const _isCAT = template?.exam_type === "cat";
 
   const statusIcon = {
     in_progress: <Clock className="h-5 w-5 text-yellow-500" />,

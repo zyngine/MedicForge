@@ -10,7 +10,6 @@ import {
   Button,
   Input,
   Label,
-  Switch,
   Avatar,
   Tabs,
   TabsList,
@@ -26,7 +25,6 @@ import {
   Shield,
   Save,
   Camera,
-  Mail,
 } from "lucide-react";
 import { useUser } from "@/lib/hooks/use-user";
 import { NotificationSettings } from "@/components/notifications";
@@ -67,8 +65,8 @@ export default function StudentSettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update password");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update password");
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -80,8 +78,8 @@ export default function StudentSettingsPage() {
       const { error } = await supabase.auth.signOut({ scope: "others" });
       if (error) throw error;
       toast.success("All other sessions have been signed out");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to sign out other sessions");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to sign out other sessions");
     }
   };
 

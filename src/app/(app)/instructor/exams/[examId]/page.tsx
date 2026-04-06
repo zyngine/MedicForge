@@ -13,21 +13,15 @@ import {
   Badge,
   Spinner,
   Input,
-  Alert,
 } from "@/components/ui";
 import {
   ArrowLeft,
   ClipboardList,
-  Clock,
   Users,
-  BarChart3,
-  Target,
   Brain,
   Calendar,
   Play,
   Pause,
-  Edit,
-  Copy,
   Search,
   CheckCircle,
   XCircle,
@@ -93,7 +87,7 @@ const certificationColors: Record<string, string> = {
 
 export default function InstructorExamDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const examId = params.examId as string;
   const { profile } = useUser();
 
@@ -112,6 +106,7 @@ export default function InstructorExamDetailPage() {
       setIsLoading(true);
       try {
         // Fetch exam with template
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: examData, error: examError } = await (supabase as any)
           .from("standardized_exams")
           .select(`
@@ -126,6 +121,7 @@ export default function InstructorExamDetailPage() {
         setExam(examData);
 
         // Fetch attempts with student info
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: attemptsData, error: attemptsError } = await (supabase as any)
           .from("exam_attempts")
           .select(`
@@ -151,6 +147,7 @@ export default function InstructorExamDetailPage() {
     if (!exam) return;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("standardized_exams")
         .update({ is_published: !exam.is_published })

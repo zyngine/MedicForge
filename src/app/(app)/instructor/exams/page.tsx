@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Badge,
   Input,
@@ -20,14 +18,11 @@ import {
   Search,
   ClipboardList,
   Clock,
-  Users,
   BarChart3,
   Settings,
   Play,
   Pause,
   Trash2,
-  Edit,
-  Copy,
   Eye,
   Brain,
   Target,
@@ -37,7 +32,6 @@ import {
 import {
   useExamTemplates,
   useStandardizedExams,
-  type ExamTemplate,
   type StandardizedExam,
 } from "@/lib/hooks/use-standardized-exams";
 import { formatDate } from "@/lib/utils";

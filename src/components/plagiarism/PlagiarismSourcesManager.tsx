@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, FileText, Trash2, Loader2, Upload, Database, FileIcon } from "lucide-react";
+import { Plus, FileText, Trash2, Loader2, Upload, Database } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Input,
   Textarea,

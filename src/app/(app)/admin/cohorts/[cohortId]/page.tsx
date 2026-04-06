@@ -34,7 +34,6 @@ import {
   GraduationCap,
   Plus,
   Trash2,
-  RefreshCw,
   Link2,
   ExternalLink,
   Edit,
@@ -73,10 +72,8 @@ import {
   DAYS_OF_WEEK,
   SESSION_TYPES,
   ProgramSchedule,
-  getDayLabel,
   getSessionTypeLabel,
   formatTimeDisplay,
-  groupSchedulesByDay,
 } from "@/lib/hooks/use-program-schedules";
 import { formatDate } from "@/lib/utils";
 
@@ -306,6 +303,7 @@ export default function CohortDetailPage() {
           title: linkForm.title,
           url: linkForm.url,
           description: linkForm.description || undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           category: linkForm.category as any,
           is_required: linkForm.is_required,
         });
@@ -316,6 +314,7 @@ export default function CohortDetailPage() {
           title: linkForm.title,
           url: linkForm.url,
           description: linkForm.description || undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           category: linkForm.category as any,
           is_required: linkForm.is_required,
         });
@@ -390,6 +389,7 @@ export default function CohortDetailPage() {
           day_of_week: scheduleForm.day_of_week,
           start_time: scheduleForm.start_time,
           end_time: scheduleForm.end_time,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           session_type: scheduleForm.session_type as any,
           location: scheduleForm.location || undefined,
         });
@@ -401,6 +401,7 @@ export default function CohortDetailPage() {
           day_of_week: scheduleForm.day_of_week,
           start_time: scheduleForm.start_time,
           end_time: scheduleForm.end_time,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           session_type: scheduleForm.session_type as any,
           location: scheduleForm.location || undefined,
         });

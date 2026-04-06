@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Label, Input, Textarea } from "@/components/ui";
+import { Label, Input } from "@/components/ui";
 import type { PatientContactFormData } from "./index";
 
 const LOC_OPTIONS = ["Alert", "Verbal", "Painful", "Unresponsive"];

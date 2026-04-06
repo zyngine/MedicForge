@@ -118,6 +118,7 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
         progressResult,
       ] = await Promise.all([
         // Quiz/Test submissions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
           .from("submissions")
           .select("final_score, submitted_at, assignment:assignments(type)")
@@ -126,12 +127,14 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
           .order("submitted_at", { ascending: false }),
 
         // Skill sheet attempts
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
           .from("skill_sheet_attempts")
           .select("status, attempt_number, critical_failures")
           .eq("student_id", effectiveStudentId),
 
         // Clinical logs (hours)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
           .from("clinical_logs")
           .select("hours, was_team_lead, verification_status")
@@ -139,6 +142,7 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
           .eq("verification_status", "verified"),
 
         // Patient contacts
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
           .from("clinical_patient_contacts")
           .select("id, was_team_lead, verification_status")
@@ -146,6 +150,7 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
           .eq("verification_status", "verified"),
 
         // Lesson progress
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
           .from("lesson_progress")
           .select("completed_at")
@@ -155,8 +160,10 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
       // Process quiz data
       const submissions = submissionsResult.data || [];
       const quizSubmissions = submissions.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (s: any) => s.assignment?.type === "quiz" && s.final_score !== null
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const quizScores = quizSubmissions.map((s: any) => s.final_score);
       const quizAverage = quizScores.length > 0
         ? quizScores.reduce((a: number, b: number) => a + b, 0) / quizScores.length
@@ -186,9 +193,12 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
 
       // Process skill sheet data
       const skillAttempts = skillAttemptsResult.data || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const passedSkills = skillAttempts.filter((s: any) => s.status === "passed");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const firstAttemptPasses = passedSkills.filter((s: any) => s.attempt_number === 1);
       const criticalFailures = skillAttempts.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (s: any) => s.critical_failures && s.critical_failures.length > 0
       );
 
@@ -208,10 +218,13 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
       const requirements = CLINICAL_REQUIREMENTS[certificationLevel] || { hours: 0, contacts: 0 };
 
       const clinicalHoursCompleted = clinicalLogs.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sum: number, log: any) => sum + (log.hours || 0), 0
       );
       const teamLeadExperiences = [
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...clinicalLogs.filter((l: any) => l.was_team_lead),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...patientContacts.filter((c: any) => c.was_team_lead),
       ].length;
 
@@ -219,6 +232,7 @@ export function useNREMTPrediction(studentId?: string, certificationLevel: strin
       const progressData = progressResult.data || [];
       const assignmentCompletionRate = submissions.length > 0 ? 85 : 0; // Simplified
       const courseCompletionRate = progressData.length > 0 ?
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (progressData.filter((p: any) => p.completed_at).length / progressData.length) * 100 : 0;
 
       // Build factors object

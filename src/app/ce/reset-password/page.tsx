@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 
 export default function CEResetPasswordPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +37,7 @@ export default function CEResetPasswordPage() {
 
     // Also check if there is already a session (e.g. the event fired before
     // this listener was attached).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       if (session) setReady(true);
     });

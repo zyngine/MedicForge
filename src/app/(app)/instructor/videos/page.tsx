@@ -1,20 +1,15 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Input,
   Label,
   Textarea,
   Select,
-  Alert,
   Spinner,
   Modal,
   Switch,
@@ -22,8 +17,6 @@ import {
 import {
   Video,
   Plus,
-  Play,
-  Eye,
   Edit,
   Trash2,
   ExternalLink,
@@ -31,9 +24,6 @@ import {
   CheckCircle,
   Clock,
   BarChart3,
-  Link2,
-  Youtube,
-  Upload,
 } from "lucide-react";
 import { useCohorts } from "@/lib/hooks/use-cohorts";
 import {
@@ -43,9 +33,7 @@ import {
   useDeleteVideo,
   useVideoStatistics,
   useVideoProgress,
-  VIDEO_SOURCES,
   detectVideoSource,
-  formatDuration,
   getVideoSourceLabel,
   type ProgramVideo,
   type VideoSource,
@@ -231,6 +219,7 @@ export default function InstructorVideosPage() {
                 onChange={setFilterProgram}
                 options={[
                   { value: "", label: "All Programs" },
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ...cohorts.map((c: any) => ({ value: c.id, label: c.name })),
                 ]}
               />
@@ -426,9 +415,12 @@ function VideoForm({
   submitLabel,
   hideProgramSelect = false,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setFormData: (data: any) => void;
   onUrlChange: (url: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cohorts: any[];
   onSubmit: () => void;
   onCancel: () => void;
@@ -448,6 +440,7 @@ function VideoForm({
             onChange={(value) => setFormData({ ...formData, program_id: value })}
             options={[
               { value: "", label: "Select a program..." },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ...cohorts.map((c: any) => ({ value: c.id, label: c.name })),
             ]}
           />

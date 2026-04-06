@@ -29,13 +29,12 @@ import {
   ListChecks,
   ChevronDown,
   ChevronRight,
-  Star,
 } from "lucide-react";
 import { useRubricBuilder, type RubricCriterion, type RubricRating } from "@/lib/hooks/use-rubrics";
 
 export default function RubricBuilderPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const rubricId = params.rubricId as string;
 
   const {

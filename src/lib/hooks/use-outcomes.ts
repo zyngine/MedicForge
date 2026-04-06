@@ -456,7 +456,7 @@ export function useStudentMastery(studentId?: string, courseId?: string) {
 
       await fetchMastery();
       toast.success("Mastery scores updated");
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to recalculate mastery");
     }
   };

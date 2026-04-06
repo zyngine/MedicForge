@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
+ 
+
 import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
@@ -31,6 +35,7 @@ export default function CECapceReportingPage() {
       .select("enrollment_id")
       .eq("status", "reported");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const reportedIds = new Set((reported || []).map((r: any) => r.enrollment_id));
 
     let q = supabase

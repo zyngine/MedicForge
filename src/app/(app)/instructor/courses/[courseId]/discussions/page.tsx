@@ -53,6 +53,7 @@ export default function CourseDiscussionsPage() {
     const fetchDiscussions = async () => {
       try {
         // Fetch course name
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: course } = await (supabase as any)
           .from("courses")
           .select("title")
@@ -62,6 +63,7 @@ export default function CourseDiscussionsPage() {
         if (course) setCourseName(course.title);
 
         // Fetch discussions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("discussions")
           .select(`
@@ -82,6 +84,7 @@ export default function CourseDiscussionsPage() {
         // Get reply counts
         const discussionsWithCounts = await Promise.all(
           (data || []).map(async (d: Discussion) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { count } = await (supabase as any)
               .from("discussion_replies")
               .select("*", { count: "exact", head: true })

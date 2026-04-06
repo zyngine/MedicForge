@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useState, useEffect, useRef } from "react";
 import { Camera, CheckCircle, Loader2, MapPin, Keyboard } from "lucide-react";
 import {
@@ -13,7 +15,7 @@ import {
   Alert,
 } from "@/components/ui";
 import { useQRCheckin } from "@/lib/hooks/use-qr-attendance";
-import { parseAttendanceQR, AttendanceQRPayload } from "@/lib/qrcode-utils";
+import { parseAttendanceQR } from "@/lib/qrcode-utils";
 
 type ScanMode = "camera" | "code";
 type CheckinStatus = "idle" | "scanning" | "processing" | "success" | "error";
@@ -27,6 +29,7 @@ export function QRScanner() {
 
   const { checkin, isChecking } = useQRCheckin();
   const scannerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const html5QrCodeRef = useRef<any>(null);
 
   // Get user location

@@ -69,7 +69,7 @@ export async function PUT(
     }
 
     const updates = await request.json();
-    const allowed: Record<string, unknown> = {};
+    const allowed: Record<string, any> = {};
     const fields = [
       "first_name", "last_name", "email", "phone", "employee_number",
       "certification_level", "state_certification_number", "national_registry_number",
@@ -100,6 +100,7 @@ export async function PUT(
       entity_type: "employee",
       entity_id: id,
       performed_by: user.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       new_values: allowed as any,
     });
 

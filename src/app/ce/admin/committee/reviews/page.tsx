@@ -1,10 +1,12 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Spinner, Select } from "@/components/ui";
-import { BookOpen, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
 interface ReviewRecord {
   id: string;

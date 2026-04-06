@@ -358,7 +358,7 @@ export function useReleaseConditions(targetType?: string, targetId?: string) {
 }
 
 // Hook for checking student content access
-export function useContentAccess(courseId: string) {
+export function useContentAccess(_courseId: string) {
   const [accessMap, setAccessMap] = useState<Record<string, StudentContentAccess>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useUser();

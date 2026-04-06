@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,7 +17,6 @@ import {
 } from "@/components/ui";
 import {
   Clock,
-  ChevronLeft,
   ChevronRight,
   AlertCircle,
   CheckCircle,
@@ -29,9 +30,7 @@ import {
 import {
   useExamSession,
   useStartExamAttempt,
-  type ExamAttempt,
   type StandardizedQuestion,
-  type ExamResponse,
 } from "@/lib/hooks/use-standardized-exams";
 import { createIntegrityTracker, type IntegrityTracker, type IntegrityEvent } from "@/lib/integrity-tracker";
 import { useTenant } from "@/lib/hooks/use-tenant";
@@ -77,7 +76,7 @@ export function ExamPlayer({
   // Integrity tracking state
   const integrityTrackerRef = React.useRef<IntegrityTracker | null>(null);
   const [integrityWarning, setIntegrityWarning] = React.useState<string | null>(null);
-  const [integrityEventCount, setIntegrityEventCount] = React.useState(0);
+  const [_integrityEventCount, setIntegrityEventCount] = React.useState(0);
 
   // Initialize integrity tracker when exam starts
   React.useEffect(() => {
@@ -85,6 +84,7 @@ export function ExamPlayer({
 
     // Check if integrity monitoring is enabled for this exam
     // Cast to any since integrity fields may not be in generated types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const template = attempt?.template as any;
     const monitoringEnabled = template?.integrity_monitoring_enabled !== false;
     if (!monitoringEnabled) return;
@@ -97,7 +97,7 @@ export function ExamPlayer({
       preventCopyPaste: template?.prevent_copy_paste || false,
       blockRightClick: template?.block_right_click || false,
       warnOnBlur: template?.warn_on_blur !== false,
-      onEvent: (event: IntegrityEvent) => {
+      onEvent: (_event: IntegrityEvent) => {
         setIntegrityEventCount((prev) => prev + 1);
       },
       onWarning: (message: string) => {

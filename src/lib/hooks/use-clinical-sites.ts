@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ClinicalSite, ClinicalSiteForm, Preceptor } from "@/types";
 
 // Helper to transform database site to ClinicalSite type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transformSite = (data: any): ClinicalSite => ({
   ...data,
   preceptors: (data.preceptors || []) as Preceptor[],
@@ -61,6 +62,7 @@ export function useClinicalSites() {
         .from("clinical_sites")
         .insert([{
           ...siteData,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           preceptors: siteData.preceptors as any,
           tenant_id: userData.tenant_id,
         }])
@@ -87,6 +89,7 @@ export function useClinicalSites() {
         .from("clinical_sites")
         .update({
           ...updates,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           preceptors: updates.preceptors as any,
         })
         .eq("id", siteId)

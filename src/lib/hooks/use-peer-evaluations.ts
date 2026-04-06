@@ -429,7 +429,7 @@ export function usePeerEvalSubmission(pairId: string) {
     setIsSubmitting(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).rpc("submit_peer_evaluation", {
+      const { _data, error } = await (supabase as any).rpc("submit_peer_evaluation", {
         p_pair_id: pairId,
         p_criteria_scores: input.criteria_scores,
         p_strengths: input.strengths || null,
@@ -560,6 +560,7 @@ export function usePeerEvalProgress(assignmentId: string) {
         if (error) throw error;
 
         const total = data?.length || 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const completed = data?.filter((p: any) => p.status === "completed").length || 0;
 
         setProgress({

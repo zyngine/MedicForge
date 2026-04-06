@@ -28,15 +28,10 @@ import {
   Clock,
   Settings,
   Plus,
-  MoreVertical,
   GraduationCap,
   FileText,
-  Calendar,
-  MessageSquare,
-  TrendingUp,
   AlertCircle,
   Edit,
-  Copy,
   Trash2,
   ChevronRight,
   Play,
@@ -62,7 +57,7 @@ import { CourseInstructorsManager } from "@/components/courses/course-instructor
 import { Modal, ModalFooter } from "@/components/ui";
 import { Save } from "lucide-react";
 
-function getStatusBadge(status: string) {
+function _getStatusBadge(status: string) {
   switch (status) {
     case "completed":
       return <Badge variant="success">Completed</Badge>;
@@ -96,12 +91,14 @@ function getLessonIcon(contentType: string | null) {
 }
 
 interface ModuleCardProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   module: any;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onAddLesson: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEditLesson: (lesson: any) => void;
   onDeleteLesson: (lessonId: string) => void;
 }
@@ -263,9 +260,10 @@ export default function CourseDetailPage() {
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = React.useState(false);
   const [templateName, setTemplateName] = React.useState("");
   const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
-  const [selectedExistingTemplate, setSelectedExistingTemplate] = React.useState<string | "new">("new");
+  const [_selectedExistingTemplate, setSelectedExistingTemplate] = React.useState<string | "new">("new");
   const [editingModule, setEditingModule] = React.useState<typeof modules[0] | null>(null);
   const [isLessonEditorOpen, setIsLessonEditorOpen] = React.useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingLesson, setEditingLesson] = React.useState<any>(null);
   const [selectedModuleId, setSelectedModuleId] = React.useState<string | null>(null);
   const [expandedModuleId, setExpandedModuleId] = React.useState<string | null>(null);
@@ -361,6 +359,7 @@ export default function CourseDetailPage() {
     setIsLessonEditorOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEditLesson = (lesson: any, moduleId: string) => {
     setSelectedModuleId(moduleId);
     setEditingLesson(lesson);

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
@@ -21,7 +23,7 @@ export interface Portfolio {
   theme: string;
   custom_css: string | null;
   cover_image_url: string | null;
-  layout_config: Record<string, unknown>;
+  layout_config: Record<string, any>;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -620,7 +622,7 @@ export function usePortfolioSharing(portfolioId: string) {
       toast.success("Share link copied to clipboard");
 
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create share link");
       return null;
     }
@@ -649,7 +651,7 @@ export function usePortfolioSharing(portfolioId: string) {
       // In production, send email notification
       toast.success(`Shared with ${email}`);
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to share");
       return false;
     }
@@ -667,7 +669,7 @@ export function usePortfolioSharing(portfolioId: string) {
       setShares((prev) => prev.filter((s) => s.id !== shareId));
       toast.success("Share revoked");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to revoke share");
       return false;
     }

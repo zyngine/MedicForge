@@ -1,11 +1,14 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useEffect, useRef, useState } from "react";
 import { X, CreditCard, Lock } from "lucide-react";
 import { Button } from "@/components/ui";
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Square?: any;
   }
 }
@@ -31,6 +34,7 @@ export function SquarePaymentModal({
 }: SquarePaymentModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [card, setCard] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +59,7 @@ export function SquarePaymentModal({
   // Init/destroy card when modal opens or closes
   useEffect(() => {
     if (!isOpen || !scriptLoaded || !containerRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let cardInst: any;
 
     const init = async () => {

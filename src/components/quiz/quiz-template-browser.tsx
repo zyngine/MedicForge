@@ -35,6 +35,7 @@ interface QuizTemplateBrowserProps {
     shuffle_options: boolean;
     show_correct_answers: boolean;
     passing_score: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     questions: any[];
     total_points: number;
   }) => void;

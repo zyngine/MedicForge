@@ -20,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 import { FileDropzone, ImportPreview, ImportResults, type ImportResultItem } from "@/components/import";
 import {
   parseFile,
-  findDuplicates,
   generateCSVTemplate,
   downloadFile,
   type ParsedRow,

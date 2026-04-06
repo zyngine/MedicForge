@@ -23,6 +23,7 @@ import Link from "next/link";
 export default function NREMTReadinessPage() {
   const { profile } = useUser();
   // Use the student's certification level from their profile, fall back to "EMT" if not set
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const certificationLevel = (profile as any)?.certification_level || "EMT";
   const { prediction, isLoading, refresh } = useNREMTPrediction(undefined, certificationLevel);
 

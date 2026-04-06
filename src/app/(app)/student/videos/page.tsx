@@ -5,9 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Badge,
   Progress,
   Spinner,
@@ -18,12 +15,9 @@ import {
   CheckCircle,
   Clock,
   Award,
-  Filter,
 } from "lucide-react";
 import {
   useStudentVideos,
-  formatDuration,
-  getVideoSourceLabel,
   type StudentVideo,
 } from "@/lib/hooks/use-program-videos";
 import { VideoThumbnail } from "@/components/video/video-player";

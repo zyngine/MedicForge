@@ -26,6 +26,7 @@ export default function CEAdminAnalyticsPage() {
         supabase.from("ce_users").select("id", { count: "exact", head: true }),
       ]);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const enrollments = (enrollRes.data || []) as any[];
 
       // Monthly buckets — last 6 months

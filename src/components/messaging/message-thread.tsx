@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Paperclip, Smile, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Send, Paperclip, Smile, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar } from "@/components/ui/avatar";

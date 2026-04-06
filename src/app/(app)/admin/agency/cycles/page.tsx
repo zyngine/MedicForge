@@ -22,7 +22,6 @@ import {
   useArchiveCycle,
   useCycleProgress,
   VerificationCycle,
-  CreateCycleInput,
 } from "@/lib/hooks/use-verification-cycles";
 import {
   Plus,
@@ -32,8 +31,6 @@ import {
   CheckCircle,
   Archive,
   MoreVertical,
-  Users,
-  TrendingUp,
   X,
   ArrowRight,
 } from "lucide-react";
@@ -64,7 +61,7 @@ export default function VerificationCyclesPage() {
     return cycles.filter((c) => c.status === statusFilter);
   }, [cycles, statusFilter]);
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case "draft":
         return "secondary";

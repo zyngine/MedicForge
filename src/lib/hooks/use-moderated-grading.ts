@@ -149,7 +149,7 @@ export function useModeratedAssignments(assignmentId?: string) {
       setModeratedAssignments((prev) => [data, ...prev]);
       toast.success("Moderated grading enabled");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to enable moderated grading");
       return null;
     }
@@ -172,7 +172,7 @@ export function useModeratedAssignments(assignmentId?: string) {
       );
       toast.success("Settings updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update settings");
       return false;
     }
@@ -206,7 +206,7 @@ export function useModeratedAssignments(assignmentId?: string) {
       setModeratedAssignments((prev) => prev.filter((ma) => ma.id !== id));
       toast.success("Moderated grading disabled");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to disable moderated grading");
       return false;
     }
@@ -351,7 +351,7 @@ export function useModeratedGrading(moderatedAssignmentId: string) {
       await fetchData();
       toast.success("Grade submitted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to submit grade");
       return false;
     }
@@ -517,7 +517,7 @@ export function useModeratorReview(moderatedAssignmentId: string) {
       toast.success("Final grade set");
       await fetchDiscrepancies();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to set final grade");
       return false;
     }
@@ -571,7 +571,7 @@ export function useModeratorReview(moderatedAssignmentId: string) {
 
       toast.success(`Calculated final grades for ${count} submissions`);
       return count;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to calculate final grades");
       return 0;
     }

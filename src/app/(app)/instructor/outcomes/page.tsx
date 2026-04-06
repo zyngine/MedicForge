@@ -35,7 +35,6 @@ import {
   Link as LinkIcon,
   BarChart3,
   Users,
-  TrendingUp,
 } from "lucide-react";
 import {
   useLearningOutcomes,

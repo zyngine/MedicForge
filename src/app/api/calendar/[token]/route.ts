@@ -40,9 +40,11 @@ export async function GET(
 
     const today = new Date().toISOString().split("T")[0];
     const upcomingBookings = (bookings || []).filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (b: any) => b.shift && b.shift.shift_date >= today
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const events: CalendarEvent[] = upcomingBookings.map((b: any) => {
       const shift = b.shift;
       const site = shift?.site;

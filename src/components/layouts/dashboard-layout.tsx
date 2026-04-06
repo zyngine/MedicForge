@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Avatar, Badge, Button, Dropdown, DropdownItem, DropdownSeparator, ThemeToggle } from "@/components/ui";
+import { Avatar, Badge, Dropdown, DropdownItem, DropdownSeparator, ThemeToggle } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications";
 import { useTenantBranding } from "@/lib/hooks/use-tenant";
 import {

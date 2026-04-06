@@ -16,6 +16,7 @@ export interface SubmissionWithDetails extends Submission {
       title: string;
       course_id: string;
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     quiz_questions?: any[];
   };
   student?: {
@@ -84,6 +85,7 @@ export function useSubmissions(options: UseSubmissionsOptions = {}) {
       if (error) throw error;
 
       // Transform data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((sub: any) => ({
         ...sub,
         status: sub.status ?? "in_progress",
@@ -204,6 +206,7 @@ export function useSubmitSubmission() {
       fileUrls,
     }: {
       submissionId: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       content: any;
       fileUrls?: string[];
     }) => {
@@ -243,6 +246,7 @@ export function useSaveDraft() {
       content,
     }: {
       submissionId: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       content: any;
     }) => {
       const supabase = createClient();
@@ -280,6 +284,7 @@ export function useGradeSubmission() {
       rawScore: number;
       curvedScore?: number;
       finalScore: number;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       feedback?: any;
     }) => {
       if (!user?.id) {
@@ -326,6 +331,7 @@ export function useReturnSubmission() {
       feedback,
     }: {
       submissionId: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       feedback: any;
     }) => {
       if (!user?.id) {

@@ -13,12 +13,10 @@ import {
 } from "@/components/ui";
 import {
   Download,
-  TrendingUp,
   Users,
   BookOpen,
   GraduationCap,
   Activity,
-  Calendar,
   FileText,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";

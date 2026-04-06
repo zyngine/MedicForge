@@ -54,7 +54,7 @@ export interface UserCheckin {
   checkout_time: string | null;
   checkout_distance_meters: number | null;
   status: "on_time" | "late" | "absent" | "excused";
-  device_info: Record<string, unknown> | null;
+  device_info: Record<string, any> | null;
   ip_address: string | null;
   notes: string | null;
   created_at: string;

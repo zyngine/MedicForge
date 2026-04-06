@@ -4,6 +4,7 @@ import type { Database } from "@/types/database.types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createCEServerClient(): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createClient() as any;
 }
 

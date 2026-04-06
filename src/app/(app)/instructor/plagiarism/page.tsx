@@ -28,13 +28,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Plus,
-  Trash2,
   RefreshCw,
   Eye,
-  FileText,
   Database,
-  Upload,
 } from "lucide-react";
 import {
   usePlagiarismChecks,
@@ -44,19 +40,18 @@ import {
   useRemovePlagiarismSource,
   useAIDetection,
   type PlagiarismCheck,
-  type PlagiarismSource,
   type AIDetectionResult,
 } from "@/lib/hooks/use-plagiarism";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { useAssignments } from "@/lib/hooks/use-assignments";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
 import { PlagiarismSourcesManager } from "@/components/plagiarism/PlagiarismSourcesManager";
 
 export default function InstructorPlagiarismPage() {
   const { data: checks = [], isLoading: checksLoading, refetch: refetchChecks } = usePlagiarismChecks();
   const { data: sources = [], isLoading: sourcesLoading } = usePlagiarismSources();
   const { data: submissions = [] } = useSubmissions({ status: "submitted" });
-  const { data: assignments = [] } = useAssignments({ includeUnpublished: false });
+  const { data: _assignments = [] } = useAssignments({ includeUnpublished: false });
   const runCheck = useRunPlagiarismCheck();
   const addSource = useAddPlagiarismSource();
   const removeSource = useRemovePlagiarismSource();
@@ -78,7 +73,7 @@ export default function InstructorPlagiarismPage() {
     checkAI: true,
   });
   const [aiResult, setAiResult] = React.useState<AIDetectionResult | null>(null);
-  const [aiCheckModal, setAiCheckModal] = React.useState(false);
+  const [_aiCheckModal, _setAiCheckModal] = React.useState(false);
   const [aiCheckContent, setAiCheckContent] = React.useState("");
 
   // Filter checks
@@ -113,7 +108,7 @@ export default function InstructorPlagiarismPage() {
     if (!submission) return;
 
     // Extract text content from submission
-    const submissionContent = submission.content as Record<string, unknown> | string | null;
+    const submissionContent = submission.content as Record<string, any> | string | null;
     const content =
       typeof submissionContent === "string"
         ? submissionContent
@@ -166,7 +161,7 @@ export default function InstructorPlagiarismPage() {
     setSourceForm({ title: "", content: "", sourceType: "document" });
   };
 
-  const handleRemoveSource = async (sourceId: string) => {
+  const _handleRemoveSource = async (sourceId: string) => {
     await removeSource.mutateAsync(sourceId);
   };
 
@@ -196,7 +191,7 @@ export default function InstructorPlagiarismPage() {
   // Stats
   const completedChecks = checks.filter((c) => c.status === "completed");
   const highSimilarity = completedChecks.filter((c) => (c.similarity_score || 0) >= 50);
-  const avgSimilarity = completedChecks.length > 0
+  const _avgSimilarity = completedChecks.length > 0
     ? Math.round(
         completedChecks.reduce((sum, c) => sum + (c.similarity_score || 0), 0) /
           completedChecks.length

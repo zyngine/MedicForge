@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   Button,
   Badge,
   Progress,
@@ -20,10 +19,8 @@ import {
   XCircle,
   Clock,
   Brain,
-  Award,
   BarChart3,
   User,
-  Calendar,
   ChevronDown,
   ChevronRight,
   Target,
@@ -65,6 +62,7 @@ interface ExamResponse {
   id: string;
   attempt_id: string;
   question_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   response: any;
   is_correct: boolean;
   time_spent_seconds: number | null;
@@ -98,6 +96,7 @@ export default function InstructorExamResultsPage() {
       setIsLoading(true);
       try {
         // Fetch attempt with student and exam info
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: attemptData, error: attemptError } = await (supabase as any)
           .from("exam_attempts")
           .select(`
@@ -121,6 +120,7 @@ export default function InstructorExamResultsPage() {
         setAttempt(attemptData);
 
         // Fetch responses with questions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: responsesData, error: responsesError } = await (supabase as any)
           .from("exam_responses")
           .select(`

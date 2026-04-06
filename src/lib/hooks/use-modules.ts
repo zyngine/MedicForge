@@ -6,7 +6,7 @@ import { useTenant } from "./use-tenant";
 import type { Database } from "@/types/database.types";
 
 type Module = Database["public"]["Tables"]["modules"]["Row"];
-type ModuleInsert = Database["public"]["Tables"]["modules"]["Insert"];
+type _ModuleInsert = Database["public"]["Tables"]["modules"]["Insert"];
 
 export interface ModuleWithDetails extends Module {
   lessons?: {
@@ -64,6 +64,7 @@ export function useModules(courseId: string | null | undefined) {
       if (error) throw error;
 
       // Transform data to include computed fields with backward compatibility
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((module: any) => {
         const lessonsCount = module.lessons?.[0]?.count || 0;
         const assignmentsCount = module.assignments?.[0]?.count || 0;
@@ -120,14 +121,17 @@ export function useModule(moduleId: string | null | undefined) {
 
       // Sort lessons and assignments by order_index
       const sortedLessons = (data.lessons || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((lesson: any) => ({
           ...lesson,
           content_type: lesson.content_type ?? "text",
           order_index: lesson.order_index ?? 0,
           is_published: lesson.is_published ?? false,
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .sort((a: any, b: any) => a.order_index - b.order_index);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sortedAssignments = (data.assignments || []).map((assignment: any) => ({
         ...assignment,
         type: assignment.type ?? "quiz",

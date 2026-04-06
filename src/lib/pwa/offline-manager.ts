@@ -6,7 +6,7 @@ import * as React from "react";
 const DB_NAME = "medicforge-offline";
 const DB_VERSION = 1;
 
-interface OfflineStore {
+interface _OfflineStore {
   submissions: Array<{
     id: string;
     assignmentId: string;
@@ -90,7 +90,7 @@ async function getFromStore<T>(storeName: string, key: string): Promise<T | unde
   });
 }
 
-async function getAllFromStore<T>(storeName: string): Promise<T[]> {
+async function _getAllFromStore<T>(storeName: string): Promise<T[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, "readonly");

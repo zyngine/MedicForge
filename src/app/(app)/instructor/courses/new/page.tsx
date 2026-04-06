@@ -12,7 +12,7 @@ import {
   Textarea,
   Select,
 } from "@/components/ui";
-import { ArrowLeft, BookOpen, Loader2, Lock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Lock } from "lucide-react";
 import { useCreateCourse } from "@/lib/hooks/use-courses";
 import { useSubscriptionEnforcement } from "@/lib/hooks/use-subscription-enforcement";
 import { LimitReachedAlert } from "@/components/subscription";

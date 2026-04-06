@@ -82,6 +82,7 @@ export function GlobalSearch({ userRole }: GlobalSearchProps) {
           userRole === "instructor" ||
           userRole === "student"
         ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: courses } = await (supabase as any)
             .from("courses")
             .select("id, title")
@@ -111,6 +112,7 @@ export function GlobalSearch({ userRole }: GlobalSearchProps) {
         // Search users for admin only
         if (userRole === "admin") {
           const safeQuery = query.replace(/[%_\\,()]/g, c => '\\' + c);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: users } = await (supabase as any)
             .from("users")
             .select("id, full_name, email")

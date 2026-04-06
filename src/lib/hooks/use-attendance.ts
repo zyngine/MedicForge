@@ -281,7 +281,7 @@ export function useAttendanceRecords(sessionId: string) {
         setRecords((prev) => [...prev, data]);
         return data;
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to record attendance");
       return null;
     }
@@ -296,7 +296,7 @@ export function useAttendanceRecords(sessionId: string) {
       }
       toast.success("Attendance recorded");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to record attendance");
       return false;
     }
@@ -359,6 +359,7 @@ export function useStudentAttendanceSummary(courseId: string, studentId?: string
         let totalMinutesRequired = 0;
         let totalMinutesPresent = 0;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sessions.forEach((session: any) => {
           const record = recordMap.get(session.id) as { status: string; minutes_present: number | null } | undefined;
           const sessionMinutes = calculateMinutes(session.start_time, session.end_time);

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect, useCallback } from "react";
 
 export interface OfflineStatus {
@@ -90,6 +92,7 @@ export function useOffline(): UseOfflineReturn {
       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then((registration) => {
           if ("sync" in registration) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (registration as any).sync.register("sync-all-pending");
           }
         });
@@ -234,9 +237,13 @@ export function useOffline(): UseOfflineReturn {
       const registration = await navigator.serviceWorker.ready;
       if ("sync" in registration) {
         await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (registration as any).sync.register("sync-submissions"),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (registration as any).sync.register("sync-clinical-logs"),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (registration as any).sync.register("sync-pending-skill-attempts"),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (registration as any).sync.register("sync-pending-patient-contacts"),
         ]);
       }

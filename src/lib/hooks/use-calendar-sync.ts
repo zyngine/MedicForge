@@ -153,6 +153,7 @@ export function useCalendarSync() {
         .eq("student_id", profile.id)
         .eq("status", "active");
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const courseIds = enrollments?.map((e: any) => e.course_id) || [];
 
       if (courseIds.length > 0) {
@@ -168,6 +169,7 @@ export function useCalendarSync() {
           .gte("due_date", now.toISOString())
           .eq("is_published", true);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         assignments?.forEach((a: any) => {
           if (a.due_date) {
             const dueDate = new Date(a.due_date);
@@ -199,6 +201,7 @@ export function useCalendarSync() {
         .eq("student_id", profile.id)
         .eq("status", "booked");
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       shifts?.forEach((booking: any) => {
         const shift = booking.shift;
         if (shift) {
@@ -228,6 +231,7 @@ export function useCalendarSync() {
         .in("course_id", courseIds)
         .gte("scheduled_date", now.toISOString().split("T")[0]);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sessions?.forEach((session: any) => {
         const startDateTime = new Date(`${session.scheduled_date}T${session.start_time}`);
         const endDateTime = new Date(`${session.scheduled_date}T${session.end_time}`);
@@ -271,7 +275,7 @@ export function useCalendarSync() {
       URL.revokeObjectURL(url);
 
       toast.success("Calendar file downloaded");
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to download calendar");
     }
   };
@@ -289,7 +293,7 @@ export function useCalendarSync() {
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
       toast.success("Subscription URL copied to clipboard");
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to copy URL");
     }
   };

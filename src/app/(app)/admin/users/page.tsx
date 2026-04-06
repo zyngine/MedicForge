@@ -4,9 +4,6 @@ import * as React from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Input,
@@ -18,7 +15,6 @@ import {
   Avatar,
 } from "@/components/ui";
 import {
-  Plus,
   Upload,
   Download,
   Search,
@@ -34,7 +30,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
-import { useSubscriptionEnforcement, getLimitMessage } from "@/lib/hooks/use-subscription-enforcement";
+import { useSubscriptionEnforcement } from "@/lib/hooks/use-subscription-enforcement";
 import { LimitWarningBanner, LimitReachedAlert, UpgradeModal } from "@/components/subscription";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

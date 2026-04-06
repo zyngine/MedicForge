@@ -29,7 +29,7 @@ export interface CalendarEvent {
   type?: "class" | "assignment" | "exam" | "clinical" | "other";
   description?: string;
   location?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, any>;
 }
 
 interface EventCalendarProps {

@@ -48,7 +48,7 @@ export interface SSOSession {
   sso_config_id: string;
   session_id: string;
   provider_user_id: string;
-  attributes: Record<string, unknown>;
+  attributes: Record<string, any>;
   created_at: string;
   expires_at: string;
 }
@@ -58,7 +58,7 @@ export function useSSOConfig() {
   const [configs, setConfigs] = useState<SSOConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useUser();
-  const supabase = createClient();
+  const _supabase = createClient();
 
   const fetchConfigs = useCallback(async () => {
     if (!profile?.tenant_id) return;
@@ -123,7 +123,7 @@ export function useSSOConfig() {
       localStorage.setItem(`sso_configs_${profile.tenant_id}`, JSON.stringify(updated));
       toast.success("SSO configuration created");
       return newConfig;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create SSO configuration");
       return null;
     }
@@ -142,7 +142,7 @@ export function useSSOConfig() {
       localStorage.setItem(`sso_configs_${profile.tenant_id}`, JSON.stringify(updated));
       toast.success("SSO configuration updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update configuration");
       return false;
     }
@@ -157,7 +157,7 @@ export function useSSOConfig() {
       localStorage.setItem(`sso_configs_${profile.tenant_id}`, JSON.stringify(updated));
       toast.success("SSO configuration deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete configuration");
       return false;
     }
@@ -184,7 +184,7 @@ export function useSSOConfig() {
       localStorage.setItem(`sso_configs_${profile.tenant_id}`, JSON.stringify(updated));
       toast.success("Default SSO provider updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to set default provider");
       return false;
     }
@@ -450,7 +450,7 @@ export function useSSOLogin() {
 
       toast.success("SSO login successful");
       return { success: true, user };
-    } catch (err) {
+    } catch (_err) {
       return { success: false, error: "Failed to process SAML response" };
     }
   };
@@ -473,7 +473,7 @@ export function useSSOLogin() {
 
       toast.success("SSO login successful");
       return { success: true, user };
-    } catch (err) {
+    } catch (_err) {
       return { success: false, error: "Failed to complete OIDC login" };
     }
   };
@@ -495,7 +495,7 @@ export function useSSOProvisioning() {
   // Provision or update user from SSO attributes
   const provisionUser = async (
     config: SSOConfig,
-    attributes: Record<string, unknown>
+    attributes: Record<string, any>
   ): Promise<{ userId: string; isNew: boolean } | null> => {
     if (!profile?.tenant_id) return null;
 

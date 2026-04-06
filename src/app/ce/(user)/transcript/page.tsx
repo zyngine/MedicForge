@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner } from "@/components/ui";
-import { Award, Download, BookOpen } from "lucide-react";
+import { Award, Download } from "lucide-react";
 
 interface TranscriptRow {
   id: string;

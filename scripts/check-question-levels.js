@@ -117,7 +117,7 @@ async function checkAndFixLevels() {
     // Apply fixes
     console.log('\n=== Applying Fixes ===');
 
-    for (const [key, items] of Object.entries(summary)) {
+    for (const [_key, items] of Object.entries(summary)) {
       const targetLevel = items[0].should_be;
       const ids = items.map(i => i.id);
 

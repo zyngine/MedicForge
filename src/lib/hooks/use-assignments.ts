@@ -30,7 +30,9 @@ interface AssignmentForm {
   points_possible?: number;
   time_limit_minutes?: number;
   attempts_allowed?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rubric?: any;
   is_published?: boolean;
 }
@@ -80,6 +82,7 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
       if (error) throw error;
 
       // Transform data to include computed fields with backward compatibility
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((assignment: any) => {
         const questionsCount = assignment.quiz_questions?.[0]?.count || 0;
         const submissionsCount = assignment.submissions?.[0]?.count || 0;
@@ -126,12 +129,14 @@ export function useAssignment(assignmentId: string | null | undefined) {
       if (error) throw error;
 
       const transformedQuestions = (data.quiz_questions || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((q: any) => ({
           ...q,
           question_type: q.question_type ?? "multiple_choice",
           points: q.points ?? 1,
           order_index: q.order_index ?? 0,
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .sort((a: any, b: any) => a.order_index - b.order_index);
 
       const questionsCount = transformedQuestions.length;

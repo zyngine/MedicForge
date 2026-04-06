@@ -15,7 +15,6 @@ import {
 import {
   CheckCircle,
   XCircle,
-  Clock,
   Target,
   Brain,
   Award,

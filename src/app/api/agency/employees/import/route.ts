@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         } else {
           results.push({ row: i + 1, name: `${emp.first_name} ${emp.last_name}`, success: true });
         }
-      } catch (err) {
+      } catch (_err) {
         results.push({ row: i + 1, name: `${emp.first_name || ""} ${emp.last_name || ""}`, success: false, error: "Unexpected error" });
       }
     }

@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Badge,
   Modal,
@@ -21,8 +18,6 @@ import {
   Plus,
   Calendar,
   Clock,
-  Users,
-  ExternalLink,
   Play,
   Loader2,
   Link as LinkIcon,

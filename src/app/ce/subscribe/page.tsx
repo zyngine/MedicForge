@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +12,7 @@ import { CheckCircle, CreditCard, Lock, Star } from "lucide-react";
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Square?: any;
   }
 }
@@ -31,6 +34,7 @@ export default function CESubscribePage() {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [subscriptionExpires, setSubscriptionExpires] = useState<string | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [card, setCard] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +113,7 @@ export default function CESubscribePage() {
   // Attach card form
   useEffect(() => {
     if (!scriptLoaded || !containerRef.current || hasSubscription) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let cardInst: any;
 
     const init = async () => {

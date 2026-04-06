@@ -221,7 +221,7 @@ export function useAccreditationDocuments(category?: DocumentCategory) {
       const timestamp = Date.now();
       const filename = `${profile.tenant_id}/accreditation/${metadata.category}/${timestamp}-${file.name}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: _uploadData, error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filename, file);
 
@@ -288,7 +288,7 @@ export function useAccreditationDocuments(category?: DocumentCategory) {
       );
       toast.success("Document updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update document");
       return false;
     }
@@ -322,7 +322,7 @@ export function useAccreditationDocuments(category?: DocumentCategory) {
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       toast.success("Document deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete document");
       return false;
     }

@@ -1,13 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Tabs,
@@ -30,10 +26,9 @@ import {
   ThumbsDown,
   Eye,
   Send,
-  AlertCircle,
 } from "lucide-react";
 import { useMyPeerReviews } from "@/lib/hooks/use-peer-review";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
 
 export default function StudentPeerReviewsPage() {
   const {

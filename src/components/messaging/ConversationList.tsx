@@ -2,10 +2,6 @@
 
 import { MessageCircle, Search, Plus, Loader2 } from "lucide-react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Button,
   Avatar,

@@ -101,6 +101,7 @@ export async function POST(request: Request) {
 
     // 2. Create the tenant (agency) — admin client bypasses RLS
     // Cast needed: DB has agency tiers but generated types are out of date
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tenant, error: tenantError } = await (adminClient as any)
       .from("tenants")
       .insert({

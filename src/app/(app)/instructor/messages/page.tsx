@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, Button, Avatar, Input, Badge, Modal, Spinner } from "@/components/ui";
-import { MessageCircle, Search, Plus, Users, X } from "lucide-react";
+import { MessageCircle, Search, Plus, Users } from "lucide-react";
 import { ConversationList, MessageThread } from "@/components/messaging";
 import { useStartConversation, useMessageableUsers, Conversation } from "@/lib/hooks/use-messaging";
 

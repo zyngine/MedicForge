@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { withAPIAuth, apiSuccess, apiError, getPagination, type APIContext } from "@/lib/api/auth";
 
@@ -60,12 +60,14 @@ async function handleGet(request: NextRequest, context: APIContext) {
   // Filter by course if specified (need to do post-query since it's nested)
   let filteredGrades = grades || [];
   if (courseId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filteredGrades = filteredGrades.filter((g: any) =>
       g.assignment?.module?.course_id === courseId
     );
   }
 
   // Transform to cleaner format
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const transformedGrades = filteredGrades.map((g: any) => ({
     id: g.id,
     student: g.student,
@@ -134,6 +136,7 @@ async function handlePost(request: NextRequest, context: APIContext) {
   }
 
   // Validate score
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const maxPoints = (submission.assignment as any)?.points_possible || 100;
   if (score < 0 || score > maxPoints) {
     return apiError(`Score must be between 0 and ${maxPoints}`, 400);

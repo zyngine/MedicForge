@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner } from "@/components/ui";
-import { BookOpen, CheckCircle, Clock, ChevronRight } from "lucide-react";
+import { BookOpen, CheckCircle } from "lucide-react";
 
 interface Enrollment {
   id: string;

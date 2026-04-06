@@ -3,7 +3,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { Button, Input, Label, Textarea } from "@/components/ui";
 import { Plus, Trash2 } from "lucide-react";
-import type { ClinicalSiteForm, ClinicalSiteType, SITE_TYPE_LABELS } from "@/types";
+import type { ClinicalSiteForm, ClinicalSiteType } from "@/types";
 
 interface SiteFormProps {
   defaultValues?: Partial<ClinicalSiteForm>;

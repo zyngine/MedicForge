@@ -52,6 +52,7 @@ export default function CEAgencyCompliancePage() {
         .eq("completion_status", "completed");
 
       const byUser: Record<string, { completed: number; ceh: number; last: string | null }> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (enrollments || []).forEach((en: any) => {
         if (!byUser[en.user_id]) byUser[en.user_id] = { completed: 0, ceh: 0, last: null };
         byUser[en.user_id].completed++;

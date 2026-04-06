@@ -153,7 +153,7 @@ export function useUser(): UseUserReturn {
           ]);
           session = result.data.session;
           if (result.error) sessionError = result.error;
-        } catch (timeoutErr) {
+        } catch (_timeoutErr) {
           console.warn("[useUser] getSession timed out, using cached data");
           // If we have cached data, proceed with it — the onAuthStateChange
           // listener will update state when the refresh eventually completes

@@ -29,6 +29,7 @@ export async function validateAPIKey(request: NextRequest): Promise<APIContext |
 
   // Look up the API key in the database
   // Using type assertion since api_keys table is newly added
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: keyData, error } = await (supabase as any)
     .from("api_keys")
     .select("id, tenant_id, scopes, is_active, expires_at")
@@ -50,6 +51,7 @@ export async function validateAPIKey(request: NextRequest): Promise<APIContext |
   }
 
   // Update last_used_at
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase as any)
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })

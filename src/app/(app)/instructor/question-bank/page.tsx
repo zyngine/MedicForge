@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Badge,
   Input,
   Spinner,

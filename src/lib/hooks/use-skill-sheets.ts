@@ -6,6 +6,7 @@ import { useUser } from "./use-user";
 import { toast } from "sonner";
 
 // Note: These tables are created by migration 20240311000000_nremt_skill_sheets.sql
+ 
 // Using 'as any' until types are regenerated from Supabase
 
 export type CertificationLevel = "EMR" | "EMT" | "AEMT" | "Paramedic";

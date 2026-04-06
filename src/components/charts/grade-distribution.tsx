@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +54,7 @@ export function GradeDistribution({
     return colors.F;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const item = payload[0].payload;

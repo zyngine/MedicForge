@@ -26,7 +26,7 @@ import { useAgencyRole } from "@/lib/hooks/use-agency-role";
 // Types
 // ---------------------------------------------------------------------------
 
-interface ParsedRow extends Record<string, string> {
+interface _ParsedRow extends Record<string, string> {
   first_name: string;
   last_name: string;
   email: string;

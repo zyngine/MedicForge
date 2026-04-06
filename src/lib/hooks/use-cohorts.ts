@@ -45,7 +45,7 @@ export interface Cohort {
   expected_graduation: string | null;
   is_active: boolean;
   max_students: number | null;
-  settings: Record<string, unknown>;
+  settings: Record<string, any>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -97,7 +97,7 @@ export interface UpdateCohortData extends Partial<CreateCohortData> {
 
 // ==================== Cohorts Hook ====================
 // Note: Using 'any' type assertions because cohorts tables are new and not yet in generated types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function useCohorts(options?: { active_only?: boolean }) {
   const { tenant } = useTenant();
   const supabase = createClient();
@@ -323,7 +323,7 @@ export function useCohortMembers(cohortId: string | null) {
 
   const updateMemberStatusMutation = useMutation({
     mutationFn: async ({ memberId, status, notes }: { memberId: string; status: string; notes?: string }) => {
-      const updateData: Record<string, unknown> = { status };
+      const updateData: Record<string, any> = { status };
       if (notes !== undefined) updateData.notes = notes;
       if (status === "graduated" || status === "withdrawn" || status === "transferred") {
         updateData.left_at = new Date().toISOString();

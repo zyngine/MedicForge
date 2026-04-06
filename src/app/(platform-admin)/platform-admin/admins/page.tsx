@@ -18,10 +18,8 @@ import {
 import {
   Shield,
   UserPlus,
-  Mail,
   Calendar,
   MoreVertical,
-  Trash2,
   Key,
 } from "lucide-react";
 import { format } from "date-fns";

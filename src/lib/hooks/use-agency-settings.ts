@@ -46,6 +46,7 @@ export function useAgencySettings() {
       if (!tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_settings")
         .select("*")
@@ -73,6 +74,7 @@ export function useUpsertAgencySettings() {
       const supabase = createClient();
 
       // Check if settings exist
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: existing } = await (supabase as any)
         .from("agency_settings")
         .select("id")
@@ -81,6 +83,7 @@ export function useUpsertAgencySettings() {
 
       if (existing) {
         // Update existing
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("agency_settings")
           .update(input)
@@ -92,6 +95,7 @@ export function useUpsertAgencySettings() {
         return data as AgencySettings;
       } else {
         // Create new
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("agency_settings")
           .insert({
@@ -126,11 +130,13 @@ export function useUpdateAgencySetting() {
       value,
     }: {
       key: keyof UpdateAgencySettingsInput;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       value: any;
     }) => {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_settings")
         .update({ [key]: value })
@@ -161,6 +167,7 @@ export function useAddCustomCategory() {
       const supabase = createClient();
 
       // Get current settings
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: settings } = await (supabase as any)
         .from("agency_settings")
         .select("custom_skill_categories")
@@ -173,6 +180,7 @@ export function useAddCustomCategory() {
         throw new Error("Category already exists");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_settings")
         .update({
@@ -205,6 +213,7 @@ export function useRemoveCustomCategory() {
       const supabase = createClient();
 
       // Get current settings
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: settings } = await (supabase as any)
         .from("agency_settings")
         .select("custom_skill_categories")
@@ -216,6 +225,7 @@ export function useRemoveCustomCategory() {
         (c: string) => c !== categoryName
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_settings")
         .update({

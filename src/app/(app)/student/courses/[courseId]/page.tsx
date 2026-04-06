@@ -21,11 +21,9 @@ import {
 import {
   ArrowLeft,
   BookOpen,
-  Clock,
   CheckCircle,
   Circle,
   Play,
-  Lock,
   FileText,
   Video,
   ClipboardCheck,
@@ -42,7 +40,7 @@ import { useModules, useModule } from "@/lib/hooks/use-modules";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { useCourseProgress } from "@/lib/hooks/use-progress";
-import { useMyCertificates, Certificate } from "@/lib/hooks/use-certificates";
+import { useMyCertificates } from "@/lib/hooks/use-certificates";
 import { CertificateViewer } from "@/components/certificates/certificate-viewer";
 import { useTenant } from "@/lib/hooks/use-tenant";
 
@@ -83,6 +81,7 @@ export default function StudentCourseDetailPage() {
   // Get first published module's details to find the first lesson for "Continue Learning"
   const firstPublishedModule = modules.find(m => m.is_published);
   const { data: firstModuleDetail } = useModule(firstPublishedModule?.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const firstLessonId = firstModuleDetail?.lessons?.find((l: any) => l.is_published)?.id;
 
   // Find certificate for this course
@@ -92,7 +91,7 @@ export default function StudentCourseDetailPage() {
   const isLoading = courseLoading || modulesLoading || assignmentsLoading;
 
   // Calculate stats
-  const totalLessons = modules.reduce((sum, m) => sum + (m.lessons_count || 0), 0);
+  const _totalLessons = modules.reduce((sum, m) => sum + (m.lessons_count || 0), 0);
 
   // Get submissions for this course's assignments
   const courseAssignmentIds = assignments.map(a => a.id);

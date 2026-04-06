@@ -9,11 +9,9 @@ import {
   Badge,
   Input,
   Select,
-  Progress,
   Dropdown,
   DropdownItem,
   DropdownSeparator,
-  Spinner,
   SkeletonCourseGrid,
 } from "@/components/ui";
 import {

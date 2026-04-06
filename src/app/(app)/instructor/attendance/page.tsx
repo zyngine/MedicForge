@@ -12,7 +12,6 @@ import {
   Input,
   Label,
   Select,
-  Alert,
   Spinner,
   Modal,
 } from "@/components/ui";
@@ -23,11 +22,9 @@ import {
   Check,
   X,
   Users,
-  RefreshCw,
   Plus,
   History,
   CheckCircle,
-  AlertCircle,
   CalendarDays,
   Play,
   MapPin,
@@ -254,6 +251,7 @@ function useSessionCheckIns(sessionId: string | null) {
       if (error) throw error;
 
       // Fetch student info separately since FK is to auth.users, not public.users
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const studentIds = (data || []).map((r: any) => r.student_id);
       const { data: students } = studentIds.length > 0
         ? await supabase
@@ -263,7 +261,9 @@ function useSessionCheckIns(sessionId: string | null) {
         : { data: [] };
 
       // Map students to records
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const studentMap = new Map((students || []).map((s: any) => [s.id, s]));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((record: any) => ({
         ...record,
         student: studentMap.get(record.student_id) || null,
@@ -596,6 +596,7 @@ export default function InstructorAttendancePage() {
               onChange={setCourseId}
               options={[
                 { value: "", label: "No specific course" },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ...courses.map((c: any) => ({ value: c.id, label: c.title })),
               ]}
             />
@@ -777,6 +778,7 @@ function SessionDetails({
   // Count students by status
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     checkIns.forEach((c: any) => {
       counts[c.status] = (counts[c.status] || 0) + 1;
     });

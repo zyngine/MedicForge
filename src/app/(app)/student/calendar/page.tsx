@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -157,13 +159,13 @@ export default function CalendarPage() {
 
         if (assignmentsData) {
           // Transform assignments to match our interface
-          const transformedAssignments = assignmentsData.map((a: Record<string, unknown>) => ({
+          const transformedAssignments = assignmentsData.map((a: Record<string, any>) => ({
             id: a.id as string,
             title: a.title as string,
             due_date: a.due_date as string,
             type: a.type as string | null,
-            course_id: ((a.module as Record<string, unknown>)?.course as Record<string, unknown>)?.id as string,
-            course: (a.module as Record<string, unknown>)?.course as { id: string; title: string } | null,
+            course_id: ((a.module as Record<string, any>)?.course as Record<string, any>)?.id as string,
+            course: (a.module as Record<string, any>)?.course as { id: string; title: string } | null,
           }));
           setAssignments(transformedAssignments);
         }

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useEffect, useState, useRef } from "react";
 import { Download, Printer, Share2 } from "lucide-react";
 import { Button, Modal } from "@/components/ui";

@@ -11,7 +11,6 @@ import {
   Button,
   Badge,
   Select,
-  Progress,
   Spinner,
 } from "@/components/ui";
 import {
@@ -22,10 +21,7 @@ import {
   Clock,
   Target,
   AlertTriangle,
-  ChevronRight,
   Activity,
-  Eye,
-  FileText,
   Award,
 } from "lucide-react";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";

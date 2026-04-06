@@ -31,7 +31,7 @@ const contentTypeOptions = [
   { value: "embed", label: "Embed Code" },
 ];
 
-const contentTypeIcons: Record<ContentType, React.ReactNode> = {
+const _contentTypeIcons: Record<ContentType, React.ReactNode> = {
   text: <Type className="h-4 w-4" />,
   video: <Video className="h-4 w-4" />,
   document: <FileText className="h-4 w-4" />,

@@ -12,8 +12,6 @@ import {
 import {
   useCalendarSync,
   CalendarEvent,
-  generateGoogleCalendarUrl,
-  generateOutlookCalendarUrl,
 } from "@/lib/hooks/use-calendar-sync";
 
 interface CalendarSyncDropdownProps {
@@ -160,7 +158,7 @@ export function CalendarSyncSettings() {
   } = useCalendarSync();
   const [eventCount, setEventCount] = useState<number | null>(null);
 
-  const handleRefresh = async () => {
+  const _handleRefresh = async () => {
     const events = await fetchUpcomingEvents();
     setEventCount(events.length);
   };

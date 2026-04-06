@@ -1,13 +1,11 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   Button,
   Badge,
   Avatar,
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui";
 import {
   Search,
-  Filter,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -40,7 +37,7 @@ import {
 } from "lucide-react";
 import { useSubmissions, usePendingSubmissions, useGradeSubmission, useApplyGradeCurve } from "@/lib/hooks/use-submissions";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
-import { applyCurve, previewCurve, type CurveMethod, type ScoreInput, type CurveResult } from "@/lib/grading";
+import { previewCurve, type CurveMethod, type ScoreInput, type CurveResult } from "@/lib/grading";
 
 const typeOptions = [
   { value: "all", label: "All Types" },
@@ -124,7 +121,7 @@ export default function GradingPage() {
   const { data: gradedSubmissionsRaw = [], isLoading: gradedLoading, refetch: refetchGraded } = useSubmissions({ status: "graded" });
   const { mutateAsync: gradeSubmission } = useGradeSubmission();
   const { mutateAsync: applyGradeCurve } = useApplyGradeCurve();
-  const { data: courses = [], isLoading: coursesLoading } = useInstructorCourses();
+  const { data: courses = [], isLoading: _coursesLoading } = useInstructorCourses();
 
   // Build a course lookup map from instructor courses
   const courseMap = new Map(courses.map(c => [c.id, c.title]));

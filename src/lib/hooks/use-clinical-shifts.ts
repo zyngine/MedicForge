@@ -54,6 +54,7 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
       if (fetchError) throw fetchError;
 
       // Transform data to include computed fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedShifts: ClinicalShiftWithDetails[] = (data || []).map((shift: any) => {
         const capacity = shift.capacity ?? 0;
         const bookingsCount = shift.bookings?.[0]?.count || 0;
@@ -63,6 +64,7 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
           is_active: shift.is_active ?? true,
           site: shift.site ? {
             ...shift.site,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             preceptors: (shift.site.preceptors || []) as any,
           } : undefined,
           bookings_count: bookingsCount,
@@ -226,6 +228,7 @@ export function useClinicalShift(shiftId: string | null) {
           is_active: data.is_active ?? true,
           site: data.site ? {
             ...data.site,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             preceptors: (data.site.preceptors || []) as any,
           } : undefined,
           bookings_count: bookingsCount,

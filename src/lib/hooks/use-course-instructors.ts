@@ -43,6 +43,7 @@ export function useCourseInstructors(courseId: string | null | undefined) {
     queryFn: async () => {
       if (!courseId || !tenant?.id) return [];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
       const { data, error } = await supabase
         .from("course_instructors")
@@ -71,6 +72,7 @@ export function useMyInstructorCourses() {
     queryFn: async () => {
       if (!tenant?.id) return [];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       // Get courses from junction table
@@ -93,7 +95,9 @@ export function useMyInstructorCourses() {
 
       // Filter to only include courses from current tenant and flatten
       return (data || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((d: any) => d.course && d.course.tenant_id === tenant.id && !d.course.is_archived)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((d: any) => ({
           ...d.course,
           my_role: d.role,
@@ -130,6 +134,7 @@ export function useAddCourseInstructor() {
       canGrade?: boolean;
       canManageStudents?: boolean;
     }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       const { data, error } = await supabase
@@ -181,6 +186,7 @@ export function useUpdateCourseInstructor() {
       canGrade?: boolean;
       canManageStudents?: boolean;
     }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       const updates: Record<string, any> = {};
@@ -217,6 +223,7 @@ export function useRemoveCourseInstructor() {
 
   return useMutation({
     mutationFn: async ({ id, courseId }: { id: string; courseId: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       const { error } = await supabase

@@ -4,7 +4,8 @@
  */
 
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ExcelJS = require("exceljs");
 
 export type ValidationSeverity = "error" | "warning" | "info";
 
@@ -23,7 +24,7 @@ export interface ParsedRow {
   hasWarnings: boolean;
 }
 
-export interface ParseResult<T = Record<string, string>> {
+export interface ParseResult<_T = Record<string, string>> {
   success: boolean;
   data: ParsedRow[];
   headers: string[];
@@ -97,84 +98,75 @@ async function parseCSV(file: File): Promise<{
 }
 
 /**
- * Parse Excel file using SheetJS
+ * Parse Excel file using ExcelJS
  */
 async function parseExcel(file: File): Promise<{
   data: Record<string, string>[];
   headers: string[];
   error?: string;
 }> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
+  try {
+    const arrayBuffer = await file.arrayBuffer();
 
-    reader.onload = (e) => {
-      try {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
 
-        // Get the first sheet
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) {
-          resolve({
-            data: [],
-            headers: [],
-            error: "Excel file has no sheets",
-          });
-          return;
-        }
+    // Get the first sheet
+    const worksheet = workbook.getWorksheet(1);
+    if (!worksheet || worksheet.rowCount === 0) {
+      return { data: [], headers: [], error: "Excel file has no sheets" };
+    }
 
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
-          raw: false,
-          defval: "",
-        });
-
-        if (jsonData.length === 0) {
-          resolve({
-            data: [],
-            headers: [],
-            error: "Excel file is empty or has no data rows",
-          });
-          return;
-        }
-
-        // Normalize headers
-        const firstRow = jsonData[0];
-        const originalHeaders = Object.keys(firstRow);
-        const normalizedHeaders = originalHeaders.map((h) =>
-          h.trim().toLowerCase().replace(/\s+/g, "_")
-        );
-
-        // Transform data to use normalized headers
-        const data = jsonData.map((row) => {
-          const newRow: Record<string, string> = {};
-          originalHeaders.forEach((origHeader, i) => {
-            const value = row[origHeader];
-            newRow[normalizedHeaders[i]] = value !== null && value !== undefined ? String(value) : "";
-          });
-          return newRow;
-        });
-
-        resolve({ data, headers: normalizedHeaders });
-      } catch (error) {
-        resolve({
-          data: [],
-          headers: [],
-          error: `Failed to parse Excel file: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
+    // Get headers from the first row
+    const headerRow = worksheet.getRow(1);
+    const colToHeader: Record<number, string> = {};
+    const normalizedHeaders: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    headerRow.eachCell({ includeEmpty: false }, (cell: any, colNumber: any) => {
+      const value = cell.value;
+      const header = value !== null && value !== undefined ? String(value).trim().toLowerCase().replace(/\s+/g, "_") : "";
+      if (header) {
+        colToHeader[colNumber] = header;
+        normalizedHeaders.push(header);
       }
-    };
+    });
 
-    reader.onerror = () => {
-      resolve({
-        data: [],
-        headers: [],
-        error: "Failed to read file",
+    if (normalizedHeaders.length === 0) {
+      return { data: [], headers: [], error: "Excel file is empty or has no data rows" };
+    }
+
+    // Parse data rows (skip header row)
+    const data: Record<string, string>[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    worksheet.eachRow({ includeEmpty: false }, (row: any, rowNumber: any) => {
+      if (rowNumber === 1) return;
+      const rowData: Record<string, string> = {};
+      for (const header of normalizedHeaders) {
+        rowData[header] = "";
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row.eachCell({ includeEmpty: true }, (cell: any, colNumber: any) => {
+        const header = colToHeader[colNumber];
+        if (header) {
+          const value = cell.value;
+          rowData[header] = value !== null && value !== undefined ? String(value) : "";
+        }
       });
-    };
+      data.push(rowData);
+    });
 
-    reader.readAsArrayBuffer(file);
-  });
+    if (data.length === 0) {
+      return { data: [], headers: [], error: "Excel file is empty or has no data rows" };
+    }
+
+    return { data, headers: normalizedHeaders };
+  } catch (error) {
+    return {
+      data: [],
+      headers: [],
+      error: `Failed to parse Excel file: ${error instanceof Error ? error.message : "Unknown error"}`,
+    };
+  }
 }
 
 /**

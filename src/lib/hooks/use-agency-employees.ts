@@ -68,6 +68,7 @@ export function useAgencyEmployees(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("agency_employees")
         .select(`
@@ -93,6 +94,7 @@ export function useAgencyEmployees(options?: {
       const { data, error } = await query;
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((emp: any) => ({
         ...emp,
         full_name: `${emp.first_name} ${emp.last_name}`,
@@ -114,6 +116,7 @@ export function useAgencyEmployee(employeeId: string | null | undefined) {
       if (!employeeId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .select(`
@@ -147,6 +150,7 @@ export function useCreateAgencyEmployee() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .insert({
@@ -181,6 +185,7 @@ export function useUpdateAgencyEmployee() {
       updates: Partial<CreateEmployeeInput> & { is_active?: boolean };
     }) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .update(updates)
@@ -207,6 +212,7 @@ export function useDeactivateEmployee() {
   return useMutation({
     mutationFn: async (employeeId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .update({ is_active: false })
@@ -232,6 +238,7 @@ export function useReactivateEmployee() {
   return useMutation({
     mutationFn: async (employeeId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .update({ is_active: true })
@@ -257,6 +264,7 @@ export function useDeleteAgencyEmployee() {
   return useMutation({
     mutationFn: async (employeeId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("agency_employees")
         .delete()
@@ -282,6 +290,7 @@ export function useImportEmployees() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .insert(
@@ -317,6 +326,7 @@ export function useExpiringCertifications(daysAhead: number = 90) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + daysAhead);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_employees")
         .select("*")
@@ -328,6 +338,7 @@ export function useExpiringCertifications(daysAhead: number = 90) {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((emp: any) => ({
         ...emp,
         full_name: `${emp.first_name} ${emp.last_name}`,
@@ -351,6 +362,7 @@ export function useEmployeeStats() {
       const supabase = createClient();
 
       // Get all employees
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: employees, error } = await (supabase as any)
         .from("agency_employees")
         .select("id, certification_level, is_active, certification_expiration")
@@ -358,16 +370,19 @@ export function useEmployeeStats() {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activeEmployees = employees?.filter((e: any) => e.is_active) || [];
       const now = new Date();
       const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const expiringCerts = activeEmployees.filter((e: any) => {
         if (!e.certification_expiration) return false;
         const expDate = new Date(e.certification_expiration);
         return expDate <= thirtyDays && expDate >= now;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const expiredCerts = activeEmployees.filter((e: any) => {
         if (!e.certification_expiration) return false;
         return new Date(e.certification_expiration) < now;
@@ -375,6 +390,7 @@ export function useEmployeeStats() {
 
       // Count by certification level
       const byCertLevel: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       activeEmployees.forEach((e: any) => {
         byCertLevel[e.certification_level] = (byCertLevel[e.certification_level] || 0) + 1;
       });

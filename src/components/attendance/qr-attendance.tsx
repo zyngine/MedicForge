@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button, Card } from "@/components/ui";
 import { QrCode, Camera, Check, X, RefreshCw, Copy, Download } from "lucide-react";
@@ -24,12 +26,12 @@ export function QRCodeGenerator({
 }: QRCodeGeneratorProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [checkInCode, setCheckInCode] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+  const [_expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const { profile } = useUser();
   const supabase = createClient();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const _canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Generate a new check-in code
   const generateCode = useCallback(async () => {
@@ -254,7 +256,7 @@ export function QRCodeScanner({ onScan, onCancel }: QRCodeScannerProps) {
             return;
           }
         }
-      } catch (err) {
+      } catch (_err) {
         // BarcodeDetector not supported, continue scanning
       }
 

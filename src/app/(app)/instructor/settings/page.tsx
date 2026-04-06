@@ -29,8 +29,6 @@ import {
   Save,
   Camera,
   Mail,
-  Phone,
-  Building,
 } from "lucide-react";
 import { useUser } from "@/lib/hooks/use-user";
 import { createClient } from "@/lib/supabase/client";

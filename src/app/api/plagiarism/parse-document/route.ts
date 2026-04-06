@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     let text = "";
-    let title = file.name.replace(/\.[^/.]+$/, ""); // Remove extension for title
+    const title = file.name.replace(/\.[^/.]+$/, ""); // Remove extension for title
 
     // Parse based on file type
     if (fileName.endsWith(".pdf")) {

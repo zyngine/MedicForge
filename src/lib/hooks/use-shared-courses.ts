@@ -137,6 +137,7 @@ export function useCoursePreview(courseId: string | null) {
       const firstRow = data[0];
       const modulesMap = new Map<string, CoursePreviewModule>();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data.forEach((row: any) => {
         if (!row.module_id) return;
 

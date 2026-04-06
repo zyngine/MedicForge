@@ -62,6 +62,7 @@ export function useEmployeeCompetencies(employeeId: string | null | undefined, o
       if (!employeeId || !tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -110,6 +111,7 @@ export function useEmployeeCompetency(competencyId: string | null | undefined) {
       if (!competencyId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -145,6 +147,7 @@ export function useSkillCompetencies(skillId: string | null | undefined, options
       if (!skillId || !tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -187,6 +190,7 @@ export function usePendingVerifications(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -229,6 +233,7 @@ export function useExpiringCompetencies(daysAhead: number = 30) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + daysAhead);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -262,6 +267,7 @@ export function useCreateCompetency() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .insert({
@@ -295,6 +301,7 @@ export function useCompleteCompetency() {
       // Get current user to set as completer
       const { data: { user } } = await supabase.auth.getUser();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .update({
@@ -342,6 +349,7 @@ export function useVerifyCompetency() {
       // Get current user to set as verifier
       const { data: { user } } = await supabase.auth.getUser();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .update({
@@ -387,6 +395,7 @@ export function useBulkCreateCompetencies() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .insert(
@@ -421,6 +430,7 @@ export function useEmployeeCompetencyStats(employeeId: string | null | undefined
       if (!employeeId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select("id, status, expires_at")
@@ -446,10 +456,12 @@ export function useEmployeeCompetencyStats(employeeId: string | null | undefined
         rejected: 0,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       competencies.forEach((c: any) => {
         byStatus[c.status] = (byStatus[c.status] || 0) + 1;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const expiringSoon = competencies.filter((c: any) => {
         if (c.status !== "verified" || !c.expires_at) return false;
         const expDate = new Date(c.expires_at);
@@ -484,6 +496,7 @@ export function useAgencyCompetencyStats(cycleId?: string) {
       if (!tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -499,6 +512,7 @@ export function useAgencyCompetencyStats(cycleId?: string) {
       const { data, error } = await query;
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const competencies = (data || []).filter((c: any) => c.employee?.is_active);
       const now = new Date();
       const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -511,10 +525,12 @@ export function useAgencyCompetencyStats(cycleId?: string) {
         rejected: 0,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       competencies.forEach((c: any) => {
         byStatus[c.status] = (byStatus[c.status] || 0) + 1;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const expiringSoon = competencies.filter((c: any) => {
         if (c.status !== "verified" || !c.expires_at) return false;
         const expDate = new Date(c.expires_at);
@@ -522,6 +538,7 @@ export function useAgencyCompetencyStats(cycleId?: string) {
       }).length;
 
       // Count unique employees
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const employeeIds = new Set(competencies.map((c: any) => c.employee_id));
 
       const total = competencies.length;

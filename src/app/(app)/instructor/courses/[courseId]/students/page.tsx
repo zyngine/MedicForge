@@ -6,8 +6,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Badge,
   Spinner,
@@ -18,9 +16,6 @@ import {
   ArrowLeft,
   Search,
   Users,
-  Mail,
-  MoreVertical,
-  UserMinus,
   BarChart,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -57,6 +52,7 @@ export default function CourseStudentsPage() {
     const fetchStudents = async () => {
       try {
         // Fetch course name
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: course } = await (supabase as any)
           .from("courses")
           .select("title")
@@ -66,6 +62,7 @@ export default function CourseStudentsPage() {
         if (course) setCourseName(course.title);
 
         // Fetch enrolled students
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("enrollments")
           .select(`

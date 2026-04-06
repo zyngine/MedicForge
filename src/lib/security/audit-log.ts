@@ -56,7 +56,7 @@ export interface AuditLogEntry {
   event_type: AuditEventType;
   resource_type: string;
   resource_id?: string;
-  details?: Record<string, unknown>;
+  details?: Record<string, any>;
   ip_address?: string;
   user_agent?: string;
   created_at?: string;
@@ -68,6 +68,7 @@ export async function logAuditEvent(entry: Omit<AuditLogEntry, "id" | "created_a
     const supabase = createClient();
 
     // Use type assertion since audit_logs may not be in generated types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("audit_logs").insert({
       tenant_id: entry.tenant_id,
       user_id: entry.user_id,
@@ -92,7 +93,7 @@ export function createAuditLogger(tenantId: string, userId: string, userEmail?: 
       eventType: AuditEventType,
       resourceType: string,
       resourceId?: string,
-      details?: Record<string, unknown>
+      details?: Record<string, any>
     ) => {
       return logAuditEvent({
         tenant_id: tenantId,

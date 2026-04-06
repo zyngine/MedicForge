@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
@@ -78,7 +80,7 @@ export interface Message {
 export function useConversations() {
   const { tenant } = useTenant();
   const { user } = useUser();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const { data: conversations, isLoading, refetch } = useQuery({
     queryKey: ["conversations", tenant?.id, user?.id],

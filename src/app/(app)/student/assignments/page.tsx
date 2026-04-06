@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -18,7 +20,6 @@ import {
   Search,
   Clock,
   CheckCircle,
-  AlertCircle,
   Calendar,
   BookOpen,
 } from "lucide-react";

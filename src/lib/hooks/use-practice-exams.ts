@@ -15,7 +15,7 @@ export interface PracticeExamSession {
   title: string;
   mode: PracticeExamMode;
   question_source: string;
-  source_filters: Record<string, unknown> | null;
+  source_filters: Record<string, any> | null;
   question_count: number;
   time_limit_minutes: number | null;
   started_at: string;
@@ -101,7 +101,7 @@ export function usePracticeExams() {
     title: string;
     mode: PracticeExamMode;
     question_source: string;
-    source_filters?: Record<string, unknown>;
+    source_filters?: Record<string, any>;
     question_count: number;
     time_limit_minutes?: number;
     course_id?: string;

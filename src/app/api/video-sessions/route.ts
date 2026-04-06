@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const upcoming = searchParams.get("upcoming");
 
     // Use type assertion to handle new tables
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabase as any)
       .from("video_sessions")
       .select(`
@@ -97,6 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create video session record
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: session, error: insertError } = await (supabase as any)
       .from("video_sessions")
       .insert({

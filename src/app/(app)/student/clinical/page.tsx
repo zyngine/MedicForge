@@ -29,19 +29,13 @@ import {
   Plus,
   Calendar,
   MapPin,
-  FileText,
   AlertCircle,
-  ChevronRight,
   Activity,
-  Heart,
-  Syringe,
-  Thermometer,
   CalendarPlus,
-  ClipboardList,
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-import { useMyClinicalLogs, useCreateClinicalLog, type ClinicalLogWithDetails } from "@/lib/hooks/use-clinical-logs";
+import { useMyClinicalLogs, useCreateClinicalLog } from "@/lib/hooks/use-clinical-logs";
 import { useMyPatientContacts } from "@/lib/hooks/use-patient-contacts";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { formatDate } from "@/lib/utils";
@@ -94,7 +88,7 @@ export default function ClinicalTrackerPage() {
   });
 
   // Form state for patient contact
-  const [contactForm, setContactForm] = React.useState({
+  const [_contactForm, _setContactForm] = React.useState({
     date: "",
     patientAge: "",
     gender: "",

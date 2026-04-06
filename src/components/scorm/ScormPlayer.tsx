@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader2, X, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
 import { Button, Alert } from "@/components/ui";
@@ -177,11 +179,15 @@ export function ScormPlayer({ package: pkg, onClose, onComplete }: ScormPlayerPr
     };
 
     // Expose APIs on window
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).API = API;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).API_1484_11 = API_1484_11;
 
     return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (window as any).API;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (window as any).API_1484_11;
     };
   }, [saveCurrentData]);

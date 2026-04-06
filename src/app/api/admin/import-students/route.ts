@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     // Check if requester is admin of this tenant
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
           filter: email,
         });
         const existingAuthUser = filteredUsers?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (u: any) => u.email?.toLowerCase() === email
         );
 

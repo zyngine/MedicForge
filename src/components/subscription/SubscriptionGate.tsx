@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -19,7 +18,6 @@ import {
   CreditCard,
   Lock,
   Zap,
-  CheckCircle,
   XCircle,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
@@ -64,7 +62,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
 
   // Calculate trial/subscription state
   const isTrialing = subscriptionStatus === "trialing";
-  const isActive = subscriptionStatus === "active";
+  const _isActive = subscriptionStatus === "active";
   const isCanceled = subscriptionStatus === "canceled";
   const isPastDue = subscriptionStatus === "past_due";
 

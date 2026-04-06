@@ -649,7 +649,7 @@ export function useRemediationPlans(options?: {
       );
       toast.success("Checkpoint added");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add checkpoint");
       return false;
     }
@@ -686,7 +686,7 @@ export function useRemediationPlans(options?: {
       );
       toast.success("Plan completed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to complete plan");
       return false;
     }

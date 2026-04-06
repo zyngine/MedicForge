@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
 import { useUser } from "./use-user";
-import { generateAttendanceQR, generateSessionCode } from "@/lib/qrcode-utils";
+import { generateAttendanceQR } from "@/lib/qrcode-utils";
 
 export interface AttendanceSession {
   id: string;

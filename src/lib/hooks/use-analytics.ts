@@ -10,7 +10,7 @@ export interface AnalyticsEvent {
   user_id: string;
   event_type: string;
   event_category: "navigation" | "engagement" | "assessment" | "content" | "system";
-  event_data: Record<string, unknown> | null;
+  event_data: Record<string, any> | null;
   course_id: string | null;
   session_id: string | null;
   created_at: string;
@@ -56,7 +56,7 @@ export function useAnalyticsTracker() {
   const trackEvent = useCallback(async (
     eventType: string,
     eventCategory: AnalyticsEvent["event_category"],
-    eventData?: Record<string, unknown>,
+    eventData?: Record<string, any>,
     courseId?: string
   ): Promise<void> => {
     if (!profile?.tenant_id || !profile?.id) return;
@@ -328,7 +328,7 @@ export function useMyAnalytics(courseId?: string) {
 
         // Fetch submissions for average score
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let submissionsQuery = (supabase as any)
+        const submissionsQuery = (supabase as any)
           .from("submissions")
           .select("final_score")
           .eq("student_id", profile.id)

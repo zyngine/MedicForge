@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, XCircle, Download, ArrowRight, RotateCcw } from "lucide-react";
-import { Button, Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { downloadFile } from "@/lib/utils/import-parser";
 
 export interface ImportResultItem {

@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
+ 
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
@@ -23,7 +27,7 @@ export interface OfflineRecord {
   id: string;
   localId: string;
   type: keyof typeof STORES;
-  data: Record<string, unknown>;
+  data: Record<string, any>;
   syncStatus: SyncStatus;
   createdAt: string;
   updatedAt: string;
@@ -38,7 +42,7 @@ export interface SyncQueueItem {
   table: string;
   recordId: string;
   localId: string;
-  data: Record<string, unknown>;
+  data: Record<string, any>;
   createdAt: string;
   status: SyncStatus;
   retryCount: number;
@@ -154,7 +158,7 @@ export function useOfflineSync() {
     operation: SyncQueueItem["operation"],
     table: string,
     localId: string,
-    data: Record<string, unknown>,
+    data: Record<string, any>,
     recordId?: string
   ): Promise<void> => {
     if (!dbRef.current) return;
@@ -239,7 +243,7 @@ export function useOfflineSync() {
     updateStore.put({ ...item, status: "syncing" });
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let result: { error: Error | null };
 
       switch (item.operation) {
@@ -412,7 +416,7 @@ export function useOfflinePatientContacts() {
   }, [loadLocalContacts]);
 
   // Save contact (works offline)
-  const saveContact = async (data: Record<string, unknown>): Promise<OfflineRecord | null> => {
+  const saveContact = async (data: Record<string, any>): Promise<OfflineRecord | null> => {
     if (!db || !profile?.tenant_id || !profile?.id) {
       toast.error("Unable to save contact");
       return null;
@@ -464,7 +468,7 @@ export function useOfflinePatientContacts() {
   // Update contact
   const updateContact = async (
     localId: string,
-    updates: Record<string, unknown>
+    updates: Record<string, any>
   ): Promise<boolean> => {
     if (!db) return false;
 

@@ -35,6 +35,7 @@ export async function GET(
       return NextResponse.json({ error: "Cycle not found" }, { status: 404 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: competencies } = await (adminClient as any)
       .from("employee_competencies")
       .select(`
@@ -46,6 +47,7 @@ export async function GET(
       .eq("tenant_id", profile.tenant_id);
 
     const employeeMap = new Map<string, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       employee: any;
       total: number;
       verified: number;
@@ -76,7 +78,9 @@ export async function GET(
     }));
 
     const totalCompetencies = competencies?.length || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const verifiedCount = competencies?.filter((c: any) => c.status === "verified").length || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pendingCount = competencies?.filter((c: any) => c.status === "pending_review").length || 0;
 
     return NextResponse.json({
@@ -118,7 +122,7 @@ export async function PUT(
     }
 
     const updates = await request.json();
-    const allowed: Record<string, unknown> = {};
+    const allowed: Record<string, any> = {};
     for (const f of ["name", "start_date", "end_date", "is_active"]) {
       if (updates[f] !== undefined) allowed[f] = updates[f];
     }

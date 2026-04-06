@@ -30,7 +30,7 @@ export interface CourseTemplate {
       points_possible: number;
       module_index?: number;
     }>;
-    settings?: Record<string, unknown>;
+    settings?: Record<string, any>;
   } | null;
   is_shared: boolean;
   created_by: string;
@@ -63,7 +63,7 @@ export interface BlueprintSyncHistory {
   id: string;
   blueprint_id: string;
   sync_type: "full" | "partial" | "manual";
-  changes_applied: Record<string, unknown> | null;
+  changes_applied: Record<string, any> | null;
   synced_by: string;
   synced_at: string;
   // Joined
@@ -140,7 +140,7 @@ export function useCourseTemplates() {
       setTemplates((prev) => [data, ...prev]);
       toast.success("Template created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create template");
       return null;
     }
@@ -233,7 +233,7 @@ export function useCourseTemplates() {
         course_type: course.course_type,
         template_data: templateData,
       });
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create template from course");
       return null;
     }
@@ -256,7 +256,7 @@ export function useCourseTemplates() {
       );
       toast.success("Template updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update template");
       return false;
     }
@@ -274,7 +274,7 @@ export function useCourseTemplates() {
       setTemplates((prev) => prev.filter((t) => t.id !== id));
       toast.success("Template deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete template");
       return false;
     }
@@ -489,7 +489,7 @@ export function useBlueprintCourses(templateId?: string) {
       setBlueprintCourses((prev) => [data, ...prev]);
       toast.success("Course linked to blueprint");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to link course");
       return null;
     }
@@ -507,7 +507,7 @@ export function useBlueprintCourses(templateId?: string) {
       setBlueprintCourses((prev) => prev.filter((b) => b.id !== blueprintId));
       toast.success("Course unlinked from blueprint");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to unlink course");
       return false;
     }
@@ -531,7 +531,7 @@ export function useBlueprintCourses(templateId?: string) {
         )
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -555,7 +555,7 @@ export function useBlueprintCourses(templateId?: string) {
       );
       toast.success("Sync settings updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update sync settings");
       return false;
     }
@@ -578,7 +578,7 @@ export function useBlueprintCourses(templateId?: string) {
 
       if (templateError) throw templateError;
 
-      const changes: Record<string, unknown> = {};
+      const changes: Record<string, any> = {};
       const settings = blueprint.sync_settings || {};
 
       // Sync modules
@@ -818,7 +818,7 @@ export function useApplyTemplate() {
 
       toast.success("Course created from template");
       return course.id;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to apply template");
       return null;
     }

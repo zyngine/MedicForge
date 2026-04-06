@@ -16,7 +16,6 @@ import {
 import {
   BookOpen,
   ClipboardCheck,
-  Clock,
   Award,
   ChevronRight,
   Calendar,

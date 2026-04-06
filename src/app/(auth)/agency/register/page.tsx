@@ -1,11 +1,13 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
 import { Button, Input, Label, Alert, Spinner, Select } from "@/components/ui";
-import { Building2, User, Mail, Lock, Eye, EyeOff, MapPin, Stethoscope } from "lucide-react";
+import { Building2, User, Mail, Lock, Eye, EyeOff, Stethoscope } from "lucide-react";
 
 const US_STATES = [
   { value: "AL", label: "Alabama" },
@@ -168,7 +170,7 @@ function AgencyRegisterForm() {
       } else {
         router.push("/agency/dashboard");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

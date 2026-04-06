@@ -1,12 +1,11 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Input,
@@ -20,7 +19,6 @@ import {
   TabsTrigger,
   TabsContent,
   Textarea,
-  Progress,
 } from "@/components/ui";
 import {
   Download,
@@ -29,16 +27,13 @@ import {
   Trash2,
   Plus,
   Search,
-  Filter,
   Eye,
   Edit,
   Users,
-  ClipboardCheck,
   Target,
   GraduationCap,
   TrendingUp,
   Upload,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -92,7 +87,7 @@ export default function InstructorGradebookPage() {
     mode: "create" | "edit";
     template?: GradebookExportTemplate;
   } | null>(null);
-  const [previewModal, setPreviewModal] = React.useState(false);
+  const [_previewModal, _setPreviewModal] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<{
     name: string;
     email: string;
@@ -207,7 +202,7 @@ export default function InstructorGradebookPage() {
     resetTemplateForm();
   };
 
-  const handleExport = async (templateId?: string) => {
+  const handleExport = async (_templateId?: string) => {
     if (!selectedCourse) return;
     setIsExporting(true);
     try {

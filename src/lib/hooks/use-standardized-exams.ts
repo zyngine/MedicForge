@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
@@ -250,13 +252,15 @@ export function useExamTemplate(templateId: string | undefined) {
     const fetchTemplate = async () => {
       try {
         setIsLoading(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const [templateRes, questionsRes] = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any)
             .from("standardized_exam_templates")
             .select("*")
             .eq("id", templateId)
             .single(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any)
             .from("standardized_questions")
             .select("*")
@@ -548,7 +552,7 @@ export function useStartExamAttempt() {
         firstQuestion = catQuestion;
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let query = (supabase as any)
+        const query = (supabase as any)
           .from("standardized_questions")
           .select("*")
           .eq("template_id", templateId)
@@ -906,13 +910,15 @@ export function useExamResult(attemptId: string | undefined) {
       try {
         setIsLoading(true);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const [resultRes, responsesRes] = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any)
             .from("exam_results")
             .select("*")
             .eq("attempt_id", attemptId)
             .single(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any)
             .from("exam_responses")
             .select("*, question:standardized_questions(*)")

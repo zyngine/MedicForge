@@ -160,6 +160,7 @@ export function hasPermission(role: UserRole, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }
 
+ 
 // Check if a role has any of the specified permissions
 export function hasAnyPermission(role: UserRole, permissions: Permission[]): boolean {
   return permissions.some((permission) => hasPermission(role, permission));

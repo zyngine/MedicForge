@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ paymentId });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[CE process-payment]", err);
     return NextResponse.json({ error: "Payment processing failed. Please try again." }, { status: 500 });
   }

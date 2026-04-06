@@ -12,7 +12,6 @@ import {
   Clock,
   ExternalLink,
   Loader2,
-  Users,
   Play,
 } from "lucide-react";
 import { useVideoSessions } from "@/lib/hooks/use-video-sessions";

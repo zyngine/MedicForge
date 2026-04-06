@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     const { data: requesterProfile } = await supabaseAdmin
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       .eq("course_id", course_id);
 
     if (modules && modules.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const moduleIds = modules.map((m: any) => m.id);
       const { data: assignments } = await supabaseAdmin
         .from("assignments")
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       try {
         // Find student
-        let studentId = studentCache.get(email);
+        const studentId = studentCache.get(email);
         if (!studentId) {
           results.push({
             identifier,

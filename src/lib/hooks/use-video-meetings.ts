@@ -27,7 +27,7 @@ export interface VideoMeeting {
   recording_url: string | null;
   waiting_room_enabled: boolean;
   max_participants: number;
-  settings: Record<string, unknown>;
+  settings: Record<string, any>;
   created_at: string;
   // Joined
   host?: { id: string; full_name: string };
@@ -44,7 +44,7 @@ export interface MeetingParticipant {
   left_at: string | null;
   duration_minutes: number | null;
   is_presenter: boolean;
-  device_info: Record<string, unknown> | null;
+  device_info: Record<string, any> | null;
   user?: { id: string; full_name: string; email: string };
 }
 
@@ -125,7 +125,7 @@ export function useVideoMeetings(courseId?: string) {
     recording_enabled?: boolean;
     waiting_room_enabled?: boolean;
     max_participants?: number;
-    settings?: Record<string, unknown>;
+    settings?: Record<string, any>;
   }): Promise<VideoMeeting | null> => {
     if (!profile?.tenant_id || !profile?.id) {
       toast.error("You must be logged in");
@@ -344,7 +344,7 @@ export function useMeetingParticipants(meetingId: string) {
     };
   }, [meetingId, supabase, fetchParticipants]);
 
-  const joinMeeting = async (deviceInfo?: Record<string, unknown>): Promise<boolean> => {
+  const joinMeeting = async (deviceInfo?: Record<string, any>): Promise<boolean> => {
     if (!profile?.tenant_id || !profile?.id) return false;
 
     try {
@@ -486,7 +486,7 @@ export function useBreakoutRooms(meetingId: string) {
       setRooms(data || []);
       toast.success(`Created ${count} breakout rooms`);
       return data || [];
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create breakout rooms");
       return [];
     }
@@ -517,7 +517,7 @@ export function useBreakoutRooms(meetingId: string) {
       if (error) throw error;
       await fetchRooms();
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -553,7 +553,7 @@ export function useBreakoutRooms(meetingId: string) {
       await fetchRooms();
       toast.success("Participants assigned to breakout rooms");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to assign participants");
       return false;
     }
@@ -574,7 +574,7 @@ export function useBreakoutRooms(meetingId: string) {
       await fetchRooms();
       toast.success("Breakout rooms started");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to start breakout rooms");
       return false;
     }
@@ -595,7 +595,7 @@ export function useBreakoutRooms(meetingId: string) {
       await fetchRooms();
       toast.success("Breakout rooms closed");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to close breakout rooms");
       return false;
     }
@@ -612,7 +612,7 @@ export function useBreakoutRooms(meetingId: string) {
       if (error) throw error;
       setRooms([]);
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

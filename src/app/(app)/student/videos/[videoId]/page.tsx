@@ -17,7 +17,6 @@ import {
 } from "@/components/ui";
 import {
   ArrowLeft,
-  Video,
   Clock,
   Award,
   CheckCircle,
@@ -30,11 +29,10 @@ import {
   getVideoSourceLabel,
 } from "@/lib/hooks/use-program-videos";
 import { VideoPlayer } from "@/components/video/video-player";
-import { format } from "date-fns";
 
 export default function StudentVideoPlayerPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const videoId = params.videoId as string;
 
   const { data: video, isLoading, error } = useStudentVideo(videoId);

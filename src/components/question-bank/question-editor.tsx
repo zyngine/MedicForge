@@ -160,7 +160,7 @@ export function QuestionEditor({ question, categories, onSave, onCancel }: Quest
           <div className="space-y-2">
             {formData.question_type === "true_false" ? (
               <div className="space-y-2">
-                {["True", "False"].map((opt, i) => (
+                {["True", "False"].map((opt, _i) => (
                   <label
                     key={opt}
                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${

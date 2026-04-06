@@ -52,6 +52,7 @@ export interface CycleProgress {
 }
 
 // Helper to compute status from is_active and is_locked flags
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeCycleStatus(cycle: any): CycleStatus {
   if (!cycle.is_active && cycle.is_locked) return "archived";
   if (cycle.is_locked) return "completed";
@@ -74,6 +75,7 @@ export function useVerificationCycles(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const query = (supabase as any)
         .from("verification_cycles")
         .select("*")
@@ -84,6 +86,7 @@ export function useVerificationCycles(options?: {
       if (error) throw error;
 
       // Map and compute status
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let cycles = (data || []).map((cycle: any) => ({
         ...cycle,
         status: computeCycleStatus(cycle),
@@ -117,6 +120,7 @@ export function useActiveCycles() {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .select("*")
@@ -144,6 +148,7 @@ export function useVerificationCycle(cycleId: string | null | undefined) {
       if (!cycleId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .select("*")
@@ -172,6 +177,7 @@ export function useCycleProgress(cycleId: string | null | undefined) {
       const supabase = createClient();
 
       // Get all competencies for this cycle with employee info
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: competencies, error } = await (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -185,6 +191,7 @@ export function useCycleProgress(cycleId: string | null | undefined) {
 
       // Filter to only active employees
       const activeCompetencies = (competencies || []).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.employee?.is_active
       );
 
@@ -197,6 +204,7 @@ export function useCycleProgress(cycleId: string | null | undefined) {
         expired: 0,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       activeCompetencies.forEach((c: any) => {
         statusCounts[c.status as keyof typeof statusCounts] =
           (statusCounts[c.status as keyof typeof statusCounts] || 0) + 1;
@@ -211,6 +219,7 @@ export function useCycleProgress(cycleId: string | null | undefined) {
         verified: number;
       }>();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       activeCompetencies.forEach((c: any) => {
         const empId = c.employee_id;
         const existing = employeeMap.get(empId) || {
@@ -274,6 +283,7 @@ export function useCreateVerificationCycle() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .insert({
@@ -309,6 +319,7 @@ export function useUpdateVerificationCycle() {
       updates: Partial<CreateCycleInput> & { status?: CycleStatus };
     }) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .update(updates)
@@ -336,6 +347,7 @@ export function useActivateCycle() {
   return useMutation({
     mutationFn: async (cycleId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .update({ status: "active" })
@@ -364,6 +376,7 @@ export function useCompleteCycle() {
   return useMutation({
     mutationFn: async (cycleId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .update({ status: "completed" })
@@ -392,6 +405,7 @@ export function useArchiveCycle() {
   return useMutation({
     mutationFn: async (cycleId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .update({ status: "archived" })
@@ -421,12 +435,14 @@ export function useDeleteVerificationCycle() {
       const supabase = createClient();
 
       // First delete all associated competencies
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from("employee_competencies")
         .delete()
         .eq("cycle_id", cycleId);
 
       // Then delete the cycle
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("verification_cycles")
         .delete()
@@ -468,6 +484,7 @@ export function useInitializeCycleCompetencies() {
         employees = employeeIds;
       } else {
         // Get all active employees
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: empData, error: empError } = await (supabase as any)
           .from("agency_employees")
           .select("id")
@@ -475,6 +492,7 @@ export function useInitializeCycleCompetencies() {
           .eq("is_active", true);
 
         if (empError) throw empError;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         employees = (empData || []).map((e: any) => e.id);
       }
 
@@ -493,6 +511,7 @@ export function useInitializeCycleCompetencies() {
         return { created: 0 };
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("employee_competencies")
         .insert(competencies)
@@ -525,6 +544,7 @@ export function useEndingCycles(daysAhead: number = 30) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + daysAhead);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("verification_cycles")
         .select("*")

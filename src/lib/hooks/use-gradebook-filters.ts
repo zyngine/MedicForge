@@ -144,7 +144,7 @@ export function useGradebookFilters(courseId: string) {
       );
       toast.success("Filter updated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update filter");
       return false;
     }
@@ -166,7 +166,7 @@ export function useGradebookFilters(courseId: string) {
       }
       toast.success("Filter deleted");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete filter");
       return false;
     }

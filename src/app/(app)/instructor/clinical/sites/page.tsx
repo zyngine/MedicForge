@@ -5,11 +5,7 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
-  Badge,
   Input,
   Spinner,
 } from "@/components/ui";
@@ -23,7 +19,6 @@ import {
   Truck,
   Flame,
   HeartPulse,
-  MapPin,
 } from "lucide-react";
 import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
 import type { ClinicalSite, ClinicalSiteForm } from "@/types";

@@ -100,6 +100,7 @@ async function fetchClinicalLogs(
 
   if (error) throw error;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data || []).map((log: any) => ({
     ...log,
     student: log.student || undefined,
@@ -149,31 +150,41 @@ async function fetchClinicalHoursSummary(
 
   if (error) throw error;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hoursLogs = (logs || []).filter((l: any) => l.log_type === "hours");
   const contactLogs = (logs || []).filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (l: any) => l.log_type === "patient_contact"
   );
 
   const totalHours = hoursLogs.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (sum: number, l: any) => sum + (l.hours || 0),
     0
   );
   const verifiedHours = hoursLogs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((l: any) => l.verification_status === "verified")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .reduce((sum: number, l: any) => sum + (l.hours || 0), 0);
   const pendingHours = hoursLogs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((l: any) => l.verification_status === "pending")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .reduce((sum: number, l: any) => sum + (l.hours || 0), 0);
 
   const patientContacts = contactLogs.length;
   const verifiedContacts = contactLogs.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (l: any) => l.verification_status === "verified"
   ).length;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const teamLeadCount = (logs || []).filter((l: any) => l.was_team_lead).length;
 
   // Group hours by month
   const monthMap = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   hoursLogs.forEach((log: any) => {
     const month = log.date.substring(0, 7); // YYYY-MM
     const existing = monthMap.get(month) || 0;
@@ -343,7 +354,7 @@ export function useUpdateClinicalLog() {
       if (error) throw error;
       return data as ClinicalLog;
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: clinicalLogsKeys.all });
     },
   });

@@ -12,13 +12,10 @@ import {
   Alert,
 } from "@/components/ui";
 import {
-  Settings,
   Globe,
   Mail,
-  Bell,
   Shield,
   Database,
-  Palette,
   Save,
   RefreshCw,
 } from "lucide-react";

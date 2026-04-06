@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, ArrowLeft, Paperclip } from "lucide-react";
+import { Send, Loader2, ArrowLeft } from "lucide-react";
 import {
   Button,
   Input,

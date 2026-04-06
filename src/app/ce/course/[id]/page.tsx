@@ -97,6 +97,7 @@ export default function CECourseDetailPage() {
       setObjectives(objRes.data || []);
 
       const instrData = (instrRes.data || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((r: any) => r.ce_instructors)
         .filter(Boolean) as Instructor[];
       setInstructors(instrData);

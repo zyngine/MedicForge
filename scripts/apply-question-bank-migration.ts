@@ -49,6 +49,7 @@ async function applyMigration() {
       } else {
         console.log(`  [OK] ${preview}...`);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(`  [ERROR] ${preview}...`);
       console.error(`    ${err.message || err}`);

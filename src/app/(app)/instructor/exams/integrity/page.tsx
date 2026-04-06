@@ -8,14 +8,11 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  Button,
   Badge,
-  Select,
   Spinner,
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@/components/ui";
 import {
   ShieldAlert,
@@ -25,8 +22,6 @@ import {
   CheckCircle,
   Clock,
   Users,
-  BarChart3,
-  Filter,
 } from "lucide-react";
 import {
   useFlaggedAttempts,

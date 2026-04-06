@@ -8,6 +8,7 @@ import { checkPlagiarism, PlagiarismResult } from "@/lib/plagiarism-utils";
 
 // Helper for tables not in generated types
 function getDb() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createClient() as any;
 }
 
@@ -25,6 +26,7 @@ export interface PlagiarismCheck {
   requested_by: string;
   status: "pending" | "processing" | "completed" | "failed";
   similarity_score: number | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   matches: any[] | null;
   web_matches?: WebSearchMatch[] | null;
   original_content: string | null;
@@ -37,6 +39,7 @@ export interface PlagiarismCheck {
     id: string;
     student_id: string;
     assignment_id: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     content: any;
     student?: {
       id: string;
@@ -301,7 +304,7 @@ export function useRunPlagiarismCheck() {
       }
 
       // Update with results
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         status: "completed",
         similarity_score: result.overallSimilarity,
         matches: result.matches,

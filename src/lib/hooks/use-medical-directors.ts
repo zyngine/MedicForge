@@ -73,6 +73,7 @@ export function useMedicalDirectors(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("medical_director_assignments")
         .select(`
@@ -107,6 +108,7 @@ export function useMedicalDirector(assignmentId: string | null | undefined) {
       if (!assignmentId || !tenant?.id) return null;
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .select(`
@@ -140,6 +142,7 @@ export function useIsMedicalDirector() {
       if (!user) return false;
 
       // Use the database function for proper check
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any).rpc("is_medical_director", {
         p_tenant_id: tenant.id,
       });
@@ -166,6 +169,7 @@ export function useMyMdAssignment() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .select("*")
@@ -192,6 +196,7 @@ export function useMyMdTenants() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .select(`
@@ -221,6 +226,7 @@ export function useAssignMedicalDirector() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .insert({
@@ -256,6 +262,7 @@ export function useUpdateMdAssignment() {
       updates: Partial<Omit<CreateMdAssignmentInput, "user_id">> & { is_active?: boolean };
     }) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .update(updates)
@@ -282,6 +289,7 @@ export function useRevokeMdAssignment() {
   return useMutation({
     mutationFn: async (assignmentId: string) => {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("medical_director_assignments")
         .update({ is_active: false })
@@ -313,6 +321,7 @@ export function useMdVerifications(mdAssignmentId: string | null | undefined, op
       if (!mdAssignmentId || !tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("competency_verifications")
         .select(`
@@ -365,6 +374,7 @@ export function useCreateVerification() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Get the user's MD assignment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: mdAssignment, error: mdError } = await (supabase as any)
         .from("medical_director_assignments")
         .select("id")
@@ -378,6 +388,7 @@ export function useCreateVerification() {
       }
 
       // Create verification record
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: verification, error: verError } = await (supabase as any)
         .from("competency_verifications")
         .insert({
@@ -398,6 +409,7 @@ export function useCreateVerification() {
       const newStatus = verificationType === "approve" ? "verified" :
                         verificationType === "reject" ? "rejected" : "pending";
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("employee_competencies")
         .update({
@@ -434,6 +446,7 @@ export function useMdStats(mdAssignmentId: string | null | undefined) {
       const supabase = createClient();
 
       // Get verification counts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: verifications, error } = await (supabase as any)
         .from("competency_verifications")
         .select("id, verification_type, created_at")
@@ -447,10 +460,12 @@ export function useMdStats(mdAssignmentId: string | null | undefined) {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const recentVerifications = (verifications || []).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (v: any) => new Date(v.created_at) >= thirtyDaysAgo
       );
 
       const lastWeekVerifications = (verifications || []).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (v: any) => new Date(v.created_at) >= sevenDaysAgo
       );
 
@@ -460,11 +475,13 @@ export function useMdStats(mdAssignmentId: string | null | undefined) {
         request_resubmit: 0,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (verifications || []).forEach((v: any) => {
         byType[v.verification_type as keyof typeof byType]++;
       });
 
       // Get pending verifications count
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { count: pendingCount, error: pendingError } = await (supabase as any)
         .from("employee_competencies")
         .select("id", { count: "exact", head: true })
@@ -503,6 +520,7 @@ export function useMdPendingVerifications(options?: {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("employee_competencies")
         .select(`
@@ -525,6 +543,7 @@ export function useMdPendingVerifications(options?: {
 
       // Filter by skill category if specified
       if (options?.skillCategory) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         results = results.filter((c: any) => c.skill?.category === options.skillCategory);
       }
 

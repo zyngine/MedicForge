@@ -19,7 +19,7 @@ export interface Certificate {
   final_grade: number | null;
   hours_completed: number | null;
   template_id: string | null;
-  custom_data: Record<string, unknown>;
+  custom_data: Record<string, any>;
   verification_code: string;
   is_revoked: boolean;
   revoked_at: string | null;
@@ -78,13 +78,14 @@ export interface IssueCertificateInput {
   final_grade?: number;
   hours_completed?: number;
   template_id?: string;
-  custom_data?: Record<string, unknown>;
+  custom_data?: Record<string, any>;
   expires_at?: string;
 }
 
 // Helper to get supabase client with type assertion for new tables
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function getDb() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createClient() as any;
 }
 
@@ -243,6 +244,7 @@ export function useVerifyCertificate(verificationCode: string | undefined) {
       }
 
       // Not found in LMS — try CE certificates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: ceData, error: ceError } = await (db as any)
         .from("ce_certificates")
         .select(`

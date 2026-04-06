@@ -59,6 +59,7 @@ export default function CEAgencyDashboardPage() {
           .in("user_id", employees.map((e) => e.id));
 
         const byUser: Record<string, { completed: number; ceh: number }> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (enrollments || []).forEach((en: any) => {
           if (!byUser[en.user_id]) byUser[en.user_id] = { completed: 0, ceh: 0 };
           if (en.completion_status === "completed") {
@@ -69,6 +70,7 @@ export default function CEAgencyDashboardPage() {
 
         const compliant = employees.filter((e) => (byUser[e.id]?.completed || 0) >= 1).length;
         const inProgress = employees.filter((e) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const enCount = (enrollments || []).filter((en: any) => en.user_id === e.id && en.completion_status === "in_progress").length;
           return enCount > 0;
         }).length;

@@ -72,7 +72,7 @@ export function QuestionImporter({ categories, onImport, onCancel, importFn, def
     const data = JSON.parse(text);
     const questions = Array.isArray(data) ? data : data.questions || [];
 
-    return questions.map((q: Record<string, unknown>, i: number) => {
+    return questions.map((q: Record<string, any>, i: number) => {
       try {
         // Validate required fields
         if (!q.question_text && !q.question && !q.text) {
@@ -95,7 +95,7 @@ export function QuestionImporter({ categories, onImport, onCancel, importFn, def
                 isCorrect: correctAnswer === opt || correctAnswer === idx || correctAnswer === String.fromCharCode(97 + idx),
               };
             }
-            const optObj = opt as Record<string, unknown>;
+            const optObj = opt as Record<string, any>;
             return {
               id: (optObj.id as string) || String.fromCharCode(97 + idx),
               text: (optObj.text as string) || String(opt),

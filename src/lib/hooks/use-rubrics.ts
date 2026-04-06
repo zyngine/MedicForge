@@ -690,7 +690,7 @@ export function useRubricAssessment(rubricId: string, submissionId: string) {
       setAssessment(assessmentData);
       toast.success(isDraft ? "Draft saved" : "Assessment saved");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save assessment");
       return false;
     } finally {

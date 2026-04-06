@@ -14,7 +14,7 @@ const PRECACHE_RESOURCES = [
 ];
 
 // API endpoints to cache for offline access
-const CACHEABLE_API_ROUTES = [
+const _CACHEABLE_API_ROUTES = [
   '/api/courses',
   '/api/enrollments',
   '/api/skill-sheets',
@@ -141,7 +141,7 @@ function safeClone(response) {
     if (response && response.status === 200 && !response.bodyUsed) {
       return response.clone();
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore clone errors
   }
   return null;
@@ -162,7 +162,7 @@ async function cacheFirst(request) {
       cache.put(request, clone);
     }
     return response;
-  } catch (error) {
+  } catch (_error) {
     return new Response('Offline', { status: 503 });
   }
 }
@@ -177,7 +177,7 @@ async function networkFirst(request) {
       cache.put(request, clone);
     }
     return response;
-  } catch (error) {
+  } catch (_error) {
     const cached = await caches.match(request);
     if (cached) {
       return cached;
@@ -446,7 +446,7 @@ function openDB() {
       });
     };
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = (_event) => {
       const db = request.result;
       const stores = [
         'pending-submissions',

@@ -55,11 +55,12 @@ export default function NewEmployeePage() {
     try {
       await createEmployee.mutateAsync({
         ...formData,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         certification_level: formData.certification_level as any,
       });
       router.push("/admin/agency/employees");
-    } catch (err: any) {
-      setError(err.message || "Failed to create employee");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create employee");
     }
   };
 

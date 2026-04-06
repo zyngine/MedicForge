@@ -47,6 +47,7 @@ export default function CEAgencyEmployeesPage() {
         .in("user_id", typedMembers.map((m) => m.id));
 
       const byUser: Record<string, { completed: number; in_progress: number; ceh: number }> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (enrollments || []).forEach((en: any) => {
         if (!byUser[en.user_id]) byUser[en.user_id] = { completed: 0, in_progress: 0, ceh: 0 };
         if (en.completion_status === "completed") {

@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       }).eq("id", enrollmentId);
 
       // Get data needed for certificate
-      const [enrollRes, courseRes, userRes] = await Promise.all([
+      const [_enrollRes, courseRes, userRes] = await Promise.all([
         supabase.from("ce_enrollments").select("enrolled_at").eq("id", enrollmentId).single(),
         supabase.from("ce_courses").select("title, course_number, ceh_hours, is_capce_accredited, capce_course_number, expiration_months").eq("id", courseId).single(),
         supabase.from("ce_users").select("first_name, last_name, nremt_id, email").eq("id", ceUserId).single(),

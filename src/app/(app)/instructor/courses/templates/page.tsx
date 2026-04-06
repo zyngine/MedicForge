@@ -31,7 +31,6 @@ import {
   Sparkles,
   Share2,
   Trash2,
-  Edit,
   Copy,
 } from "lucide-react";
 import { useCourseTemplates, useApplyTemplate } from "@/lib/hooks/use-course-templates";
@@ -66,7 +65,7 @@ interface TemplateForImport {
       points_possible: number;
       module_index?: number;
     }>;
-    settings?: Record<string, unknown>;
+    settings?: Record<string, any>;
   } | null;
 }
 

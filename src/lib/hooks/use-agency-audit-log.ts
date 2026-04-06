@@ -67,6 +67,7 @@ export function useAuditLog(options?: {
       if (!tenant?.id) return { entries: [], total: 0 };
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("agency_audit_log")
         .select(`
@@ -128,6 +129,7 @@ export function useEntityAuditLog(entityType: string, entityId: string | null | 
       if (!tenant?.id || !entityId) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_audit_log")
         .select(`
@@ -159,6 +161,7 @@ export function useUserActivityLog(userId: string | null | undefined, limit: num
       if (!tenant?.id || !userId) return [];
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_audit_log")
         .select("*")
@@ -200,6 +203,7 @@ export function useLogAuditAction() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_audit_log")
         .insert({
@@ -238,6 +242,7 @@ export function useAuditLogStats(daysBack: number = 30) {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysBack);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("agency_audit_log")
         .select("action, created_at")
@@ -248,12 +253,14 @@ export function useAuditLogStats(daysBack: number = 30) {
 
       // Count by action
       const byAction: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data || []).forEach((entry: any) => {
         byAction[entry.action] = (byAction[entry.action] || 0) + 1;
       });
 
       // Count by day
       const byDay: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data || []).forEach((entry: any) => {
         const day = entry.created_at.split("T")[0];
         byDay[day] = (byDay[day] || 0) + 1;
@@ -281,6 +288,7 @@ export function useExportAuditLog() {
       if (!tenant?.id) throw new Error("No tenant");
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from("agency_audit_log")
         .select(`
@@ -323,6 +331,7 @@ export function useExportAuditLog() {
         "Changes",
       ];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rows = (data || []).map((entry: any) => [
         entry.created_at,
         entry.user?.full_name || entry.user?.email || "Unknown",
@@ -334,7 +343,9 @@ export function useExportAuditLog() {
 
       const csvContent = [
         headers.join(","),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...rows.map((row: any) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
         ),
       ].join("\n");

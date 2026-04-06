@@ -163,10 +163,11 @@ export function useStudentGrades(courseId: string) {
 
       // Get assignment count for the course
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: assignments, error: assignError } = await (supabase as any)
+      const { data: assignments, error: _assignError } = await (supabase as any)
         .from("assignments")
         .select("id")
         .eq("tenant_id", profile.tenant_id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .in("module_id", (supabase as any)
           .from("modules")
           .select("id")

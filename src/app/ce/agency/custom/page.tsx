@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
-import { Button, Input } from "@/components/ui";
-import { FileText, ExternalLink, Lock } from "lucide-react";
+import { Button } from "@/components/ui";
+import { FileText, Lock } from "lucide-react";
 
 interface Agency {
   id: string;

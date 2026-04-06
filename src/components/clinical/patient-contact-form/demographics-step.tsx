@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Label, Input } from "@/components/ui";
+import { Label } from "@/components/ui";
 import { PATIENT_AGE_LABELS } from "@/types";
 import type { PatientContactFormData } from "./index";
 

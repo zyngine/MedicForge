@@ -79,6 +79,7 @@ export async function POST(
     });
 
     // Send email to POC
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const site = shiftData?.site as any;
     if (shiftData && site?.contact_email && tokenRow) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net";

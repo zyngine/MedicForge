@@ -124,9 +124,9 @@ export function SaveQuizTemplateModal({
 
       onSuccess?.();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to save template:", err);
-      const errorMessage = err?.message || err?.error?.message || "Unknown error"; setError(`Failed to save template: ${errorMessage}`);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error"; setError(`Failed to save template: ${errorMessage}`);
     }
   };
 

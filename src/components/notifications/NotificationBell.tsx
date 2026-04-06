@@ -3,14 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useNotifications, Notification } from "@/lib/hooks/use-notifications";
-import { Button, Badge, Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import {
   Bell,
   ClipboardList,
   Award,
   Megaphone,
   Clock,
-  Check,
   CheckCheck,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";

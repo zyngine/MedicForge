@@ -20,7 +20,6 @@ import {
   Plus,
   Clock,
   MapPin,
-  Users,
   Video,
   ChevronLeft,
   ChevronRight,

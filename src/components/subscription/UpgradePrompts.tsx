@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Alert, Button, Badge, Modal, ModalFooter } from "@/components/ui";
-import { AlertTriangle, Lock, Zap, CheckCircle, ArrowRight } from "lucide-react";
+import { Zap, CheckCircle, ArrowRight } from "lucide-react";
 
 interface LimitReachedAlertProps {
   type: "instructor" | "student" | "course";

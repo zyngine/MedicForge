@@ -12,7 +12,6 @@ import {
   Label,
   Alert,
   Spinner,
-  Badge,
 } from "@/components/ui";
 import { Shield, Key, Lock, Clock, Save, AlertTriangle } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
@@ -54,7 +53,7 @@ export default function SecuritySettingsPage() {
 
   useEffect(() => {
     if (tenant?.settings) {
-      const tenantSettings = tenant.settings as Record<string, unknown>;
+      const tenantSettings = tenant.settings as Record<string, any>;
       const security = (tenantSettings.security || {}) as Partial<SecuritySettings>;
       setSettings({ ...defaultSettings, ...security });
     }
@@ -84,6 +83,7 @@ export default function SecuritySettingsPage() {
         security: settings,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("tenants")
         .update({

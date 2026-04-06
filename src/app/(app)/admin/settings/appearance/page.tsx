@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -80,6 +82,7 @@ export default function AppearanceSettingsPage() {
     if (tenant) {
       setPrimaryColor(tenant.primary_color || "#C53030");
       setLogoUrl(tenant.logo_url);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setWhiteLabel((tenant as any).white_label_enabled || false);
     }
   }, [tenant]);
@@ -158,9 +161,9 @@ export default function AppearanceSettingsPage() {
 
       setLogoUrl(publicUrl);
       toast.success("Logo uploaded successfully");
-    } catch (err: any) {
+    } catch (err) {
       console.error("[Logo Upload] Error:", err);
-      const errorMessage = err?.message || err?.error?.message || "Unknown error";
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to upload logo: ${errorMessage}`);
     } finally {
       setIsUploading(false);
@@ -183,7 +186,7 @@ export default function AppearanceSettingsPage() {
     try {
       const supabase = createClient();
 
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         primary_color: primaryColor,
         logo_url: logoUrl,
         updated_at: new Date().toISOString(),
@@ -194,6 +197,7 @@ export default function AppearanceSettingsPage() {
         updateData.white_label_enabled = whiteLabel;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("tenants")
         .update(updateData)

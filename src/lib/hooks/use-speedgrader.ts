@@ -234,7 +234,7 @@ export function useSpeedGrader(assignmentId: string) {
 
       toast.success("Grade saved");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save grade");
       return false;
     }
@@ -539,7 +539,7 @@ export function useSubmissionAnnotations(submissionId: string) {
       if (error) throw error;
       setAnnotations((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -555,7 +555,7 @@ export function useSubmissionAnnotations(submissionId: string) {
       if (error) throw error;
       setAnnotations((prev) => prev.filter((a) => a.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };
@@ -571,7 +571,7 @@ export function useSubmissionAnnotations(submissionId: string) {
       if (error) throw error;
       setAnnotations([]);
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

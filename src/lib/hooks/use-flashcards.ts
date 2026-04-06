@@ -343,8 +343,9 @@ export function useFlashcards(deckId: string) {
         order_index: index,
       }));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       for (const update of updates) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any)
           .from("flashcards")
           .update({ order_index: update.order_index })

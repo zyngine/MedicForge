@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
+ 
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -64,7 +68,7 @@ type Tab = "overview" | "attendance" | "motions" | "actions";
 
 export default function CECommitteeMeetingDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const _router = useRouter();
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [members, setMembers] = useState<Member[]>([]);

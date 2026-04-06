@@ -7,6 +7,7 @@ import { useUser } from "./use-user";
 
 // Helper for tables not in generated types
 function getDb() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createClient() as any;
 }
 
@@ -19,6 +20,7 @@ export interface ScormPackage {
   description: string | null;
   version: "scorm_1.2" | "scorm_2004";
   status: "uploading" | "processing" | "ready" | "error";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   manifest: any;
   entry_point: string | null;
   storage_path: string;
@@ -51,7 +53,9 @@ export interface ScormAttempt {
   last_accessed_at: string;
   completed_at: string | null;
   cmi_data: Record<string, string> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interactions: any[] | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   objectives: any[] | null;
   created_at: string;
   updated_at: string;

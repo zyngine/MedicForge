@@ -5,9 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Tabs,
@@ -21,17 +18,14 @@ import {
   Search,
   FileText,
   User,
-  Calendar,
   CheckCircle,
   XCircle,
   Clock,
-  Activity,
   Stethoscope,
   AlertCircle,
   ChevronRight,
   Loader2,
 } from "lucide-react";
-import type { ClinicalPatientContactWithDetails } from "@/types";
 import { PATIENT_AGE_LABELS } from "@/types";
 import { usePatientContacts } from "@/lib/hooks/use-patient-contacts";
 import { format } from "date-fns";

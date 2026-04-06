@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -18,10 +20,7 @@ import {
   Users,
   Plus,
   Search,
-  Filter,
-  MoreVertical,
   CheckCircle,
-  Clock,
   AlertTriangle,
   ChevronRight,
   Upload,

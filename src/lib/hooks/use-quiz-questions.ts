@@ -12,7 +12,9 @@ type QuestionType = "multiple_choice" | "true_false" | "matching" | "short_answe
 interface QuizQuestionForm {
   question_text: string;
   question_type?: QuestionType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   correct_answer: any;
   points?: number;
   order_index?: number;
@@ -40,6 +42,7 @@ export function useQuizQuestions(assignmentId: string | null | undefined) {
       if (error) throw error;
 
       // Transform data to ensure required fields have defaults
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((q: any) => ({
         ...q,
         question_type: q.question_type ?? "multiple_choice",

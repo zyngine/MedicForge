@@ -5,7 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { DemographicsStep } from "./demographics-step";
 import { CallInfoStep } from "./call-info-step";
 import { AssessmentStep } from "./assessment-step";
@@ -13,7 +13,6 @@ import { VitalsStep } from "./vitals-step";
 import { InterventionsStep } from "./interventions-step";
 import { DispositionStep } from "./disposition-step";
 import { NarrativeStep } from "./narrative-step";
-import type { PatientContactForm } from "@/types";
 
 const vitalSchema = z.object({
   time: z.string().min(1, "Time is required"),

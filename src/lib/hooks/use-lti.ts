@@ -52,7 +52,7 @@ export interface LTILaunch {
   return_url: string | null;
   outcome_service_url: string | null;
   result_sourcedid: string | null;
-  session_data: Record<string, unknown> | null;
+  session_data: Record<string, any> | null;
   created_at: string;
 }
 
@@ -302,7 +302,7 @@ export function useLTIPlacements(courseId?: string) {
       setPlacements((prev) => [...prev, data].sort((a, b) => a.position - b.position));
       toast.success("Placement created");
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to create placement");
       return null;
     }
@@ -319,7 +319,7 @@ export function useLTIPlacements(courseId?: string) {
       if (error) throw error;
       setPlacements((prev) => prev.filter((p) => p.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete placement");
       return false;
     }
@@ -341,7 +341,7 @@ export function useLTIPlacements(courseId?: string) {
         prev.map((p) => (p.id === id ? { ...p, is_visible: !p.is_visible } : p))
       );
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   };

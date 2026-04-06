@@ -17,7 +17,7 @@ import {
   Checkbox,
   Select,
 } from "@/components/ui";
-import { ArrowLeft, Calendar, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useAgencyRole } from "@/lib/hooks/use-agency-role";
 import { useAgencyCycles } from "@/lib/hooks/use-agency-data";
 

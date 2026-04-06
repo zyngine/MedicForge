@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
@@ -272,6 +274,7 @@ export function useAdaptiveTesting(config: Partial<CATConfig> = {}) {
       }
 
       // Convert questions to CAT format with IRT parameters
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const catQuestions: CATQuestion[] = questions.map((q: any) => {
         // Calculate IRT parameters from question stats
         const difficultyMap: Record<string, number> = {

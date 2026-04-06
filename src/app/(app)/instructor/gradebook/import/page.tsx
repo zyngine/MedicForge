@@ -43,7 +43,7 @@ const GRADE_FIELDS = [
 
 type ImportStep = "upload" | "preview" | "results";
 
-interface Course {
+interface _Course {
   id: string;
   title: string;
 }

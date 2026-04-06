@@ -108,6 +108,7 @@ export function useVideoSessions(options: UseVideoSessionsOptions = {}) {
 
   const deleteSession = async (sessionId: string): Promise<boolean> => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: deleteError } = await (supabase as any)
         .from("video_sessions")
         .delete()

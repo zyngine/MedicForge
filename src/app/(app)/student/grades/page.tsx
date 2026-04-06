@@ -18,8 +18,6 @@ import {
 import {
   Award,
   TrendingUp,
-  TrendingDown,
-  Minus,
   BookOpen,
   ClipboardList,
   ChevronRight,

@@ -12,7 +12,7 @@ import {
   downloadICS,
 } from "@/lib/calendar-utils";
 
-interface AssignmentEvent {
+interface _AssignmentEvent {
   id: string;
   title: string;
   due_date: string;

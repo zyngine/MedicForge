@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
+ 
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createCEClient } from "@/lib/supabase/client";

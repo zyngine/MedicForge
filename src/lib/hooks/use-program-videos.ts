@@ -344,6 +344,7 @@ export function useVideoProgress(videoId: string | null) {
       if (error) throw error;
 
       // Fetch user info separately
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userIds = (data || []).map((p: any) => p.user_id);
       const { data: users } = userIds.length > 0
         ? await supabase
@@ -352,7 +353,9 @@ export function useVideoProgress(videoId: string | null) {
             .in("id", userIds)
         : { data: [] };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userMap = new Map((users || []).map((u: any) => [u.id, u]));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((progress: any) => ({
         ...progress,
         user: userMap.get(progress.user_id) || null,

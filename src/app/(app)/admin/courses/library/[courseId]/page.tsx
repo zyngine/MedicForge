@@ -19,7 +19,6 @@ import {
 } from "@/components/ui";
 import {
   ArrowLeft,
-  Library,
   BookOpen,
   Copy,
   ChevronDown,
@@ -30,14 +29,11 @@ import {
   ClipboardList,
   MessageSquare,
   Award,
-  Layers,
   Check,
-  ExternalLink,
 } from "lucide-react";
 import {
   useCoursePreview,
   useCloneCourse,
-  formatCloneCount,
   type CoursePreviewModule,
 } from "@/lib/hooks/use-shared-courses";
 

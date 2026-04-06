@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     // Check if requester is admin of this tenant
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (inviteError) {
       const errorMsg = inviteError.message?.toLowerCase() || "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const isRateLimit = errorMsg.includes("rate limit") || (inviteError as any).status === 429;
       const isAlreadyRegistered = errorMsg.includes("already registered") || errorMsg.includes("already been registered");
 

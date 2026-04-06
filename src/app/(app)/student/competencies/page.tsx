@@ -24,7 +24,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
-import { useMySkillProgress, type SkillProgress } from "@/lib/hooks/use-skills";
+import { useMySkillProgress } from "@/lib/hooks/use-skills";
 import { useStudentClinicalHours } from "@/lib/hooks/use-clinical-logs";
 import { useUser } from "@/lib/hooks/use-user";
 import { formatDate } from "@/lib/utils";

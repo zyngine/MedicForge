@@ -332,7 +332,7 @@ export function useLessonHighlights(lessonId: string) {
       if (error) throw error;
       setHighlights((prev) => [...prev, data]);
       return data;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to save highlight");
       return null;
     }
@@ -349,7 +349,7 @@ export function useLessonHighlights(lessonId: string) {
       if (error) throw error;
       setHighlights((prev) => prev.filter((h) => h.id !== id));
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete highlight");
       return false;
     }

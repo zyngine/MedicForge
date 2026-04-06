@@ -12,7 +12,7 @@ import {
   Alert,
   Spinner,
 } from "@/components/ui";
-import { Bell, Mail, MessageSquare, Save } from "lucide-react";
+import { Bell, Mail, Save } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -47,7 +47,7 @@ export default function NotificationSettingsPage() {
 
   useEffect(() => {
     if (tenant?.settings) {
-      const tenantSettings = tenant.settings as Record<string, unknown>;
+      const tenantSettings = tenant.settings as Record<string, any>;
       const notifications = (tenantSettings.notifications || {}) as Partial<NotificationSettings>;
       setSettings({ ...defaultSettings, ...notifications });
     }
@@ -71,6 +71,7 @@ export default function NotificationSettingsPage() {
         notifications: settings,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("tenants")
         .update({

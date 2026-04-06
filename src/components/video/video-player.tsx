@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Card, CardContent, Badge, Button, Progress } from "@/components/ui";
+import { Badge, Button, Progress } from "@/components/ui";
 import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, CheckCircle, Clock } from "lucide-react";
 import {
   useUpdateVideoProgress,
@@ -229,7 +229,7 @@ export function VideoPlayer({
   }, []);
 
   // Progress percentage
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const _progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   if (isEmbedded) {
     // For YouTube/Vimeo, use iframe embed

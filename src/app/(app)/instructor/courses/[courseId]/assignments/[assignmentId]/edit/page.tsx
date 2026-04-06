@@ -21,8 +21,6 @@ import {
 } from "@/components/ui";
 import {
   ArrowLeft,
-  ClipboardCheck,
-  FileText,
   CheckCircle,
   Save,
   Eye,
@@ -288,7 +286,7 @@ export default function EditAssignmentPage() {
       await deleteAssignment(assignmentId);
       toast.success("Assignment deleted");
       router.push(`/instructor/courses/${courseId}`);
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete assignment");
     }
   };

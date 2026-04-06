@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     const { data: requesterProfile } = await supabaseAdmin
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
 
       if (sourceModules && sourceModules.length > 0) {
         for (const module of sourceModules) {
-          const { data: newModule, error: moduleError } = await supabaseAdmin
+          const { data: newModule, error: _moduleError } = await supabaseAdmin
             .from("modules")
             .insert({
               tenant_id,
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Count duplicated items
-    const { data: moduleCount } = await supabaseAdmin
+    const { data: _moduleCount } = await supabaseAdmin
       .from("modules")
       .select("id", { count: "exact" })
       .eq("course_id", newCourse.id);
@@ -250,7 +251,7 @@ export async function POST(request: NextRequest) {
       .select("id", { count: "exact" })
       .in("module_id", Array.from(moduleIdMap.values()));
 
-    const { data: assignmentCount } = await supabaseAdmin
+    const { data: _assignmentCount } = await supabaseAdmin
       .from("assignments")
       .select("id", { count: "exact" })
       .eq("module_id", Array.from(moduleIdMap.values())[0] || "");

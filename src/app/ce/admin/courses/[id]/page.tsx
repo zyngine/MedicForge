@@ -265,9 +265,11 @@ export default function CEAdminCourseEditPage() {
       setReferences(refRes.data || []);
 
       const rawMods = modRes.data || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setModules(rawMods.map((m: any) => ({
         ...m,
         expanded: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         content: (m.ce_module_content || []).sort((a: any, b: any) => a.content_order - b.content_order),
       })));
 
@@ -287,9 +289,11 @@ export default function CEAdminCourseEditPage() {
           .eq("quiz_id", q.id)
           .order("sort_order");
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setQuestions((qqs || []).map((qq: any) => ({
           ...qq,
           expanded: false,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           options: (qq.ce_quiz_question_options || []).sort((a: any, b: any) => a.option_order - b.option_order),
         })));
       } else {

@@ -86,7 +86,7 @@ export default function DomainSettingsPage() {
       setSuccess(data.message || "Domain added successfully!");
       setNewDomain("");
       await fetchDomainStatus();
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to add domain. Please try again.");
     } finally {
       setIsAdding(false);
@@ -113,7 +113,7 @@ export default function DomainSettingsPage() {
 
       setSuccess("Domain removed successfully");
       await fetchDomainStatus();
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to remove domain. Please try again.");
     } finally {
       setIsRemoving(false);

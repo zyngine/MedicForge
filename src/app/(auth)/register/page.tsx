@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/layouts";
-import { Button, Input, Label, Select, Alert, Checkbox, Spinner } from "@/components/ui";
+import { Button, Input, Label, Alert, Checkbox, Spinner } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, User, Building, Eye, EyeOff, Key, GraduationCap } from "lucide-react";
 

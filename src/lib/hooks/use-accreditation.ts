@@ -333,7 +333,7 @@ export function useComplianceTracking(courseId?: string) {
     const item = compliance.find((c) => c.standard_id === standardId);
     if (!item) return false;
 
-    const newDocIds = [...(item.evidence_document_ids || []), documentId];
+    const _newDocIds = [...(item.evidence_document_ids || []), documentId];
     return updateComplianceStatus(standardId, item.status, item.notes || undefined, item.action_items);
   };
 

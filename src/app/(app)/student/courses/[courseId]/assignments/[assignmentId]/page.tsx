@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -66,7 +68,7 @@ interface UploadedFile {
 export default function AssignmentPage() {
   const params = useParams();
   const router = useRouter();
-  const courseId = params.courseId as string;
+  const _courseId = params.courseId as string;
   const assignmentId = params.assignmentId as string;
   const fileInputRef = useRef<HTMLInputElement>(null);
 

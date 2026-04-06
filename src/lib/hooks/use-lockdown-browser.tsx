@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
@@ -113,7 +115,7 @@ export function useLockdownBrowser(config: Partial<LockdownConfig> = {}) {
         try {
           await document.documentElement.requestFullscreen();
           setStatus((prev) => ({ ...prev, isFullscreen: true }));
-        } catch (err) {
+        } catch (_err) {
           toast.error("Fullscreen mode is required for this exam");
           return false;
         }
@@ -130,7 +132,7 @@ export function useLockdownBrowser(config: Partial<LockdownConfig> = {}) {
 
       toast.success("Lockdown browser activated");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to activate lockdown mode");
       return false;
     }

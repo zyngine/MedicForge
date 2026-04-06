@@ -262,7 +262,7 @@ export function useClinicalSignature(documentType: "clinical_log" | "shift_booki
 
       toast.success("Preceptor signature recorded");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to record signature");
       return false;
     }
@@ -308,7 +308,7 @@ export function useSkillSheetSignature() {
 
       toast.success("Evaluator signature recorded");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to record signature");
       return false;
     }
@@ -331,7 +331,7 @@ export function useSkillSheetSignature() {
       if (updateError) throw updateError;
       toast.success("Student signature recorded");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to record signature");
       return false;
     }

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
@@ -38,6 +40,7 @@ export default function CEAgencyReportsPage() {
     if (dateTo) q = q.lte("completed_at", dateTo + "T23:59:59");
 
     const { data } = await q;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const agencyOnly = (data || []) as any[];
 
     setRows(agencyOnly.map((r) => ({

@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   Plus,
   GripVertical,
-  Edit,
   Trash2,
   Eye,
   EyeOff,
@@ -70,6 +69,7 @@ export default function CourseModulesPage() {
 
     try {
       // Fetch course name
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: course } = await (supabase as any)
         .from("courses")
         .select("title")
@@ -79,6 +79,7 @@ export default function CourseModulesPage() {
       if (course) setCourseName(course.title);
 
       // Fetch modules with lessons
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("modules")
         .select(`
@@ -124,6 +125,7 @@ export default function CourseModulesPage() {
 
     setIsAdding(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("modules")
         .insert({
@@ -150,6 +152,7 @@ export default function CourseModulesPage() {
 
   const handleTogglePublish = async (module: Module) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("modules")
         .update({ is_published: !module.is_published })
@@ -157,7 +160,7 @@ export default function CourseModulesPage() {
 
       if (error) throw error;
       fetchModules();
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to update module");
     }
   };
@@ -166,6 +169,7 @@ export default function CourseModulesPage() {
     if (!confirm("Delete this module and all its lessons?")) return;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("modules")
         .delete()
@@ -174,7 +178,7 @@ export default function CourseModulesPage() {
       if (error) throw error;
       toast.success("Module deleted");
       fetchModules();
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to delete module");
     }
   };

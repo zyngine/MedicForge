@@ -19,7 +19,6 @@ import {
   TabsContent,
 } from "@/components/ui";
 import {
-  Settings,
   Building2,
   Bell,
   Shield,

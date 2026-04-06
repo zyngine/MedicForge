@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Award,
   Search,
-  Filter,
   Download,
   MoreHorizontal,
   XCircle,

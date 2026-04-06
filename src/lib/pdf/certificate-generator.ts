@@ -231,8 +231,8 @@ function drawSeal(doc: jsPDF, x: number, y: number, color: string): void {
   for (let i = 0; i < starPoints * 2; i++) {
     const radius = i % 2 === 0 ? outerRadius : innerRadius;
     const angle = angleOffset + (i * Math.PI) / starPoints;
-    const px = x + radius * Math.cos(angle);
-    const py = y + radius * Math.sin(angle);
+    const _px = x + radius * Math.cos(angle);
+    const _py = y + radius * Math.sin(angle);
 
     if (i === 0) {
       // Move to first point

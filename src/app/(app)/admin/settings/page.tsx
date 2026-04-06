@@ -105,6 +105,7 @@ export default function SettingsPage() {
       const supabase = createClient();
       const newCode = generateAgencyCode();
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("tenants")
         .update({ agency_code: newCode })

@@ -36,8 +36,6 @@ import {
   GripVertical,
   Star,
   Clock,
-  Check,
-  Globe,
 } from "lucide-react";
 import { usePortfolios, usePortfolioBuilder, usePortfolioSharing } from "@/lib/hooks/use-portfolios";
 import { formatDate } from "@/lib/utils";

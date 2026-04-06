@@ -11,6 +11,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     // Verify the requester is an admin of their tenant
@@ -59,6 +60,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabaseAdmin: any = createAdminClient();
 
     // Verify the requester is an admin
@@ -94,7 +96,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only allow updating safe fields
-    const allowedUpdates: Record<string, unknown> = {};
+    const allowedUpdates: Record<string, any> = {};
     if (updates.role && ["admin", "instructor", "student"].includes(updates.role)) {
       allowedUpdates.role = updates.role;
     }

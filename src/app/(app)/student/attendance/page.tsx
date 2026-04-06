@@ -21,7 +21,6 @@ import {
   Clock,
   History,
   TrendingUp,
-  AlertCircle,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";

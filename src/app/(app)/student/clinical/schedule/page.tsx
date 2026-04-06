@@ -7,7 +7,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   Button,
   Badge,
   Spinner,
@@ -20,9 +19,6 @@ import { ShiftCard, BookingButton, BookingCard } from "@/components/clinical";
 import {
   ArrowLeft,
   Calendar,
-  Clock,
-  Building2,
-  MapPin,
   Filter,
   ChevronLeft,
   ChevronRight,

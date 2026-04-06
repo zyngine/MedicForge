@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-async function executeSql(sql) {
+async function _executeSql(sql) {
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
     method: "POST",
     headers: {

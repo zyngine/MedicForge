@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
-    const rows = questions.map((q: Record<string, unknown>) => ({
+    const rows = questions.map((q: Record<string, any>) => ({
       question_text: q.question_text as string,
       question_type: q.question_type as string,
       options: (q.options ?? null) as object | null,

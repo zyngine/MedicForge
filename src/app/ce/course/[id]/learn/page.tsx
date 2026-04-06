@@ -126,15 +126,18 @@ export default function CECourseLearnPage() {
       ]);
 
       const progressMap = new Map<string, { completed_at: string | null; started_at: string | null }>(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (progressRes.data || []).map((p: any) => [p.module_id, p])
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mods: Module[] = (modsRes.data || []).map((m: any) => ({
         id: m.id,
         module_number: m.module_number,
         title: m.title,
         duration_minutes: m.duration_minutes,
         sort_order: m.sort_order,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         content: (m.ce_module_content || []).sort((a: any, b: any) => a.content_order - b.content_order),
         completed: !!(progressMap.get(m.id)?.completed_at),
         started: !!(progressMap.get(m.id)?.started_at),
@@ -151,8 +154,10 @@ export default function CECourseLearnPage() {
           .select("*, ce_quiz_question_options(*)")
           .eq("quiz_id", quizRes.data.id)
           .order("sort_order");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setQuestions((qqs || []).map((q: any) => ({
           ...q,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           options: (q.ce_quiz_question_options || []).sort((a: any, b: any) => a.option_order - b.option_order),
         })));
       }

@@ -60,6 +60,7 @@ export function useQuizTemplates(options?: {
     queryFn: async () => {
       if (!tenant?.id) return [];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
       let query = supabase
         .from("quiz_templates")
@@ -112,6 +113,7 @@ export function useQuizTemplate(templateId: string | null | undefined) {
     queryFn: async () => {
       if (!templateId || !tenant?.id) return null;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
       const { data, error } = await supabase
         .from("quiz_templates")
@@ -158,6 +160,7 @@ export function useCreateQuizTemplate() {
         throw new Error("Only instructors and admins can create quiz templates");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       // Log for debugging
@@ -211,6 +214,7 @@ export function useUpdateQuizTemplate() {
       id,
       ...updates
     }: Partial<QuizTemplate> & { id: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       // JSONB columns accept objects directly, no need to stringify
@@ -239,6 +243,7 @@ export function useDeleteQuizTemplate() {
 
   return useMutation({
     mutationFn: async (templateId: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       const { error } = await supabase
@@ -263,6 +268,7 @@ export function useCloneQuizTemplate() {
 
   return useMutation({
     mutationFn: async (templateId: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       // Get the template
@@ -328,6 +334,7 @@ export function useSaveAsQuizTemplate() {
         throw new Error("Only instructors and admins can create quiz templates");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase: any = createClient();
 
       // Get assignment and its questions
@@ -350,6 +357,7 @@ export function useSaveAsQuizTemplate() {
 
       // Transform questions to template format
       const templateQuestions: QuizQuestion[] = (questions || []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (q: any, index: number) => ({
           id: `q_${index}`,
           question_text: q.question_text,

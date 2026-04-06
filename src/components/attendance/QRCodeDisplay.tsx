@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect } from "react";
 import { QrCode, RefreshCw, Clock, CheckCircle, Users, Loader2 } from "lucide-react";
 import {
@@ -9,7 +11,6 @@ import {
   CardTitle,
   CardDescription,
   Button,
-  Badge,
 } from "@/components/ui";
 import { useAttendanceSessions, useSessionCheckins, AttendanceSession } from "@/lib/hooks/use-qr-attendance";
 

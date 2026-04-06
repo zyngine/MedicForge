@@ -5,12 +5,10 @@ import { Button, Card, Badge } from "@/components/ui";
 import {
   FileText,
   Download,
-  Calendar,
   Users,
   Stethoscope,
   ClipboardCheck,
   TrendingUp,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   RefreshCw,

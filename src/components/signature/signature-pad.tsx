@@ -304,7 +304,7 @@ export function PreceptorSignature({
 }: PreceptorSignatureProps) {
   const [name, setName] = useState(initialName);
   const [credentials, setCredentials] = useState(initialCredentials);
-  const [signature, setSignature] = useState<string | null>(null);
+  const [_signature, setSignature] = useState<string | null>(null);
   const [step, setStep] = useState<"info" | "sign">("info");
 
   const handleSignatureSave = (sig: string) => {

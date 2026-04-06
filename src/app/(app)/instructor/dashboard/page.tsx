@@ -11,8 +11,6 @@ import {
   Button,
   Badge,
   Avatar,
-  Progress,
-  Spinner,
   SkeletonDashboard,
 } from "@/components/ui";
 import {
@@ -24,7 +22,6 @@ import {
   AlertCircle,
   ChevronRight,
   Plus,
-  FileText,
   GraduationCap,
   BarChart3,
   RefreshCw,
@@ -44,10 +41,11 @@ export default function InstructorDashboardPage() {
   const isLoading = userLoading || coursesLoading || submissionsLoading || assignmentsLoading;
 
   // Calculate stats from real data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeCourses = courses.filter((c: any) => !c.is_archived);
   const totalStudents = activeCourses.reduce((sum, course) => sum + (course.enrollments_count || 0), 0);
   const pendingGradesCount = submissions.length;
-  const avgCompletion = activeCourses.length > 0
+  const _avgCompletion = activeCourses.length > 0
     ? Math.round(activeCourses.reduce((sum, course) => sum + (course.modules_count || 0), 0) / activeCourses.length * 10) // Approximate
     : 0;
 

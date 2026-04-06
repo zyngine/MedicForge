@@ -21,6 +21,7 @@ export function useInstallPrompt() {
     if (typeof window !== "undefined") {
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window.navigator as any).standalone === true;
       setIsInstalled(isStandalone);
 

@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Input, Label, Select } from "@/components/ui";
+import { Card, CardContent, Button, Input, Label, Select } from "@/components/ui";
 import { PatientContactFormWizard } from "@/components/clinical";
 import { ArrowLeft, Calendar, Clock, MapPin, Loader2, AlertCircle, FileText, ClipboardList } from "lucide-react";
 import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
@@ -54,6 +54,7 @@ function NewPatientContactContent() {
     (b) => b.id === selectedBookingId
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = async (data: any) => {
     if (mode === "shift" && selectedBookingId) {
       const result = await createContact({

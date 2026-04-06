@@ -46,6 +46,7 @@ export function useStorageQuota() {
 
     try {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: rpcError } = await (supabase as any).rpc(
         "get_storage_usage",
         { p_tenant_id: tenant.id }
@@ -80,6 +81,7 @@ export function useStorageQuota() {
 
       try {
         const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error: rpcError } = await (supabase as any).rpc(
           "check_storage_quota",
           {

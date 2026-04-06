@@ -12,7 +12,6 @@ import {
   CalendarClock,
   UserCog,
   AlertTriangle,
-  CheckCircle,
   Clock,
   TrendingUp,
   ArrowRight,

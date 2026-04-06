@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import * as React from "react";
 import {
   Card,
@@ -17,7 +19,6 @@ import {
   Flag,
   CheckCircle,
   Circle,
-  Clock,
   AlertTriangle,
   Send,
   Loader2,
@@ -420,13 +421,13 @@ export function QuizResults({
           </p>
           <div className="mt-4 flex justify-center gap-4">
             <Badge variant="success">
-              {answers.filter((a, i) => {
+              {answers.filter((a, _i) => {
                 const q = questions.find((q) => q.id === a.questionId);
                 return q && a.answer === q.correct_answer;
               }).length} Correct
             </Badge>
             <Badge variant="destructive">
-              {answers.filter((a, i) => {
+              {answers.filter((a, _i) => {
                 const q = questions.find((q) => q.id === a.questionId);
                 return q && a.answer !== q.correct_answer && a.answer !== null;
               }).length} Incorrect

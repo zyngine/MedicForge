@@ -7,6 +7,7 @@ import { useTenant } from "./use-tenant";
 import { toast } from "sonner";
 
 // Note: These tables are created by migration 20240310000000_question_bank.sql
+ 
 // Using 'as any' until types are regenerated from Supabase
 
 export type QuestionDifficulty = "easy" | "medium" | "hard" | "expert";
@@ -221,7 +222,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     try {
       const supabase = createClient();
       // Only include valid columns for the question_bank table
-      const insertData: Record<string, unknown> = {
+      const insertData: Record<string, any> = {
         question_text: input.question_text,
         question_type: input.question_type,
         options: input.options || null,
@@ -239,6 +240,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
         created_by: profile?.id,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
         .insert(insertData)
@@ -261,7 +263,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
     try {
       const supabase = createClient();
       // Only include valid columns for the question_bank table
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         updated_at: new Date().toISOString(),
       };
 
@@ -280,6 +282,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       if (input.category_id !== undefined) updateData.category_id = input.category_id || null;
       if (input.references !== undefined) updateData.references = input.references;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: updateError } = await (supabase as any)
         .from("question_bank")
         .update(updateData)
@@ -308,6 +311,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const deleteQuestion = async (id: string): Promise<boolean> => {
     try {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: deleteError } = await (supabase as any)
         .from("question_bank")
         .update({ is_active: false })
@@ -327,6 +331,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
   const validateQuestion = async (id: string): Promise<boolean> => {
     try {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from("question_bank")
         .update({
@@ -377,6 +382,7 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
       console.log("Importing questions:", questionsWithMeta.length);
 
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: insertError } = await (supabase as any)
         .from("question_bank")
         .insert(questionsWithMeta)
@@ -428,6 +434,7 @@ export function useQuestionStats(questionId?: string) {
       setIsLoading(true);
       try {
         const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("question_bank")
           .select("times_used, times_correct, avg_time_seconds, difficulty")
@@ -466,6 +473,7 @@ export function useAssignmentQuestions(assignmentId: string) {
     try {
       setIsLoading(true);
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("assignment_questions")
         .select("*, question:question_bank(*, category:question_bank_categories(*))")
@@ -491,6 +499,7 @@ export function useAssignmentQuestions(assignmentId: string) {
   const addQuestion = async (questionId: string, orderIndex?: number): Promise<boolean> => {
     try {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from("assignment_questions").insert({
         assignment_id: assignmentId,
         question_id: questionId,
@@ -501,7 +510,7 @@ export function useAssignmentQuestions(assignmentId: string) {
       await fetchAssignedQuestions();
       toast.success("Question added to assignment");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to add question");
       return false;
     }
@@ -510,6 +519,7 @@ export function useAssignmentQuestions(assignmentId: string) {
   const removeQuestion = async (questionId: string): Promise<boolean> => {
     try {
       const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("assignment_questions")
         .delete()
@@ -520,7 +530,7 @@ export function useAssignmentQuestions(assignmentId: string) {
       setAssignedQuestions((prev) => prev.filter((q) => q.id !== questionId));
       toast.success("Question removed from assignment");
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to remove question");
       return false;
     }
@@ -536,14 +546,16 @@ export function useAssignmentQuestions(assignmentId: string) {
       }));
 
       // Delete existing and re-insert with new order
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from("assignment_questions").delete().eq("assignment_id", assignmentId);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from("assignment_questions").insert(updates);
 
       if (error) throw error;
       await fetchAssignedQuestions();
       return true;
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to reorder questions");
       return false;
     }

@@ -17,11 +17,9 @@ import {
   Globe,
   CheckCircle,
   Building2,
-  UserCog,
   BookOpen,
   CalendarClock,
   Stethoscope,
-  FileSignature,
 } from "lucide-react";
 
 const featureCategories = [

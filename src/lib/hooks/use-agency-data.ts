@@ -48,8 +48,8 @@ export interface AuditLogEntry {
   entity_id: string | null;
   performed_by: string | null;
   performed_by_name: string | null;
-  new_values: Record<string, unknown> | null;
-  old_values: Record<string, unknown> | null;
+  new_values: Record<string, any> | null;
+  old_values: Record<string, any> | null;
   created_at: string;
 }
 
@@ -207,9 +207,9 @@ export function useAgencyStats() {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 export function useAgencySettings() {
-  const { data, isLoading, error, refetch } = useFetch<Record<string, unknown>>("/api/agency/settings");
+  const { data, isLoading, error, refetch } = useFetch<Record<string, any>>("/api/agency/settings");
 
-  const saveSettings = async (payload: Record<string, unknown>) => {
+  const saveSettings = async (payload: Record<string, any>) => {
     const res = await fetch("/api/agency/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

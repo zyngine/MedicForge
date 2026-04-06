@@ -133,6 +133,7 @@ function InfoRow({
 
 function StatusBadge({ status }: { status: CompetencyStatus }) {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <Badge variant={STATUS_BADGE_VARIANTS[status] as any}>
       {STATUS_LABELS[status] ?? status}
     </Badge>
@@ -477,7 +478,7 @@ function CompetencyGrid({ employeeId, cycleId, isAdmin }: CompetencyGridProps) {
 
 export default function EmployeeDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const employeeId = params.id as string;
 
   const { isAgencyAdmin } = useAgencyRole();
@@ -520,7 +521,7 @@ export default function EmployeeDetailPage() {
     ...cycles.map((c) => ({ value: c.id, label: c.name })),
   ];
 
-  const handleSaved = (updated: EmployeeDetail) => {
+  const handleSaved = (_updated: EmployeeDetail) => {
     refetch();
   };
 

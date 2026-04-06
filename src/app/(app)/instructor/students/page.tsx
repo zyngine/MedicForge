@@ -1,12 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Badge,
   Button,
   Spinner,
@@ -25,16 +22,13 @@ import {
   Mail,
   GraduationCap,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   ChevronRight,
   Download,
-  Filter,
 } from "lucide-react";
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
-import { formatDate } from "@/lib/utils";
 
 export default function InstructorStudentsPage() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
@@ -107,7 +101,7 @@ export default function InstructorStudentsPage() {
     return { total: enrollments.length, active, atRisk, avgProgress };
   }, [enrollments]);
 
-  const getProgressColor = (percentage: number) => {
+  const _getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "bg-green-500";
     if (percentage >= 50) return "bg-yellow-500";
     return "bg-red-500";

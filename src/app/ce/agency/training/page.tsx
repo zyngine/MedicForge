@@ -26,7 +26,7 @@ interface EnrollmentWithCourse {
 export default function CEAgencyTrainingPage() {
   const [employees, setEmployees] = useState<AgencyUser[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([]);
-  const [courses, setCourses] = useState<{ id: string; title: string; ceh_hours: number }[]>([]);
+  const [_courses, setCourses] = useState<{ id: string; title: string; ceh_hours: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
@@ -36,7 +36,7 @@ export default function CEAgencyTrainingPage() {
       const { data: me } = await supabase.from("ce_users").select("agency_id").eq("id", (await supabase.auth.getUser()).data.user?.id || "").single();
       if (!me?.agency_id) { setIsLoading(false); return; }
 
-      const [empRes, enrollRes, courseRes] = await Promise.all([
+      const [empRes, _enrollRes, courseRes] = await Promise.all([
         supabase.from("ce_users").select("id, first_name, last_name, certification_level").eq("agency_id", me.agency_id).eq("role", "user"),
         supabase
           .from("ce_enrollments")
@@ -45,6 +45,7 @@ export default function CEAgencyTrainingPage() {
         supabase.from("ce_courses").select("id, title, ceh_hours").eq("status", "published"),
       ]);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const empIds = (empRes.data || []).map((e: any) => e.id);
 
       let enrollData: EnrollmentWithCourse[] = [];

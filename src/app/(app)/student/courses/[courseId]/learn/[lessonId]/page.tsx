@@ -14,7 +14,6 @@ import {
 } from "@/components/ui";
 import {
   ArrowLeft,
-  ArrowRight,
   CheckCircle,
   Circle,
   Clock,
@@ -25,7 +24,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useLesson, useLessons } from "@/lib/hooks/use-lessons";
-import { useModule } from "@/lib/hooks/use-modules";
 import {
   useLessonProgress,
   useMarkLessonComplete,
@@ -60,7 +58,7 @@ export default function StudentLessonPage() {
   const lessonId = params.lessonId as string;
 
   const { data: lesson, isLoading: lessonLoading } = useLesson(lessonId);
-  const { data: course } = useCourse(courseId);
+  const { data: _course } = useCourse(courseId);
   const { data: progress, isLoading: progressLoading } = useLessonProgress(lessonId);
   const { mutate: markComplete, isPending: isMarkingComplete } = useMarkLessonComplete();
   const { mutate: markIncomplete, isPending: isMarkingIncomplete } = useMarkLessonIncomplete();

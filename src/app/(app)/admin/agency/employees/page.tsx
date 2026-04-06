@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Button,
   Input,
   Badge,
@@ -23,16 +21,13 @@ import {
 import {
   Search,
   Plus,
-  Filter,
   MoreVertical,
   Mail,
   Phone,
-  Calendar,
   AlertTriangle,
   UserCheck,
   UserX,
   Edit,
-  Trash2,
   Download,
   Upload,
 } from "lucide-react";
@@ -43,7 +38,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = React.useState("");
   const [certFilter, setCertFilter] = React.useState("All");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("active");
-  const [selectedEmployee, setSelectedEmployee] = React.useState<AgencyEmployee | null>(null);
+  const [_selectedEmployee, _setSelectedEmployee] = React.useState<AgencyEmployee | null>(null);
   const [showActions, setShowActions] = React.useState<string | null>(null);
 
   const { data: employees, isLoading, error } = useAgencyEmployees({
@@ -252,6 +247,7 @@ export default function EmployeesPage() {
                         {expStatus && (
                           <div className="mt-2">
                             <Badge
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               variant={expStatus.color as any}
                               className="flex items-center gap-1 w-fit"
                             >

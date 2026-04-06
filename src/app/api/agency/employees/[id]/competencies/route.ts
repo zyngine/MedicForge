@@ -85,7 +85,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const updates: Record<string, unknown> = {
+    const updates: Record<string, any> = {
       status,
       updated_at: new Date().toISOString(),
     };

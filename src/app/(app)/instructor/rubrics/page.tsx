@@ -5,9 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Button,
   Badge,
   Input,
@@ -21,7 +18,6 @@ import {
 import {
   Plus,
   Search,
-  MoreVertical,
   Edit,
   Trash2,
   Copy,
@@ -30,12 +26,10 @@ import {
   Grid3x3,
   ListChecks,
   Target,
-  Eye,
-  GripVertical,
   ChevronRight,
   ChevronDown,
 } from "lucide-react";
-import { useRubrics, useRubricBuilder, type Rubric, type RubricCriterion } from "@/lib/hooks/use-rubrics";
+import { useRubrics, type Rubric } from "@/lib/hooks/use-rubrics";
 import { formatDate } from "@/lib/utils";
 
 export default function InstructorRubricsPage() {
@@ -147,7 +141,7 @@ export default function InstructorRubricsPage() {
     setEditingRubric(rubric);
   };
 
-  const getRubricTypeIcon = (type: Rubric["rubric_type"]) => {
+  const _getRubricTypeIcon = (type: Rubric["rubric_type"]) => {
     switch (type) {
       case "analytic":
         return <Grid3x3 className="h-4 w-4" />;
@@ -158,7 +152,7 @@ export default function InstructorRubricsPage() {
     }
   };
 
-  const getRubricTypeBadge = (type: Rubric["rubric_type"]) => {
+  const _getRubricTypeBadge = (type: Rubric["rubric_type"]) => {
     switch (type) {
       case "analytic":
         return <Badge variant="info">Analytic</Badge>;

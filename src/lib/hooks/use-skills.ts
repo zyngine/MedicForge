@@ -95,6 +95,7 @@ export function useSkillCategories(courseType?: SkillCourseType) {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((cat: any) => {
         const count = cat.skills?.[0]?.count || 0;
         return {
@@ -449,6 +450,7 @@ export function useSkillAttempts(options: {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((attempt: any) => ({
         ...attempt,
         skill: attempt.skill || undefined,
@@ -561,6 +563,7 @@ export function useStudentSkillProgress(studentId: string | null | undefined, co
 
       // Build progress data
       const attemptsMap = new Map<string, any[]>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (attempts || []).forEach((attempt: any) => {
         const existing = attemptsMap.get(attempt.skill_id) || [];
         existing.push(attempt);
@@ -570,14 +573,18 @@ export function useStudentSkillProgress(studentId: string | null | undefined, co
       let totalRequired = 0;
       let totalPassed = 0;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const categoriesProgress = (categories || []).map((cat: any) => {
         const skills = cat.skills || [];
         const requiredCount = cat.required_count || 1;
         totalRequired += requiredCount;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const skillsProgress = skills.map((skill: any) => {
           const skillAttempts = attemptsMap.get(skill.id) || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const passedAttempt = skillAttempts.find((a: any) => a.status === "passed");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const latestAttempt = skillAttempts.sort((a: any, b: any) =>
             new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime()
           )[0];
@@ -591,6 +598,7 @@ export function useStudentSkillProgress(studentId: string | null | undefined, co
           };
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const passedCount = skillsProgress.filter((s: any) => s.passed).length;
         const isComplete = passedCount >= requiredCount;
 

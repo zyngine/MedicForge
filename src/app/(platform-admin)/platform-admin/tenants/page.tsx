@@ -17,13 +17,11 @@ import {
 import {
   Building2,
   Search,
-  MoreVertical,
   ExternalLink,
   Users,
   BookOpen,
   Calendar,
   X,
-  CreditCard,
   FileText,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -209,9 +207,9 @@ export default function TenantsPage() {
       setTimeout(() => {
         closeEditModal();
       }, 1500);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating subscription:", error);
-      setSaveError(error.message || "Failed to update subscription. Please try again.");
+      setSaveError(error instanceof Error ? error.message : "Failed to update subscription. Please try again.");
     } finally {
       setIsSaving(false);
     }

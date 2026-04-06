@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ClinicalPatientContact, ClinicalPatientContactWithDetails, PatientContactForm, VitalSigns, MedicationGiven, Preceptor } from "@/types";
+import type { ClinicalPatientContactWithDetails, PatientContactForm, VitalSigns, MedicationGiven, Preceptor } from "@/types";
 
 type VerificationStatus = "pending" | "verified" | "rejected";
 
 // Helper to transform database contact to ClinicalPatientContactWithDetails type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transformContact = (data: any): ClinicalPatientContactWithDetails => ({
   ...data,
   vitals: (data.vitals || []) as VitalSigns[],
@@ -127,13 +128,18 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
         .insert({
           ...contactData,
           booking_id: contactData.booking_id || null, // Allow null booking_id
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           vitals: contactData.vitals as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           skills_performed: contactData.skills_performed as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           medications_given: contactData.medications_given as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           procedures: contactData.procedures as any,
           tenant_id: userProfile.tenant_id,
           student_id: userData.user.id,
           verification_status: "pending",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
         .select()
         .single();
@@ -158,9 +164,13 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
         .from("clinical_patient_contacts")
         .update({
           ...updates,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           vitals: updates.vitals as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           skills_performed: updates.skills_performed as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           medications_given: updates.medications_given as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           procedures: updates.procedures as any,
         })
         .eq("id", contactId)

@@ -11,7 +11,6 @@ import {
   Phone,
   Mail,
   Users,
-  MoreVertical,
   Pencil,
   Trash2,
   Calendar,

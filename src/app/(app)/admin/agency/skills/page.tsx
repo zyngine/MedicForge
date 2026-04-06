@@ -10,12 +10,10 @@ import {
   Input,
   Badge,
   Spinner,
-  Alert,
   Select,
 } from "@/components/ui";
 import {
   useSkillsByCategory,
-  useSkillCategories,
   useCreateSkill,
   useUpdateSkill,
   useDeactivateSkill,
@@ -31,9 +29,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Shield,
   Clock,
-  CheckCircle,
   X,
 } from "lucide-react";
 
@@ -342,6 +338,7 @@ function SkillModal({
         name,
         description,
         category,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         certification_levels: certLevels as any,
         requires_annual_verification: requiresAnnualVerification,
         is_required: isRequired,

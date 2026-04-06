@@ -13,16 +13,12 @@ import {
   Spinner,
 } from "@/components/ui";
 import {
-  BarChart3,
   Download,
   TrendingUp,
   Users,
-  BookOpen,
   ClipboardCheck,
-  GraduationCap,
   Clock,
   Target,
-  Award,
 } from "lucide-react";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";

@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Button,
   Input,
   Badge,
   Spinner,
@@ -52,6 +51,7 @@ const ACTION_LABELS: Record<string, string> = {
   cycle_created: "Cycle Created",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const truncate = (val: any) => {
   const str = String(val ?? "");
   return str.length > 100 ? str.slice(0, 100) + "..." : str;

@@ -33,10 +33,7 @@ import {
   Monitor,
   Maximize,
   Printer,
-  CheckCircle,
-  XCircle,
   User,
-  Calendar,
   FileText,
 } from "lucide-react";
 import {
@@ -45,7 +42,6 @@ import {
   useReviewAttempt,
   REVIEW_DECISIONS,
   getEventTypeLabel,
-  getEventSeverityColor,
   getDecisionBadgeVariant,
   getDecisionLabel,
   formatEventSummary,
@@ -250,7 +246,7 @@ export default function IntegrityAttemptDetailPage() {
                 </p>
               ) : (
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {filteredEvents.map((event, index) => {
+                  {filteredEvents.map((event, _index) => {
                     const Icon = EVENT_ICONS[event.event_type] || AlertTriangle;
                     return (
                       <div

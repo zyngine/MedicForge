@@ -16,7 +16,7 @@ export interface NotificationPayload {
   icon?: string;
   badge?: string;
   tag?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, any>;
   actions?: Array<{
     action: string;
     title: string;

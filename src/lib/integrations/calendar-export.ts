@@ -35,7 +35,7 @@ export function generateICS(event: CalendarEvent): string {
   const startDate = formatICSDate(event.start, event.allDay);
   const endDate = formatICSDate(event.end || addHours(event.start, 1), event.allDay);
 
-  let ics = [
+  const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//MedicForge//Event Export//EN",
@@ -85,7 +85,7 @@ export function generateICSBatch(events: CalendarEvent[]): string {
       .replace(/\n/g, "\\n");
   };
 
-  let ics = [
+  const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//MedicForge//Event Export//EN",

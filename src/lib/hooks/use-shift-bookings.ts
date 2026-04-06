@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ShiftBooking, ShiftBookingWithDetails, BookingStatus, Preceptor } from "@/types";
 
 // Helper to transform database booking to ShiftBookingWithDetails type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transformBooking = (data: any): ShiftBookingWithDetails => ({
   ...data,
   shift: data.shift ? {

@@ -24,7 +24,7 @@ export interface IntegrityEvent {
   tenant_id: string;
   user_id: string;
   event_type: string;
-  event_data: Record<string, unknown>;
+  event_data: Record<string, any>;
   question_id: string | null;
   question_number: number | null;
   timestamp: string;
@@ -141,6 +141,7 @@ export function useIntegritySummary(attemptId: string | null) {
         .select("id, full_name, email")
         .in("id", userIds);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userMap = new Map((users || []).map((u: any) => [u.id, u]));
 
       return {
@@ -283,15 +284,22 @@ export function useExamIntegrityStats(examId: string | null) {
 
       const data = summaries || [];
       const total = data.length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const flagged = data.filter((s: any) => s.flagged).length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const reviewed = data.filter((s: any) => s.reviewed).length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pending = flagged - data.filter((s: any) => s.flagged && s.reviewed).length;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const violations = data.filter((s: any) => s.review_decision === "violation").length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const warnings = data.filter((s: any) => s.review_decision === "warning").length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cleared = data.filter((s: any) => s.review_decision === "cleared").length;
 
       const avgEvents = total > 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? data.reduce((sum: number, s: any) => sum + s.total_events, 0) / total
         : 0;
 

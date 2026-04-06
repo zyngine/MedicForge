@@ -168,6 +168,7 @@ export function useInstructorCourses() {
       }
 
       // First get course IDs from junction table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: courseInstructors, error: ciError } = await (supabase as any)
         .from("course_instructors")
         .select("course_id, role, can_edit, can_grade, can_manage_students")
@@ -189,6 +190,7 @@ export function useInstructorCourses() {
       }
 
       // Get courses from junction table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const junctionCourseIds = (courseInstructors || []).map((ci: any) => ci.course_id);
 
       // Also get courses where user is the direct instructor (legacy field)
@@ -203,6 +205,7 @@ export function useInstructorCourses() {
       // Merge both sources (deduplicate)
       const allCourseIds = [...new Set([
         ...junctionCourseIds,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(legacyCourses || []).map((c: any) => c.id),
       ])];
 
@@ -223,6 +226,7 @@ export function useInstructorCourses() {
 
       // Add role/permissions info to each course
       return counted.map((course) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ci = courseInstructors.find((c: any) => c.course_id === course.id);
         return {
           ...course,
@@ -370,6 +374,7 @@ export function useCreateCourse() {
       // Also add to course_instructors junction table so the course
       // appears in My Courses (which checks both sources)
       if (data?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: ciError } = await (supabase as any)
           .from("course_instructors")
           .insert({

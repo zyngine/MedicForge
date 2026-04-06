@@ -6,7 +6,7 @@ const getDb = async () => (await createClient()) as any;
 
 interface IntegrityEvent {
   event_type: string;
-  event_data: Record<string, unknown>;
+  event_data: Record<string, any>;
   question_id?: string;
   question_number?: number;
   timestamp: string;
