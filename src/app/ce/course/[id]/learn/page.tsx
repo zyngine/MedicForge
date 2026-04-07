@@ -229,7 +229,7 @@ export default function CECourseLearnPage() {
   // ── Quiz result view ──
   if (quizResult) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md text-center">
           {quizResult.passed ? (
             <>
@@ -262,8 +262,8 @@ export default function CECourseLearnPage() {
   // ── Quiz taking view ──
   if (quizView && questions.length > 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
+      <div className="min-h-screen bg-muted/30">
+        <div className="bg-card border-b px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={() => setQuizView(false)} className="text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-5 w-5" />
@@ -277,7 +277,7 @@ export default function CECourseLearnPage() {
           {error && <Alert variant="error">{error}</Alert>}
 
           {questions.map((q, qIdx) => (
-            <div key={q.id} className="bg-white border rounded-lg p-5">
+            <div key={q.id} className="bg-card border rounded-lg p-5">
               <p className="font-medium text-sm mb-4">
                 <span className="text-muted-foreground mr-2">{qIdx + 1}.</span>
                 {q.question_text}
@@ -289,7 +289,7 @@ export default function CECourseLearnPage() {
                     className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
                       answers[q.id] === opt.option_text
                         ? "bg-red-50 border-red-300"
-                        : "hover:bg-gray-50"
+                        : "hover:bg-muted/30"
                     }`}
                   >
                     <input
@@ -326,9 +326,9 @@ export default function CECourseLearnPage() {
 
   // ── Main learn view ──
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Top bar */}
-      <div className="bg-white border-b px-6 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-card border-b px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Link href={`/ce/course/${id}`} className="text-muted-foreground hover:text-foreground">
             <ChevronLeft className="h-5 w-5" />
@@ -339,7 +339,7 @@ export default function CECourseLearnPage() {
           <div className="text-sm text-muted-foreground hidden sm:block">
             {completedCount}/{modules.length} modules
           </div>
-          <div className="w-24 bg-gray-200 rounded-full h-1.5">
+          <div className="w-24 bg-muted rounded-full h-1.5">
             <div
               className="bg-red-700 h-1.5 rounded-full transition-all"
               style={{ width: `${enrollment?.progress_percentage || 0}%` }}
@@ -351,7 +351,7 @@ export default function CECourseLearnPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-72 bg-white border-r shrink-0 overflow-y-auto">
+        <div className="w-72 bg-card border-r shrink-0 overflow-y-auto">
           <div className="p-4 border-b">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Course Content</p>
           </div>
@@ -363,14 +363,14 @@ export default function CECourseLearnPage() {
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
                   activeModuleId === mod.id && !quizView
                     ? "bg-red-50 text-red-700 border-r-2 border-red-700"
-                    : "hover:bg-gray-50 text-gray-700"
+                    : "hover:bg-muted/30 text-foreground"
                 }`}
               >
                 <div className="shrink-0">
                   {mod.completed ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
-                    <div className={`h-4 w-4 rounded-full border-2 ${activeModuleId === mod.id && !quizView ? "border-red-700" : "border-gray-300"}`} />
+                    <div className={`h-4 w-4 rounded-full border-2 ${activeModuleId === mod.id && !quizView ? "border-red-700" : "border-border"}`} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -391,7 +391,7 @@ export default function CECourseLearnPage() {
                   quizView
                     ? "bg-red-50 text-red-700 border-r-2 border-red-700"
                     : allModulesComplete
-                      ? "hover:bg-gray-50 text-gray-700"
+                      ? "hover:bg-muted/30 text-foreground"
                       : "text-muted-foreground cursor-not-allowed opacity-60"
                 }`}
               >
@@ -435,7 +435,7 @@ export default function CECourseLearnPage() {
 
                       {block.content_type === "text" && block.body && (
                         <div
-                          className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                          className="prose prose-sm max-w-none text-foreground leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: sanitizeHTML(block.body) }}
                         />
                       )}

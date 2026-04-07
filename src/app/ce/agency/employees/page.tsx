@@ -94,7 +94,7 @@ export default function CEAgencyEmployeesPage() {
         <Input placeholder="Search employees..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
@@ -105,7 +105,7 @@ export default function CEAgencyEmployeesPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cert Level</th>
@@ -117,7 +117,7 @@ export default function CEAgencyEmployeesPage() {
             </thead>
             <tbody>
               {filtered.map((emp) => (
-                <tr key={emp.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={emp.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <p className="font-medium">{emp.first_name} {emp.last_name}</p>
                     <p className="text-xs text-muted-foreground">{emp.email}</p>

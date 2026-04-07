@@ -146,7 +146,7 @@ export default function CECourseDiscussionPage() {
       </div>
 
       {showNewForm && (
-        <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="bg-card border rounded-lg p-5 space-y-3">
           <h2 className="font-semibold text-sm">Start a Discussion</h2>
           <input
             className="w-full border rounded-md px-3 py-2 text-sm"
@@ -178,10 +178,10 @@ export default function CECourseDiscussionPage() {
       ) : (
         <div className="space-y-3">
           {discussions.map((d) => (
-            <div key={d.id} className="bg-white border rounded-lg overflow-hidden">
+            <div key={d.id} className="bg-card border rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleExpand(d.id)}
-                className="w-full flex items-start justify-between px-5 py-4 text-left hover:bg-gray-50"
+                className="w-full flex items-start justify-between px-5 py-4 text-left hover:bg-muted/30"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -200,9 +200,9 @@ export default function CECourseDiscussionPage() {
 
               {expanded === d.id && (
                 <div className="border-t">
-                  <div className="px-5 py-4 bg-gray-50 space-y-2">
+                  <div className="px-5 py-4 bg-muted/30 space-y-2">
                     <p className="text-sm whitespace-pre-wrap">{d.body}</p>
-                    <button onClick={() => likeDiscussion(d)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-gray-700">
+                    <button onClick={() => likeDiscussion(d)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                       <ThumbsUp className="h-3.5 w-3.5" />{d.likes_count}
                     </button>
                   </div>
@@ -236,7 +236,7 @@ export default function CECourseDiscussionPage() {
                   ) : (
                     <button
                       onClick={() => setReplyingTo(d.id)}
-                      className="w-full text-left px-5 py-3 border-t text-xs text-blue-700 hover:bg-gray-50"
+                      className="w-full text-left px-5 py-3 border-t text-xs text-blue-700 hover:bg-muted/30"
                     >
                       Reply to this thread...
                     </button>

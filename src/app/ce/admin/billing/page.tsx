@@ -126,7 +126,7 @@ export default function CEAdminBillingPage() {
 
       {/* Revenue summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Course Sales</p>
           <p className="text-2xl font-bold">${purchaseRevenue.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -134,14 +134,14 @@ export default function CEAdminBillingPage() {
             {purchases.filter((p) => p.refunded).length} refunded
           </p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Subscription Revenue</p>
           <p className="text-2xl font-bold">${subscriptionRevenue.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">
             {activeSubscriptions} active · {subscriptions.length} total
           </p>
         </div>
-        <div className="bg-white border rounded-lg p-4 border-l-4 border-l-green-500">
+        <div className="bg-card border rounded-lg p-4 border-l-4 border-l-green-500">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Revenue</p>
           <p className="text-2xl font-bold text-green-700">
             ${(purchaseRevenue + subscriptionRevenue).toFixed(2)}
@@ -151,7 +151,7 @@ export default function CEAdminBillingPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         <div className="flex items-center border-b">
           {(["purchases", "subscriptions"] as Tab[]).map((t) => (
             <button
@@ -160,7 +160,7 @@ export default function CEAdminBillingPage() {
               className={`px-6 py-3 text-sm font-medium capitalize transition-colors ${
                 tab === t
                   ? "border-b-2 border-red-700 text-red-700"
-                  : "text-muted-foreground hover:text-gray-900"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t === "purchases" ? `Purchases (${purchases.length})` : `Subscriptions (${subscriptions.length})`}
@@ -180,7 +180,7 @@ export default function CEAdminBillingPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted/30 border-b">
                   <tr className="text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="text-left px-4 py-3">Date</th>
                     <th className="text-left px-4 py-3">User</th>
@@ -238,7 +238,7 @@ export default function CEAdminBillingPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted/30 border-b">
                   <tr className="text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="text-left px-4 py-3">Started</th>
                     <th className="text-left px-4 py-3">User</th>
@@ -280,7 +280,7 @@ export default function CEAdminBillingPage() {
                               <CheckCircle className="h-3 w-3" /> Active
                             </span>
                           ) : isExpired ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                               <Clock className="h-3 w-3" /> Expired
                             </span>
                           ) : (

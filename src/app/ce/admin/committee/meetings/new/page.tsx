@@ -81,7 +81,7 @@ export default function CECommitteeNewMeetingPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Date & time */}
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Date & Time</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -108,7 +108,7 @@ export default function CECommitteeNewMeetingPage() {
         </div>
 
         {/* Agenda */}
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Agenda Items</h2>
           <div className="space-y-1">
             <label className="text-sm font-medium">Old Business</label>
@@ -140,7 +140,7 @@ export default function CECommitteeNewMeetingPage() {
         </div>
 
         {/* Next meeting */}
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Next Meeting</h2>
           <div className="space-y-1 max-w-xs">
             <label className="text-sm font-medium">Tentative Next Meeting Date</label>

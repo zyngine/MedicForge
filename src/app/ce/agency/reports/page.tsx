@@ -108,7 +108,7 @@ export default function CEAgencyReportsPage() {
       </div>
 
       {/* Date filter */}
-      <div className="bg-white border rounded-lg p-5 flex items-end gap-4 flex-wrap">
+      <div className="bg-card border rounded-lg p-5 flex items-end gap-4 flex-wrap">
         <div className="space-y-1">
           <label className="text-sm font-medium">From</label>
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
@@ -126,7 +126,7 @@ export default function CEAgencyReportsPage() {
 
       {/* Compliance summary */}
       {!isLoading && Object.keys(employeeMap).length > 0 && (
-        <div className="bg-white border rounded-lg p-5">
+        <div className="bg-card border rounded-lg p-5">
           <h2 className="font-semibold text-sm mb-3">CEH Summary ({dateFrom} – {dateTo})</h2>
           <div className="space-y-3">
             {Object.entries(employeeMap).map(([name, { level, ceh }]) => {
@@ -142,7 +142,7 @@ export default function CEAgencyReportsPage() {
                       <span className={compliant ? "text-green-700 font-medium" : "text-red-600 font-medium"}>{ceh.toFixed(1)}h / {required}h</span>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="w-full bg-muted rounded-full h-1.5">
                     <div className={`h-1.5 rounded-full ${compliant ? "bg-green-500" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -153,8 +153,8 @@ export default function CEAgencyReportsPage() {
       )}
 
       {/* Completions table */}
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <div className="px-5 py-4 border-b bg-gray-50 flex items-center justify-between">
+      <div className="bg-card border rounded-lg overflow-hidden">
+        <div className="px-5 py-4 border-b bg-muted/30 flex items-center justify-between">
           <p className="font-medium text-sm">{rows.length} completion{rows.length !== 1 ? "s" : ""} in range</p>
         </div>
         {isLoading ? (
@@ -165,7 +165,7 @@ export default function CEAgencyReportsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">NREMT ID</th>
@@ -176,7 +176,7 @@ export default function CEAgencyReportsPage() {
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={i} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{r.employee}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.nremt_id === "MISSING" ? <span className="text-red-600">Missing</span> : r.nremt_id}</td>
                   <td className="px-4 py-3">

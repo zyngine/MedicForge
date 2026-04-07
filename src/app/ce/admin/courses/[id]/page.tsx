@@ -151,12 +151,12 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
+  draft: "bg-muted text-foreground",
   pending_committee_review: "bg-yellow-100 text-yellow-800",
   revisions_requested: "bg-orange-100 text-orange-800",
   approved: "bg-blue-100 text-blue-800",
   published: "bg-green-100 text-green-800",
-  archived: "bg-gray-100 text-gray-500",
+  archived: "bg-muted text-muted-foreground",
 };
 
 const CONTENT_TYPES = [
@@ -808,11 +808,11 @@ export default function CEAdminCourseEditPage() {
             </Button>
           </div>
           {visibleObjectives.length === 0 ? (
-            <div className="bg-white rounded-lg border p-8 text-center text-muted-foreground text-sm">No objectives yet. Add at least 3 measurable learning objectives.</div>
+            <div className="bg-card rounded-lg border p-8 text-center text-muted-foreground text-sm">No objectives yet. Add at least 3 measurable learning objectives.</div>
           ) : (
             <div className="space-y-3">
               {visibleObjectives.map((obj, idx) => (
-                <div key={obj.id} className="bg-white rounded-lg border p-4 flex gap-3 items-start">
+                <div key={obj.id} className="bg-card rounded-lg border p-4 flex gap-3 items-start">
                   <span className="text-muted-foreground text-sm font-mono mt-2 w-5 shrink-0">{idx + 1}.</span>
                   <div className="flex-1 space-y-2">
                     <Input value={obj.objective_text} onChange={(e) => setObjectives((prev) => prev.map((o) => o.id === obj.id ? { ...o, objective_text: e.target.value } : o))} placeholder="e.g., Identify the three components of the cardiac conduction system" />
@@ -841,11 +841,11 @@ export default function CEAdminCourseEditPage() {
             </Button>
           </div>
           {visibleReferences.length === 0 ? (
-            <div className="bg-white rounded-lg border p-8 text-center text-muted-foreground text-sm">No references yet. Add clinical guidelines, journal articles, or textbooks.</div>
+            <div className="bg-card rounded-lg border p-8 text-center text-muted-foreground text-sm">No references yet. Add clinical guidelines, journal articles, or textbooks.</div>
           ) : (
             <div className="space-y-3">
               {visibleReferences.map((ref, idx) => (
-                <div key={ref.id} className="bg-white rounded-lg border p-4 flex gap-3 items-start">
+                <div key={ref.id} className="bg-card rounded-lg border p-4 flex gap-3 items-start">
                   <span className="text-muted-foreground text-sm font-mono mt-2 w-5 shrink-0">{idx + 1}.</span>
                   <div className="flex-1 space-y-2">
                     <Select value={ref.reference_type || ""} onChange={(v) => setReferences((prev) => prev.map((r) => r.id === ref.id ? { ...r, reference_type: v } : r))} options={REF_TYPES} />
@@ -878,7 +878,7 @@ export default function CEAdminCourseEditPage() {
           </div>
 
           {modules.length === 0 ? (
-            <div className="bg-white rounded-lg border p-12 text-center text-muted-foreground">
+            <div className="bg-card rounded-lg border p-12 text-center text-muted-foreground">
               <p className="font-medium mb-1">No modules yet</p>
               <p className="text-sm mb-4">Add your first module to start building course content.</p>
               <Button size="sm" onClick={addModule}>Add Module</Button>
@@ -886,9 +886,9 @@ export default function CEAdminCourseEditPage() {
           ) : (
             <div className="space-y-3">
               {modules.map((mod, modIdx) => (
-                <div key={mod.id} className="bg-white border rounded-lg overflow-hidden">
+                <div key={mod.id} className="bg-card border rounded-lg overflow-hidden">
                   {/* Module header */}
-                  <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50">
+                  <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
                     <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="text-sm font-mono text-muted-foreground w-6 shrink-0">{modIdx + 1}</span>
                     <Input
@@ -929,7 +929,7 @@ export default function CEAdminCourseEditPage() {
                         <p className="text-sm text-muted-foreground text-center py-4">No content yet. Add a text block, video, or PDF.</p>
                       )}
                       {mod.content.filter((c) => !c.isDeleted).map((block, blockIdx) => (
-                        <div key={block.id} className="border rounded-md p-3 space-y-2 bg-gray-50">
+                        <div key={block.id} className="border rounded-md p-3 space-y-2 bg-muted/30">
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground font-mono">{blockIdx + 1}</span>
                             <Select
@@ -962,7 +962,7 @@ export default function CEAdminCourseEditPage() {
                                 ...m, content: m.content.map((c) => c.id === block.id ? { ...c, body: e.target.value } : c),
                               } : m))}
                               rows={6}
-                              className="w-full px-3 py-2 text-sm border rounded-md bg-white resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+                              className="w-full px-3 py-2 text-sm border rounded-md bg-card resize-y focus:outline-none focus:ring-2 focus:ring-ring"
                               placeholder="Enter text content (HTML supported)..."
                             />
                           )}
@@ -1075,15 +1075,15 @@ export default function CEAdminCourseEditPage() {
               </div>
 
               {visibleQuestions.length === 0 ? (
-                <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground text-sm">
+                <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground text-sm">
                   No questions yet. Add your first question.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {visibleQuestions.map((q, qIdx) => (
-                    <div key={q.id} className="bg-white border rounded-lg overflow-hidden">
+                    <div key={q.id} className="bg-card border rounded-lg overflow-hidden">
                       {/* Question header */}
-                      <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b">
+                      <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 border-b">
                         <span className="text-sm font-mono text-muted-foreground w-6 shrink-0">{qIdx + 1}.</span>
                         <p className="flex-1 text-sm font-medium truncate">
                           {q.question_text || <span className="text-muted-foreground italic">New question</span>}
@@ -1169,7 +1169,7 @@ export default function CEAdminCourseEditPage() {
                                 />
                                 <span className="text-xs text-muted-foreground font-mono w-4">{String.fromCharCode(65 + optIdx)}.</span>
                                 {q.question_type === "true_false" ? (
-                                  <span className="text-sm flex-1 px-3 py-1.5 border rounded-md bg-gray-50">{opt.option_text}</span>
+                                  <span className="text-sm flex-1 px-3 py-1.5 border rounded-md bg-muted/30">{opt.option_text}</span>
                                 ) : (
                                   <Input
                                     value={opt.option_text}
@@ -1334,7 +1334,7 @@ export default function CEAdminCourseEditPage() {
 
                 {course.status === "published" && (
                   <div className="flex items-start gap-3 p-3 border rounded-md">
-                    <Archive className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
+                    <Archive className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Archive Course</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Remove from catalog. Existing completions are preserved.</p>

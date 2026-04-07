@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function CELayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-card text-foreground">
       {children}
     </div>
   );

@@ -129,7 +129,7 @@ export default function CEAdminInstructorsPage() {
       )}
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Add Instructor</h2>
             <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
@@ -173,7 +173,7 @@ export default function CEAdminInstructorsPage() {
               <div className="flex flex-wrap gap-2">
                 {EXPERTISE_OPTIONS.map((area) => (
                   <button key={area} type="button" onClick={() => toggleExpertise(area)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${form.expertise_areas.includes(area) ? "bg-red-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${form.expertise_areas.includes(area) ? "bg-red-700 text-white" : "bg-muted text-foreground hover:bg-muted"}`}>
                     {area}
                   </button>
                 ))}
@@ -192,7 +192,7 @@ export default function CEAdminInstructorsPage() {
         <Input placeholder="Search instructors..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
@@ -202,7 +202,7 @@ export default function CEAdminInstructorsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Instructor</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Credentials</th>
@@ -217,7 +217,7 @@ export default function CEAdminInstructorsPage() {
                   ? (new Date(inst.coi_expires_at).getTime() - Date.now()) / 86400000
                   : null;
                 return (
-                  <tr key={inst.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={inst.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div>
@@ -233,7 +233,7 @@ export default function CEAdminInstructorsPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {(inst.expertise_areas || []).slice(0, 3).map((a) => (
-                          <span key={a} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{a}</span>
+                          <span key={a} className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{a}</span>
                         ))}
                         {(inst.expertise_areas || []).length > 3 && (
                           <span className="text-xs text-muted-foreground">+{(inst.expertise_areas || []).length - 3}</span>
@@ -251,7 +251,7 @@ export default function CEAdminInstructorsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${inst.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${inst.status === "active" ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {inst.status}
                       </span>
                     </td>

@@ -173,7 +173,7 @@ export default function CESubscribePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-muted/30 text-foreground">
       <CEHeader />
 
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -211,7 +211,7 @@ export default function CESubscribePage() {
           </div>
 
           {/* Payment panel */}
-          <div className="bg-white border rounded-xl p-6 space-y-5">
+          <div className="bg-card border rounded-xl p-6 space-y-5">
             {success ? (
               <div className="text-center py-8">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
@@ -249,7 +249,7 @@ export default function CESubscribePage() {
 
                 <div ref={containerRef} className="min-h-[100px]" />
 
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                <div className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3 text-sm">
                   <span className="text-muted-foreground">Annual subscription</span>
                   <span className="font-bold">${price?.toFixed(2) ?? "—"}/yr</span>
                 </div>

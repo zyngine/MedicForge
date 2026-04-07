@@ -106,7 +106,7 @@ export default function CECommitteeDocumentsPage() {
       )}
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Add Document</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1">
@@ -158,7 +158,7 @@ export default function CECommitteeDocumentsPage() {
             <button
               key={c}
               onClick={() => setFilterCategory(c)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${filterCategory === c ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${filterCategory === c ? "bg-gray-900 text-white border-gray-900" : "bg-card text-muted-foreground hover:bg-muted/30"}`}
             >
               {c}
             </button>
@@ -166,7 +166,7 @@ export default function CECommitteeDocumentsPage() {
         </div>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
@@ -176,7 +176,7 @@ export default function CECommitteeDocumentsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
@@ -191,13 +191,13 @@ export default function CECommitteeDocumentsPage() {
                 const overdue = d.review_date && new Date(d.review_date) < new Date();
                 const dueSoon = d.review_date && !overdue && (new Date(d.review_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 30;
                 return (
-                  <tr key={d.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={d.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <p className="font-medium">{d.title}</p>
                       {d.description && <p className="text-xs text-muted-foreground">{d.description}</p>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{d.category}</span>
+                      <span className="text-xs bg-muted text-foreground px-2 py-0.5 rounded-full">{d.category}</span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{d.version || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{d.effective_date ? new Date(d.effective_date).toLocaleDateString() : "—"}</td>

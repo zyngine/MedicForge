@@ -97,7 +97,7 @@ export default function CEAdminDashboardPage() {
           { label: "Total Enrollments", value: stats?.totalEnrollments, icon: TrendingUp, color: "text-blue-600", href: "/ce/admin/users" },
           { label: "Completions This Month", value: stats?.completionsThisMonth, icon: Award, color: "text-red-700", href: "/ce/admin/users" },
         ].map(({ label, value, icon: Icon, color, href }) => (
-          <Link key={label} href={href} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
+          <Link key={label} href={href} className="bg-card border rounded-lg p-5 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
@@ -119,11 +119,11 @@ export default function CEAdminDashboardPage() {
           <Link
             key={href}
             href={href}
-            className="bg-white border rounded-lg p-5 flex items-center justify-between hover:shadow-sm transition-shadow group"
+            className="bg-card border rounded-lg p-5 flex items-center justify-between hover:shadow-sm transition-shadow group"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-gray-100 p-2 rounded-lg">
-                <Icon className="h-5 w-5 text-gray-600" />
+              <div className="bg-muted p-2 rounded-lg">
+                <Icon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="font-medium text-sm">{title}</p>
@@ -139,7 +139,7 @@ export default function CEAdminDashboardPage() {
       {recent.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Recent Enrollments</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {recent.map((e) => (
               <div key={e.id} className="flex items-center justify-between px-4 py-3">
                 <div>

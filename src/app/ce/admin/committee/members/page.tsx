@@ -30,7 +30,7 @@ const ROLE_STYLES: Record<string, string> = {
   chair: "bg-red-100 text-red-700",
   medical_director: "bg-green-100 text-green-700",
   secretary: "bg-blue-100 text-blue-700",
-  member: "bg-gray-100 text-gray-700",
+  member: "bg-muted text-foreground",
 };
 
 export default function CECommitteeMembersPage() {
@@ -104,7 +104,7 @@ export default function CECommitteeMembersPage() {
       )}
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Add Committee Member</h2>
             <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -152,7 +152,7 @@ export default function CECommitteeMembersPage() {
 
       <div>
         <h2 className="text-base font-semibold mb-3">Active Members</h2>
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-card border rounded-lg overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-32"><Spinner size="lg" /></div>
           ) : active.length === 0 ? (
@@ -161,7 +161,7 @@ export default function CECommitteeMembersPage() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-muted/30 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Member</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
@@ -172,13 +172,13 @@ export default function CECommitteeMembersPage() {
               </thead>
               <tbody>
                 {active.map((m) => (
-                  <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <p className="font-medium">{m.name}</p>
                       <p className="text-xs text-muted-foreground">{m.email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_STYLES[m.role] || "bg-gray-100 text-gray-700"}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_STYLES[m.role] || "bg-muted text-foreground"}`}>
                         {ROLES.find((r) => r.value === m.role)?.label || m.role}
                       </span>
                     </td>
@@ -202,7 +202,7 @@ export default function CECommitteeMembersPage() {
       {inactive.length > 0 && (
         <div>
           <h2 className="text-base font-semibold mb-3 text-muted-foreground">Inactive Members</h2>
-          <div className="bg-white border rounded-lg divide-y opacity-60">
+          <div className="bg-card border rounded-lg divide-y opacity-60">
             {inactive.map((m) => (
               <div key={m.id} className="flex items-center justify-between px-4 py-3">
                 <div>

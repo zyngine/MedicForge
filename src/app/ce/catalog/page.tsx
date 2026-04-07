@@ -84,7 +84,7 @@ export default function CECatalogPage() {
   const hasActiveFilters = category !== "All" || capceOnly || search.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-muted/30 text-foreground">
       <CEHeader />
 
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
@@ -102,13 +102,13 @@ export default function CECatalogPage() {
         {/* Search + filter bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search courses..."
-              className="w-full pl-9 pr-4 py-2 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 border rounded-md text-sm bg-card focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent"
             />
           </div>
           <button
@@ -116,7 +116,7 @@ export default function CECatalogPage() {
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm border transition-colors ${
               showFilters || hasActiveFilters
                 ? "bg-red-50 border-red-300 text-red-700"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-card text-muted-foreground hover:bg-muted/30"
             }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -130,7 +130,7 @@ export default function CECatalogPage() {
           {hasActiveFilters && (
             <button
               onClick={() => { setSearch(""); setCategory("All"); setCapceOnly(false); }}
-              className="text-sm text-gray-500 hover:text-gray-900 px-2"
+              className="text-sm text-muted-foreground hover:text-foreground px-2"
             >
               Clear
             </button>
@@ -139,9 +139,9 @@ export default function CECatalogPage() {
 
         {/* Expandable filter panel */}
         {showFilters && (
-          <div className="bg-white border rounded-lg p-4 space-y-4">
+          <div className="bg-card border rounded-lg p-4 space-y-4">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Category</p>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((c) => (
                   <button
@@ -150,7 +150,7 @@ export default function CECatalogPage() {
                     className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                       category === c
                         ? "bg-red-700 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-muted text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     {c}
@@ -164,7 +164,7 @@ export default function CECatalogPage() {
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
                   capceOnly
                     ? "bg-blue-700 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    : "bg-muted text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Award className="h-3.5 w-3.5" />
@@ -206,11 +206,11 @@ export default function CECatalogPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((course) => (
                 <Link key={course.id} href={`/ce/course/${course.id}`}>
-                  <div className="bg-white border rounded-lg p-5 hover:shadow-md transition-shadow h-full flex flex-col">
+                  <div className="bg-card border rounded-lg p-5 hover:shadow-md transition-shadow h-full flex flex-col">
                     {/* Badges */}
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       {course.category && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                           {course.category}
                         </span>
                       )}
@@ -260,7 +260,7 @@ export default function CECatalogPage() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 border-t px-6 py-6 text-center text-xs text-gray-500">
+      <footer className="mt-16 border-t px-6 py-6 text-center text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} Summers Digital LLC · <Link href="/ce/terms" className="hover:underline">Terms</Link> · <Link href="/ce/privacy" className="hover:underline">Privacy</Link></p>
       </footer>
     </div>

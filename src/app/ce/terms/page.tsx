@@ -43,7 +43,7 @@ function CETermsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-muted/30 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -58,10 +58,10 @@ function CETermsContent() {
         </div>
 
         {/* Terms Content */}
-        <div className="bg-white rounded-lg border p-8 space-y-6 text-sm leading-relaxed max-h-[60vh] overflow-y-auto">
+        <div className="bg-card rounded-lg border p-8 space-y-6 text-sm leading-relaxed max-h-[60vh] overflow-y-auto">
           <div>
             <h2 className="font-semibold text-base mb-2">1. Acceptance of Terms</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               By accessing and using MedicForge Continuing Education (CE), a service of Summers Digital LLC,
               you agree to be bound by these Terms of Service and all applicable laws and regulations.
               If you do not agree with any of these terms, you are prohibited from using or accessing this platform.
@@ -70,7 +70,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">2. Description of Service</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               MedicForge CE provides online continuing education courses for emergency medical services (EMS)
               providers. Courses are designed to meet the requirements for NREMT recertification and continuing
               competency. We are an approved CE provider in Pennsylvania and states that recognize approved providers.
@@ -79,7 +79,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">3. Eligibility</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               You must be at least 18 years of age to use this service. By using MedicForge CE, you represent and
               warrant that you are 18 or older and that you are a licensed or certified EMS provider, student, or
               otherwise authorized professional seeking continuing education.
@@ -88,13 +88,13 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">4. Account Responsibilities</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               You are responsible for maintaining the confidentiality of your account credentials. All course
               completions are recorded under your account and associated with your NREMT ID (if provided).
               You must provide accurate information, including your name and NREMT ID, as certificates are
               issued based on the information in your profile.
             </p>
-            <p className="text-gray-700 mt-2">
+            <p className="text-foreground mt-2">
               You may not share your account with others or allow others to complete courses on your behalf.
               Such actions may result in account termination and invalidation of certificates.
             </p>
@@ -102,13 +102,13 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">5. Course Content and Certificates</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               Course content is provided for educational purposes only and does not constitute medical advice.
               Certificates are issued upon successful completion of courses, including passing assessments at
               the required minimum score. Certificates are non-transferable and represent the individual
               provider&apos;s personal completion.
             </p>
-            <p className="text-gray-700 mt-2">
+            <p className="text-foreground mt-2">
               MedicForge CE makes no guarantees that completions will be accepted by any specific state EMS
               office or employer. You are responsible for verifying CE acceptance requirements with your
               certifying or licensing body.
@@ -117,7 +117,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">6. Payment and Refunds</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               Individual course purchases and subscription fees are processed through Square. Subscriptions
               renew automatically unless cancelled. Refund requests must be submitted within 7 days of purchase
               and prior to completing the course. Completed courses are non-refundable.
@@ -126,7 +126,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">7. Intellectual Property</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               All course content, materials, assessments, and platform features are owned by Summers Digital LLC
               or its licensors. You may not reproduce, distribute, or create derivative works from any content
               without written permission.
@@ -135,7 +135,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">8. Privacy</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               Your use of MedicForge CE is also governed by our{" "}
               <Link href="/ce/privacy" className="text-red-700 hover:underline">
                 Privacy Policy
@@ -147,7 +147,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">9. Limitation of Liability</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               To the maximum extent permitted by law, Summers Digital LLC shall not be liable for any indirect,
               incidental, special, consequential, or punitive damages arising from your use of MedicForge CE.
               Our total liability for any claim shall not exceed the amount you paid us in the twelve months
@@ -157,7 +157,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">10. Changes to Terms</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               We reserve the right to modify these Terms at any time. We will notify you of significant changes
               via email or a prominent notice on the platform. Continued use of MedicForge CE after changes
               constitutes acceptance of the new Terms.
@@ -166,7 +166,7 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">11. Governing Law</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               These Terms are governed by the laws of the Commonwealth of Pennsylvania, without regard to
               conflict of law provisions. Any disputes shall be resolved in the courts of Pennsylvania.
             </p>
@@ -174,21 +174,21 @@ function CETermsContent() {
 
           <div>
             <h2 className="font-semibold text-base mb-2">12. Contact</h2>
-            <p className="text-gray-700">
+            <p className="text-foreground">
               For questions about these Terms, contact us at{" "}
               <a href="mailto:ce@medicforge.net" className="text-red-700 hover:underline">
                 ce@medicforge.net
               </a>
               .
             </p>
-            <p className="text-gray-500 text-xs mt-2">
+            <p className="text-muted-foreground text-xs mt-2">
               Summers Digital LLC | Last updated: March 2026
             </p>
           </div>
         </div>
 
         {/* Accept Section */}
-        <div className="mt-6 bg-white rounded-lg border p-6">
+        <div className="mt-6 bg-card rounded-lg border p-6">
           {error && (
             <Alert variant="error" className="mb-4">
               {error}
@@ -197,7 +197,7 @@ function CETermsContent() {
 
           <div className="flex items-start gap-3 mb-4">
             <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-foreground">
               By clicking &quot;Accept &amp; Continue&quot;, you confirm that you have read and agree to the
               Terms of Service and Privacy Policy, and that all information in your profile is accurate.
             </p>
@@ -230,7 +230,7 @@ export default function CETermsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-muted/30 flex items-center justify-center">
           <Spinner size="lg" />
         </div>
       }

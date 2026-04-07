@@ -20,7 +20,7 @@ interface Meeting {
 const STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -76,7 +76,7 @@ export default function CECommitteeMeetingsPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-              filter === f ? "bg-gray-900 text-white" : "bg-white border text-gray-600 hover:bg-gray-50"
+              filter === f ? "bg-gray-900 text-white" : "bg-card border text-muted-foreground hover:bg-muted/30"
             }`}
           >
             {f}
@@ -84,7 +84,7 @@ export default function CECommitteeMeetingsPage() {
         ))}
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : meetings.length === 0 ? (
@@ -99,7 +99,7 @@ export default function CECommitteeMeetingsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
@@ -112,7 +112,7 @@ export default function CECommitteeMeetingsPage() {
             </thead>
             <tbody>
               {meetings.map((m) => (
-                <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <p className="font-medium">
                       {new Date(m.meeting_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -122,7 +122,7 @@ export default function CECommitteeMeetingsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{TYPE_LABELS[m.meeting_type] || m.meeting_type}</td>
                   <td className="px-4 py-3 text-muted-foreground">{m.location}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[m.status] || "bg-gray-100 text-gray-700"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[m.status] || "bg-muted text-foreground"}`}>
                       {m.status}
                     </span>
                   </td>

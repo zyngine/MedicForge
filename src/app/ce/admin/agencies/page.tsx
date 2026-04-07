@@ -27,7 +27,7 @@ const TIERS = [
 ];
 
 const TIER_STYLES: Record<string, string> = {
-  starter: "bg-gray-100 text-gray-700",
+  starter: "bg-muted text-foreground",
   team: "bg-blue-100 text-blue-700",
   agency: "bg-purple-100 text-purple-700",
   enterprise: "bg-red-100 text-red-700",
@@ -132,7 +132,7 @@ export default function CEAdminAgenciesPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Add Agency</h2>
             <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -193,7 +193,7 @@ export default function CEAdminAgenciesPage() {
         </div>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : agencies.length === 0 ? (
@@ -203,7 +203,7 @@ export default function CEAdminAgenciesPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Agency</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
@@ -218,14 +218,14 @@ export default function CEAdminAgenciesPage() {
                 // eslint-disable-next-line react-hooks/purity -- Date.now() for display
                 const expiringSoon = agency.subscription_end && (new Date(agency.subscription_end).getTime() - Date.now()) / 86400000 < 30;
                 return (
-                  <tr key={agency.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={agency.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <p className="font-medium">{agency.name}</p>
                       <p className="text-xs text-muted-foreground">Since {new Date(agency.created_at).toLocaleDateString()}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{[agency.city, agency.state].filter(Boolean).join(", ") || "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${TIER_STYLES[agency.subscription_tier] || "bg-gray-100 text-gray-700"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${TIER_STYLES[agency.subscription_tier] || "bg-muted text-foreground"}`}>
                         {TIERS.find((t) => t.value === agency.subscription_tier)?.label || agency.subscription_tier}
                       </span>
                     </td>

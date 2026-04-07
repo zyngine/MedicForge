@@ -107,7 +107,7 @@ export default function CEAdminCourseReviewSubmitPage() {
         </div>
       ) : null}
 
-      <div className="bg-white border rounded-lg p-5">
+      <div className="bg-card border rounded-lg p-5">
         <h2 className="font-semibold text-sm mb-3">Pre-submission Checklist</h2>
         <div className="space-y-2">
           {PRE_SUBMIT_CHECKLIST.map(({ key, label }) => (
@@ -128,7 +128,7 @@ export default function CEAdminCourseReviewSubmitPage() {
       </div>
 
       {!alreadySubmitted && !submitted && (
-        <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="bg-card border rounded-lg p-5 space-y-3">
           <h2 className="font-semibold text-sm">Submit</h2>
           <p className="text-sm text-muted-foreground">
             Submitting will change the course status to <strong>Pending Committee Review</strong>. The Program Committee will evaluate the course against CAPCE standards and record their decision.

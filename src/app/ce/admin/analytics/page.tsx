@@ -106,7 +106,7 @@ export default function CEAdminAnalyticsPage() {
           { label: "Total Completions", value: totals.completions, color: "text-green-700" },
           { label: "Total CEH Issued", value: `${totals.ceh.toFixed(1)}h`, color: "text-red-700" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white border rounded-lg p-5">
+          <div key={label} className="bg-card border rounded-lg p-5">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
           </div>
@@ -114,7 +114,7 @@ export default function CEAdminAnalyticsPage() {
       </div>
 
       {/* Monthly chart (CSS bar chart) */}
-      <div className="bg-white border rounded-lg p-5">
+      <div className="bg-card border rounded-lg p-5">
         <h2 className="font-semibold mb-4">Enrollments & Completions — Last 6 Months</h2>
         <div className="flex items-end gap-3 h-40">
           {months.map((m) => (
@@ -143,7 +143,7 @@ export default function CEAdminAnalyticsPage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Top courses */}
-        <div className="bg-white border rounded-lg p-5">
+        <div className="bg-card border rounded-lg p-5">
           <h2 className="font-semibold mb-4">Top Courses by Enrollment</h2>
           {topCourses.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No enrollment data yet</p>
@@ -160,7 +160,7 @@ export default function CEAdminAnalyticsPage() {
                         <span className="text-green-700 font-medium">{c.completions} done</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="w-full bg-muted rounded-full h-1.5">
                       <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -171,7 +171,7 @@ export default function CEAdminAnalyticsPage() {
         </div>
 
         {/* Completions by cert level */}
-        <div className="bg-white border rounded-lg p-5">
+        <div className="bg-card border rounded-lg p-5">
           <h2 className="font-semibold mb-4">Completions by Certification Level</h2>
           {certStats.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No completion data yet</p>
@@ -188,7 +188,7 @@ export default function CEAdminAnalyticsPage() {
                         <span className="text-red-700 font-medium">{c.ceh.toFixed(1)}h CEH</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="w-full bg-muted rounded-full h-1.5">
                       <div className="bg-red-400 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                   </div>

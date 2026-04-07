@@ -96,8 +96,8 @@ export default function CEHelpPage() {
 
       {FAQS.map((section) => (
         <div key={section.category}>
-          <h2 className="text-base font-semibold mb-3 text-gray-800">{section.category}</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <h2 className="text-base font-semibold mb-3 text-foreground">{section.category}</h2>
+          <div className="bg-card border rounded-lg divide-y">
             {section.items.map((item) => {
               const id = `${section.category}-${item.q}`;
               const isOpen = open === id;
@@ -105,13 +105,13 @@ export default function CEHelpPage() {
                 <div key={item.q}>
                   <button
                     onClick={() => setOpen(isOpen ? null : id)}
-                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50"
+                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-muted/30"
                   >
                     <span className="text-sm font-medium pr-4">{item.q}</span>
                     <span className="text-muted-foreground text-lg shrink-0 leading-none">{isOpen ? "−" : "+"}</span>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t pt-3 bg-gray-50">
+                    <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t pt-3 bg-muted/30">
                       {item.a}
                     </div>
                   )}

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
-import { Spinner } from "@/components/ui";
+import { Spinner, ThemeToggle } from "@/components/ui";
 import { BookOpen, LayoutDashboard, Users, BarChart3, Settings, LogOut, Upload, Shield } from "lucide-react";
+
+/* eslint-disable react-hooks/exhaustive-deps */
 
 export default function CEAgencyLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -74,7 +76,8 @@ export default function CEAgencyLayout({ children }: { children: React.ReactNode
   ];
 
   return (
-    <div className="min-h-screen flex text-gray-900">
+    <div className="min-h-screen flex">
+      {/* Sidebar — always dark regardless of theme */}
       <aside className="w-60 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-800">
           <Link href="/ce/agency" className="flex items-center gap-2">
@@ -118,8 +121,12 @@ export default function CEAgencyLayout({ children }: { children: React.ReactNode
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-gray-50">
-        <div className="p-8">{children}</div>
+      {/* Main content — theme-aware */}
+      <main className="flex-1 overflow-auto bg-muted/30">
+        <div className="flex items-center justify-end px-8 pt-4">
+          <ThemeToggle />
+        </div>
+        <div className="px-8 pb-8">{children}</div>
       </main>
     </div>
   );

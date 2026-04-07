@@ -220,7 +220,7 @@ export default function CECommitteeMeetingDetailPage() {
           >
             {t.label}
             {t.count !== undefined && t.count > 0 && (
-              <span className="ml-1.5 bg-gray-100 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">{t.count}</span>
+              <span className="ml-1.5 bg-muted text-foreground text-xs px-1.5 py-0.5 rounded-full">{t.count}</span>
             )}
           </button>
         ))}
@@ -235,7 +235,7 @@ export default function CECommitteeMeetingDetailPage() {
               { label: "Previous Minutes Approved", checked: meeting.previous_minutes_approved, field: "previous_minutes_approved" as keyof Meeting },
               { label: "Minutes Approved", checked: meeting.minutes_approved, field: "minutes_approved" as keyof Meeting },
             ].map(({ label, checked, field }) => (
-              <label key={field} className="flex items-center gap-3 bg-white border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+              <label key={field} className="flex items-center gap-3 bg-card border rounded-lg p-4 cursor-pointer hover:bg-muted/30">
                 <input
                   type="checkbox"
                   checked={!!checked}
@@ -252,7 +252,7 @@ export default function CECommitteeMeetingDetailPage() {
             { label: "New Business", field: "new_business" as keyof Meeting },
             { label: "Needs Assessment Notes", field: "needs_assessment_notes" as keyof Meeting },
           ].map(({ label, field }) => (
-            <div key={field} className="bg-white border rounded-lg p-5">
+            <div key={field} className="bg-card border rounded-lg p-5">
               <label className="text-sm font-semibold mb-2 block">{label}</label>
               <textarea
                 className="w-full text-sm border rounded-md px-3 py-2 min-h-[80px] resize-y focus:outline-none focus:ring-2 focus:ring-ring"
@@ -264,7 +264,7 @@ export default function CECommitteeMeetingDetailPage() {
             </div>
           ))}
 
-          <div className="bg-white border rounded-lg p-5">
+          <div className="bg-card border rounded-lg p-5">
             <label className="text-sm font-semibold mb-2 block">Next Meeting Date</label>
             <Input
               type="date"
@@ -283,7 +283,7 @@ export default function CECommitteeMeetingDetailPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{presentCount} of {members.length} present {presentCount >= 3 ? "· Quorum met" : "· No quorum"}</p>
           </div>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {members.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
                 No active committee members. <Link href="/ce/admin/committee/members" className="text-red-700 hover:underline">Add members first.</Link>
@@ -305,7 +305,7 @@ export default function CECommitteeMeetingDetailPage() {
                         <p className="text-xs text-muted-foreground capitalize">{member.role.replace(/_/g, " ")}</p>
                       </div>
                     </div>
-                    <span className={`text-xs font-medium ${present ? "text-green-700" : "text-gray-400"}`}>
+                    <span className={`text-xs font-medium ${present ? "text-green-700" : "text-muted-foreground"}`}>
                       {present ? "Present" : "Absent"}
                     </span>
                   </div>
@@ -326,7 +326,7 @@ export default function CECommitteeMeetingDetailPage() {
           </div>
 
           {showMotionForm && (
-            <div className="bg-white border rounded-lg p-5">
+            <div className="bg-card border rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium">Add Motion</h3>
                 <button onClick={() => setShowMotionForm(false)}><X className="h-4 w-4 text-muted-foreground" /></button>
@@ -363,9 +363,9 @@ export default function CECommitteeMeetingDetailPage() {
           )}
 
           {motions.length === 0 ? (
-            <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground text-sm">No motions recorded yet.</div>
+            <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground text-sm">No motions recorded yet.</div>
           ) : (
-            <div className="bg-white border rounded-lg divide-y">
+            <div className="bg-card border rounded-lg divide-y">
               {motions.map((m) => (
                 <div key={m.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-4">
@@ -396,7 +396,7 @@ export default function CECommitteeMeetingDetailPage() {
           </div>
 
           {showActionForm && (
-            <div className="bg-white border rounded-lg p-5">
+            <div className="bg-card border rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium">Add Action Item</h3>
                 <button onClick={() => setShowActionForm(false)}><X className="h-4 w-4 text-muted-foreground" /></button>
@@ -426,9 +426,9 @@ export default function CECommitteeMeetingDetailPage() {
           )}
 
           {actionItems.length === 0 ? (
-            <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground text-sm">No action items yet.</div>
+            <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground text-sm">No action items yet.</div>
           ) : (
-            <div className="bg-white border rounded-lg divide-y">
+            <div className="bg-card border rounded-lg divide-y">
               {actionItems.map((item) => {
                 const overdue = item.due_date && item.status === "pending" && new Date(item.due_date) < new Date();
                 return (
@@ -437,7 +437,7 @@ export default function CECommitteeMeetingDetailPage() {
                       <button onClick={() => item.status === "pending" && completeAction(item.id)} className="mt-0.5 shrink-0">
                         {item.status === "completed"
                           ? <CheckCircle className="h-4 w-4 text-green-500" />
-                          : <Circle className="h-4 w-4 text-gray-300 hover:text-gray-500" />}
+                          : <Circle className="h-4 w-4 text-gray-300 hover:text-muted-foreground" />}
                       </button>
                       <div>
                         <p className={`text-sm ${item.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{item.description}</p>

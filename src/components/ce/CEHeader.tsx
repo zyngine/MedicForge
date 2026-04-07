@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createCEClient } from "@/lib/supabase/client";
 import { BookOpen, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ui";
 
 interface CEHeaderUser {
   id: string;
@@ -44,15 +45,15 @@ export function CEHeader() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="bg-white border-b px-6 py-3 flex items-center justify-between text-gray-900">
+    <nav className="bg-card border-b border-border px-6 py-3 flex items-center justify-between text-card-foreground">
       <div className="flex items-center gap-6">
-        <Link href="/ce" className="flex items-center gap-2 font-bold text-red-700 shrink-0">
+        <Link href="/ce" className="flex items-center gap-2 font-bold text-primary shrink-0">
           <BookOpen className="h-5 w-5" />
           <span className="hidden sm:inline">MedicForge CE</span>
         </Link>
         <Link
           href="/ce/catalog"
-          className={`text-sm transition-colors ${isActive("/ce/catalog") ? "text-red-700 font-medium" : "text-gray-600 hover:text-gray-900"}`}
+          className={`text-sm transition-colors ${isActive("/ce/catalog") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
         >
           Course Catalog
         </Link>
@@ -60,33 +61,34 @@ export function CEHeader() {
 
       <div className="flex items-center gap-4">
         {ceUser === "loading" ? (
-          <div className="w-16 h-4 bg-gray-100 rounded animate-pulse" />
+          <div className="w-16 h-4 bg-muted rounded animate-pulse" />
         ) : ceUser ? (
           <>
             <Link
               href="/ce/my-training"
-              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/my-training") ? "text-red-700 font-medium" : "text-gray-600 hover:text-gray-900"}`}
+              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/my-training") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               My Training
             </Link>
             <Link
               href="/ce/transcript"
-              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/transcript") ? "text-red-700 font-medium" : "text-gray-600 hover:text-gray-900"}`}
+              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/transcript") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               Transcript
             </Link>
             <Link
               href="/ce/account"
-              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/account") ? "text-red-700 font-medium" : "text-gray-600 hover:text-gray-900"}`}
+              className={`text-sm transition-colors hidden md:inline ${isActive("/ce/account") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               Account
             </Link>
-            <span className="text-sm text-gray-500 hidden lg:inline">
+            <span className="text-sm text-muted-foreground hidden lg:inline">
               {ceUser.first_name} {ceUser.last_name}
             </span>
+            <ThemeToggle />
             <button
               onClick={handleSignOut}
-              className="text-gray-500 hover:text-red-700 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors"
               title="Sign out"
             >
               <LogOut className="h-4 w-4" />
@@ -94,12 +96,13 @@ export function CEHeader() {
           </>
         ) : (
           <>
-            <Link href="/ce/login" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/ce/login" className="text-sm text-muted-foreground hover:text-foreground">
               Sign In
             </Link>
+            <ThemeToggle />
             <Link
               href="/ce/register"
-              className="bg-red-700 text-white text-sm px-3 py-1.5 rounded-md hover:bg-red-800 transition-colors"
+              className="bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-md hover:opacity-90 transition-colors"
             >
               Get Started
             </Link>

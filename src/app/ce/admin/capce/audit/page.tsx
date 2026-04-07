@@ -77,12 +77,12 @@ export default function CECapceAuditPage() {
       </div>
 
       {/* Progress bar */}
-      <div className="bg-white border rounded-lg p-5">
+      <div className="bg-card border rounded-lg p-5">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium">Audit Readiness</p>
           <p className="text-sm font-bold">{Math.round((passCount / items.length) * 100)}%</p>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5">
+        <div className="w-full bg-muted rounded-full h-2.5">
           <div
             className={`h-2.5 rounded-full transition-all ${passCount === items.length ? "bg-green-500" : passCount >= items.length * 0.75 ? "bg-yellow-500" : "bg-red-400"}`}
             style={{ width: `${(passCount / items.length) * 100}%` }}
@@ -94,15 +94,15 @@ export default function CECapceAuditPage() {
       {categories.map((category) => (
         <div key={category}>
           <h2 className="text-base font-semibold mb-2">{category}</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {items.filter((i) => i.category === category).map((item) => (
-              <Link key={item.label} href={item.href} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+              <Link key={item.label} href={item.href} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30">
                 <div className="flex items-center gap-3">
                   {item.pass
                     ? <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                     : <XCircle className="h-5 w-5 text-red-400 shrink-0" />}
                   <div>
-                    <p className="text-sm text-gray-900 font-medium">{item.label}</p>
+                    <p className="text-sm text-foreground font-medium">{item.label}</p>
                     <p className={`text-xs ${item.pass ? "text-green-700" : "text-red-600"}`}>{item.detail}</p>
                   </div>
                 </div>

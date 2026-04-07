@@ -89,9 +89,9 @@ export default function CETranscriptPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-card border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Course</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Completed</th>
@@ -137,7 +137,7 @@ export default function CETranscriptPage() {
                 );
               })}
             </tbody>
-            <tfoot className="bg-gray-50 border-t">
+            <tfoot className="bg-muted/30 border-t">
               <tr>
                 <td colSpan={2} className="px-4 py-3 text-sm font-medium">Total</td>
                 <td className="px-4 py-3 font-bold text-red-700">{totalCEH.toFixed(1)}h</td>

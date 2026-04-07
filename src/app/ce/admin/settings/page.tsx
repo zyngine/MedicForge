@@ -65,7 +65,7 @@ export default function CEAdminSettingsPage() {
         </p>
       </div>
 
-      <div className="bg-white border rounded-lg p-6 space-y-5">
+      <div className="bg-card border rounded-lg p-6 space-y-5">
         <h2 className="font-semibold text-sm flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
           Subscription Pricing

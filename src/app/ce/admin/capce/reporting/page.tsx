@@ -132,7 +132,7 @@ export default function CECapceReportingPage() {
       </div>
 
       {/* Date range */}
-      <div className="bg-white border rounded-lg p-5 flex items-end gap-4 flex-wrap">
+      <div className="bg-card border rounded-lg p-5 flex items-end gap-4 flex-wrap">
         <div className="space-y-1">
           <label className="text-sm font-medium">From</label>
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
@@ -153,8 +153,8 @@ export default function CECapceReportingPage() {
         </div>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
+      <div className="bg-card border rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30">
           <p className="font-medium text-sm">{completions.length} unreported completion{completions.length !== 1 ? "s" : ""}</p>
           <Button onClick={generateReport} disabled={generating || completions.length === 0}>
             <Download className="h-4 w-4 mr-2" />
@@ -176,7 +176,7 @@ export default function CECapceReportingPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">NREMT ID</th>

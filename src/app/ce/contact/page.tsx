@@ -62,7 +62,7 @@ export default function CEContactPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white border rounded-lg p-6 space-y-4">
+        <div className="bg-card border rounded-lg p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
@@ -98,15 +98,15 @@ export default function CEContactPage() {
       )}
 
       <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="font-semibold mb-1">Email</p>
           <a href="mailto:ce@medicforge.net" className="text-blue-700 hover:underline">ce@medicforge.net</a>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="font-semibold mb-1">Response Time</p>
           <p className="text-muted-foreground">1 business day</p>
         </div>
-        <div className="bg-white border rounded-lg p-4 col-span-2">
+        <div className="bg-card border rounded-lg p-4 col-span-2">
           <p className="font-semibold mb-1">Before contacting us</p>
           <p className="text-muted-foreground text-xs">
             Check the <a href="/ce/help" className="text-blue-700 hover:underline">Help & FAQ</a> — most common questions are answered there, including NREMT ID setup, certificates, and reporting.

@@ -40,9 +40,9 @@ export default function CEAgencyCustomPage() {
       </div>
 
       {!isPro ? (
-        <div className="bg-white border rounded-lg p-8 flex flex-col items-center text-center space-y-4">
-          <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <Lock className="h-6 w-6 text-gray-400" />
+        <div className="bg-card border rounded-lg p-8 flex flex-col items-center text-center space-y-4">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+            <Lock className="h-6 w-6 text-muted-foreground" />
           </div>
           <div>
             <p className="font-semibold">Custom Training requires a Pro or Enterprise subscription</p>
@@ -51,7 +51,7 @@ export default function CEAgencyCustomPage() {
               Upgrade your plan to access this feature.
             </p>
           </div>
-          <div className="bg-gray-50 border rounded-lg p-4 text-sm text-left max-w-md w-full space-y-2">
+          <div className="bg-muted/30 border rounded-lg p-4 text-sm text-left max-w-md w-full space-y-2">
             <p className="font-medium text-sm">What&apos;s included:</p>
             <ul className="space-y-1 text-muted-foreground text-xs">
               <li>• Upload PDF, video, and document materials</li>
@@ -70,7 +70,7 @@ export default function CEAgencyCustomPage() {
           </div>
 
           {/* Placeholder for Pro content — full implementation in a future phase */}
-          <div className="bg-white border rounded-lg p-6 flex flex-col items-center text-center space-y-3">
+          <div className="bg-card border rounded-lg p-6 flex flex-col items-center text-center space-y-3">
             <FileText className="h-8 w-8 text-gray-300" />
             <p className="text-sm font-medium">No custom training materials yet</p>
             <p className="text-xs text-muted-foreground">Upload your first document or video to get started.</p>
@@ -87,7 +87,7 @@ export default function CEAgencyCustomPage() {
               { label: "Storage included", value: "50 GB (Pro) / Unlimited (Enterprise)" },
               { label: "Max file size", value: "2 GB per upload" },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-white border rounded-lg p-4">
+              <div key={label} className="bg-card border rounded-lg p-4">
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p className="font-medium mt-1">{value}</p>
               </div>

@@ -84,26 +84,26 @@ export default function CEAgencyTrainingPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">Employees</p>
           <p className="text-2xl font-bold text-blue-700 mt-1">{employees.length}</p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">Completions</p>
           <p className="text-2xl font-bold text-green-700 mt-1">{completedCount}</p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">In Progress</p>
           <p className="text-2xl font-bold text-yellow-700 mt-1">{inProgressCount}</p>
         </div>
       </div>
 
       {/* Employee filter */}
-      <div className="bg-white border rounded-lg p-4 flex items-center gap-3 flex-wrap">
+      <div className="bg-card border rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <span className="text-sm font-medium">Filter by employee:</span>
         <button
           onClick={() => setSelectedUser(null)}
-          className={`text-xs px-3 py-1.5 rounded-full border ${!selectedUser ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+          className={`text-xs px-3 py-1.5 rounded-full border ${!selectedUser ? "bg-gray-900 text-white border-gray-900" : "bg-card text-muted-foreground hover:bg-muted/30"}`}
         >
           All
         </button>
@@ -111,7 +111,7 @@ export default function CEAgencyTrainingPage() {
           <button
             key={emp.id}
             onClick={() => setSelectedUser(emp.id)}
-            className={`text-xs px-3 py-1.5 rounded-full border ${selectedUser === emp.id ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            className={`text-xs px-3 py-1.5 rounded-full border ${selectedUser === emp.id ? "bg-gray-900 text-white border-gray-900" : "bg-card text-muted-foreground hover:bg-muted/30"}`}
           >
             {emp.first_name} {emp.last_name}
           </button>
@@ -119,7 +119,7 @@ export default function CEAgencyTrainingPage() {
       </div>
 
       {/* Enrollments table */}
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {filteredEnrollments.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
             <BookOpen className="h-8 w-8 mb-2 opacity-40" />
@@ -128,7 +128,7 @@ export default function CEAgencyTrainingPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Course</th>
@@ -142,7 +142,7 @@ export default function CEAgencyTrainingPage() {
               {filteredEnrollments.map((e) => {
                 const emp = employees.find((u) => u.id === e.user_id);
                 return (
-                  <tr key={e.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{emp ? `${emp.first_name} ${emp.last_name}` : "—"}</td>
                     <td className="px-4 py-3">
                       <p>{e.ce_courses?.title}</p>

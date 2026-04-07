@@ -310,7 +310,7 @@ export default function CEAccountPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Current plan */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
             <div>
               <p className="text-sm font-medium">Current Plan</p>
               {subscription ? (

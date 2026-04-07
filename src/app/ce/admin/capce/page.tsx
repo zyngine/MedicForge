@@ -93,9 +93,9 @@ export default function CECapceDashboardPage() {
       {/* Checklist */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Accreditation Checklist</h2>
-        <div className="bg-white border rounded-lg divide-y">
+        <div className="bg-card border rounded-lg divide-y">
           {checks.map((check) => (
-            <Link key={check.label} href={check.href} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+            <Link key={check.label} href={check.href} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30">
               <div className="flex items-center gap-3">
                 {check.pass
                   ? <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
@@ -118,7 +118,7 @@ export default function CECapceDashboardPage() {
           { title: "Submissions", desc: "Track submitted reports", href: "/ce/admin/capce/submissions" },
           { title: "Audit Prep", desc: "Checklist for accreditation audit", href: "/ce/admin/capce/audit" },
         ].map(({ title, desc, href }) => (
-          <Link key={href} href={href} className="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow group">
+          <Link key={href} href={href} className="bg-card border rounded-lg p-4 hover:shadow-sm transition-shadow group">
             <p className="font-medium text-sm mb-1">{title}</p>
             <p className="text-xs text-muted-foreground">{desc}</p>
           </Link>

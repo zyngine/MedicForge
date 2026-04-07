@@ -54,7 +54,7 @@ export default function CECapceSubmissionsPage() {
         <p className="text-muted-foreground text-sm mt-1">History of NREMT completion reports</p>
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : submissions.length === 0 ? (
@@ -65,7 +65,7 @@ export default function CECapceSubmissionsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Submission Date</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
@@ -77,14 +77,14 @@ export default function CECapceSubmissionsPage() {
             </thead>
             <tbody>
               {submissions.map((s) => (
-                <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={s.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{new Date(s.submission_date).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     {new Date(s.period_start).toLocaleDateString()} – {new Date(s.period_end).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 font-medium">{s.total_records}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[s.status] || "bg-gray-100 text-gray-700"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[s.status] || "bg-muted text-foreground"}`}>
                       {s.status}
                     </span>
                   </td>

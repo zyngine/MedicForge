@@ -3,7 +3,7 @@ import { BookOpen, Award, Shield, Clock, Users, CheckCircle, Building2 } from "l
 
 export default async function CELandingPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-card text-foreground">
       {/* Nav */}
       <nav className="border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -11,10 +11,10 @@ export default async function CELandingPage() {
           <span className="font-bold text-lg">MedicForge CE</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/ce/catalog" className="text-sm text-gray-600 hover:text-gray-900">
+          <Link href="/ce/catalog" className="text-sm text-muted-foreground hover:text-foreground">
             Course Catalog
           </Link>
-          <Link href="/ce/login" className="text-sm text-gray-600 hover:text-gray-900">
+          <Link href="/ce/login" className="text-sm text-muted-foreground hover:text-foreground">
             Sign In
           </Link>
           <Link
@@ -32,10 +32,10 @@ export default async function CELandingPage() {
           <Shield className="h-4 w-4" />
           Built to CAPCE Standards — CAPCE Accreditation Coming 2027
         </div>
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
+        <h1 className="text-5xl font-bold text-foreground mb-6">
           Continuing Education<br />Built for EMS Providers
         </h1>
-        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
           Quality CE content accepted in Pennsylvania and states that recognize approved providers.
           Complete your CEHs on your schedule, earn verified certificates, and stay ready for NREMT recertification.
         </p>
@@ -48,7 +48,7 @@ export default async function CELandingPage() {
           </Link>
           <Link
             href="/ce/catalog"
-            className="border border-gray-300 text-gray-700 px-8 py-3 rounded-md text-lg font-medium hover:bg-gray-50"
+            className="border border-border text-foreground px-8 py-3 rounded-md text-lg font-medium hover:bg-muted/30"
           >
             Browse Courses
           </Link>
@@ -56,56 +56,56 @@ export default async function CELandingPage() {
       </section>
 
       {/* Features */}
-      <section className="px-6 py-16 bg-gray-50">
+      <section className="px-6 py-16 bg-muted/30">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
             Everything you need for EMS recertification
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <Award className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">Verified Certificates</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">Verified Certificates</h3>
+              <p className="text-muted-foreground text-sm">
                 Every completion generates a verifiable certificate with a unique QR code.
                 Accepted by state EMS offices and NREMT.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <Clock className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">Learn at Your Pace</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">Learn at Your Pace</h3>
+              <p className="text-muted-foreground text-sm">
                 Self-paced online courses available 24/7. Start, pause, and resume whenever
                 your shift schedule allows.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <Shield className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">CAPCE-Ready Content</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">CAPCE-Ready Content</h3>
+              <p className="text-muted-foreground text-sm">
                 All courses built to CAPCE standards: evidence-based content, measurable
                 learning objectives, and committee-reviewed curriculum.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <Users className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">Agency Solutions</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">Agency Solutions</h3>
+              <p className="text-muted-foreground text-sm">
                 Manage your entire department&apos;s CE from one dashboard. Assign training,
                 track compliance, and export reports.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <BookOpen className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">Custom Training</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">Custom Training</h3>
+              <p className="text-muted-foreground text-sm">
                 Upload your agency&apos;s own protocols and training materials. Host custom
                 courses alongside our catalog content.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border">
               <CheckCircle className="h-8 w-8 text-red-700 mb-4" />
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">NREMT Ready</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-foreground">NREMT Ready</h3>
+              <p className="text-muted-foreground text-sm">
                 Courses mapped to NREMT topic categories. When CAPCE accreditation is
                 approved, completions will auto-report to NREMT.
               </p>
@@ -116,28 +116,28 @@ export default async function CELandingPage() {
 
       {/* Pricing — Individual */}
       <section className="px-6 py-16 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">Simple, transparent pricing</h2>
-        <p className="text-center text-gray-600 mb-12">
+        <h2 className="text-3xl font-bold text-center mb-4 text-foreground">Simple, transparent pricing</h2>
+        <p className="text-center text-muted-foreground mb-12">
           No per-seat fees. No hidden costs. Individual providers or entire departments.
         </p>
 
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">For Individual Providers</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-6">For Individual Providers</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <div className="border rounded-lg p-6">
-            <h4 className="font-semibold text-lg mb-1 text-gray-900">Free Courses</h4>
+            <h4 className="font-semibold text-lg mb-1 text-foreground">Free Courses</h4>
             <div className="text-3xl font-bold mb-4">$0</div>
-            <p className="text-sm text-gray-600 mb-4">Try before you commit</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Try before you commit</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Select free courses</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Verified certificates</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> CE transcript</li>
             </ul>
           </div>
           <div className="border rounded-lg p-6">
-            <h4 className="font-semibold text-lg mb-1 text-gray-900">Per Course</h4>
+            <h4 className="font-semibold text-lg mb-1 text-foreground">Per Course</h4>
             <div className="text-3xl font-bold mb-4">$10–25</div>
-            <p className="text-sm text-gray-600 mb-4">Pay as you go</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Pay as you go</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Single course access</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Verified certificate</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> CE transcript</li>
@@ -147,10 +147,10 @@ export default async function CELandingPage() {
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-700 text-white text-xs px-3 py-1 rounded-full">
               Best Value
             </div>
-            <h4 className="font-semibold text-lg mb-1 text-gray-900">Annual Unlimited</h4>
+            <h4 className="font-semibold text-lg mb-1 text-foreground">Annual Unlimited</h4>
             <div className="text-3xl font-bold mb-1">$69<span className="text-base font-normal">/yr</span></div>
             <p className="text-sm text-green-600 mb-4">Every course included</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Unlimited course access</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> All certificates included</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Full CE transcript</li>
@@ -159,19 +159,19 @@ export default async function CELandingPage() {
         </div>
 
         {/* Pricing — Agency */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">For Agencies &amp; Departments</h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <h3 className="text-lg font-semibold text-foreground mb-2">For Agencies &amp; Departments</h3>
+        <p className="text-sm text-muted-foreground mb-6">
           Flat annual pricing — no per-seat fees, no surprise invoices. Every employee gets full access.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="border rounded-lg p-6">
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-5 w-5 text-red-700" />
-              <h4 className="font-semibold text-gray-900">Starter</h4>
+              <h4 className="font-semibold text-foreground">Starter</h4>
             </div>
             <div className="text-3xl font-bold mb-1">$1,000<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-gray-500 mb-4">Up to 25 employees</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Up to 25 employees</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Unlimited CE for all staff</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Compliance dashboard</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Training assignments</li>
@@ -184,11 +184,11 @@ export default async function CELandingPage() {
             </div>
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-5 w-5 text-red-700" />
-              <h4 className="font-semibold text-gray-900">Team</h4>
+              <h4 className="font-semibold text-foreground">Team</h4>
             </div>
             <div className="text-3xl font-bold mb-1">$2,000<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-gray-500 mb-4">Up to 75 employees</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Up to 75 employees</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Starter</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Custom course uploads</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Advanced reporting</li>
@@ -197,11 +197,11 @@ export default async function CELandingPage() {
           <div className="border rounded-lg p-6">
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-5 w-5 text-red-700" />
-              <h4 className="font-semibold text-gray-900">Department</h4>
+              <h4 className="font-semibold text-foreground">Department</h4>
             </div>
             <div className="text-3xl font-bold mb-1">$4,000<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-gray-500 mb-4">Up to 200 employees</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Up to 200 employees</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Team</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Dedicated onboarding</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Priority support</li>
@@ -210,11 +210,11 @@ export default async function CELandingPage() {
           <div className="border rounded-lg p-6">
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-5 w-5 text-red-700" />
-              <h4 className="font-semibold text-gray-900">Enterprise</h4>
+              <h4 className="font-semibold text-foreground">Enterprise</h4>
             </div>
             <div className="text-3xl font-bold mb-1">$7,000<span className="text-base font-normal">/yr</span></div>
-            <p className="text-sm text-gray-500 mb-4">Unlimited employees</p>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground mb-4">Unlimited employees</p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Everything in Department</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Custom integrations</li>
               <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600" /> Account manager</li>
@@ -225,22 +225,22 @@ export default async function CELandingPage() {
 
       {/* Accreditation Banner */}
       <section className="bg-gray-900 text-white px-6 py-10 text-center">
-        <p className="text-sm text-gray-400 mb-2">Accreditation Status</p>
+        <p className="text-sm text-muted-foreground mb-2">Accreditation Status</p>
         <p className="font-medium">
           MedicForge Continuing Education — Quality CE content built to CAPCE standards.
         </p>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-muted-foreground text-sm mt-1">
           Accepted in Pennsylvania and states that recognize approved providers. CAPCE accreditation: Coming 2027.
         </p>
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 border-t text-center text-sm text-gray-500">
+      <footer className="px-6 py-8 border-t text-center text-sm text-muted-foreground">
         <div className="flex items-center justify-center gap-6 mb-4">
-          <Link href="/ce/terms" className="hover:text-gray-700">Terms of Service</Link>
-          <Link href="/ce/privacy" className="hover:text-gray-700">Privacy Policy</Link>
-          <Link href="/ce/help" className="hover:text-gray-700">Help</Link>
-          <Link href="/ce/contact" className="hover:text-gray-700">Contact</Link>
+          <Link href="/ce/terms" className="hover:text-foreground">Terms of Service</Link>
+          <Link href="/ce/privacy" className="hover:text-foreground">Privacy Policy</Link>
+          <Link href="/ce/help" className="hover:text-foreground">Help</Link>
+          <Link href="/ce/contact" className="hover:text-foreground">Contact</Link>
         </div>
         <p>© {new Date().getFullYear()} Summers Digital LLC. All rights reserved.</p>
       </footer>

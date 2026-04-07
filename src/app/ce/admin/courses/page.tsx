@@ -19,12 +19,12 @@ interface CECourse {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
+  draft: "bg-muted text-foreground",
   pending_committee_review: "bg-yellow-100 text-yellow-800",
   revisions_requested: "bg-orange-100 text-orange-800",
   approved: "bg-blue-100 text-blue-800",
   published: "bg-green-100 text-green-800",
-  archived: "bg-gray-100 text-gray-500",
+  archived: "bg-muted text-muted-foreground",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -94,10 +94,10 @@ export default function CEAdminCoursesPage() {
         {[
           { label: "Published", key: "published", color: "text-green-700" },
           { label: "Pending Review", key: "pending_committee_review", color: "text-yellow-700" },
-          { label: "Draft", key: "draft", color: "text-gray-600" },
-          { label: "Archived", key: "archived", color: "text-gray-400" },
+          { label: "Draft", key: "draft", color: "text-muted-foreground" },
+          { label: "Archived", key: "archived", color: "text-muted-foreground" },
         ].map(({ label, key, color }) => (
-          <div key={key} className="bg-white rounded-lg border p-4">
+          <div key={key} className="bg-card rounded-lg border p-4">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className={`text-2xl font-bold mt-1 ${color}`}>{counts[key] || 0}</p>
           </div>
@@ -113,7 +113,7 @@ export default function CEAdminCoursesPage() {
             className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
               filter === f.value
                 ? "bg-gray-900 text-white"
-                : "bg-white border text-gray-600 hover:bg-gray-50"
+                : "bg-card border text-muted-foreground hover:bg-muted/30"
             }`}
           >
             {f.label}
@@ -122,7 +122,7 @@ export default function CEAdminCoursesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-card rounded-lg border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Spinner size="lg" />
@@ -137,7 +137,7 @@ export default function CEAdminCoursesPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Course</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
@@ -153,7 +153,7 @@ export default function CEAdminCoursesPage() {
                 <tr
                   key={course.id}
                   onClick={() => router.push(`/ce/admin/courses/${course.id}`)}
-                  className="border-b last:border-0 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <p className="font-medium">{course.title}</p>
@@ -166,7 +166,7 @@ export default function CEAdminCoursesPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        STATUS_STYLES[course.status] || "bg-gray-100 text-gray-700"
+                        STATUS_STYLES[course.status] || "bg-muted text-foreground"
                       }`}
                     >
                       {STATUS_LABELS[course.status] || course.status}

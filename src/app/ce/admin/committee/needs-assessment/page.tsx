@@ -91,7 +91,7 @@ export default function CECommitteeNeedsAssessmentPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Document Needs Assessment</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -162,17 +162,17 @@ export default function CECommitteeNeedsAssessmentPage() {
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : assessments.length === 0 ? (
-          <div className="bg-white border rounded-lg flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <div className="bg-card border rounded-lg flex flex-col items-center justify-center h-48 text-muted-foreground">
             <ClipboardList className="h-8 w-8 mb-2 opacity-40" />
             <p className="text-sm">No needs assessments on record</p>
             <p className="text-xs mt-1">Add your first assessment to satisfy CAPCE requirements.</p>
           </div>
         ) : (
           assessments.map((a) => (
-            <div key={a.id} className="bg-white border rounded-lg overflow-hidden">
+            <div key={a.id} className="bg-card border rounded-lg overflow-hidden">
               <button
                 onClick={() => setExpanded(expanded === a.id ? null : a.id)}
-                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-muted/30"
               >
                 <div>
                   <p className="font-medium text-sm">{new Date(a.assessment_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>

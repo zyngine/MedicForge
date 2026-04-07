@@ -178,7 +178,7 @@ export default function CECourseDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen bg-muted/30 text-foreground">
         <CEHeader />
         <div className="flex justify-center py-24">
           <Spinner size="lg" />
@@ -189,7 +189,7 @@ export default function CECourseDetailPage() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen bg-muted/30 text-foreground">
         <CEHeader />
         <div className="max-w-4xl mx-auto px-6 py-16 text-center text-muted-foreground">
           <p className="mb-4">Course not found.</p>
@@ -207,7 +207,7 @@ export default function CECourseDetailPage() {
   const hasAccess = isFree || hasPurchase || hasSubscription;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-muted/30 text-foreground">
       <CEHeader />
 
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
@@ -224,7 +224,7 @@ export default function CECourseDetailPage() {
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {course.category && (
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                     {course.category}
                   </span>
                 )}
@@ -238,7 +238,7 @@ export default function CECourseDetailPage() {
                   </span>
                 )}
                 {course.delivery_method && (
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                     {DELIVERY_LABELS[course.delivery_method] || course.delivery_method}
                   </span>
                 )}
@@ -253,11 +253,11 @@ export default function CECourseDetailPage() {
             <div className="flex flex-wrap gap-6 text-sm py-4 border-y">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <strong className="text-gray-900">{course.ceh_hours}</strong> CEH
+                <strong className="text-foreground">{course.ceh_hours}</strong> CEH
               </span>
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <Star className="h-4 w-4" />
-                Passing score: <strong className="text-gray-900">{course.passing_score}%</strong>
+                Passing score: <strong className="text-foreground">{course.passing_score}%</strong>
               </span>
               {course.certification_levels && course.certification_levels.length > 0 && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -296,7 +296,7 @@ export default function CECourseDetailPage() {
                 <div className="space-y-3">
                   {instructors.map((instr) => (
                     <div key={instr.id} className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">
                         {instr.name.charAt(0)}
                       </div>
                       <div>
@@ -320,7 +320,7 @@ export default function CECourseDetailPage() {
                 <h2 className="font-semibold mb-2">Target Audience</h2>
                 <div className="flex flex-wrap gap-2">
                   {course.target_audience.map((a) => (
-                    <span key={a} className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                    <span key={a} className="text-sm bg-muted text-foreground px-3 py-1 rounded-full">
                       {a}
                     </span>
                   ))}
@@ -347,7 +347,7 @@ export default function CECourseDetailPage() {
 
           {/* Enroll card — sticky */}
           <div>
-            <div className="bg-white border rounded-lg p-5 sticky top-6 space-y-4">
+            <div className="bg-card border rounded-lg p-5 sticky top-6 space-y-4">
               <div>
                 <div className="text-3xl font-bold">
                   {isFree ? "Free" : hasSubscription ? "Included" : `$${course.price!.toFixed(2)}`}
@@ -415,7 +415,7 @@ export default function CECourseDetailPage() {
                     <span>Progress</span>
                     <span>{enrollment.progress_percentage}%</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="w-full bg-muted rounded-full h-1.5">
                     <div
                       className="bg-red-700 h-1.5 rounded-full"
                       style={{ width: `${enrollment.progress_percentage}%` }}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
-import { Spinner } from "@/components/ui";
+import { Spinner, ThemeToggle } from "@/components/ui";
 import { BookOpen, GraduationCap, FileText, User, LogOut, Bell } from "lucide-react";
 
 interface CEUser {
@@ -82,11 +82,11 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30">
       {/* Top nav */}
-      <nav className="bg-white border-b px-6 py-3 flex items-center justify-between">
+      <nav className="bg-card border-b border-border px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/ce" className="flex items-center gap-2 font-bold text-red-700">
+          <Link href="/ce" className="flex items-center gap-2 font-bold text-primary">
             <BookOpen className="h-5 w-5" />
             <span>MedicForge CE</span>
           </Link>
@@ -100,8 +100,8 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
                   href={item.href}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors ${
                     isActive
-                      ? "bg-red-50 text-red-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -113,18 +113,19 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="text-gray-500 hover:text-gray-700">
+          <button className="text-muted-foreground hover:text-foreground">
             <Bell className="h-5 w-5" />
           </button>
+          <ThemeToggle />
           <div className="text-sm text-right hidden sm:block">
-            <p className="font-medium">
+            <p className="font-medium text-foreground">
               {ceUser?.first_name} {ceUser?.last_name}
             </p>
             <p className="text-muted-foreground text-xs">{ceUser?.email}</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="text-gray-500 hover:text-red-700 transition-colors"
+            className="text-muted-foreground hover:text-primary transition-colors"
             title="Sign out"
           >
             <LogOut className="h-5 w-5" />
@@ -133,7 +134,7 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
       </nav>
 
       {/* Mobile nav */}
-      <div className="md:hidden flex items-center gap-1 px-4 py-2 bg-white border-b overflow-x-auto">
+      <div className="md:hidden flex items-center gap-1 px-4 py-2 bg-card border-b border-border overflow-x-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -143,8 +144,8 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
               href={item.href}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors ${
                 isActive
-                  ? "bg-red-50 text-red-700 font-medium"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -155,7 +156,7 @@ export default function CEUserLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Main content */}
-      <main className="max-w-5xl mx-auto px-4 py-8 text-gray-900">
+      <main className="max-w-5xl mx-auto px-4 py-8">
         {children}
       </main>
     </div>

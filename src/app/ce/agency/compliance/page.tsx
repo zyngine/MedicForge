@@ -100,15 +100,15 @@ export default function CEAgencyCompliancePage() {
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border rounded-lg p-5 text-center">
+        <div className="bg-card border rounded-lg p-5 text-center">
           <p className={`text-3xl font-bold ${complianceRate >= 80 ? "text-green-700" : complianceRate >= 50 ? "text-yellow-700" : "text-red-700"}`}>{complianceRate}%</p>
           <p className="text-sm text-muted-foreground mt-1">Compliance Rate</p>
         </div>
-        <div className="bg-white border rounded-lg p-5 text-center">
+        <div className="bg-card border rounded-lg p-5 text-center">
           <p className="text-3xl font-bold text-green-700">{compliantCount}</p>
           <p className="text-sm text-muted-foreground mt-1">Compliant</p>
         </div>
-        <div className="bg-white border rounded-lg p-5 text-center">
+        <div className="bg-card border rounded-lg p-5 text-center">
           <p className="text-3xl font-bold text-red-700">{employees.length - compliantCount}</p>
           <p className="text-sm text-muted-foreground mt-1">Need More CEH</p>
         </div>
@@ -118,13 +118,13 @@ export default function CEAgencyCompliancePage() {
       <div className="flex gap-2">
         {(["all", "compliant", "non_compliant"] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${filter === f ? "bg-gray-900 text-white" : "bg-white border text-gray-600 hover:bg-gray-50"}`}>
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${filter === f ? "bg-gray-900 text-white" : "bg-card border text-muted-foreground hover:bg-muted/30"}`}>
             {f === "all" ? "All" : f === "compliant" ? "Compliant" : "Needs CEH"}
           </button>
         ))}
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
@@ -133,7 +133,7 @@ export default function CEAgencyCompliancePage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Employee</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cert Level</th>
@@ -149,14 +149,14 @@ export default function CEAgencyCompliancePage() {
                 const status = getStatus(emp);
                 const pct = Math.min(100, Math.round((emp.total_ceh / required) * 100));
                 return (
-                  <tr key={emp.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={emp.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{emp.first_name} {emp.last_name}</td>
                     <td className="px-4 py-3 text-muted-foreground">{emp.certification_level || "Unknown"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{required}h</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className={`font-medium ${status === "compliant" ? "text-green-700" : "text-red-700"}`}>{emp.total_ceh.toFixed(1)}h</span>
-                        <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                        <div className="w-16 bg-muted rounded-full h-1.5">
                           <div className={`h-1.5 rounded-full ${status === "compliant" ? "bg-green-500" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-xs text-muted-foreground">{pct}%</span>

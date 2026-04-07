@@ -123,7 +123,7 @@ export function SquarePaymentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b">
           <div>
             <h2 className="font-semibold text-base">Complete Purchase</h2>
@@ -139,7 +139,7 @@ export function SquarePaymentModal({
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
             <span className="text-sm text-muted-foreground">Total due today</span>
             <span className="text-2xl font-bold">${amount.toFixed(2)}</span>
           </div>

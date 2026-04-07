@@ -99,7 +99,7 @@ export default function CECommitteeDashboardPage() {
           { label: "Pending Reviews", value: stats?.pendingReviews, icon: BookOpen, color: "text-yellow-700", href: "/ce/admin/committee/reviews" },
           { label: "Open Action Items", value: stats?.openActionItems, icon: ClipboardList, color: "text-red-700", href: "/ce/admin/committee/meetings" },
         ].map(({ label, value, icon: Icon, color, href }) => (
-          <Link key={label} href={href} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
+          <Link key={label} href={href} className="bg-card border rounded-lg p-5 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
@@ -121,12 +121,12 @@ export default function CECommitteeDashboardPage() {
             </Link>
           </div>
           {pending.length === 0 ? (
-            <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground">
+            <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground">
               <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-60" />
               <p className="text-sm">No courses pending review</p>
             </div>
           ) : (
-            <div className="bg-white border rounded-lg divide-y">
+            <div className="bg-card border rounded-lg divide-y">
               {pending.map((course) => (
                 <div key={course.id} className="flex items-center justify-between px-4 py-3">
                   <div>
@@ -151,7 +151,7 @@ export default function CECommitteeDashboardPage() {
             </Link>
           </div>
           {meetings.length === 0 ? (
-            <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground">
+            <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-40" />
               <p className="text-sm mb-3">No meetings scheduled</p>
               <Link href="/ce/admin/committee/meetings/new" className="text-sm text-red-700 hover:underline">
@@ -159,9 +159,9 @@ export default function CECommitteeDashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="bg-white border rounded-lg divide-y">
+            <div className="bg-card border rounded-lg divide-y">
               {meetings.map((m) => (
-                <Link key={m.id} href={`/ce/admin/committee/meetings/${m.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                <Link key={m.id} href={`/ce/admin/committee/meetings/${m.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30">
                   <div>
                     <p className="text-sm font-medium">{new Date(m.meeting_date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
                     <p className="text-xs text-muted-foreground">{m.location}</p>
@@ -180,7 +180,7 @@ export default function CECommitteeDashboardPage() {
       {actions.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Open Action Items</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {actions.map((item) => {
               const isOverdue = item.due_date && new Date(item.due_date) < new Date();
               return (
@@ -189,7 +189,7 @@ export default function CECommitteeDashboardPage() {
                     {isOverdue ? (
                       <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
                     ) : (
-                      <Clock className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                      <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     )}
                     <div>
                       <p className="text-sm">{item.description}</p>

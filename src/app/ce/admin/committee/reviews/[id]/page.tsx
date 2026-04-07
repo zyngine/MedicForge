@@ -135,7 +135,7 @@ export default function CECommitteeCourseReviewDetailPage() {
       </div>
 
       {/* Course summary */}
-      <div className="bg-white border rounded-lg p-5 space-y-3">
+      <div className="bg-card border rounded-lg p-5 space-y-3">
         <h2 className="font-semibold text-sm">Course Details</h2>
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
@@ -166,7 +166,7 @@ export default function CECommitteeCourseReviewDetailPage() {
       </div>
 
       {/* CAPCE compliance checklist */}
-      <div className="bg-white border rounded-lg p-5">
+      <div className="bg-card border rounded-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-sm">CAPCE Compliance Checklist</h2>
           <span className={`text-xs font-medium ${allChecked ? "text-green-700" : "text-muted-foreground"}`}>
@@ -185,7 +185,7 @@ export default function CECommitteeCourseReviewDetailPage() {
               <span className={`text-sm flex-1 ${checklist[item] ? "text-green-700" : ""}`}>{item}</span>
               {checklist[item]
                 ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                : <XCircle className="h-4 w-4 text-gray-300 shrink-0 mt-0.5 group-hover:text-gray-400" />}
+                : <XCircle className="h-4 w-4 text-gray-300 shrink-0 mt-0.5 group-hover:text-muted-foreground" />}
             </label>
           ))}
         </div>
@@ -198,7 +198,7 @@ export default function CECommitteeCourseReviewDetailPage() {
       </div>
 
       {/* Vote & decision */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
+      <div className="bg-card border rounded-lg p-5 space-y-4">
         <h2 className="font-semibold text-sm">Committee Decision</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 space-y-1">

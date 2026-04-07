@@ -66,15 +66,15 @@ export default function CEMyTrainingPage() {
     <div className="space-y-8">
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-card border rounded-lg p-4 text-center">
           <p className="text-2xl font-bold text-blue-600">{inProgress.length}</p>
           <p className="text-sm text-muted-foreground mt-1">In Progress</p>
         </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-card border rounded-lg p-4 text-center">
           <p className="text-2xl font-bold text-green-600">{completed.length}</p>
           <p className="text-sm text-muted-foreground mt-1">Completed</p>
         </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-card border rounded-lg p-4 text-center">
           <p className="text-2xl font-bold text-red-700">{totalCEH.toFixed(1)}</p>
           <p className="text-sm text-muted-foreground mt-1">CEH Earned</p>
         </div>
@@ -86,7 +86,7 @@ export default function CEMyTrainingPage() {
           <h2 className="text-lg font-semibold mb-3">In Progress</h2>
           <div className="space-y-3">
             {inProgress.map((e) => (
-              <div key={e.id} className="bg-white border rounded-lg p-4">
+              <div key={e.id} className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <p className="font-medium">{e.ce_courses?.title}</p>
@@ -98,7 +98,7 @@ export default function CEMyTrainingPage() {
                     <Button size="sm">Continue</Button>
                   </Link>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div
                     className="bg-red-700 h-2 rounded-full transition-all"
                     style={{ width: `${e.progress_percentage || 0}%` }}
@@ -115,7 +115,7 @@ export default function CEMyTrainingPage() {
       {completed.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Completed</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {completed.map((e) => (
               <div key={e.id} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">

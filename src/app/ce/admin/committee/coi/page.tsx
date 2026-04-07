@@ -137,7 +137,7 @@ export default function CECommitteeCOIPage() {
       )}
 
       {showForm && (
-        <div className="bg-white border rounded-lg p-5 space-y-4">
+        <div className="bg-card border rounded-lg p-5 space-y-4">
           <h2 className="font-semibold">Add COI Record</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -199,7 +199,7 @@ export default function CECommitteeCOIPage() {
         </div>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-card border rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
         ) : records.length === 0 ? (
@@ -209,7 +209,7 @@ export default function CECommitteeCOIPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
@@ -224,7 +224,7 @@ export default function CECommitteeCOIPage() {
                 const isExpired = r.expires_at && new Date(r.expires_at) < now;
                 const isSoon = r.expires_at && !isExpired && (new Date(r.expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24) <= 90;
                 return (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{r.entity_name}</td>
                     <td className="px-4 py-3 text-muted-foreground capitalize">{r.entity_role.replace(/_/g, " ")}</td>
                     <td className="px-4 py-3">

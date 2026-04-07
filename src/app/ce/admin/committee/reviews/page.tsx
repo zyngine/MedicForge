@@ -132,14 +132,14 @@ export default function CECommitteeReviewsPage() {
           Pending Review ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="bg-white border rounded-lg p-8 text-center text-muted-foreground">
+          <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground">
             <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-60" />
             <p className="text-sm">No courses pending review</p>
           </div>
         ) : (
           <div className="space-y-3">
             {pending.map((course) => (
-              <div key={course.id} className="bg-white border rounded-lg overflow-hidden">
+              <div key={course.id} className="bg-card border rounded-lg overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4">
                   <div>
                     <p className="font-medium">{course.title}</p>
@@ -159,7 +159,7 @@ export default function CECommitteeReviewsPage() {
                 </div>
 
                 {reviewingId === course.id && (
-                  <div className="border-t bg-gray-50 px-5 py-4 space-y-4">
+                  <div className="border-t bg-muted/30 px-5 py-4 space-y-4">
                     {saveError && (
                       <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
                         <AlertCircle className="h-4 w-4 shrink-0" />{saveError}
@@ -238,7 +238,7 @@ export default function CECommitteeReviewsPage() {
       {reviews.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Review History</h2>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {reviews.map((r) => (
               <div key={r.id} className="flex items-center justify-between px-4 py-3">
                 <div>
@@ -252,7 +252,7 @@ export default function CECommitteeReviewsPage() {
                   {r.medical_director_approved === true && <span title="MD Approved"><CheckCircle className="h-4 w-4 text-green-500" /></span>}
                   {r.medical_director_approved === false && <span title="MD Not Approved"><XCircle className="h-4 w-4 text-red-500" /></span>}
                   {r.committee_decision && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DECISION_STYLES[r.committee_decision] || "bg-gray-100 text-gray-700"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DECISION_STYLES[r.committee_decision] || "bg-muted text-foreground"}`}>
                       {DECISION_LABELS[r.committee_decision] || r.committee_decision}
                     </span>
                   )}

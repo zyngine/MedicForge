@@ -124,7 +124,7 @@ export default function CEAgencyDashboardPage() {
           { label: "In Progress", value: stats?.inProgress, icon: Clock, color: "text-yellow-700", href: "/ce/agency/employees" },
           { label: "Total CEH Earned", value: stats?.totalCEH?.toFixed(1), icon: Award, color: "text-red-700", href: "/ce/agency/compliance" },
         ].map(({ label, value, icon: Icon, color, href }) => (
-          <Link key={label} href={href} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
+          <Link key={label} href={href} className="bg-card border rounded-lg p-5 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
@@ -143,7 +143,7 @@ export default function CEAgencyDashboardPage() {
           { title: "Compliance Report", desc: "Track CE status across the department", href: "/ce/agency/compliance" },
           { title: "Browse Catalog", desc: "Assign training to employees", href: "/ce/catalog" },
         ].map(({ title, desc, href }) => (
-          <Link key={href} href={href} className="bg-white border rounded-lg p-4 flex items-center justify-between hover:shadow-sm transition-shadow group">
+          <Link key={href} href={href} className="bg-card border rounded-lg p-4 flex items-center justify-between hover:shadow-sm transition-shadow group">
             <div>
               <p className="font-medium text-sm">{title}</p>
               <p className="text-xs text-muted-foreground">{desc}</p>
@@ -162,7 +162,7 @@ export default function CEAgencyDashboardPage() {
               View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="bg-white border rounded-lg divide-y">
+          <div className="bg-card border rounded-lg divide-y">
             {topEmployees.map((emp, i) => (
               <div key={emp.id} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">

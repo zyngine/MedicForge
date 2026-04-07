@@ -84,11 +84,11 @@ export default function CEResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md text-center">
           <BookOpen className="h-12 w-12 text-red-700 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Password updated</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             Your password has been reset successfully. You can now sign in with your new password.
           </p>
           <Link href="/ce/login">
@@ -100,7 +100,7 @@ export default function CEResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">

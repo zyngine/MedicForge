@@ -21,7 +21,7 @@ interface CEUser {
 }
 
 const ROLE_STYLES: Record<string, string> = {
-  user: "bg-gray-100 text-gray-700",
+  user: "bg-muted text-foreground",
   admin: "bg-red-100 text-red-700",
   agency_admin: "bg-blue-100 text-blue-700",
   committee_member: "bg-purple-100 text-purple-700",
@@ -111,7 +111,7 @@ export default function CEAdminUsersPage() {
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 filter === f.value
                   ? "bg-gray-900 text-white"
-                  : "bg-white border text-gray-600 hover:bg-gray-50"
+                  : "bg-card border text-muted-foreground hover:bg-muted/30"
               }`}
             >
               {f.label}
@@ -121,7 +121,7 @@ export default function CEAdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-card rounded-lg border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Spinner size="lg" />
@@ -133,7 +133,7 @@ export default function CEAdminUsersPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted/30 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
@@ -146,13 +146,13 @@ export default function CEAdminUsersPage() {
             </thead>
             <tbody>
               {filtered.map((user) => (
-                <tr key={user.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <p className="font-medium">{user.first_name} {user.last_name}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_STYLES[user.role] || "bg-gray-100 text-gray-700"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_STYLES[user.role] || "bg-muted text-foreground"}`}>
                       {ROLE_LABELS[user.role] || user.role}
                     </span>
                   </td>

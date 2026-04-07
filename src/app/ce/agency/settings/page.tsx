@@ -85,7 +85,7 @@ export default function CEAgencySettingsPage() {
       </div>
 
       {/* Subscription info */}
-      <div className="bg-white border rounded-lg p-5">
+      <div className="bg-card border rounded-lg p-5">
         <h2 className="font-semibold text-sm mb-3">Subscription</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
@@ -103,7 +103,7 @@ export default function CEAgencySettingsPage() {
       </div>
 
       {/* Agency profile */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
+      <div className="bg-card border rounded-lg p-5 space-y-4">
         <h2 className="font-semibold text-sm">Agency Profile</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 space-y-1">

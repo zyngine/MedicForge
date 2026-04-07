@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
-import { Spinner } from "@/components/ui";
+import { Spinner, ThemeToggle } from "@/components/ui";
 import {
   BookOpen, LayoutDashboard, GraduationCap, Users, Building2,
-  BarChart3, Users2, LogOut, ChevronDown, Settings, CreditCard,
+  BarChart3, Users2, LogOut, Settings, CreditCard,
 } from "lucide-react";
+
+/* eslint-disable react-hooks/exhaustive-deps */
 
 export default function CEAdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -95,7 +97,7 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
     {
       label: "CAPCE",
       items: [
-        { href: "/ce/admin/capce", label: "CAPCE Dashboard", icon: ChevronDown },
+        { href: "/ce/admin/capce", label: "CAPCE Dashboard", icon: LayoutDashboard },
         { href: "/ce/admin/capce/reporting", label: "Reporting", icon: BarChart3 },
         { href: "/ce/admin/capce/submissions", label: "Submissions", icon: BookOpen },
         { href: "/ce/admin/capce/audit", label: "Audit Prep", icon: Users },
@@ -111,8 +113,8 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <div className="min-h-screen flex text-gray-900">
-      {/* Sidebar */}
+    <div className="min-h-screen flex">
+      {/* Sidebar — always dark regardless of theme */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-800">
           <Link href="/ce/admin" className="flex items-center gap-2">
@@ -164,24 +166,12 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Main — override theme variables to light so inputs/selects are readable */}
-      <main
-        className="flex-1 overflow-auto bg-gray-50"
-        style={{
-          "--background": "#ffffff",
-          "--foreground": "#1A202C",
-          "--card": "#ffffff",
-          "--card-foreground": "#1A202C",
-          "--input": "#E2E8F0",
-          "--border": "#E2E8F0",
-          "--muted": "#F7FAFC",
-          "--muted-foreground": "#4A5568",
-          "--popover": "#ffffff",
-          "--popover-foreground": "#1A202C",
-          colorScheme: "light",
-        } as React.CSSProperties}
-      >
-        <div className="p-8">{children}</div>
+      {/* Main content — theme-aware */}
+      <main className="flex-1 overflow-auto bg-muted/30">
+        <div className="flex items-center justify-end px-8 pt-4">
+          <ThemeToggle />
+        </div>
+        <div className="px-8 pb-8">{children}</div>
       </main>
     </div>
   );
