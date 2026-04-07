@@ -164,8 +164,23 @@ export default function CEAdminLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto bg-gray-50">
+      {/* Main — override theme variables to light so inputs/selects are readable */}
+      <main
+        className="flex-1 overflow-auto bg-gray-50"
+        style={{
+          "--background": "#ffffff",
+          "--foreground": "#1A202C",
+          "--card": "#ffffff",
+          "--card-foreground": "#1A202C",
+          "--input": "#E2E8F0",
+          "--border": "#E2E8F0",
+          "--muted": "#F7FAFC",
+          "--muted-foreground": "#4A5568",
+          "--popover": "#ffffff",
+          "--popover-foreground": "#1A202C",
+          colorScheme: "light",
+        } as React.CSSProperties}
+      >
         <div className="p-8">{children}</div>
       </main>
     </div>
