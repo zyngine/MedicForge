@@ -96,7 +96,12 @@ function RegisterForm() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        const msg = signUpError.message?.toLowerCase() || "";
+        if (msg.includes("rate limit") || msg.includes("rate_limit")) {
+          setError("Too many signups from this network. Please wait a few minutes and try again, or ask your instructor to add you directly.");
+        } else {
+          setError(signUpError.message);
+        }
         return;
       }
 

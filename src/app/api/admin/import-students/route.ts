@@ -105,6 +105,8 @@ export async function POST(request: NextRequest) {
           // User exists in auth but not in this tenant
           authUserId = existingAuthUser.id;
         } else {
+          const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net"}/auth/callback`;
+
           // Create new auth user with invite
           const { data: inviteData, error: inviteError } =
             await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
@@ -113,29 +115,58 @@ export async function POST(request: NextRequest) {
                 role: "student",
                 tenant_id,
               },
-              redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.medicforge.net"}/auth/callback`,
+              redirectTo: redirectUrl,
             });
 
           if (inviteError) {
-            results.push({
-              identifier: email,
-              success: false,
-              error: inviteError.message,
-            });
-            continue;
-          }
+            const errorMsg = inviteError.message?.toLowerCase() || "";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const isRateLimit = errorMsg.includes("rate limit") || (inviteError as any).status === 429;
 
-          if (!inviteData.user) {
+            if (isRateLimit) {
+              // Rate limit hit — generate invite link without sending email
+              const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+                type: "invite",
+                email,
+                options: {
+                  data: { full_name: fullName, role: "student", tenant_id },
+                  redirectTo: redirectUrl,
+                },
+              });
+
+              if (linkError || !linkData?.user) {
+                results.push({
+                  identifier: email,
+                  success: false,
+                  error: "Email rate limit reached. Try again later or invite individually.",
+                });
+                continue;
+              }
+
+              authUserId = linkData.user.id;
+              invited = true;
+            } else {
+              results.push({
+                identifier: email,
+                success: false,
+                error: inviteError.message,
+              });
+              continue;
+            }
+          } else if (!inviteData?.user) {
             results.push({
               identifier: email,
               success: false,
               error: "Failed to create user invitation",
             });
             continue;
+          } else {
+            authUserId = inviteData.user.id;
+            invited = true;
           }
 
-          authUserId = inviteData.user.id;
-          invited = true;
+          // Small delay between invites to reduce rate limit pressure
+          await new Promise((r) => setTimeout(r, 150));
         }
 
         // Create user profile in users table
