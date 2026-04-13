@@ -19,21 +19,33 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [isValidSession, setIsValidSession] = React.useState(false);
 
-  // Verify the session on mount
+  // Listen for PASSWORD_RECOVERY event and verify session on mount
   React.useEffect(() => {
-    const verifySession = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createClient();
 
+    // Listen for PASSWORD_RECOVERY event fired when user clicks recovery link
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsValidSession(true);
+        setIsVerifying(false);
+      }
+    });
+
+    // Fallback: check if session already exists (event may have fired before listener attached)
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsValidSession(true);
       } else {
         setError("Invalid or expired reset link. Please request a new one.");
       }
       setIsVerifying(false);
-    };
+    });
 
-    verifySession();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const validatePassword = (pwd: string): string | null => {

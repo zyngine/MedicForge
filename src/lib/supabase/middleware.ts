@@ -250,7 +250,9 @@ export async function updateSession(request: NextRequest) {
 
     // For login/register pages, allow users through
     // The login page will handle signing out stale sessions before new login
-    if (pathname === "/login" || pathname === "/register") {
+    // For reset-password, the user has a valid session from the recovery link
+    // but must stay on the page to set their new password (not get redirected to dashboard)
+    if (pathname === "/login" || pathname === "/register" || pathname === "/reset-password") {
       applyTenantCookies()
       return supabaseResponse
     }
