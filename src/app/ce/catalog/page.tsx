@@ -17,8 +17,8 @@ interface CECourse {
   delivery_method: string | null;
   is_free: boolean;
   price: number | null;
-  capce_approved: boolean;
-  target_audience: string[] | null;
+  is_capce_accredited: boolean;
+  target_audience: string | null;
 }
 
 const CATEGORIES = [
@@ -56,7 +56,7 @@ export default function CECatalogPage() {
       const { data } = await supabase
         .from("ce_courses")
         .select(
-          "id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, capce_approved, target_audience"
+          "id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, is_capce_accredited, target_audience"
         )
         .eq("status", "published")
         .order("title");
@@ -69,7 +69,7 @@ export default function CECatalogPage() {
   const filtered = useMemo(() => {
     return allCourses.filter((c) => {
       if (category !== "All" && c.category !== category) return false;
-      if (capceOnly && !c.capce_approved) return false;
+      if (capceOnly && !c.is_capce_accredited) return false;
       if (search.trim()) {
         const s = search.toLowerCase();
         const inTitle = c.title.toLowerCase().includes(s);
@@ -214,7 +214,7 @@ export default function CECatalogPage() {
                           {course.category}
                         </span>
                       )}
-                      {course.capce_approved && (
+                      {course.is_capce_accredited && (
                         <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Award className="h-3 w-3" />
                           CAPCE
