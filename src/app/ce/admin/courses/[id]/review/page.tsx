@@ -12,7 +12,7 @@ interface Course {
   status: string;
   ceh_hours: number;
   passing_score: number | null;
-  capce_number: string | null;
+  capce_course_number: string | null;
   description: string | null;
   ce_course_objectives: { objective_text: string }[];
   ce_course_references: { citation: string }[];
@@ -45,7 +45,7 @@ export default function CEAdminCourseReviewSubmitPage() {
       const { data } = await supabase
         .from("ce_courses")
         .select(`
-          id, title, status, ceh_hours, passing_score, capce_number, description,
+          id, title, status, ceh_hours, passing_score, capce_course_number, description,
           ce_course_objectives(objective_text),
           ce_course_references(citation),
           ce_course_instructors(ce_instructors(cv_url, coi_expires_at))

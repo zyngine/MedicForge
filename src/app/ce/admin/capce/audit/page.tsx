@@ -27,13 +27,13 @@ export default function CECapceAuditPage() {
         supabase.from("ce_committee_members").select("id", { count: "exact", head: true }).eq("role", "medical_director").eq("status", "active"),
         supabase.from("ce_conflict_of_interest").select("id", { count: "exact", head: true }).eq("attestation_signed", true),
         supabase.from("ce_needs_assessments").select("id", { count: "exact", head: true }),
-        supabase.from("ce_courses").select("id, capce_number, status, passing_score"),
+        supabase.from("ce_courses").select("id, capce_course_number, status, passing_score"),
         supabase.from("ce_instructors").select("id, cv_url, coi_expires_at"),
       ]);
 
-      const courses = (coursesRes.data || []) as { id: string; capce_number: string | null; status: string; passing_score: number | null }[];
+      const courses = (coursesRes.data || []) as { id: string; capce_course_number: string | null; status: string; passing_score: number | null }[];
       const instructors = (instructorsRes.data || []) as { id: string; cv_url: string | null; coi_expires_at: string | null }[];
-      const publishedWithCapce = courses.filter((c) => c.status === "published" && c.capce_number);
+      const publishedWithCapce = courses.filter((c) => c.status === "published" && c.capce_course_number);
       const coursesGoodPassScore = courses.filter((c) => (c.passing_score || 0) >= 70);
       const instructorsWithCV = instructors.filter((i) => i.cv_url);
       const instructorsCoiCurrent = instructors.filter((i) => !i.coi_expires_at || new Date(i.coi_expires_at) > new Date());

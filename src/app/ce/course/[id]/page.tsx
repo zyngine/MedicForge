@@ -19,8 +19,8 @@ interface CourseDetail {
   delivery_method: string | null;
   is_free: boolean;
   price: number | null;
-  capce_approved: boolean;
-  capce_number: string | null;
+  is_capce_accredited: boolean;
+  capce_course_number: string | null;
   target_audience: string[] | null;
   prerequisites: string | null;
   disclosure_statement: string | null;
@@ -71,14 +71,14 @@ export default function CECourseDetailPage() {
       const [courseRes, objRes, instrRes, settingRes] = await Promise.all([
         supabase
           .from("ce_courses")
-          .select("id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, capce_approved, capce_number, target_audience, prerequisites, disclosure_statement, passing_score, certification_levels, expiration_months")
+          .select("id, title, description, category, ceh_hours, course_type, delivery_method, is_free, price, is_capce_accredited, capce_course_number, target_audience, prerequisites, disclosure_statement, passing_score, certification_levels, expiration_months")
           .eq("id", id)
           .single(),
         supabase
           .from("ce_course_objectives")
           .select("id, objective_text, bloom_level")
           .eq("course_id", id)
-          .order("order_index"),
+          .order("sort_order"),
         supabase
           .from("ce_course_instructors")
           .select("ce_instructors(id, name, credentials, bio)")
@@ -228,12 +228,12 @@ export default function CECourseDetailPage() {
                     {course.category}
                   </span>
                 )}
-                {course.capce_approved && (
+                {course.is_capce_accredited && (
                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Award className="h-3 w-3" />
                     CAPCE Approved
-                    {course.capce_number && (
-                      <span className="font-mono ml-0.5">{course.capce_number}</span>
+                    {course.capce_course_number && (
+                      <span className="font-mono ml-0.5">{course.capce_course_number}</span>
                     )}
                   </span>
                 )}
@@ -337,7 +337,7 @@ export default function CECourseDetailPage() {
             )}
 
             {/* CAPCE Disclosure */}
-            {course.capce_approved && course.disclosure_statement && (
+            {course.is_capce_accredited && course.disclosure_statement && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800">
                 <p className="font-semibold mb-1">Disclosure Statement</p>
                 <p>{course.disclosure_statement}</p>
@@ -433,7 +433,7 @@ export default function CECourseDetailPage() {
                   <BookOpen className="h-3.5 w-3.5 shrink-0" />
                   Passing score: {course.passing_score}%
                 </p>
-                {course.capce_approved && (
+                {course.is_capce_accredited && (
                   <p className="flex items-center gap-1.5">
                     <Award className="h-3.5 w-3.5 shrink-0" />
                     CAPCE Approved

@@ -20,7 +20,7 @@ interface EnrollmentWithCourse {
   enrolled_at: string;
   completed_at: string | null;
   progress_pct: number | null;
-  ce_courses: { id: string; title: string; ceh_hours: number; capce_number: string | null } | null;
+  ce_courses: { id: string; title: string; ceh_hours: number; capce_course_number: string | null } | null;
 }
 
 export default function CEAgencyTrainingPage() {
@@ -40,7 +40,7 @@ export default function CEAgencyTrainingPage() {
         supabase.from("ce_users").select("id, first_name, last_name, certification_level").eq("agency_id", me.agency_id).eq("role", "user"),
         supabase
           .from("ce_enrollments")
-          .select("id, user_id, completion_status, enrolled_at, completed_at, progress_pct, ce_courses(id, title, ceh_hours, capce_number)")
+          .select("id, user_id, completion_status, enrolled_at, completed_at, progress_pct, ce_courses(id, title, ceh_hours, capce_course_number)")
           .in("user_id", []),  // will refetch below
         supabase.from("ce_courses").select("id, title, ceh_hours").eq("status", "published"),
       ]);
@@ -52,7 +52,7 @@ export default function CEAgencyTrainingPage() {
       if (empIds.length > 0) {
         const { data } = await supabase
           .from("ce_enrollments")
-          .select("id, user_id, completion_status, enrolled_at, completed_at, progress_pct, ce_courses(id, title, ceh_hours, capce_number)")
+          .select("id, user_id, completion_status, enrolled_at, completed_at, progress_pct, ce_courses(id, title, ceh_hours, capce_course_number)")
           .in("user_id", empIds)
           .order("enrolled_at", { ascending: false });
         enrollData = (data as EnrollmentWithCourse[]) || [];
@@ -146,7 +146,7 @@ export default function CEAgencyTrainingPage() {
                     <td className="px-4 py-3 font-medium">{emp ? `${emp.first_name} ${emp.last_name}` : "—"}</td>
                     <td className="px-4 py-3">
                       <p>{e.ce_courses?.title}</p>
-                      {e.ce_courses?.capce_number && <p className="text-xs text-muted-foreground font-mono">{e.ce_courses.capce_number}</p>}
+                      {e.ce_courses?.capce_course_number && <p className="text-xs text-muted-foreground font-mono">{e.ce_courses.capce_course_number}</p>}
                     </td>
                     <td className="px-4 py-3 font-medium">{e.ce_courses?.ceh_hours}h</td>
                     <td className="px-4 py-3">

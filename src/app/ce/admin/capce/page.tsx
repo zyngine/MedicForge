@@ -25,7 +25,7 @@ export default function CECapceDashboardPage() {
       const supabase = createCEClient();
 
       const [coursesRes, membersRes, mdRes, coiRes, naRes, completionsRes, submissionsRes] = await Promise.all([
-        supabase.from("ce_courses").select("id, capce_approved, status"),
+        supabase.from("ce_courses").select("id, is_capce_accredited, status"),
         supabase.from("ce_committee_members").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("ce_committee_members").select("id", { count: "exact", head: true }).eq("role", "medical_director").eq("status", "active"),
         supabase.from("ce_conflict_of_interest").select("id", { count: "exact", head: true }).eq("attestation_signed", true),
@@ -34,13 +34,13 @@ export default function CECapceDashboardPage() {
         supabase.from("ce_capce_submission_records").select("id", { count: "exact", head: true }).eq("status", "reported"),
       ]);
 
-      const courses = (coursesRes.data || []) as { id: string; status: string; capce_approved: boolean | null }[];
+      const courses = (coursesRes.data || []) as { id: string; status: string; is_capce_accredited: boolean | null }[];
       const totalCompletions = completionsRes.count || 0;
       const reportedCompletions = submissionsRes.count || 0;
 
       setStatus({
         publishedCourses: courses.filter((c) => c.status === "published").length,
-        coursesWithCapce: courses.filter((c) => c.capce_approved).length,
+        coursesWithCapce: courses.filter((c) => c.is_capce_accredited).length,
         activeMembers: membersRes.count || 0,
         medicalDirector: (mdRes.count || 0) > 0,
         coiFormsOnFile: coiRes.count || 0,

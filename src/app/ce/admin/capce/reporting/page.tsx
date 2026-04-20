@@ -13,7 +13,7 @@ interface UnreportedCompletion {
   id: string;
   completed_at: string;
   ce_users: { first_name: string; last_name: string; nremt_id: string | null; certification_level: string | null } | null;
-  ce_courses: { title: string; course_number: string | null; ceh_hours: number; capce_number: string | null } | null;
+  ce_courses: { title: string; course_number: string | null; ceh_hours: number; capce_course_number: string | null } | null;
 }
 
 export default function CECapceReportingPage() {
@@ -40,7 +40,7 @@ export default function CECapceReportingPage() {
 
     let q = supabase
       .from("ce_enrollments")
-      .select("id, completed_at, ce_users(first_name, last_name, nremt_id, certification_level), ce_courses(title, course_number, ceh_hours, capce_number)")
+      .select("id, completed_at, ce_users(first_name, last_name, nremt_id, certification_level), ce_courses(title, course_number, ceh_hours, capce_course_number)")
       .eq("completion_status", "completed")
       .order("completed_at", { ascending: false });
 
@@ -76,7 +76,7 @@ export default function CECapceReportingPage() {
       c.ce_users?.certification_level || "",
       c.ce_courses?.course_number || "",
       `"${c.ce_courses?.title || ""}"`,
-      c.ce_courses?.capce_number || "",
+      c.ce_courses?.capce_course_number || "",
       c.ce_courses?.ceh_hours || 0,
       c.completed_at ? new Date(c.completed_at).toLocaleDateString() : "",
     ].join(","));
@@ -194,7 +194,7 @@ export default function CECapceReportingPage() {
                   </td>
                   <td className="px-4 py-3">
                     <p>{c.ce_courses?.title}</p>
-                    {c.ce_courses?.capce_number && <p className="text-xs text-muted-foreground font-mono">{c.ce_courses.capce_number}</p>}
+                    {c.ce_courses?.capce_course_number && <p className="text-xs text-muted-foreground font-mono">{c.ce_courses.capce_course_number}</p>}
                   </td>
                   <td className="px-4 py-3 font-medium">{c.ce_courses?.ceh_hours}h</td>
                   <td className="px-4 py-3 text-muted-foreground">

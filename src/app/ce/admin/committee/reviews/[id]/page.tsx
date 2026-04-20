@@ -26,7 +26,7 @@ interface Course {
   status: string;
   ceh_hours: number;
   passing_score: number | null;
-  capce_number: string | null;
+  capce_course_number: string | null;
   ce_users: { first_name: string; last_name: string } | null;
 }
 
@@ -65,7 +65,7 @@ export default function CECommitteeCourseReviewDetailPage() {
     const load = async () => {
       const supabase = createCEClient();
       const [courseRes, reviewRes] = await Promise.all([
-        supabase.from("ce_courses").select("id, title, description, status, ceh_hours, passing_score, capce_number, ce_users(first_name, last_name)").eq("id", courseId).single(),
+        supabase.from("ce_courses").select("id, title, description, status, ceh_hours, passing_score, capce_course_number, ce_users(first_name, last_name)").eq("id", courseId).single(),
         supabase.from("ce_committee_reviews").select("*").eq("course_id", courseId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       setCourse(courseRes.data as Course | null);
@@ -148,7 +148,7 @@ export default function CECommitteeCourseReviewDetailPage() {
           </div>
           <div>
             <p className="text-muted-foreground text-xs">CAPCE Number</p>
-            <p className="font-medium font-mono text-xs">{course.capce_number || "Not assigned"}</p>
+            <p className="font-medium font-mono text-xs">{course.capce_course_number || "Not assigned"}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Author</p>

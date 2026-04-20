@@ -12,7 +12,7 @@ interface ReportRow {
   certification_level: string;
   nremt_id: string;
   course: string;
-  capce_number: string;
+  capce_course_number: string;
   ceh_hours: number;
   completed_at: string;
 }
@@ -32,7 +32,7 @@ export default function CEAgencyReportsPage() {
 
     let q = supabase
       .from("ce_enrollments")
-      .select("completed_at, ce_users!inner(first_name, last_name, nremt_id, certification_level, agency_id), ce_courses(title, capce_number, ceh_hours)")
+      .select("completed_at, ce_users!inner(first_name, last_name, nremt_id, certification_level, agency_id), ce_courses(title, capce_course_number, ceh_hours)")
       .eq("completion_status", "completed")
       .eq("ce_users.agency_id", aId);
 
@@ -48,7 +48,7 @@ export default function CEAgencyReportsPage() {
       certification_level: r.ce_users?.certification_level || "",
       nremt_id: r.ce_users?.nremt_id || "MISSING",
       course: r.ce_courses?.title || "",
-      capce_number: r.ce_courses?.capce_number || "",
+      capce_course_number: r.ce_courses?.capce_course_number || "",
       ceh_hours: r.ce_courses?.ceh_hours || 0,
       completed_at: r.completed_at ? new Date(r.completed_at).toLocaleDateString() : "",
     })));
@@ -79,7 +79,7 @@ export default function CEAgencyReportsPage() {
       r.certification_level,
       r.nremt_id,
       `"${r.course}"`,
-      r.capce_number,
+      r.capce_course_number,
       r.ceh_hours,
       r.completed_at,
     ].join(","));
@@ -181,7 +181,7 @@ export default function CEAgencyReportsPage() {
                   <td className="px-4 py-3 font-mono text-xs">{r.nremt_id === "MISSING" ? <span className="text-red-600">Missing</span> : r.nremt_id}</td>
                   <td className="px-4 py-3">
                     <p>{r.course}</p>
-                    {r.capce_number && <p className="text-xs text-muted-foreground font-mono">{r.capce_number}</p>}
+                    {r.capce_course_number && <p className="text-xs text-muted-foreground font-mono">{r.capce_course_number}</p>}
                   </td>
                   <td className="px-4 py-3 font-medium">{r.ceh_hours}h</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{r.completed_at}</td>
