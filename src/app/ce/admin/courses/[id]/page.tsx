@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input, Button, Alert, Select, Spinner } from "@/components/ui";
-import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical, Upload, Link2 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -161,12 +161,118 @@ const STATUS_STYLES: Record<string, string> = {
 
 const CONTENT_TYPES = [
   { value: "text", label: "Text / HTML" },
-  { value: "video", label: "Video (URL)" },
-  { value: "pdf", label: "PDF (URL)" },
-  { value: "image", label: "Image (URL)" },
+  { value: "video", label: "Video" },
+  { value: "pdf", label: "PDF" },
+  { value: "image", label: "Image" },
 ];
 
 type Tab = "details" | "objectives" | "references" | "modules" | "quiz" | "capce" | "status";
+
+// ─── File Upload or URL Input ────────────────────────────────────────────────
+
+function FileOrUrlInput({
+  value, onChange, accept, bucket, folder, urlPlaceholder, uploadLabel,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  accept: string;
+  bucket: string;
+  folder: string;
+  urlPlaceholder: string;
+  uploadLabel: string;
+}) {
+  const [mode, setMode] = useState<"upload" | "url">(value && !value.includes(bucket) ? "url" : "upload");
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+    setProgress("Uploading...");
+
+    try {
+      const supabase = createCEClient();
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, { upsert: true, contentType: file.type });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
+      onChange(publicUrl);
+      setProgress("Uploaded");
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setProgress("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setMode("upload")}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+            mode === "upload" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Upload className="h-3 w-3" /> Upload
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("url")}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+            mode === "url" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Link2 className="h-3 w-3" /> URL
+        </button>
+        {value && (
+          <span className="ml-2 text-xs text-muted-foreground truncate max-w-[300px] self-center" title={value}>
+            {value.includes(bucket) ? "Uploaded file" : value}
+          </span>
+        )}
+      </div>
+
+      {mode === "upload" ? (
+        <div>
+          <label className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-md cursor-pointer transition-colors ${
+            uploading ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"
+          }`}>
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {uploading ? progress : value ? "Replace file" : uploadLabel}
+            </span>
+            <input
+              type="file"
+              accept={accept}
+              onChange={handleFileChange}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+          {uploadError && <p className="text-xs text-red-600 mt-1">{uploadError}</p>}
+        </div>
+      ) : (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={urlPlaceholder}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -967,30 +1073,42 @@ export default function CEAdminCourseEditPage() {
                             />
                           )}
                           {block.content_type === "video" && (
-                            <Input
+                            <FileOrUrlInput
                               value={block.video_url || ""}
-                              onChange={(e) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
-                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, video_url: e.target.value } : c),
+                              onChange={(url) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
+                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, video_url: url } : c),
                               } : m))}
-                              placeholder="Video URL (YouTube embed, Vimeo, or direct .mp4)"
+                              accept="video/mp4,video/webm,video/quicktime"
+                              bucket="ce-content"
+                              folder={`courses/${id}/videos`}
+                              urlPlaceholder="YouTube, Vimeo, or direct .mp4 URL"
+                              uploadLabel="Upload Video"
                             />
                           )}
                           {block.content_type === "pdf" && (
-                            <Input
+                            <FileOrUrlInput
                               value={block.pdf_url || ""}
-                              onChange={(e) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
-                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, pdf_url: e.target.value } : c),
+                              onChange={(url) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
+                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, pdf_url: url } : c),
                               } : m))}
-                              placeholder="PDF URL"
+                              accept="application/pdf"
+                              bucket="ce-content"
+                              folder={`courses/${id}/pdfs`}
+                              urlPlaceholder="PDF URL"
+                              uploadLabel="Upload PDF"
                             />
                           )}
                           {block.content_type === "image" && (
-                            <Input
+                            <FileOrUrlInput
                               value={block.image_url || ""}
-                              onChange={(e) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
-                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, image_url: e.target.value } : c),
+                              onChange={(url) => setModules((prev) => prev.map((m) => m.id === mod.id ? {
+                                ...m, content: m.content.map((c) => c.id === block.id ? { ...c, image_url: url } : c),
                               } : m))}
-                              placeholder="Image URL"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              bucket="ce-content"
+                              folder={`courses/${id}/images`}
+                              urlPlaceholder="Image URL"
+                              uploadLabel="Upload Image"
                             />
                           )}
                         </div>
