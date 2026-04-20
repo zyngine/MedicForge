@@ -53,6 +53,33 @@ function CELoginContent() {
         .single();
 
       if (!ceUser) {
+        // Safety net: if auth exists but ce_users doesn't, create the profile
+        // This handles cases where registration's setup-ce-user call failed
+        try {
+          const meta = authData.user.user_metadata || {};
+          const setupRes = await fetch("/api/ce/auth/setup-ce-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              email: authData.user.email,
+              firstName: meta.first_name || authData.user.email?.split("@")[0] || "User",
+              lastName: meta.last_name || "",
+              certificationLevel: meta.certification_level || null,
+              state: meta.state || null,
+              nremtId: meta.nremt_id || null,
+              registrationType: meta.ce_registration_type || "individual",
+              agencyInviteCode: meta.agency_invite_code || null,
+            }),
+          });
+          if (setupRes.ok) {
+            // Profile created — redirect to terms acceptance
+            router.push(`/ce/terms?redirect=${encodeURIComponent(redirectTo)}`);
+            return;
+          }
+        } catch {
+          // Fall through to error message
+        }
         await supabase.auth.signOut();
         setError(
           "No CE account found for this email. Please register for a CE account."
