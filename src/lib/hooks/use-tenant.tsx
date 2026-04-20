@@ -115,6 +115,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const fetchAttemptedRef = useRef(false);
 
   const fetchTenant = async () => {
+    // CE platform routes don't use tenants — skip resolution entirely
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/ce")) {
+      cachedTenant = null;
+      tenantInitialized = true;
+      setTenant(null);
+      setIsLoading(false);
+      return;
+    }
+
     // If already initialized and cached, skip fetch
     if (tenantInitialized && cachedTenant !== undefined) {
       setTenant(cachedTenant);
