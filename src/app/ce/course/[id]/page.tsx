@@ -21,7 +21,7 @@ interface CourseDetail {
   price: number | null;
   is_capce_accredited: boolean;
   capce_course_number: string | null;
-  target_audience: string[] | null;
+  target_audience: string | null;
   prerequisites: string | null;
   disclosure_statement: string | null;
   passing_score: number;
@@ -315,16 +315,10 @@ export default function CECourseDetailPage() {
             )}
 
             {/* Target Audience */}
-            {course.target_audience && course.target_audience.length > 0 && (
+            {course.target_audience && (
               <div>
                 <h2 className="font-semibold mb-2">Target Audience</h2>
-                <div className="flex flex-wrap gap-2">
-                  {course.target_audience.map((a) => (
-                    <span key={a} className="text-sm bg-muted text-foreground px-3 py-1 rounded-full">
-                      {a}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-sm text-muted-foreground">{String(course.target_audience)}</p>
               </div>
             )}
 
