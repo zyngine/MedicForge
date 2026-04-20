@@ -62,13 +62,18 @@ function sanitizeHTML(html: string): string {
   return clean;
 }
 
-function isYoutubeUrl(url: string) {
-  return url.includes("youtube.com") || url.includes("youtu.be");
+function isEmbedUrl(url: string) {
+  return url.includes("youtube.com") || url.includes("youtu.be")
+    || url.includes("vimeo.com")
+    || url.includes("mediadelivery.net");
 }
 
 function toEmbedUrl(url: string) {
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  // Bunny Stream URLs are already embed-ready
   return url;
 }
 
@@ -442,12 +447,13 @@ export default function CECourseLearnPage() {
 
                       {block.content_type === "video" && block.video_url && (
                         <div className="aspect-video rounded-lg overflow-hidden bg-black">
-                          {isYoutubeUrl(block.video_url) ? (
+                          {isEmbedUrl(block.video_url) ? (
                             <iframe
                               src={toEmbedUrl(block.video_url)}
                               className="w-full h-full"
                               allowFullScreen
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              loading="lazy"
                             />
                           ) : (
                             <video src={block.video_url} controls className="w-full h-full" />

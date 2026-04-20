@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input, Button, Alert, Select, Spinner } from "@/components/ui";
-import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical, Upload, Link2 } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical, Upload as UploadIcon, Link2 } from "lucide-react";
+import * as tus from "tus-js-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ type Tab = "details" | "objectives" | "references" | "modules" | "quiz" | "capce
 // ─── File Upload or URL Input ────────────────────────────────────────────────
 
 function FileOrUrlInput({
-  value, onChange, accept, bucket, folder, urlPlaceholder, uploadLabel,
+  value, onChange, accept, bucket, folder, urlPlaceholder, uploadLabel, useStreamUpload,
 }: {
   value: string;
   onChange: (url: string) => void;
@@ -180,16 +181,99 @@ function FileOrUrlInput({
   folder: string;
   urlPlaceholder: string;
   uploadLabel: string;
+  useStreamUpload?: boolean; // Use Bunny Stream for video uploads
 }) {
-  const [mode, setMode] = useState<"upload" | "url">(value && !value.includes(bucket) ? "url" : "upload");
+  const [mode, setMode] = useState<"upload" | "url">(value && !value.includes("mediadelivery.net") && !value.includes(bucket) && value.length > 0 ? "url" : "upload");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleVideoStreamUpload = async (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    setProgress("Creating video...");
 
+    try {
+      // Step 1: Create video entry + get TUS auth from our API
+      const createRes = await fetch("/api/ce/video/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, "") }),
+      });
+
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        throw new Error(err.error || "Failed to create video");
+      }
+
+      const { videoId, libraryId, authSignature, authExpire, embedUrl } = await createRes.json();
+
+      // Step 2: Upload via TUS (resumable, handles any file size)
+      setProgress("Uploading video (0%)...");
+
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: "https://video.bunnycdn.com/tusupload",
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          chunkSize: 10 * 1024 * 1024, // 10MB chunks
+          metadata: {
+            filetype: file.type,
+            title: file.name.replace(/\.[^.]+$/, ""),
+          },
+          headers: {
+            AuthorizationSignature: authSignature,
+            AuthorizationExpire: String(authExpire),
+            VideoId: videoId,
+            LibraryId: String(libraryId),
+          },
+          onError: (err) => reject(err),
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+            setProgress(`Uploading video (${pct}%)...`);
+          },
+          onSuccess: () => resolve(),
+        });
+        upload.start();
+      });
+
+      // Step 3: Set embed URL (video processes in background)
+      onChange(embedUrl);
+      setProgress("Uploaded — video is processing");
+      setProcessingStatus("processing");
+
+      // Step 4: Poll for processing completion
+      const pollStatus = async () => {
+        for (let i = 0; i < 120; i++) {
+          await new Promise((r) => setTimeout(r, 10000));
+          try {
+            const statusRes = await fetch(`/api/ce/video/status?videoId=${videoId}`);
+            if (statusRes.ok) {
+              const status = await statusRes.json();
+              if (status.isReady) {
+                setProcessingStatus(null);
+                setProgress("Ready");
+                return;
+              }
+            }
+          } catch {
+            // ignore polling errors
+          }
+        }
+        setProcessingStatus(null);
+        setProgress("Processing (may take a few minutes)");
+      };
+      pollStatus();
+
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setProgress("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
     setUploading(true);
     setUploadError(null);
     setProgress("Uploading...");
@@ -216,6 +300,20 @@ function FileOrUrlInput({
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (useStreamUpload) {
+      await handleVideoStreamUpload(file);
+    } else {
+      await handleFileUpload(file);
+    }
+  };
+
+  const hasValue = value && value.length > 0;
+  const isStreamVideo = value?.includes("mediadelivery.net");
+
   return (
     <div className="space-y-2">
       <div className="flex gap-1">
@@ -226,7 +324,7 @@ function FileOrUrlInput({
             mode === "upload" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Upload className="h-3 w-3" /> Upload
+          <UploadIcon className="h-3 w-3" /> Upload
         </button>
         <button
           type="button"
@@ -237,10 +335,13 @@ function FileOrUrlInput({
         >
           <Link2 className="h-3 w-3" /> URL
         </button>
-        {value && (
+        {hasValue && (
           <span className="ml-2 text-xs text-muted-foreground truncate max-w-[300px] self-center" title={value}>
-            {value.includes(bucket) ? "Uploaded file" : value}
+            {isStreamVideo ? "Bunny Stream video" : value.includes(bucket) ? "Uploaded file" : value}
           </span>
+        )}
+        {processingStatus && (
+          <span className="ml-2 text-xs text-yellow-600 self-center animate-pulse">Processing...</span>
         )}
       </div>
 
@@ -249,9 +350,9 @@ function FileOrUrlInput({
           <label className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-md cursor-pointer transition-colors ${
             uploading ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"
           }`}>
-            <Upload className="h-4 w-4 text-muted-foreground" />
+            <UploadIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              {uploading ? progress : value ? "Replace file" : uploadLabel}
+              {uploading ? progress : hasValue ? "Replace file" : uploadLabel}
             </span>
             <input
               type="file"
@@ -261,6 +362,9 @@ function FileOrUrlInput({
               className="hidden"
             />
           </label>
+          {useStreamUpload && !uploading && (
+            <p className="text-xs text-muted-foreground mt-1">Videos are hosted via Bunny Stream — any size supported, auto-transcoded for adaptive playback.</p>
+          )}
           {uploadError && <p className="text-xs text-red-600 mt-1">{uploadError}</p>}
         </div>
       ) : (
@@ -1083,6 +1187,7 @@ export default function CEAdminCourseEditPage() {
                               folder={`courses/${id}/videos`}
                               urlPlaceholder="YouTube, Vimeo, or direct .mp4 URL"
                               uploadLabel="Upload Video"
+                              useStreamUpload
                             />
                           )}
                           {block.content_type === "pdf" && (
