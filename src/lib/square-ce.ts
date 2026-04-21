@@ -24,7 +24,7 @@ export async function chargeCard(params: {
         amount: params.amountCents,
         currency: "USD",
       },
-      location_id: process.env.SQUARE_LOCATION_ID,
+      location_id: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || process.env.SQUARE_LOCATION_ID,
       note: params.note,
     }),
   });
