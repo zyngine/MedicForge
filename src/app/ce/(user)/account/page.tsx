@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input } from "@/components/ui";
@@ -10,7 +10,111 @@ import { Select } from "@/components/ui";
 import { Spinner } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import Link from "next/link";
-import { User, Shield, Save, CreditCard, CheckCircle, Clock } from "lucide-react";
+import { User, Shield, Save, CreditCard, CheckCircle, Clock, X, Lock } from "lucide-react";
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Square?: any;
+  }
+}
+
+function UpdateCardModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [card, setCard] = useState<any>(null);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.Square) { setScriptLoaded(true); return; }
+    const s = document.createElement("script");
+    s.src = process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT === "sandbox"
+      ? "https://sandbox.web.squarecdn.com/v1/square.js"
+      : "https://web.squarecdn.com/v1/square.js";
+    s.onload = () => setScriptLoaded(true);
+    s.onerror = () => setError("Failed to load payment SDK. Please refresh.");
+    document.head.appendChild(s);
+  }, []);
+
+  useEffect(() => {
+    if (!scriptLoaded || !containerRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cardInst: any;
+    (async () => {
+      try {
+        const payments = window.Square!.payments(
+          process.env.NEXT_PUBLIC_SQUARE_APP_ID!,
+          process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!
+        );
+        cardInst = await payments.card();
+        await cardInst.attach(containerRef.current);
+        setCard(cardInst);
+      } catch (e) {
+        console.error("Square init:", e);
+        setError("Payment form failed to load.");
+      }
+    })();
+    return () => { if (cardInst) cardInst.destroy().catch(() => {}); };
+  }, [scriptLoaded]);
+
+  const handleSubmit = async () => {
+    if (!card) return;
+    setProcessing(true);
+    setError(null);
+    try {
+      const result = await card.tokenize();
+      if (result.status !== "OK") {
+        setError(result.errors?.[0]?.message || "Card declined.");
+        setProcessing(false);
+        return;
+      }
+      const res = await fetch("/api/ce/subscription/update-card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceId: result.token }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update card.");
+        setProcessing(false);
+        return;
+      }
+      onSuccess();
+    } catch {
+      setError("An unexpected error occurred.");
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b">
+          <h3 className="font-semibold">Update Payment Card</h3>
+          <button onClick={onClose} disabled={processing} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
+          )}
+          <div ref={containerRef} className="min-h-[100px]" />
+          <Button onClick={handleSubmit} disabled={processing || !card} className="w-full">
+            <CreditCard className="h-4 w-4 mr-2" />
+            {processing ? "Updating..." : "Update Card"}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+            <Lock className="h-3 w-3" /> Payments secured by Square
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Subscription {
   id: string;
@@ -19,6 +123,12 @@ interface Subscription {
   starts_at: string;
   expires_at: string;
   status: string;
+  auto_renew: boolean | null;
+  canceled_at: string | null;
+  card_last_four: string | null;
+  card_brand: string | null;
+  next_billing_at: string | null;
+  grace_period_ends_at: string | null;
 }
 
 interface Purchase {
@@ -71,6 +181,12 @@ export default function CEAccountPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Subscription management
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [showUpdateCard, setShowUpdateCard] = useState(false);
+
   // Form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -107,9 +223,9 @@ export default function CEAccountPage() {
         const [subRes, purchRes] = await Promise.all([
           supabase
             .from("ce_user_subscriptions")
-            .select("id, plan, price, starts_at, expires_at, status")
+            .select("id, plan, price, starts_at, expires_at, status, auto_renew, canceled_at, card_last_four, card_brand, next_billing_at, grace_period_ends_at")
             .eq("user_id", user.id)
-            .eq("status", "active")
+            .in("status", ["active", "past_due"])
             .gt("expires_at", now)
             .order("expires_at", { ascending: false })
             .limit(1)
@@ -310,32 +426,136 @@ export default function CEAccountPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Current plan */}
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
-            <div>
-              <p className="text-sm font-medium">Current Plan</p>
-              {subscription ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 font-medium capitalize">
-                    {subscription.plan} subscription
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    — expires {new Date(subscription.expires_at).toLocaleDateString()}
-                  </span>
+          {subscription ? (
+            <div className="p-4 bg-muted/30 rounded-lg border space-y-3">
+              <div className="flex items-start justify-between flex-wrap gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {subscription.status === "past_due" ? (
+                      <Clock className="h-4 w-4 text-yellow-600" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    )}
+                    <span className="text-sm font-semibold capitalize">
+                      {subscription.plan} subscription
+                    </span>
+                    {subscription.status === "past_due" && (
+                      <Badge variant="warning">Payment Failed</Badge>
+                    )}
+                    {subscription.canceled_at && (
+                      <Badge variant="secondary">Canceled</Badge>
+                    )}
+                    {subscription.auto_renew && !subscription.canceled_at && (
+                      <Badge variant="default">Auto-renewing</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ${subscription.price.toFixed(2)}/year
+                    {subscription.canceled_at
+                      ? ` · access until ${new Date(subscription.expires_at).toLocaleDateString()}`
+                      : subscription.next_billing_at
+                      ? ` · next billing ${new Date(subscription.next_billing_at).toLocaleDateString()}`
+                      : ` · expires ${new Date(subscription.expires_at).toLocaleDateString()}`}
+                  </p>
+                  {subscription.card_last_four && (
+                    <p className="text-xs text-muted-foreground">
+                      {subscription.card_brand || "Card"} ending in •••• {subscription.card_last_four}
+                    </p>
+                  )}
+                  {subscription.grace_period_ends_at && subscription.status === "past_due" && (
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Please update your card by {new Date(subscription.grace_period_ends_at).toLocaleDateString()} to avoid losing access.
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 mt-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">No active subscription</span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowUpdateCard(true)}
+                  >
+                    Update Card
+                  </Button>
+                  {!subscription.canceled_at && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowCancelConfirm(true)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {cancelError && (
+                <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
+                  {cancelError}
                 </div>
               )}
             </div>
-            {!subscription && (
+          ) : (
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">No active subscription</span>
+              </div>
               <Link href="/ce/subscribe">
                 <Button size="sm">Subscribe</Button>
               </Link>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Cancel confirmation modal */}
+          {showCancelConfirm && subscription && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+              <div className="bg-card rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+                <h3 className="font-semibold text-lg">Cancel subscription?</h3>
+                <p className="text-sm text-muted-foreground">
+                  You&apos;ll keep access to all CE courses until <strong>{new Date(subscription.expires_at).toLocaleDateString()}</strong>. After that, your subscription won&apos;t renew.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setShowCancelConfirm(false); setCancelError(null); }}
+                    disabled={isCanceling}
+                  >
+                    Keep Subscription
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      setIsCanceling(true);
+                      setCancelError(null);
+                      try {
+                        const res = await fetch("/api/ce/subscription/cancel", { method: "POST" });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || "Failed to cancel");
+                        setShowCancelConfirm(false);
+                        // Refresh page to show updated state
+                        window.location.reload();
+                      } catch (err) {
+                        setCancelError(err instanceof Error ? err.message : "Cancellation failed");
+                      } finally {
+                        setIsCanceling(false);
+                      }
+                    }}
+                    disabled={isCanceling}
+                  >
+                    {isCanceling ? "Canceling..." : "Cancel Subscription"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Update card modal */}
+          {showUpdateCard && (
+            <UpdateCardModal
+              onClose={() => setShowUpdateCard(false)}
+              onSuccess={() => { setShowUpdateCard(false); window.location.reload(); }}
+            />
+          )}
 
           {/* Purchase history */}
           {purchases.length > 0 && (
