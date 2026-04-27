@@ -80,11 +80,16 @@ export async function POST(request: Request) {
 
     if (passed) {
       // Mark enrollment complete
-      await supabase.from("ce_enrollments").update({
+      const { error: updateErr } = await supabase.from("ce_enrollments").update({
         completion_status: "completed",
         completed_at: now,
         progress_percentage: 100,
       }).eq("id", enrollmentId);
+
+      if (updateErr) {
+        console.error("[CE submit-quiz] Failed to mark enrollment complete:", updateErr);
+        return NextResponse.json({ error: "Failed to record completion. Please contact support." }, { status: 500 });
+      }
 
       // Get data needed for certificate
       const [_enrollRes, courseRes, userRes] = await Promise.all([
@@ -136,7 +141,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ score, passed, attemptNumber, passingScore: quiz.passing_score });
-  } catch {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  } catch (err) {
+    console.error("[CE submit-quiz] Unexpected error:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "An unexpected error occurred." }, { status: 500 });
   }
 }
