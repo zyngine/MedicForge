@@ -11,11 +11,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Missing verification code" }, { status: 400 });
     }
 
-    const upperCode = code.toUpperCase();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const admin: any = createCEAdminClient();
 
-    // Try LMS certificates first
+    // Try LMS certificates first (case-insensitive — codes may be stored upper or lower)
     const { data: lmsData } = await admin
       .from("certificates")
       .select(`
@@ -24,7 +23,7 @@ export async function GET(request: Request) {
         course:courses(id, title, course_type),
         tenant:tenants(id, name, logo_url)
       `)
-      .eq("verification_code", upperCode)
+      .ilike("verification_code", code)
       .maybeSingle();
 
     if (lmsData) {
@@ -54,7 +53,7 @@ export async function GET(request: Request) {
         student:ce_users!ce_certificates_user_id_fkey(id, first_name, last_name, email),
         course:ce_courses!ce_certificates_course_id_fkey(id, title, ceh_hours)
       `)
-      .eq("verification_code", upperCode)
+      .ilike("verification_code", code)
       .maybeSingle();
 
     if (!ceData) {

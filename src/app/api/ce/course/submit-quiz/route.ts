@@ -110,7 +110,7 @@ export async function POST(request: Request) {
           ? new Date(Date.now() + course.expiration_months * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
           : null;
 
-        const verificationCode = crypto.randomBytes(16).toString("hex");
+        const verificationCode = crypto.randomBytes(16).toString("hex").toUpperCase();
 
         await supabase.from("ce_certificates").insert({
           enrollment_id: enrollmentId,
