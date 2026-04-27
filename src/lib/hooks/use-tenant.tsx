@@ -115,13 +115,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const fetchAttemptedRef = useRef(false);
 
   const fetchTenant = async () => {
-    // CE platform routes don't use tenants — skip resolution entirely
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/ce")) {
-      cachedTenant = null;
-      tenantInitialized = true;
-      setTenant(null);
-      setIsLoading(false);
-      return;
+    // CE platform routes and certificate verification don't use tenants — skip resolution entirely
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path.startsWith("/ce") || path.startsWith("/verify")) {
+        cachedTenant = null;
+        tenantInitialized = true;
+        setTenant(null);
+        setIsLoading(false);
+        return;
+      }
     }
 
     // If already initialized and cached, skip fetch
