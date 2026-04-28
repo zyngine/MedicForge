@@ -131,7 +131,8 @@ export async function PUT(
 
     const { data: updated, error } = await adminClient
       .from("verification_cycles")
-      .update(allowed)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(allowed as any)
       .eq("id", id)
       .eq("tenant_id", profile.tenant_id)
       .eq("is_locked", false)
