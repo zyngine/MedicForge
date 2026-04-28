@@ -10,8 +10,6 @@ import {
   BarChart3, Users2, LogOut, Settings, CreditCard,
 } from "lucide-react";
 
-/* eslint-disable react-hooks/exhaustive-deps */
-
 export default function CEAdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

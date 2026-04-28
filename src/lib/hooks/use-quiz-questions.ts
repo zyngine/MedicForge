@@ -153,7 +153,7 @@ export function useUpdateQuizQuestion() {
 
       const { data: question, error } = await supabase
         .from("quiz_questions")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", questionId)
         .select()
         .single();

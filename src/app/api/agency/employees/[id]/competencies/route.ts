@@ -98,7 +98,7 @@ export async function POST(
 
     const { data: updated, error } = await adminClient
       .from("employee_competencies")
-      .update(updates)
+      .update(updates as never)
       .eq("id", competency_id)
       .eq("employee_id", id)
       .eq("tenant_id", profile.tenant_id)

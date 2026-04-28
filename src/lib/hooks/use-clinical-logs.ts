@@ -347,7 +347,7 @@ export function useUpdateClinicalLog() {
 
       const { data, error } = await supabase
         .from("clinical_logs")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", logId)
         .select()
         .single();
@@ -432,7 +432,7 @@ export function useVerifyClinicalLog() {
 
       const { data, error } = await supabase
         .from("clinical_logs")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", logId)
         .select()
         .single();

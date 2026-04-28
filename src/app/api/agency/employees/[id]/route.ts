@@ -84,7 +84,7 @@ export async function PUT(
 
     const { data: updated, error } = await adminClient
       .from("agency_employees")
-      .update(allowed)
+      .update(allowed as never)
       .eq("id", id)
       .eq("tenant_id", profile.tenant_id)
       .select()

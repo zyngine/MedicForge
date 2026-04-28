@@ -244,7 +244,7 @@ export function useUpdateAssignment() {
 
       const { data: assignment, error } = await supabase
         .from("assignments")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", assignmentId)
         .select()
         .single();

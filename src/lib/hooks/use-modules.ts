@@ -242,7 +242,7 @@ export function useUpdateModule() {
 
       const { data: module, error } = await supabase
         .from("modules")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", moduleId)
         .select()
         .single();

@@ -7,8 +7,6 @@ import { createCEClient } from "@/lib/supabase/client";
 import { Spinner, ThemeToggle } from "@/components/ui";
 import { BookOpen, LayoutDashboard, Users, BarChart3, Settings, LogOut, Upload, Shield } from "lucide-react";
 
-/* eslint-disable react-hooks/exhaustive-deps */
-
 export default function CEAgencyLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

@@ -191,7 +191,7 @@ export function useUpdateLesson() {
 
       const { data: lesson, error } = await supabase
         .from("lessons")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", lessonId)
         .select()
         .single();

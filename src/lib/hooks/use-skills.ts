@@ -215,7 +215,7 @@ export function useUpdateSkillCategory() {
 
       const { data: category, error } = await supabase
         .from("skill_categories")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", categoryId)
         .select()
         .single();
@@ -362,7 +362,7 @@ export function useUpdateSkill() {
 
       const { data: skill, error } = await supabase
         .from("skills")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", skillId)
         .select()
         .single();

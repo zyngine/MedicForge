@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
 
     const { data, error } = await adminClient
       .from("tenants")
-      .update(updateData)
+      .update(updateData as never)
       .eq("id", tenantId)
       .select()
       .single();

@@ -299,7 +299,7 @@ export function useUpdateThread() {
 
       const { data, error } = await supabase
         .from("discussion_threads")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", threadId)
         .select()
         .single();
