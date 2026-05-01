@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'medicforge-v5';
+const CACHE_NAME = 'medicforge-v6';
 const OFFLINE_URL = '/offline';
 const DATA_CACHE_NAME = 'medicforge-data-v1';
 
@@ -33,13 +33,13 @@ const CACHE_STRATEGIES = {
   networkFirst: [
     /\/api\//,
     /\/_next\/data\//,
-  ],
-  // Stale while revalidate
-  staleWhileRevalidate: [
     /\/_next\/static\//,
     /\.css$/,
     /\.js$/,
   ],
+  // Stale while revalidate (none — JS/CSS moved to networkFirst to avoid
+  // serving stale chunks after deploys, which manifests as stuck loaders)
+  staleWhileRevalidate: [],
 };
 
 // Install event - precache critical resources

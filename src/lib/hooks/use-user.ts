@@ -262,11 +262,18 @@ export function useUser(): UseUserReturn {
       }
     };
 
-    // Safety timeout to prevent infinite loading states
+    // Safety timeout to prevent infinite loading states.
+    // After 8s, force-unblock and clear stale cache. If there's no profile,
+    // the consumer's redirect-to-login effect will fire.
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
-        console.warn("[useUser] Auth initialization timed out after 8s - proceeding with cached data");
+        console.warn("[useUser] Auth initialization timed out after 8s — unblocking UI");
         authInitialized = true;
+        // Don't keep stale cached profile if auth never confirmed
+        if (!cachedUser) {
+          cachedProfile = null;
+          setProfile(null);
+        }
         setIsLoading(false);
         // Kick off a background refresh so the session can recover
         supabase.auth.refreshSession().catch(() => {});

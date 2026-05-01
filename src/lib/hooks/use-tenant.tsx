@@ -277,6 +277,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     fetchTenant();
 
+    // Safety timeout — never let the spinner stay up more than 8s
+    const safetyTimeout = setTimeout(() => {
+      if (mountedRef.current && !tenantInitialized) {
+        console.warn("[useTenant] Resolution timed out after 8s — unblocking UI");
+        tenantInitialized = true;
+        setIsLoading(false);
+      }
+    }, 8000);
+
     // Listen for auth state changes
     const {
       data: { subscription },
@@ -316,6 +325,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mountedRef.current = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
