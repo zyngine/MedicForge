@@ -142,6 +142,7 @@ const pricingTiers = [
   {
     name: "Professional",
     price: "$1,499",
+    regularPrice: "$2,499",
     period: "/year",
     description: "For growing training programs",
     features: [
@@ -158,6 +159,7 @@ const pricingTiers = [
   {
     name: "Institution",
     price: "$3,999",
+    regularPrice: "$4,999",
     period: "/year",
     description: "For colleges and large academies",
     features: [
@@ -174,6 +176,7 @@ const pricingTiers = [
   {
     name: "Enterprise",
     price: "Custom",
+    regularPrice: "",
     description: "For large institutions with custom needs",
     features: [
       "Unlimited students",
@@ -470,7 +473,7 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto mb-10 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Flame className="h-5 w-5 text-primary" />
-              <span className="font-bold text-lg">Founders Pricing — 6 spots remaining</span>
+              <span className="font-bold text-lg">Founders Pricing — 5 spots remaining</span>
               <Flame className="h-5 w-5 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -498,6 +501,12 @@ export default function HomePage() {
                         <span className="text-muted-foreground">{tier.period}</span>
                       )}
                     </div>
+                    {tier.regularPrice && (
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        <span className="line-through">{tier.regularPrice}{tier.period}</span>
+                        <span className="ml-2 text-primary font-medium">Founders discount</span>
+                      </div>
+                    )}
                     <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
                   </div>
                   <ul className="space-y-3 mb-6">
