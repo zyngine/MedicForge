@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkPlagiarism } from "@/lib/plagiarism-utils";
+import { runAIDetection } from "@/lib/plagiarism/ai-detection";
+import { runWebSearch } from "@/lib/plagiarism/web-search";
+import { parseDocumentsFromUrls, type ParsedFile } from "@/lib/plagiarism/file-parser";
+import { stripCitedQuotes } from "@/lib/plagiarism/citations";
 import crypto from "crypto";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,6 +23,19 @@ function extractText(content: unknown): string {
   return "";
 }
 
+function extractFileUrls(file_urls: unknown): string[] {
+  if (Array.isArray(file_urls)) return file_urls.filter((u): u is string => typeof u === "string");
+  if (typeof file_urls === "string") {
+    try {
+      const parsed = JSON.parse(file_urls);
+      if (Array.isArray(parsed)) return parsed.filter((u): u is string => typeof u === "string");
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function hashContent(text: string): string {
   return crypto.createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
 }
@@ -29,9 +46,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin: AnyClient = createAdminClient();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (admin as any)
+  const { data: profile } = await admin
     .from("users")
     .select("id, role, tenant_id")
     .eq("id", user.id)
@@ -45,35 +60,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing submission_id" }, { status: 400 });
   }
 
-  // Fetch the submission and verify tenant scoping (and student access).
   const { data: submission } = await admin
     .from("submissions")
-    .select("id, tenant_id, user_id, content")
+    .select("id, tenant_id, user_id, content, file_urls")
     .eq("id", submissionId)
     .maybeSingle();
   if (!submission || submission.tenant_id !== profile.tenant_id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-
-  // Students can only kick off a check on their own submission. Instructors
-  // and admins can run it on any submission in their tenant.
   if (profile.role === "student" && submission.user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const text = (overrideContent && overrideContent.trim()) || extractText(submission.content);
-  if (!text || text.trim().length < 20) {
+  // 1. Gather text from typed content AND parsed file uploads.
+  const typedText = (overrideContent && overrideContent.trim()) || extractText(submission.content);
+  const fileUrls = extractFileUrls(submission.file_urls);
+  const parsedFiles: ParsedFile[] = fileUrls.length > 0 ? await parseDocumentsFromUrls(fileUrls) : [];
+  const combinedRaw = [typedText, ...parsedFiles.map((f) => f.text)]
+    .filter((t) => t && t.trim().length > 0)
+    .join("\n\n");
+  if (!combinedRaw || combinedRaw.trim().length < 20) {
     return NextResponse.json({ error: "Not enough text content to check" }, { status: 400 });
   }
-  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
 
-  // Upsert the check row in 'processing' state.
+  // 2. Strip properly-cited quotes so they don't penalize the student.
+  const { stripped: textForCheck, removedWords, originalWords } = stripCitedQuotes(combinedRaw);
+  const wordCount = textForCheck.split(/\s+/).filter((w) => w.length > 0).length;
+  if (wordCount < 10) {
+    return NextResponse.json(
+      { error: "After removing cited quotes, not enough original text remains to check" },
+      { status: 400 },
+    );
+  }
+
+  // 3. Mark the check as processing.
   const { data: existingCheck } = await admin
     .from("plagiarism_checks")
     .select("id")
     .eq("submission_id", submissionId)
     .maybeSingle();
-
   let checkId: string;
   if (existingCheck) {
     const { data, error } = await admin
@@ -81,10 +106,16 @@ export async function POST(request: Request) {
       .update({
         status: "processing",
         requested_by: user.id,
-        original_content: text,
-        word_count: wordCount,
+        original_content: combinedRaw,
+        word_count: originalWords,
         similarity_score: null,
         matches: null,
+        ai_score: null,
+        ai_provider: null,
+        web_match_count: null,
+        web_matches: null,
+        parsed_files: null,
+        citations_removed_words: null,
         error_message: null,
         updated_at: new Date().toISOString(),
       })
@@ -101,8 +132,8 @@ export async function POST(request: Request) {
         submission_id: submissionId,
         requested_by: user.id,
         status: "processing",
-        original_content: text,
-        word_count: wordCount,
+        original_content: combinedRaw,
+        word_count: originalWords,
       })
       .select("id")
       .single();
@@ -110,39 +141,64 @@ export async function POST(request: Request) {
     checkId = data.id;
   }
 
-  // Fetch sources (skip this submission's own indexed source if any).
+  // 4. Fan out the three checks in parallel: internal sources, web search,
+  //    AI detection. Each is wrapped so a single failure doesn't kill the
+  //    pipeline.
   const { data: sources } = await admin
     .from("plagiarism_sources")
     .select("id, title, source_type, content, source_id")
     .eq("tenant_id", profile.tenant_id)
     .eq("is_active", true)
     .neq("source_id", submissionId);
+  const sourcesForCheck = ((sources || []) as {
+    id: string;
+    title: string;
+    source_type: string;
+    content: string;
+  }[]).map((s) => ({ id: s.id, title: s.title, type: s.source_type, content: s.content }));
 
-  const result = checkPlagiarism(
-    text,
-    ((sources || []) as { id: string; title: string; source_type: string; content: string }[]).map((s) => ({
-      id: s.id,
-      title: s.title,
-      type: s.source_type,
-      content: s.content,
-    })),
-  );
+  const [internalResult, webResult, aiResult] = await Promise.all([
+    Promise.resolve(checkPlagiarism(textForCheck, sourcesForCheck)),
+    runWebSearch(textForCheck).catch((e) => {
+      console.error("[plagiarism/check] web search failed:", e);
+      return null;
+    }),
+    runAIDetection(textForCheck).catch((e) => {
+      console.error("[plagiarism/check] AI detection failed:", e);
+      return null;
+    }),
+  ]);
 
+  // 5. Compute headline similarity: take the worst signal (internal or web).
+  const internalScore = internalResult.overallSimilarity;
+  const webScore = webResult && webResult.results.length > 0
+    ? Math.min(95, webResult.results.length * 12) // crude: 1 hit ≈ 12%, capped
+    : 0;
+  const headline = Math.round(Math.max(internalScore, webScore) * 100) / 100;
+
+  // 6. Persist the final report.
   await admin
     .from("plagiarism_checks")
     .update({
       status: "completed",
-      similarity_score: result.overallSimilarity,
-      matches: result.matches,
+      similarity_score: headline,
+      matches: internalResult.matches,
+      ai_score: aiResult?.aiScore ?? null,
+      ai_provider: aiResult?.provider ?? null,
+      web_match_count: webResult?.results.length ?? null,
+      web_matches: webResult?.results ?? null,
+      parsed_files: parsedFiles.length > 0
+        ? parsedFiles.map((f) => ({ url: f.url, fileName: f.fileName, wordCount: f.wordCount }))
+        : null,
+      citations_removed_words: removedWords,
       checked_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", checkId);
 
-  // Index this submission as a plagiarism source so future checks compare
-  // against it (cross-submission detection). Use hash as dedupe key.
+  // 7. Index this submission as a plagiarism source for future cross-checks.
   try {
-    const content_hash = hashContent(text);
+    const content_hash = hashContent(textForCheck);
     const { data: studentRow } = await admin
       .from("users")
       .select("first_name, last_name")
@@ -152,7 +208,6 @@ export async function POST(request: Request) {
       ? `${studentRow.first_name || ""} ${studentRow.last_name || ""}`.trim()
       : "Student submission";
     const sourceTitle = `${studentLabel || "Student"} — submission ${submissionId.slice(0, 8)}`;
-
     const { data: existingSource } = await admin
       .from("plagiarism_sources")
       .select("id")
@@ -160,13 +215,12 @@ export async function POST(request: Request) {
       .eq("source_type", "submission")
       .eq("source_id", submissionId)
       .maybeSingle();
-
     if (existingSource) {
       await admin
         .from("plagiarism_sources")
         .update({
           title: sourceTitle,
-          content: text,
+          content: textForCheck,
           content_hash,
           word_count: wordCount,
           is_active: true,
@@ -178,20 +232,30 @@ export async function POST(request: Request) {
         source_type: "submission",
         source_id: submissionId,
         title: sourceTitle,
-        content: text,
+        content: textForCheck,
         content_hash,
         word_count: wordCount,
         is_active: true,
       });
     }
   } catch (e) {
-    console.error("[plagiarism check] indexing failed:", e);
+    console.error("[plagiarism/check] indexing failed:", e);
   }
 
   return NextResponse.json({
     success: true,
     check_id: checkId,
-    similarity_score: result.overallSimilarity,
-    match_count: result.matches.length,
+    similarity_score: headline,
+    internal_similarity: internalScore,
+    internal_match_count: internalResult.matches.length,
+    web_match_count: webResult?.results.length ?? 0,
+    web_provider: webResult?.provider ?? null,
+    web_configured: webResult?.configured ?? false,
+    ai_score: aiResult?.aiScore ?? null,
+    ai_is_generated: aiResult?.isAIGenerated ?? null,
+    ai_confidence: aiResult?.confidence ?? null,
+    ai_provider: aiResult?.provider ?? null,
+    parsed_file_count: parsedFiles.length,
+    citations_removed_words: removedWords,
   });
 }
