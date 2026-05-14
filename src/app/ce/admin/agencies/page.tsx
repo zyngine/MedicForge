@@ -104,7 +104,7 @@ export default function CEAdminAgenciesPage() {
       subscription_tier: form.subscription_tier,
       subscription_start: form.subscription_start || null,
       subscription_end: form.subscription_end || null,
-      invite_code: form.invite_code || generateInviteCode(),
+      invite_code: (form.invite_code || generateInviteCode()).trim().toUpperCase(),
     });
     if (error) { setSaveError("Failed to create agency."); }
     else {

@@ -76,40 +76,22 @@ export async function POST(request: Request) {
 
     // Handle agency employee registration
     if (registrationType === "agency_employee" && agencyInviteCode) {
-      const { data: inviteCode } = await adminClient
-        .from("ce_agency_invite_codes")
-        .select("id, agency_id, expires_at, max_uses, uses_count")
-        .eq("code", agencyInviteCode)
+      const normalizedCode = agencyInviteCode.trim().toUpperCase();
+
+      const { data: agency } = await adminClient
+        .from("ce_agencies")
+        .select("id")
+        .eq("invite_code", normalizedCode)
         .single();
 
-      if (!inviteCode) {
+      if (!agency) {
         return NextResponse.json(
           { error: "Invalid agency invite code. Please check with your agency administrator." },
           { status: 400 }
         );
       }
 
-      if (inviteCode.expires_at && new Date(inviteCode.expires_at) < new Date()) {
-        return NextResponse.json(
-          { error: "This invite code has expired. Please contact your agency administrator." },
-          { status: 400 }
-        );
-      }
-
-      if (inviteCode.max_uses && inviteCode.uses_count >= inviteCode.max_uses) {
-        return NextResponse.json(
-          { error: "This invite code has reached its maximum uses. Please contact your agency administrator." },
-          { status: 400 }
-        );
-      }
-
-      agencyId = inviteCode.agency_id;
-
-      // Increment uses_count
-      await adminClient
-        .from("ce_agency_invite_codes")
-        .update({ uses_count: inviteCode.uses_count + 1 })
-        .eq("id", inviteCode.id);
+      agencyId = agency.id;
     }
 
     // Create CE user profile
