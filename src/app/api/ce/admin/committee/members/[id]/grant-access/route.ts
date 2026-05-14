@@ -61,7 +61,7 @@ export async function POST(
       (request.headers.get("origin") ?? "https://medicforge.net");
     const { data: invite, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(
       normalizedEmail,
-      { redirectTo: `${baseUrl}/ce/auth/callback` },
+      { redirectTo: `${baseUrl}/ce/reset-password` },
     );
     if (inviteErr || !invite?.user) {
       return NextResponse.json(

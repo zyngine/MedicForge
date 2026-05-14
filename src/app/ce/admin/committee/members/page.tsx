@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input, Select } from "@/components/ui";
-import { Users, Plus, X, Edit, Trash2, KeyRound, CheckCircle2, AlertCircle } from "lucide-react";
+import { Users, Plus, X, Edit, Trash2, KeyRound, CheckCircle2, AlertCircle, Mail } from "lucide-react";
 
 interface CommitteeMember {
   id: string;
@@ -189,6 +189,17 @@ export default function CECommitteeMembersPage() {
     await load();
   };
 
+  const resendSetup = async (id: string) => {
+    setActionError(null);
+    const res = await fetch(`/api/ce/admin/committee/members/${id}/resend-setup`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setActionError(data.error || "Failed to resend setup link.");
+      return;
+    }
+    flash("Password setup email sent.");
+  };
+
   const active = members.filter((m) => m.status === "active");
   const inactive = members.filter((m) => m.status !== "active");
 
@@ -344,13 +355,21 @@ export default function CECommitteeMembersPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {!m.user_id && (
+                        {!m.user_id ? (
                           <button
                             onClick={() => grantAccess(m.id)}
                             className="p-1.5 hover:bg-muted rounded text-amber-700"
                             title="Grant access"
                           >
                             <KeyRound className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => resendSetup(m.id)}
+                            className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                            title="Resend password setup email"
+                          >
+                            <Mail className="h-4 w-4" />
                           </button>
                         )}
                         <button
