@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner } from "@/components/ui";
-import { BookOpen, CheckCircle } from "lucide-react";
+import { BookOpen, CheckCircle, FileText, Video } from "lucide-react";
 
 interface Enrollment {
   id: string;
@@ -20,8 +20,17 @@ interface Enrollment {
   } | null;
 }
 
+interface CustomMaterial {
+  id: string;
+  title: string;
+  description: string | null;
+  content_type: string;
+  completed_at: string | null;
+}
+
 export default function CEMyTrainingPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [customMaterials, setCustomMaterials] = useState<CustomMaterial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,13 +47,20 @@ export default function CEMyTrainingPage() {
 
       if (!ceUser) { setIsLoading(false); return; }
 
-      const { data } = await supabase
-        .from("ce_enrollments")
-        .select("id, completion_status, progress_percentage, enrolled_at, completed_at, ce_courses(id, title, category, ceh_hours)")
-        .eq("user_id", ceUser.id)
-        .order("enrolled_at", { ascending: false });
+      const [{ data: enrollData }, customRes] = await Promise.all([
+        supabase
+          .from("ce_enrollments")
+          .select("id, completion_status, progress_percentage, enrolled_at, completed_at, ce_courses(id, title, category, ceh_hours)")
+          .eq("user_id", ceUser.id)
+          .order("enrolled_at", { ascending: false }),
+        fetch("/api/ce/my-training/custom"),
+      ]);
 
-      setEnrollments(data || []);
+      setEnrollments(enrollData || []);
+      if (customRes.ok) {
+        const { materials } = await customRes.json();
+        setCustomMaterials(materials || []);
+      }
       setIsLoading(false);
     };
     load();
@@ -79,6 +95,47 @@ export default function CEMyTrainingPage() {
           <p className="text-sm text-muted-foreground mt-1">CEH Earned</p>
         </div>
       </div>
+
+      {/* From your agency */}
+      {customMaterials.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">From your agency</h2>
+          <div className="space-y-2">
+            {customMaterials.map((m) => {
+              const Icon = m.content_type === "pdf" ? FileText : Video;
+              return (
+                <Link
+                  key={m.id}
+                  href={`/ce/custom/${m.id}`}
+                  className="block bg-card border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <Icon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{m.title}</p>
+                        {m.description && (
+                          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                            {m.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {m.completed_at ? (
+                      <span className="shrink-0 inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+                        <CheckCircle className="h-3 w-3" />
+                        Completed
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-xs text-muted-foreground">Open</span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* In Progress */}
       {inProgress.length > 0 && (
@@ -140,7 +197,7 @@ export default function CEMyTrainingPage() {
       )}
 
       {/* Empty state */}
-      {enrollments.length === 0 && (
+      {enrollments.length === 0 && customMaterials.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="font-medium mb-1">No courses yet</p>

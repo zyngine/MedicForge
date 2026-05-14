@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!ceUser || ceUser.role !== "admin") {
-      return NextResponse.json({ error: "CE admin access required" }, { status: 403 });
+    if (!ceUser || (ceUser.role !== "admin" && ceUser.role !== "agency_admin")) {
+      return NextResponse.json({ error: "CE admin or agency admin access required" }, { status: 403 });
     }
 
     if (!BUNNY_API_KEY || !BUNNY_LIBRARY_ID) {
