@@ -277,3 +277,44 @@ export async function sendContactFormEmail(
     emailType: "contact_form",
   });
 }
+
+// ---------------------------------------------------------------------------
+// Course assignment — sent when an agency admin assigns a CE course
+// ---------------------------------------------------------------------------
+
+export async function sendCourseAssignmentEmail(
+  to: string,
+  firstName: string,
+  courseTitle: string,
+  courseId: string,
+  agencyName: string,
+  dueDate: string | null,
+  userId?: string
+): Promise<void> {
+  const dueLine = dueDate
+    ? `<p style="color:#4b5563;margin:0 0 16px;font-size:14px"><strong>Due:</strong> ${new Date(dueDate).toLocaleDateString()}</p>`
+    : "";
+  const html = layout(`
+    <h2 style="margin:0 0 8px;font-size:20px">A new course has been assigned to you</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 8px">
+      Hi ${firstName},
+    </p>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px">
+      ${agencyName} has assigned you the following continuing education course:
+    </p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:0 0 16px">
+      <p style="margin:0;font-size:16px;font-weight:600">${courseTitle}</p>
+    </div>
+    ${dueLine}
+    ${btn(`${BASE_URL}/ce/course/${courseId}`, "Start Course")}
+    <p style="color:#6b7280;font-size:13px;margin-top:24px">
+      You can find all your assigned courses in your
+      <a href="${BASE_URL}/ce/my-training" style="color:#b91c1c">My Training</a> dashboard.
+    </p>
+  `);
+
+  await sendEmail(to, `${agencyName} assigned you a course: ${courseTitle}`, html, {
+    emailType: "course_assigned",
+    userId,
+  });
+}

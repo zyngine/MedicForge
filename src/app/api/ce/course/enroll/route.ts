@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createCEAdminClient } from "@/lib/supabase/admin";
+import { getAgencyAccess } from "@/lib/ce-agency-access";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     // Payment gate for paid courses
     if (!course.is_free && course.price && course.price > 0) {
       const now = new Date().toISOString();
-      const [{ data: activeSub }, { data: purchase }] = await Promise.all([
+      const [{ data: activeSub }, { data: purchase }, agencyAccess] = await Promise.all([
         admin
           .from("ce_user_subscriptions")
           .select("id")
@@ -75,9 +76,10 @@ export async function POST(request: Request) {
           .eq("course_id", courseId)
           .eq("refunded", false)
           .maybeSingle(),
+        getAgencyAccess(admin, ceUser.id),
       ]);
 
-      if (!activeSub && !purchase) {
+      if (!activeSub && !purchase && !agencyAccess.covers) {
         return NextResponse.json(
           { error: "Payment required", requiresPayment: true },
           { status: 402 }

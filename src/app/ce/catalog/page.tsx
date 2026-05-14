@@ -50,7 +50,7 @@ export default function CECatalogPage() {
   const [category, setCategory] = useState("All");
   const [capceOnly, setCapceOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const { hasActiveSubscription, subscriptionPrice, loading: subLoading } = useCEActiveSubscription();
+  const { hasActiveSubscription, subscriptionPrice, loading: subLoading, agencyCovers, agencyName, hasUnlimitedAccess } = useCEActiveSubscription();
 
   useEffect(() => {
     const load = async () => {
@@ -101,8 +101,23 @@ export default function CECatalogPage() {
           </div>
         </div>
 
-        {/* Subscription nudge — only for non-subscribers */}
-        {!subLoading && !hasActiveSubscription && subscriptionPrice !== null && (
+        {/* Agency-covered banner */}
+        {!subLoading && agencyCovers && agencyName && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+            <Sparkles className="h-5 w-5 text-green-700 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                All courses included via <span className="font-semibold">{agencyName}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Your agency&apos;s subscription covers full access to the CE catalog.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Subscription nudge — only for non-subscribers and not agency-covered */}
+        {!subLoading && !hasActiveSubscription && !agencyCovers && subscriptionPrice !== null && (
           <Link
             href="/ce/subscribe"
             className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/30 hover:shadow-sm transition-shadow"
@@ -273,7 +288,7 @@ export default function CECatalogPage() {
                       <span className="text-sm font-semibold text-red-700">
                         {course.is_free || !course.price
                           ? "Free"
-                          : hasActiveSubscription
+                          : hasUnlimitedAccess
                             ? <span className="text-green-700 inline-flex items-center gap-1"><Sparkles className="h-3 w-3" />Included</span>
                             : `$${course.price.toFixed(2)}`}
                       </span>

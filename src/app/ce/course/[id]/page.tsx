@@ -58,6 +58,8 @@ export default function CECourseDetailPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [hasPurchase, setHasPurchase] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [hasAgencyAccess, setHasAgencyAccess] = useState(false);
+  const [agencyName, setAgencyName] = useState<string | null>(null);
   const [subscriptionPrice, setSubscriptionPrice] = useState<number | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,9 +110,22 @@ export default function CECourseDetailPage() {
         setIsLoggedIn(true);
         const { data: ceUser } = await supabase
           .from("ce_users")
-          .select("id")
+          .select("id, agency_id")
           .eq("id", user.id)
           .single();
+
+        if (ceUser?.agency_id) {
+          const { data: agency } = await supabase
+            .from("ce_agencies")
+            .select("name, subscription_tier")
+            .eq("id", ceUser.agency_id)
+            .maybeSingle();
+          const tier = agency?.subscription_tier;
+          if (tier === "enterprise" || tier === "enterprise_plus" || tier === "custom") {
+            setHasAgencyAccess(true);
+            setAgencyName(agency?.name ?? null);
+          }
+        }
 
         if (ceUser) {
           const now = new Date().toISOString();
@@ -204,7 +219,7 @@ export default function CECourseDetailPage() {
   const enrolled = enrollment?.completion_status === "enrolled" || enrollment?.completion_status === "in_progress";
   const completed = enrollment?.completion_status === "completed";
   const isFree = course.is_free || !course.price;
-  const hasAccess = isFree || hasPurchase || hasSubscription;
+  const hasAccess = isFree || hasPurchase || hasSubscription || hasAgencyAccess;
 
   return (
     <div className="min-h-screen bg-muted/30 text-foreground">
@@ -344,13 +359,22 @@ export default function CECourseDetailPage() {
             <div className="bg-card border rounded-lg p-5 sticky top-6 space-y-4">
               <div>
                 <div className="text-3xl font-bold">
-                  {isFree ? "Free" : hasSubscription ? "Included" : `$${course.price!.toFixed(2)}`}
+                  {isFree
+                    ? "Free"
+                    : hasSubscription || hasAgencyAccess
+                      ? "Included"
+                      : `$${course.price!.toFixed(2)}`}
                 </div>
-                {!isFree && !hasSubscription && (
+                {!isFree && !hasSubscription && !hasAgencyAccess && (
                   <p className="text-xs text-muted-foreground mt-0.5">One-time purchase</p>
                 )}
-                {hasSubscription && (
+                {hasSubscription && !hasAgencyAccess && (
                   <p className="text-xs text-green-700 mt-0.5">Covered by your subscription</p>
+                )}
+                {hasAgencyAccess && (
+                  <p className="text-xs text-green-700 mt-0.5">
+                    Covered by {agencyName ? `${agencyName}'s` : "your agency's"} subscription
+                  </p>
                 )}
               </div>
 
@@ -381,7 +405,7 @@ export default function CECourseDetailPage() {
                 <Button className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
                   {isEnrolling ? "Enrolling..." : isFree ? "Enroll Free" : "Access Course"}
                 </Button>
-              ) : isLoggedIn && !isFree ? (
+              ) : isLoggedIn && !isFree && !hasAgencyAccess ? (
                 <div className="space-y-3">
                   <Button
                     className="w-full"
