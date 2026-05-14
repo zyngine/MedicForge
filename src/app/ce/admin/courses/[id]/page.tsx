@@ -6,8 +6,9 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Input, Button, Alert, Select, Spinner } from "@/components/ui";
-import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical, Upload as UploadIcon, Link2 } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Send, CheckCircle, Archive, ChevronDown, ChevronRight, GripVertical, Upload as UploadIcon, Link2, FileUp } from "lucide-react";
 import * as tus from "tus-js-client";
+import { QuizCsvImport, type ParsedQuestion } from "@/components/ce/quiz-csv-import";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -390,6 +391,7 @@ export default function CEAdminCourseEditPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -796,6 +798,66 @@ export default function CEAdminCourseEditPage() {
       await supabase.from("ce_quiz_questions").delete().eq("id", qId);
     }
     setQuestions((prev) => prev.filter((q) => q.id !== qId));
+  };
+
+  const importQuestionsFromCsv = async (parsed: ParsedQuestion[]) => {
+    if (!quiz || parsed.length === 0) return;
+    setIsSaving(true);
+    setSaveError(null);
+    const supabase = createCEClient();
+    const startSortOrder = questions.filter((q) => !q.isDeleted).length;
+
+    try {
+      const questionsToInsert = parsed.map((p, i) => ({
+        quiz_id: quiz.id,
+        question_type: "multiple_choice",
+        question_text: p.question_text,
+        explanation: p.explanation,
+        correct_answer: p.correct_answer,
+        difficulty: p.difficulty,
+        sort_order: startSortOrder + i,
+      }));
+
+      const { data: insertedQs, error: qErr } = await supabase
+        .from("ce_quiz_questions")
+        .insert(questionsToInsert)
+        .select("*");
+      if (qErr || !insertedQs) throw qErr || new Error("Failed to insert questions");
+
+      const optionsToInsert = insertedQs.flatMap(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (qq: any, qi: number) =>
+          parsed[qi].options.map((opt, oi) => ({
+            question_id: qq.id,
+            option_text: opt,
+            option_order: oi,
+          })),
+      );
+      if (optionsToInsert.length) {
+        const { error: oErr } = await supabase.from("ce_quiz_question_options").insert(optionsToInsert);
+        if (oErr) throw oErr;
+      }
+
+      // Reload questions to get fresh state with options
+      const { data: refreshed } = await supabase
+        .from("ce_quiz_questions")
+        .select("*, ce_quiz_question_options(*)")
+        .eq("quiz_id", quiz.id)
+        .order("sort_order");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setQuestions((refreshed || []).map((qq: any) => ({
+        ...qq,
+        expanded: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        options: (qq.ce_quiz_question_options || []).sort((a: any, b: any) => a.option_order - b.option_order),
+      })));
+      showSuccess();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Failed to import questions.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1292,10 +1354,21 @@ export default function CEAdminCourseEditPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold">{visibleQuestions.length} Question{visibleQuestions.length !== 1 ? "s" : ""}</h2>
-                <Button size="sm" onClick={addQuestion} disabled={isSaving}>
-                  <Plus className="h-4 w-4 mr-1" /> Add Question
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} disabled={isSaving}>
+                    <FileUp className="h-4 w-4 mr-1" /> Import CSV
+                  </Button>
+                  <Button size="sm" onClick={addQuestion} disabled={isSaving}>
+                    <Plus className="h-4 w-4 mr-1" /> Add Question
+                  </Button>
+                </div>
               </div>
+
+              <QuizCsvImport
+                open={csvImportOpen}
+                onClose={() => setCsvImportOpen(false)}
+                onImport={importQuestionsFromCsv}
+              />
 
               {visibleQuestions.length === 0 ? (
                 <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground text-sm">
