@@ -33,6 +33,7 @@ import {
   type StandardizedQuestion,
 } from "@/lib/hooks/use-standardized-exams";
 import { createIntegrityTracker, type IntegrityTracker, type IntegrityEvent } from "@/lib/integrity-tracker";
+import { useLockdownBrowser, LockdownBrowserBanner } from "@/lib/hooks/use-lockdown-browser";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";
 
@@ -77,6 +78,24 @@ export function ExamPlayer({
   const integrityTrackerRef = React.useRef<IntegrityTracker | null>(null);
   const [integrityWarning, setIntegrityWarning] = React.useState<string | null>(null);
   const [_integrityEventCount, setIntegrityEventCount] = React.useState(0);
+
+  // Lockdown browser — actively blocks copy/paste/devtools/tab-switch when
+  // template.lockdown_mode is true. Complements the IntegrityTracker (which
+  // only records; lockdown both records AND blocks).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const templateData = attempt?.template as any;
+  const lockdownEnabled = templateData?.lockdown_mode === true;
+  const lockdown = useLockdownBrowser({
+    enabled: lockdownEnabled,
+    allowCopy: false,
+    allowPaste: false,
+    allowRightClick: false,
+    allowDevTools: false,
+    allowTabSwitch: false,
+    fullscreenRequired: true,
+    maxViolations: 5,
+    warningThreshold: 3,
+  });
 
   // Initialize integrity tracker when exam starts
   React.useEffect(() => {
@@ -126,6 +145,19 @@ export function ExamPlayer({
     }
   }, [currentQuestion?.id, attempt?.questions_answered]);
 
+  // Auto-abandon if the lockdown layer terminated the attempt (violations
+  // exceeded the threshold). Fires once per termination.
+  const lockdownTerminated = lockdown.status.isTerminated;
+  React.useEffect(() => {
+    if (!lockdownTerminated || !attempt) return;
+    (async () => {
+      await integrityTrackerRef.current?.flush();
+      lockdown.deactivate();
+      await abandonExam();
+      router.push(`/student/exams/${attempt.id}/results`);
+    })();
+  }, [lockdownTerminated, attempt?.id]);
+
   // Timer effect
   React.useEffect(() => {
     if (!attempt?.template?.time_limit_minutes || attempt.status !== "in_progress") return;
@@ -156,10 +188,23 @@ export function ExamPlayer({
   }, [currentQuestion?.id]);
 
   const handleStart = async () => {
+    // If this exam requires lockdown mode, activate it BEFORE starting the
+    // attempt. Activation triggers fullscreen + event blockers. If the user
+    // denies fullscreen, abort the start so they can't bypass.
+    if (lockdownEnabled) {
+      const ok = await lockdown.activate();
+      if (!ok) {
+        setIntegrityWarning("This exam requires lockdown mode — please allow fullscreen to start.");
+        return;
+      }
+    }
     const result = await startAttempt(templateId, courseId);
     if (result) {
       setAttemptId(result.attempt.id);
       setShowStartScreen(false);
+    } else if (lockdownEnabled) {
+      // Roll back lockdown if the attempt couldn't start.
+      lockdown.deactivate();
     }
   };
 
@@ -172,6 +217,7 @@ export function ExamPlayer({
     if (result?.isComplete) {
       // Flush integrity events before navigating away
       await integrityTrackerRef.current?.flush();
+      if (lockdownEnabled) lockdown.deactivate();
       onComplete?.(attempt!.id);
       router.push(`/student/exams/${attempt!.id}/results`);
     }
@@ -180,6 +226,7 @@ export function ExamPlayer({
   const handleTimeUp = async () => {
     if (attempt) {
       await integrityTrackerRef.current?.flush();
+      if (lockdownEnabled) lockdown.deactivate();
       await abandonExam();
       router.push(`/student/exams/${attempt.id}/results`);
     }
@@ -187,6 +234,7 @@ export function ExamPlayer({
 
   const handleExit = async () => {
     await integrityTrackerRef.current?.flush();
+    if (lockdownEnabled) lockdown.deactivate();
     await abandonExam();
     router.push("/student/exams");
   };
@@ -276,6 +324,15 @@ export function ExamPlayer({
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
+      {/* Lockdown banner — only shows when lockdown is actively engaged */}
+      {lockdownEnabled && lockdown.status.isActive && (
+        <LockdownBrowserBanner
+          violations={lockdown.status.violationCount}
+          maxViolations={lockdown.config.maxViolations}
+          isActive={lockdown.status.isActive}
+        />
+      )}
+
       {/* Integrity Warning Banner */}
       {integrityWarning && (
         <Alert variant="warning" className="flex items-center gap-2">

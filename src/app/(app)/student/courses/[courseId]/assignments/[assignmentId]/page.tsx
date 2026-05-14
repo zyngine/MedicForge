@@ -311,20 +311,40 @@ export default function AssignmentPage() {
       const percentageScore = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
 
       // Create submission
-      const { error: submitError } = await supabase.from("submissions").insert({
-        tenant_id: profile.tenant_id,
-        assignment_id: assignmentId,
-        student_id: user.id,
-        attempt_number: attemptNumber,
-        content,
-        file_urls: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : null,
-        submitted_at: new Date().toISOString(),
-        status: assignment.type === "quiz" ? "graded" : "submitted",
-        raw_score: assignment.type === "quiz" ? score : null,
-        final_score: assignment.type === "quiz" ? percentageScore : null,
-      });
+      const { data: createdSubmission, error: submitError } = await supabase
+        .from("submissions")
+        .insert({
+          tenant_id: profile.tenant_id,
+          assignment_id: assignmentId,
+          student_id: user.id,
+          attempt_number: attemptNumber,
+          content,
+          file_urls: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : null,
+          submitted_at: new Date().toISOString(),
+          status: assignment.type === "quiz" ? "graded" : "submitted",
+          raw_score: assignment.type === "quiz" ? score : null,
+          final_score: assignment.type === "quiz" ? percentageScore : null,
+        })
+        .select("id")
+        .single();
 
       if (submitError) throw submitError;
+
+      // Fire-and-forget plagiarism check for written submissions with enough text.
+      // The server-side check also indexes this submission as a source for
+      // future cross-submission comparison.
+      if (
+        assignment.type === "written" &&
+        writtenContent &&
+        writtenContent.split(/\s+/).filter((w) => w.length > 0).length >= 30 &&
+        createdSubmission?.id
+      ) {
+        fetch("/api/plagiarism/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ submission_id: createdSubmission.id }),
+        }).catch(() => {});
+      }
 
       if (assignment.type === "quiz") {
         setSubmissionResult({

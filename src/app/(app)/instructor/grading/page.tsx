@@ -36,6 +36,7 @@ import {
   Edit,
 } from "lucide-react";
 import { useSubmissions, usePendingSubmissions, useGradeSubmission, useApplyGradeCurve } from "@/lib/hooks/use-submissions";
+import { SubmissionPreview } from "@/components/grading/submission-preview";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { previewCurve, type CurveMethod, type ScoreInput, type CurveResult } from "@/lib/grading";
 
@@ -572,6 +573,9 @@ export default function GradingPage() {
                 )}
               </div>
             </div>
+
+            {/* Submission content + plagiarism check */}
+            <SubmissionPreview submissionId={selectedSubmission.id} />
 
             {/* Previous Grade (when editing) */}
             {selectedSubmission.gradedAt && selectedSubmission.rawScore !== null && (
