@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner } from "@/components/ui";
-import { BookOpen, CheckCircle, FileText, Video } from "lucide-react";
+import { BookOpen, CheckCircle, FileText, Video, Sparkles } from "lucide-react";
+import { useCEActiveSubscription } from "@/lib/hooks/use-ce-subscription";
 
 interface Enrollment {
   id: string;
@@ -32,6 +33,7 @@ export default function CEMyTrainingPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [customMaterials, setCustomMaterials] = useState<CustomMaterial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { hasActiveSubscription, subscriptionPrice, loading: subLoading } = useCEActiveSubscription();
 
   useEffect(() => {
     const load = async () => {
@@ -95,6 +97,23 @@ export default function CEMyTrainingPage() {
           <p className="text-sm text-muted-foreground mt-1">CEH Earned</p>
         </div>
       </div>
+
+      {/* Subscription nudge — only for non-subscribers */}
+      {!subLoading && !hasActiveSubscription && subscriptionPrice !== null && (
+        <Link
+          href="/ce/subscribe"
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/30 hover:shadow-sm transition-shadow"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <Sparkles className="h-5 w-5 text-red-700 shrink-0" />
+            <p className="text-sm">
+              <span className="font-medium">Want unlimited access?</span>
+              <span className="text-muted-foreground"> Subscribe for ${subscriptionPrice.toFixed(0)}/yr — all CAPCE courses included.</span>
+            </p>
+          </div>
+          <span className="text-sm font-semibold text-red-700 whitespace-nowrap shrink-0">Subscribe →</span>
+        </Link>
+      )}
 
       {/* From your agency */}
       {customMaterials.length > 0 && (

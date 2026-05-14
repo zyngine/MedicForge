@@ -502,8 +502,8 @@ export default function CEAccountPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">No active subscription</span>
               </div>
-              <Link href="/ce/subscribe">
-                <Button size="sm">Subscribe</Button>
+              <Link href="/ce/subscribe" className="text-sm text-red-700 hover:underline">
+                Manage subscription →
               </Link>
             </div>
           )}

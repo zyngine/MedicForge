@@ -5,7 +5,8 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui";
 import { CEHeader } from "@/components/ce/CEHeader";
-import { BookOpen, Clock, Award, Search, SlidersHorizontal } from "lucide-react";
+import { BookOpen, Clock, Award, Search, SlidersHorizontal, Sparkles } from "lucide-react";
+import { useCEActiveSubscription } from "@/lib/hooks/use-ce-subscription";
 
 interface CECourse {
   id: string;
@@ -49,6 +50,7 @@ export default function CECatalogPage() {
   const [category, setCategory] = useState("All");
   const [capceOnly, setCapceOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const { hasActiveSubscription, subscriptionPrice, loading: subLoading } = useCEActiveSubscription();
 
   useEffect(() => {
     const load = async () => {
@@ -98,6 +100,27 @@ export default function CECatalogPage() {
             </p>
           </div>
         </div>
+
+        {/* Subscription nudge — only for non-subscribers */}
+        {!subLoading && !hasActiveSubscription && subscriptionPrice !== null && (
+          <Link
+            href="/ce/subscribe"
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/30 hover:shadow-sm transition-shadow"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Sparkles className="h-5 w-5 text-red-700 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  Unlock every paid course for ${subscriptionPrice.toFixed(0)}/yr
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  One subscription · all CAPCE courses included · cancel anytime
+                </p>
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-red-700 whitespace-nowrap">Subscribe →</span>
+          </Link>
+        )}
 
         {/* Search + filter bar */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -248,7 +271,11 @@ export default function CECatalogPage() {
                         )}
                       </div>
                       <span className="text-sm font-semibold text-red-700">
-                        {course.is_free || !course.price ? "Free" : `$${course.price.toFixed(2)}`}
+                        {course.is_free || !course.price
+                          ? "Free"
+                          : hasActiveSubscription
+                            ? <span className="text-green-700 inline-flex items-center gap-1"><Sparkles className="h-3 w-3" />Included</span>
+                            : `$${course.price.toFixed(2)}`}
                       </span>
                     </div>
                   </div>
