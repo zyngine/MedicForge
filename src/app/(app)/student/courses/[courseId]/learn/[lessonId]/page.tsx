@@ -24,6 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useLesson, useLessons } from "@/lib/hooks/use-lessons";
+import { LessonAttachmentsView } from "@/components/course/lesson-attachments-view";
 import {
   useLessonProgress,
   useMarkLessonComplete,
@@ -260,6 +261,9 @@ export default function StudentLessonPage() {
               <p>No content has been added to this lesson yet.</p>
             </div>
           )}
+
+          {/* Attachments (PowerPoint, PDF, video, etc.) */}
+          <LessonAttachmentsView lessonId={lessonId} />
         </CardContent>
       </Card>
 

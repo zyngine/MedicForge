@@ -1163,6 +1163,7 @@ export default function CourseDetailPage() {
           is_published: editingLesson.is_published || false,
         } : undefined}
         isEditing={!!editingLesson}
+        lessonId={editingLesson?.id}
       />
 
       {/* Save as Template Modal */}

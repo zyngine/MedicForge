@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Button, Input, Label, Textarea, Select, Checkbox, Modal, ModalFooter } from "@/components/ui";
-import { Loader2, Video, FileText, Type, Code } from "lucide-react";
+import { Loader2, Video, FileText, Type, Code, Trash2, FileSpreadsheet, Presentation, Link2, Paperclip } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { LessonAttachmentUploader, type AttachmentResult } from "./lesson-attachment-uploader";
 
 type ContentType = "video" | "document" | "text" | "embed";
 
@@ -16,13 +18,35 @@ interface LessonFormData {
   is_published: boolean;
 }
 
+interface LessonAttachment {
+  id: string;
+  title: string;
+  kind: string;
+  file_url: string;
+  mime_type: string | null;
+  file_size: number | null;
+  bunny_video_id: string | null;
+  storage_path: string | null;
+}
+
 interface LessonEditorProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: LessonFormData) => Promise<void>;
   initialData?: Partial<LessonFormData>;
   isEditing?: boolean;
+  lessonId?: string;
 }
+
+const ATTACHMENT_ICON: Record<string, typeof FileText> = {
+  pdf: FileText,
+  powerpoint: Presentation,
+  word: FileText,
+  excel: FileSpreadsheet,
+  video_upload: Video,
+  video_url: Link2,
+  other: Paperclip,
+};
 
 const contentTypeOptions = [
   { value: "text", label: "Text/Rich Content" },
@@ -44,9 +68,12 @@ export function LessonEditor({
   onSubmit,
   initialData,
   isEditing = false,
+  lessonId,
 }: LessonEditorProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [tenantId, setTenantId] = React.useState<string | null>(null);
+  const [attachments, setAttachments] = React.useState<LessonAttachment[]>([]);
   const [formData, setFormData] = React.useState<LessonFormData>({
     title: initialData?.title || "",
     content_type: initialData?.content_type || "text",
@@ -70,8 +97,68 @@ export function LessonEditor({
         is_published: initialData?.is_published || false,
       });
       setError(null);
+      setAttachments([]);
     }
   }, [isOpen, initialData]);
+
+  // Fetch current user's tenant_id (needed for the upload path prefix) and
+  // existing attachments when editing.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const load = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      if (profile?.tenant_id) setTenantId(profile.tenant_id);
+
+      if (lessonId) {
+        const res = await fetch(`/api/lessons/${lessonId}/attachments`);
+        if (res.ok) {
+          const { attachments: list } = await res.json();
+          setAttachments(list || []);
+        }
+      }
+    };
+    load();
+  }, [isOpen, lessonId]);
+
+  const addAttachment = async (result: AttachmentResult) => {
+    if (!lessonId) return;
+    const res = await fetch(`/api/lessons/${lessonId}/attachments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(result),
+    });
+    if (res.ok) {
+      const { attachment } = await res.json();
+      setAttachments((prev) => [...prev, attachment]);
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to attach file.");
+    }
+  };
+
+  const removeAttachment = async (id: string) => {
+    if (!lessonId) return;
+    if (!confirm("Remove this attachment?")) return;
+    const res = await fetch(`/api/lessons/${lessonId}/attachments/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setAttachments((prev) => prev.filter((a) => a.id !== id));
+    }
+  };
+
+  const formatSize = (bytes: number | null): string => {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,6 +319,71 @@ export function LessonEditor({
           disabled={isSubmitting}
           label="Publish lesson immediately"
         />
+
+        {/* Attachments — only editable for existing lessons. */}
+        {isEditing && lessonId && tenantId && (
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-medium m-0">Attachments</Label>
+            </div>
+
+            {attachments.length > 0 && (
+              <div className="space-y-2">
+                {attachments.map((a) => {
+                  const Icon = ATTACHMENT_ICON[a.kind] || FileText;
+                  return (
+                    <div key={a.id} className="flex items-center gap-3 p-2 border rounded-md">
+                      <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{a.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {a.kind.replace("_", " ")}
+                          {a.file_size ? ` · ${formatSize(a.file_size)}` : ""}
+                        </p>
+                      </div>
+                      <a
+                        href={a.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground hover:text-foreground hover:underline px-2"
+                      >
+                        Open
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(a.id)}
+                        className="p-1 hover:bg-muted rounded text-red-600"
+                        title="Remove"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <LessonAttachmentUploader
+              tenantId={tenantId}
+              lessonId={lessonId}
+              onUploaded={addAttachment}
+            />
+            <p className="text-xs text-muted-foreground">
+              Upload PowerPoint, PDF, Word, Excel, or videos. Students will see these alongside the lesson content.
+            </p>
+          </div>
+        )}
+        {isEditing && !lessonId && (
+          <p className="text-xs text-muted-foreground border-t pt-3 italic">
+            Save the lesson once, then reopen it to upload PowerPoint, PDF, video, and other attachments.
+          </p>
+        )}
+        {!isEditing && (
+          <p className="text-xs text-muted-foreground border-t pt-3 italic">
+            After you create this lesson, you can reopen it to attach PowerPoint, PDF, video, and other files.
+          </p>
+        )}
 
         <ModalFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
