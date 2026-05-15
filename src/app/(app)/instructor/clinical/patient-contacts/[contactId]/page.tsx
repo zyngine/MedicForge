@@ -64,12 +64,13 @@ export default function PatientContactDetailPage() {
   const { verifyContact, rejectContact } = usePatientContacts();
 
   const [feedback, setFeedback] = useState("");
+  const [privateNotes, setPrivateNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleVerify = async () => {
     setIsSubmitting(true);
     try {
-      await verifyContact(contactId, feedback || undefined);
+      await verifyContact(contactId, feedback || undefined, privateNotes || undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +83,7 @@ export default function PatientContactDetailPage() {
     }
     setIsSubmitting(true);
     try {
-      await rejectContact(contactId, feedback);
+      await rejectContact(contactId, feedback, privateNotes || undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -476,17 +477,37 @@ export default function PatientContactDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {contact.preceptor_feedback ? (
-                <div className="p-3 rounded-lg bg-muted">
-                  <p className="text-sm">{contact.preceptor_feedback}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Feedback shown to student</p>
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-sm">{contact.preceptor_feedback}</p>
+                  </div>
                 </div>
               ) : contact.verification_status === "pending" ? (
                 <>
-                  <Textarea
-                    placeholder="Add feedback for the student (optional for verification, required for rejection)..."
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    rows={4}
-                  />
+                  <div>
+                    <label className="text-sm font-medium block mb-1">
+                      Feedback for the student
+                    </label>
+                    <Textarea
+                      placeholder="Optional for verification, required for rejection. The student WILL see this."
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium block mb-1">
+                      Instructor-only notes
+                    </label>
+                    <Textarea
+                      placeholder="Private notes — NOT visible to the student. Useful for flagging concerns, recording context from a preceptor, or tracking a student's progress privately."
+                      value={privateNotes}
+                      onChange={(e) => setPrivateNotes(e.target.value)}
+                      rows={3}
+                      className="bg-amber-50/50 dark:bg-amber-950/20"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       className="flex-1 bg-green-600 hover:bg-green-700"
@@ -511,6 +532,18 @@ export default function PatientContactDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   No feedback was provided.
                 </p>
+              )}
+
+              {/* Existing private notes — only shown in the instructor view */}
+              {contact.instructor_private_notes && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Instructor-only notes (not visible to student)
+                  </p>
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm">{contact.instructor_private_notes}</p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

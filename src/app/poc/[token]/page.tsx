@@ -23,7 +23,7 @@ export default function POCResponsePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<"approve" | "deny" | null>(null);
-  const [denyNotes, setDenyNotes] = useState("");
+  const [responseNotes, setResponseNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<"approved" | "denied" | null>(null);
 
@@ -54,7 +54,11 @@ export default function POCResponsePage() {
 
   const handleApprove = async () => {
     setSubmitting(true);
-    const res = await fetch(`/api/clinical/poc/${token}/approve`, { method: "POST" });
+    const res = await fetch(`/api/clinical/poc/${token}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: responseNotes || null }),
+    });
     if (res.ok) {
       setDone("approved");
     } else {
@@ -69,7 +73,7 @@ export default function POCResponsePage() {
     const res = await fetch(`/api/clinical/poc/${token}/deny`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: denyNotes || null }),
+      body: JSON.stringify({ notes: responseNotes || null }),
     });
     if (res.ok) {
       setDone("denied");
@@ -164,10 +168,20 @@ export default function POCResponsePage() {
                   </div>
                 )}
 
-                {/* Approve confirmation */}
+                {/* Approve with optional notes */}
                 {action === "approve" && (
                   <div>
                     <p style={{ color: "#374151" }}>Confirm that you are approving this shift request for <strong>{data.student.name}</strong>.</p>
+                    <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#374151" }}>
+                      Note for the student or program <span style={{ fontWeight: "normal", color: "#6b7280" }}>(optional)</span>
+                    </label>
+                    <textarea
+                      value={responseNotes}
+                      onChange={(e) => setResponseNotes(e.target.value)}
+                      placeholder="Anything the student should know before they arrive — parking, dress code, who to ask for, etc."
+                      rows={3}
+                      style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", resize: "vertical", boxSizing: "border-box", marginBottom: "12px" }}
+                    />
                     <div style={{ display: "flex", gap: "12px" }}>
                       <button
                         onClick={handleApprove}
@@ -194,8 +208,8 @@ export default function POCResponsePage() {
                       Reason for denial <span style={{ fontWeight: "normal", color: "#6b7280" }}>(optional)</span>
                     </label>
                     <textarea
-                      value={denyNotes}
-                      onChange={(e) => setDenyNotes(e.target.value)}
+                      value={responseNotes}
+                      onChange={(e) => setResponseNotes(e.target.value)}
                       placeholder="Capacity full, scheduling conflict, etc."
                       rows={3}
                       style={{ width: "100%", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "14px", resize: "vertical", boxSizing: "border-box" }}

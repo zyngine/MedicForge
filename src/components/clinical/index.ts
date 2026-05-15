@@ -6,3 +6,5 @@ export { BookingButton } from "./booking-button";
 export { BookingCard } from "./booking-card";
 export { PatientContactFormWizard } from "./patient-contact-form";
 export { CalendarExport } from "./CalendarExport";
+export { PreceptorRatingModal } from "./preceptor-rating-modal";
+export { FileComplaintModal } from "./file-complaint-modal";

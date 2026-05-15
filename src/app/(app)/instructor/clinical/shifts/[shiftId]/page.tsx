@@ -300,8 +300,9 @@ export default function ShiftDetailPage() {
                 return (
                   <div
                     key={booking.id}
-                    className="flex items-center justify-between p-4 rounded-lg border"
+                    className="flex flex-col gap-3 p-4 rounded-lg border"
                   >
+                    <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-5 w-5 text-muted-foreground" />
@@ -363,6 +364,34 @@ export default function ShiftDetailPage() {
                         </Button>
                       )}
                     </div>
+                    </div>
+
+                    {(booking.request_notes || booking.poc_response_notes) && (
+                      <div className="space-y-2 pl-14">
+                        {booking.request_notes && (
+                          <div className="text-xs bg-blue-50 dark:bg-blue-950/30 border-l-2 border-blue-500 rounded px-3 py-2">
+                            <p className="font-semibold text-blue-700 dark:text-blue-300 mb-0.5">Student&apos;s request note</p>
+                            <p className="text-foreground">{booking.request_notes}</p>
+                          </div>
+                        )}
+                        {booking.poc_response_notes && (
+                          <div className={`text-xs rounded px-3 py-2 border-l-2 ${
+                            booking.status === "poc_denied"
+                              ? "bg-red-50 dark:bg-red-950/30 border-red-500"
+                              : "bg-green-50 dark:bg-green-950/30 border-green-500"
+                          }`}>
+                            <p className={`font-semibold mb-0.5 ${
+                              booking.status === "poc_denied"
+                                ? "text-red-700 dark:text-red-300"
+                                : "text-green-700 dark:text-green-300"
+                            }`}>
+                              Note from clinical site
+                            </p>
+                            <p className="text-foreground">{booking.poc_response_notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

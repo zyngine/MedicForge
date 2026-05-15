@@ -22,6 +22,8 @@ import {
   XCircle,
   FileText,
   Upload,
+  ShieldAlert,
+  Star,
 } from "lucide-react";
 import { format, addDays, startOfToday } from "date-fns";
 import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
@@ -96,6 +98,18 @@ export default function InstructorClinicalPage() {
             <Link href="/instructor/clinical/import">
               <Upload className="h-4 w-4 mr-2" />
               Import Hours
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/instructor/clinical/preceptor-performance">
+              <Star className="h-4 w-4 mr-2" />
+              Preceptor Performance
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/instructor/clinical/complaints">
+              <ShieldAlert className="h-4 w-4 mr-2" />
+              Complaints
             </Link>
           </Button>
           <Button variant="outline" asChild>

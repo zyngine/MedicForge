@@ -102,7 +102,8 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
 
       if (userError) throw userError;
 
-      const { data, error: createError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: createError } = await (supabase as any)
         .from("clinical_shifts")
         .insert([{
           ...shiftData,
@@ -134,7 +135,8 @@ export function useClinicalShifts(options: UseShiftsOptions = {}) {
     updates: Partial<ClinicalShiftForm>
   ): Promise<ClinicalShift | null> => {
     try {
-      const { data, error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: updateError } = await (supabase as any)
         .from("clinical_shifts")
         .update(updates)
         .eq("id", shiftId)

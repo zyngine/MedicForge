@@ -206,22 +206,26 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
     }
   };
 
-  // Verify a patient contact (instructor only)
+  // Verify a patient contact (instructor only). `feedback` is shown to the
+  // student; `privateNotes` is instructor-only and never surfaced to the student.
   const verifyContact = async (
     contactId: string,
-    feedback?: string
+    feedback?: string,
+    privateNotes?: string
   ): Promise<boolean> => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const { error: verifyError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: verifyError } = await (supabase as any)
         .from("clinical_patient_contacts")
         .update({
           verification_status: "verified",
           verified_by: userData.user.id,
           verified_at: new Date().toISOString(),
           preceptor_feedback: feedback || null,
+          instructor_private_notes: privateNotes || null,
         })
         .eq("id", contactId);
 
@@ -235,22 +239,25 @@ export function usePatientContacts(options: UsePatientContactsOptions = {}) {
     }
   };
 
-  // Reject a patient contact (instructor only)
+  // Reject a patient contact (instructor only). Same split as verify.
   const rejectContact = async (
     contactId: string,
-    feedback: string
+    feedback: string,
+    privateNotes?: string
   ): Promise<boolean> => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const { error: rejectError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rejectError } = await (supabase as any)
         .from("clinical_patient_contacts")
         .update({
           verification_status: "rejected",
           verified_by: userData.user.id,
           verified_at: new Date().toISOString(),
           preceptor_feedback: feedback,
+          instructor_private_notes: privateNotes || null,
         })
         .eq("id", contactId);
 

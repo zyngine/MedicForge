@@ -4,12 +4,18 @@ import { sendEmail } from "@/lib/notifications/email-service";
 import { clinicalShiftApprovedEmail } from "@/lib/notifications/email-templates";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const pocResponseNotes: string | null =
+      typeof body.notes === "string" && body.notes.trim().length > 0
+        ? body.notes.trim()
+        : null;
+
     const admin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const adminAny = admin as any;
@@ -42,7 +48,11 @@ export async function POST(
     // Update booking status to poc_approved
     await adminAny
       .from("clinical_shift_bookings")
-      .update({ status: "poc_approved", updated_at: now })
+      .update({
+        status: "poc_approved",
+        poc_response_notes: pocResponseNotes,
+        updated_at: now,
+      })
       .eq("id", booking.id);
 
     // Mark token as used
@@ -57,6 +67,7 @@ export async function POST(
       tenant_id: tokenRow.tenant_id,
       action: "poc_approved",
       actor_type: "poc",
+      notes: pocResponseNotes,
     });
 
     // Send approval email to student

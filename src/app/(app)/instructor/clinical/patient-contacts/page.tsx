@@ -250,10 +250,17 @@ export default function PatientContactsPage() {
                                 )}
                               </p>
                             </div>
-                            <Badge variant={statusConfig.variant} className="ml-auto">
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig.label}
-                            </Badge>
+                            <div className="ml-auto flex items-center gap-2">
+                              {contact.was_submitted_late && (
+                                <Badge variant="warning" title="Submitted past the per-shift deadline">
+                                  Late submission
+                                </Badge>
+                              )}
+                              <Badge variant={statusConfig.variant}>
+                                <StatusIcon className="h-3 w-3 mr-1" />
+                                {statusConfig.label}
+                              </Badge>
+                            </div>
                           </div>
 
                           {/* Patient Info */}

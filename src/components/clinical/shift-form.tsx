@@ -35,6 +35,7 @@ export function ShiftForm({
       end_time: "19:00",
       capacity: 1,
       notes: "",
+      paperwork_due_hours_after_shift: 24,
       ...defaultValues,
     },
   });
@@ -156,6 +157,26 @@ export function ShiftForm({
         {errors.capacity && (
           <p className="text-sm text-red-500">{errors.capacity.message}</p>
         )}
+      </div>
+
+      {/* Paperwork deadline */}
+      <div className="space-y-2">
+        <Label htmlFor="paperwork_due_hours_after_shift">
+          Paperwork Due (hours after shift ends)
+        </Label>
+        <Input
+          id="paperwork_due_hours_after_shift"
+          type="number"
+          min={1}
+          max={336}
+          {...register("paperwork_due_hours_after_shift", {
+            valueAsNumber: true,
+            min: { value: 1, message: "Must be at least 1 hour" },
+          })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Patient contacts and clinical paperwork submitted past this deadline will trigger an alert to the course&apos;s instructor(s). Default: 24 hours.
+        </p>
       </div>
 
       {/* Notes */}

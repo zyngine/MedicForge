@@ -13,7 +13,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui";
-import { BookingCard } from "@/components/clinical";
+import { BookingCard, PreceptorRatingModal, FileComplaintModal } from "@/components/clinical";
 import {
   ArrowLeft,
   Calendar,
@@ -22,6 +22,8 @@ import {
   XCircle,
   Hourglass,
   RefreshCw,
+  Star,
+  Flag,
 } from "lucide-react";
 import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
 import type { BookingStatus } from "@/types";
@@ -38,6 +40,12 @@ const STATUS_TABS: { value: string; label: string; icon: React.ReactNode }[] = [
 
 export default function MyShiftsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [ratingBookingId, setRatingBookingId] = useState<string | undefined>(undefined);
+  const [ratingPreceptorName, setRatingPreceptorName] = useState<string | undefined>(undefined);
+  const [complaintOpen, setComplaintOpen] = useState(false);
+  const [complaintBookingId, setComplaintBookingId] = useState<string | undefined>(undefined);
+  const [complaintPreceptorName, setComplaintPreceptorName] = useState<string | undefined>(undefined);
 
   // Fetch real bookings data
   const {
@@ -212,18 +220,64 @@ export default function MyShiftsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {sortedBookings.map((booking) => (
-                <BookingCard
-                  key={booking.id}
-                  booking={booking}
-                  onCancel={(reason) => handleCancelBooking(booking.id, reason)}
-                  showCancelButton={CANCELLABLE_STATUSES.includes(booking.status)}
-                  showDocumentButton={booking.status === "completed"}
-                />
+                <div key={booking.id} className="space-y-2">
+                  <BookingCard
+                    booking={booking}
+                    onCancel={(reason) => handleCancelBooking(booking.id, reason)}
+                    showCancelButton={CANCELLABLE_STATUSES.includes(booking.status)}
+                    showDocumentButton={booking.status === "completed"}
+                  />
+                  {booking.status === "completed" && (
+                    <div className="flex gap-2 px-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setRatingBookingId(booking.id);
+                          setRatingPreceptorName(booking.preceptor_name || undefined);
+                          setRatingOpen(true);
+                        }}
+                      >
+                        <Star className="h-4 w-4 mr-1" />
+                        Rate Preceptor
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => {
+                          setComplaintBookingId(booking.id);
+                          setComplaintPreceptorName(booking.preceptor_name || undefined);
+                          setComplaintOpen(true);
+                        }}
+                      >
+                        <Flag className="h-4 w-4 mr-1" />
+                        Report concern
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      <PreceptorRatingModal
+        isOpen={ratingOpen}
+        onClose={() => setRatingOpen(false)}
+        bookingId={ratingBookingId}
+        defaultPreceptorName={ratingPreceptorName}
+        onSaved={refetch}
+      />
+      <FileComplaintModal
+        isOpen={complaintOpen}
+        onClose={() => setComplaintOpen(false)}
+        defaultSubjectType="preceptor"
+        defaultSubjectName={complaintPreceptorName}
+        defaultBookingId={complaintBookingId}
+      />
     </div>
   );
 }

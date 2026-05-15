@@ -276,6 +276,8 @@ export interface ShiftBooking {
   preceptor_name: string | null;
   preceptor_signature: string | null;
   notes: string | null;
+  request_notes: string | null;
+  poc_response_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -331,10 +333,13 @@ export interface ClinicalPatientContact {
   role_description: string | null;
   narrative: string | null;
   preceptor_feedback: string | null;
+  instructor_private_notes: string | null;
   preceptor_signature: string | null;
   verification_status: "pending" | "verified" | "rejected";
   verified_by: string | null;
   verified_at: string | null;
+  was_submitted_late: boolean;
+  submitted_due_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -370,6 +375,7 @@ export interface ClinicalShiftForm {
   end_time: string;
   capacity: number;
   notes?: string;
+  paperwork_due_hours_after_shift?: number;
 }
 
 export interface PatientContactForm {
