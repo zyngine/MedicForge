@@ -9,7 +9,15 @@ import { toast } from "sonner";
 
 // Types based on database schema from 20240402000000_nremt_exam_system.sql
 
-export type ExamType = "standard" | "cat";
+// exam_type = which phase of the program: entrance test, unit exam, final,
+// practice, or targeted remediation. Must match DB enum standardized_exam_type.
+export type ExamType = "entrance" | "unit" | "comprehensive" | "practice" | "remediation";
+
+// delivery_mode = how the exam is delivered: fixed-length "standard" or
+// Item-Response-Theory adaptive "adaptive" (CAT). Must match DB enum
+// exam_delivery_mode.
+export type DeliveryMode = "standard" | "adaptive";
+
 export type ExamStatus = "draft" | "published" | "archived";
 export type AttemptStatus = "in_progress" | "completed" | "timed_out" | "abandoned";
 
@@ -19,28 +27,33 @@ export interface ExamTemplate {
   name: string;
   description: string | null;
   exam_type: ExamType;
+  delivery_mode: DeliveryMode;
   certification_level: string;
   total_questions: number;
+  min_questions: number | null;
+  max_questions: number | null;
   time_limit_minutes: number | null;
   passing_score: number;
-  randomize_questions: boolean;
-  randomize_options: boolean;
+  shuffle_questions: boolean;
+  shuffle_options: boolean;
   show_results_immediately: boolean;
+  show_correct_answers: boolean;
   allow_review: boolean;
-  max_attempts: number | null;
-  cat_config: CATConfig | null;
+  cat_settings: CATSettings | null;
+  is_system_template: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export interface CATConfig {
-  min_questions: number;
-  max_questions: number;
+export interface CATSettings {
   initial_theta: number;
   termination_se: number;
   content_constraints?: Record<string, { min: number; max: number }>;
 }
+
+/** @deprecated Use CATSettings instead. Kept for consumers migrating away. */
+export type CATConfig = CATSettings & { min_questions?: number; max_questions?: number };
 
 export interface StandardizedQuestion {
   id: string;
@@ -160,15 +173,23 @@ export function useExamTemplates() {
   }, [fetchTemplates]);
 
   const createTemplate = async (
-    input: Omit<ExamTemplate, "id" | "created_at" | "updated_at">
+    input: Omit<ExamTemplate, "id" | "created_at" | "updated_at" | "tenant_id" | "is_system_template"> & { tenant_id?: string | null }
   ): Promise<ExamTemplate | null> => {
     try {
+      if (!profile?.tenant_id) {
+        toast.error("You must belong to an organization to create a template");
+        return null;
+      }
+      // Regular admins/instructors can only create tenant-scoped templates.
+      // System templates (tenant_id=null, is_system_template=true) are
+      // reserved for platform admins via a separate flow.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error: createError } = await (supabase as any)
         .from("standardized_exam_templates")
         .insert({
           ...input,
-          tenant_id: input.tenant_id || profile?.tenant_id || null,
+          tenant_id: profile.tenant_id,
+          is_system_template: false,
         })
         .select("*")
         .single();
@@ -508,14 +529,13 @@ export function useStartExamAttempt() {
 
       if (attemptsError) throw attemptsError;
 
-      if (template.max_attempts && existingAttempts.length >= template.max_attempts) {
-        toast.error("Maximum attempts reached");
-        return null;
-      }
+      // Note: standardized_exam_templates does not have a max_attempts column;
+      // attempt limits are enforced at the assignment level, not the template.
 
       // Create new attempt
       const attemptNumber = existingAttempts.length + 1;
-      const catConfig = template.cat_config as CATConfig | null;
+      const catSettings = template.cat_settings as CATSettings | null;
+      const isAdaptive = template.delivery_mode === "adaptive";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: attempt, error: createError } = await (supabase as any)
         .from("exam_attempts")
@@ -527,8 +547,8 @@ export function useStartExamAttempt() {
           attempt_number: attemptNumber,
           status: "in_progress",
           started_at: new Date().toISOString(),
-          current_theta: template.exam_type === "cat" ? (catConfig?.initial_theta || 0) : null,
-          current_se: template.exam_type === "cat" ? 1.0 : null,
+          current_theta: isAdaptive ? (catSettings?.initial_theta || 0) : null,
+          current_se: isAdaptive ? 1.0 : null,
           questions_answered: 0,
         })
         .select("*")
@@ -539,13 +559,13 @@ export function useStartExamAttempt() {
       // Get first question
       let firstQuestion: StandardizedQuestion;
 
-      if (template.exam_type === "cat") {
+      if (isAdaptive) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: catQuestion, error: catError } = await (supabase as any)
           .rpc("select_next_cat_question", {
             p_attempt_id: attempt.id,
             p_template_id: templateId,
-            p_current_theta: catConfig?.initial_theta || 0,
+            p_current_theta: catSettings?.initial_theta || 0,
           });
 
         if (catError) throw catError;
@@ -558,7 +578,7 @@ export function useStartExamAttempt() {
           .eq("template_id", templateId)
           .eq("is_active", true);
 
-        if (template.randomize_questions) {
+        if (template.shuffle_questions) {
           const { data: allQuestions } = await query;
           const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
           firstQuestion = shuffled[0];
@@ -597,7 +617,7 @@ export function useExamSession(attemptId: string | undefined) {
 
     const answeredIds = currentResponses.map((r) => r.question_id);
 
-    if (template.exam_type === "cat") {
+    if (template.delivery_mode === "adaptive") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: nextQuestion, error } = await (supabase as any)
         .rpc("select_next_cat_question", {
@@ -621,7 +641,7 @@ export function useExamSession(attemptId: string | undefined) {
         query = query.not("id", "in", `(${answeredIds.join(",")})`);
       }
 
-      if (!template.randomize_questions) {
+      if (!template.shuffle_questions) {
         query = query.order("order_index");
       }
 
@@ -768,7 +788,7 @@ export function useExamSession(attemptId: string | undefined) {
       let newTheta = attempt.current_theta;
       let newSe = attempt.current_se;
 
-      if (template.exam_type === "cat" && attempt.current_theta !== null) {
+      if (template.delivery_mode === "adaptive" && attempt.current_theta !== null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: updatedTheta, error: thetaError } = await (supabase as any)
           .rpc("update_cat_theta", {
@@ -826,18 +846,18 @@ export function useExamSession(attemptId: string | undefined) {
       setAttempt(updatedAttempt);
 
       let shouldEnd = false;
-      const catConfig = template.cat_config as CATConfig | null;
+      const catSettings = template.cat_settings as CATSettings | null;
 
-      if (template.exam_type === "cat") {
+      if (template.delivery_mode === "adaptive") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: terminate } = await (supabase as any)
           .rpc("should_terminate_cat", {
             p_attempt_id: attempt.id,
             p_questions_answered: questionsAnswered,
             p_current_se: newSe,
-            p_min_questions: catConfig?.min_questions || 10,
-            p_max_questions: catConfig?.max_questions || 50,
-            p_termination_se: catConfig?.termination_se || 0.3,
+            p_min_questions: template.min_questions || 10,
+            p_max_questions: template.max_questions || 50,
+            p_termination_se: catSettings?.termination_se || 0.3,
           });
 
         shouldEnd = terminate;

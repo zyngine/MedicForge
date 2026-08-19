@@ -14,6 +14,7 @@ import {
   Select,
   Spinner,
   Modal,
+  Textarea,
 } from "@/components/ui";
 import {
   UserCheck,
@@ -243,7 +244,7 @@ function useSessionCheckIns(sessionId: string | null) {
       const { data, error } = await supabase
         .from("attendance_records")
         .select(`
-          id, status, check_in_time, recorded_at, student_id, was_late
+          id, status, check_in_time, recorded_at, student_id, was_late, notes
         `)
         .eq("session_id", sessionId)
         .order("recorded_at", { ascending: true });
@@ -274,20 +275,33 @@ function useSessionCheckIns(sessionId: string | null) {
   });
 }
 
-// Hook to update a student's attendance status
+// Hook to update a student's attendance status + optional instructor note
+// (e.g. "watched recorded lecture, marked present retroactively").
 function useUpdateAttendanceStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ recordId, status }: { recordId: string; status: string }) => {
+    mutationFn: async ({
+      recordId,
+      status,
+      notes,
+    }: {
+      recordId: string;
+      status: string;
+      notes?: string | null;
+    }) => {
       const supabase = getDb();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const update: Record<string, any> = {
+        status,
+        was_late: status === "late",
+      };
+      // Only touch `notes` when explicitly passed — omitting preserves existing.
+      if (notes !== undefined) update.notes = notes || null;
 
       const { error } = await supabase
         .from("attendance_records")
-        .update({
-          status,
-          was_late: status === "late",
-        })
+        .update(update)
         .eq("id", recordId);
 
       if (error) throw error;
@@ -767,13 +781,31 @@ function SessionDetails({
   const { data: checkIns = [], isLoading } = useSessionCheckIns(session.id);
   const updateStatusMutation = useUpdateAttendanceStatus();
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = React.useState<string>("");
+  const [pendingNotes, setPendingNotes] = React.useState<string>("");
 
-  const handleStatusChange = async (recordId: string, newStatus: string) => {
+  const startEditing = (recordId: string, currentStatus: string, currentNotes: string | null) => {
+    setEditingId(recordId);
+    setPendingStatus(currentStatus);
+    setPendingNotes(currentNotes || "");
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setPendingStatus("");
+    setPendingNotes("");
+  };
+
+  const handleSave = async (recordId: string) => {
     try {
-      await updateStatusMutation.mutateAsync({ recordId, status: newStatus });
-      setEditingId(null);
+      await updateStatusMutation.mutateAsync({
+        recordId,
+        status: pendingStatus,
+        notes: pendingNotes.trim() || null,
+      });
+      cancelEditing();
     } catch (error) {
-      console.error("Failed to update status:", error);
+      console.error("Failed to update record:", error);
     }
   };
 
@@ -824,7 +856,7 @@ function SessionDetails({
       <div className="border-t pt-4">
         <div className="flex items-center justify-between mb-3">
           <p className="font-medium">Attendance List</p>
-          <p className="text-xs text-muted-foreground">Click status to change</p>
+          <p className="text-xs text-muted-foreground">Click a row to edit status &amp; notes</p>
         </div>
         {isLoading ? (
           <div className="flex justify-center py-4">
@@ -835,45 +867,88 @@ function SessionDetails({
             No check-ins recorded
           </p>
         ) : (
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {checkIns.map((checkin: any) => (
-              <div
-                key={checkin.id}
-                className="flex items-center justify-between p-2 rounded border"
-              >
-                <div>
-                  <p className="font-medium text-sm">
-                    {checkin.student?.full_name || "Unknown"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {checkin.student?.email}
-                  </p>
-                </div>
-                <div className="text-right flex items-center gap-2">
-                  {editingId === checkin.id ? (
-                    <Select
-                      value={checkin.status}
-                      onChange={(newStatus) => handleStatusChange(checkin.id, newStatus)}
-                      options={ATTENDANCE_STATUSES}
-                    />
-                  ) : (
-                    <Badge
-                      variant={getStatusBadgeVariant(checkin.status)}
-                      className="cursor-pointer hover:opacity-80"
-                      onClick={() => setEditingId(checkin.id)}
-                    >
-                      {getStatusLabel(checkin.status)}
-                      {checkin.was_late && checkin.status === "present" && " (was late)"}
-                    </Badge>
-                  )}
-                  <div className="text-xs text-muted-foreground min-w-[60px]">
-                    {checkin.recorded_at &&
-                      format(new Date(checkin.recorded_at), "h:mm a")}
+            {checkIns.map((checkin: any) => {
+              const isEditing = editingId === checkin.id;
+              return (
+                <div key={checkin.id} className="p-3 rounded border">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm">
+                        {checkin.student?.full_name || "Unknown"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {checkin.student?.email}
+                      </p>
+                    </div>
+                    <div className="text-right flex items-center gap-2 shrink-0">
+                      {!isEditing && (
+                        <>
+                          <Badge
+                            variant={getStatusBadgeVariant(checkin.status)}
+                            className="cursor-pointer hover:opacity-80"
+                            onClick={() => startEditing(checkin.id, checkin.status, checkin.notes)}
+                          >
+                            {getStatusLabel(checkin.status)}
+                            {checkin.was_late && checkin.status === "present" && " (was late)"}
+                          </Badge>
+                          <div className="text-xs text-muted-foreground min-w-[60px]">
+                            {checkin.recorded_at &&
+                              format(new Date(checkin.recorded_at), "h:mm a")}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Existing note preview (when not editing) */}
+                  {!isEditing && checkin.notes && (
+                    <div className="mt-2 text-xs bg-muted/50 rounded px-2 py-1.5 border-l-2 border-muted-foreground/40">
+                      <span className="font-medium">Note:</span> {checkin.notes}
+                    </div>
+                  )}
+
+                  {/* Edit form */}
+                  {isEditing && (
+                    <div className="mt-3 space-y-3 pt-3 border-t">
+                      <div>
+                        <Label className="text-xs mb-1 block">Status</Label>
+                        <Select
+                          value={pendingStatus}
+                          onChange={setPendingStatus}
+                          options={ATTENDANCE_STATUSES}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs mb-1 block">
+                          Instructor note (optional)
+                        </Label>
+                        <Textarea
+                          value={pendingNotes}
+                          onChange={(e) => setPendingNotes(e.target.value)}
+                          placeholder="E.g. Watched recorded lecture 3/15 — marked present."
+                          rows={2}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={cancelEditing}>
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSave(checkin.id)}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          {updateStatusMutation.isPending ? "Saving…" : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

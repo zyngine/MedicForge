@@ -37,8 +37,16 @@ import {
 import { formatDate } from "@/lib/utils";
 
 const examTypeLabels: Record<string, string> = {
+  practice: "Practice",
+  unit: "Unit Exam",
+  comprehensive: "Comprehensive",
+  entrance: "Entrance",
+  remediation: "Remediation",
+};
+
+const deliveryModeLabels: Record<string, string> = {
   standard: "Standard",
-  cat: "Adaptive (CAT)",
+  adaptive: "Adaptive (CAT)",
 };
 
 const certificationColors: Record<string, string> = {
@@ -68,7 +76,7 @@ export default function InstructorExamsPage() {
     const matchesSearch =
       exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exam.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || exam.template?.exam_type === typeFilter;
+    const matchesType = typeFilter === "all" || exam.template?.delivery_mode === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -195,7 +203,7 @@ export default function InstructorExamsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">CAT Exams</p>
-                <p className="text-2xl font-bold">{exams.filter((e) => e.template?.exam_type === "cat").length}</p>
+                <p className="text-2xl font-bold">{exams.filter((e) => e.template?.delivery_mode === "adaptive").length}</p>
               </div>
             </div>
           </CardContent>
@@ -232,7 +240,7 @@ export default function InstructorExamsPage() {
               options={[
                 { value: "all", label: "All Types" },
                 { value: "standard", label: "Standard" },
-                { value: "cat", label: "Adaptive (CAT)" },
+                { value: "adaptive", label: "Adaptive (CAT)" },
               ]}
               value={typeFilter}
               onChange={setTypeFilter}
@@ -287,7 +295,7 @@ export default function InstructorExamsPage() {
                 { value: "", label: "Select a template..." },
                 ...templates.map((t) => ({
                   value: t.id,
-                  label: `${t.name} (${examTypeLabels[t.exam_type]} - ${t.certification_level})`,
+                  label: `${t.name} (${deliveryModeLabels[t.delivery_mode] || "Standard"} · ${examTypeLabels[t.exam_type] || t.exam_type} - ${t.certification_level})`,
                 })),
               ]}
               value={selectedTemplate}
@@ -300,7 +308,8 @@ export default function InstructorExamsPage() {
                   if (!template) return null;
                   return (
                     <div className="space-y-1">
-                      <p><strong>Type:</strong> {examTypeLabels[template.exam_type]}</p>
+                      <p><strong>Type:</strong> {examTypeLabels[template.exam_type] || template.exam_type}</p>
+                      <p><strong>Delivery:</strong> {deliveryModeLabels[template.delivery_mode] || template.delivery_mode}</p>
                       <p><strong>Questions:</strong> {template.total_questions}</p>
                       <p><strong>Time Limit:</strong> {template.time_limit_minutes ? `${template.time_limit_minutes} min` : "None"}</p>
                       <p><strong>Passing Score:</strong> {template.passing_score}%</p>
@@ -377,8 +386,8 @@ function ExamCard({ exam, onPublish, onDelete }: ExamCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${template?.exam_type === "cat" ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
-              {template?.exam_type === "cat" ? (
+            <div className={`p-2 rounded-lg ${template?.delivery_mode === "adaptive" ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
+              {template?.delivery_mode === "adaptive" ? (
                 <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               ) : (
                 <ClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-400" />

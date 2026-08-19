@@ -31,7 +31,9 @@ import {
 import {
   useExamTemplates,
   type ExamTemplate,
-  type CATConfig,
+  type ExamType,
+  type DeliveryMode,
+  type CATSettings,
 } from "@/lib/hooks/use-standardized-exams";
 
 const certificationLevels = [
@@ -48,43 +50,60 @@ const certificationColors: Record<string, string> = {
   Paramedic: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
+const examTypeOptions: Array<{ value: ExamType; label: string }> = [
+  { value: "practice", label: "Practice" },
+  { value: "unit", label: "Unit / Module Exam" },
+  { value: "comprehensive", label: "Comprehensive / Final" },
+  { value: "entrance", label: "Entrance / Pre-Admission" },
+  { value: "remediation", label: "Remediation" },
+];
+
+const deliveryModeOptions: Array<{ value: DeliveryMode; label: string }> = [
+  { value: "standard", label: "Standard (fixed question count)" },
+  { value: "adaptive", label: "Adaptive (CAT)" },
+];
+
 interface TemplateFormData {
   name: string;
   description: string;
-  exam_type: "standard" | "cat";
+  exam_type: ExamType;
+  delivery_mode: DeliveryMode;
   certification_level: string;
   total_questions: number;
+  min_questions: number | null;
+  max_questions: number | null;
   time_limit_minutes: number | null;
   passing_score: number;
-  randomize_questions: boolean;
-  randomize_options: boolean;
+  shuffle_questions: boolean;
+  shuffle_options: boolean;
   show_results_immediately: boolean;
+  show_correct_answers: boolean;
   allow_review: boolean;
-  max_attempts: number | null;
-  cat_config: CATConfig | null;
+  cat_settings: CATSettings | null;
 }
+
+const defaultCATSettings: CATSettings = {
+  initial_theta: 0,
+  termination_se: 0.3,
+};
 
 const defaultFormData: TemplateFormData = {
   name: "",
   description: "",
-  exam_type: "standard",
+  exam_type: "practice",
+  delivery_mode: "standard",
   certification_level: "EMT",
   total_questions: 100,
+  min_questions: null,
+  max_questions: null,
   time_limit_minutes: 120,
   passing_score: 70,
-  randomize_questions: true,
-  randomize_options: true,
+  shuffle_questions: true,
+  shuffle_options: true,
   show_results_immediately: true,
+  show_correct_answers: false,
   allow_review: true,
-  max_attempts: null,
-  cat_config: null,
-};
-
-const defaultCATConfig: CATConfig = {
-  min_questions: 70,
-  max_questions: 120,
-  initial_theta: 0,
-  termination_se: 0.3,
+  cat_settings: null,
 };
 
 export default function ExamTemplatesPage() {
@@ -94,10 +113,12 @@ export default function ExamTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = React.useState<ExamTemplate | null>(null);
   const [formData, setFormData] = React.useState<TemplateFormData>(defaultFormData);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const handleOpenCreate = () => {
     setEditingTemplate(null);
     setFormData(defaultFormData);
+    setSubmitError(null);
     setShowModal(true);
   };
 
@@ -107,28 +128,35 @@ export default function ExamTemplatesPage() {
       name: template.name,
       description: template.description || "",
       exam_type: template.exam_type,
+      delivery_mode: template.delivery_mode,
       certification_level: template.certification_level,
       total_questions: template.total_questions,
+      min_questions: template.min_questions,
+      max_questions: template.max_questions,
       time_limit_minutes: template.time_limit_minutes,
       passing_score: template.passing_score,
-      randomize_questions: template.randomize_questions,
-      randomize_options: template.randomize_options,
+      shuffle_questions: template.shuffle_questions,
+      shuffle_options: template.shuffle_options,
       show_results_immediately: template.show_results_immediately,
+      show_correct_answers: template.show_correct_answers,
       allow_review: template.allow_review,
-      max_attempts: template.max_attempts,
-      cat_config: template.cat_config,
+      cat_settings: template.cat_settings,
     });
+    setSubmitError(null);
     setShowModal(true);
   };
 
-  const handleExamTypeChange = (type: "standard" | "cat") => {
+  // When switching between standard and adaptive delivery, apply CAT defaults
+  // to avoid submitting stale/null CAT fields the DB expects for adaptive exams.
+  const handleDeliveryModeChange = (mode: DeliveryMode) => {
     setFormData((prev) => ({
       ...prev,
-      exam_type: type,
-      cat_config: type === "cat" ? defaultCATConfig : null,
-      // CAT exams typically have different defaults
-      total_questions: type === "cat" ? 120 : 100,
-      time_limit_minutes: type === "cat" ? null : 120,
+      delivery_mode: mode,
+      min_questions: mode === "adaptive" ? prev.min_questions ?? 70 : null,
+      max_questions: mode === "adaptive" ? prev.max_questions ?? 120 : null,
+      cat_settings: mode === "adaptive" ? prev.cat_settings ?? defaultCATSettings : null,
+      // Adaptive exams typically don't have a hard time limit
+      time_limit_minutes: mode === "adaptive" ? null : prev.time_limit_minutes,
     }));
   };
 
@@ -136,19 +164,24 @@ export default function ExamTemplatesPage() {
     if (!formData.name || !formData.certification_level) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
+      const payload = {
+        ...formData,
+        description: formData.description || null,
+      };
       if (editingTemplate) {
-        await updateTemplate(editingTemplate.id, {
-          ...formData,
-          description: formData.description || null,
-        });
+        const ok = await updateTemplate(editingTemplate.id, payload);
+        if (!ok) {
+          setSubmitError("Failed to save changes.");
+          return;
+        }
       } else {
-        await createTemplate({
-          ...formData,
-          description: formData.description || null,
-          tenant_id: null, // Global template available to all tenants
-          is_active: true,
-        });
+        const created = await createTemplate({ ...payload, is_active: true });
+        if (!created) {
+          setSubmitError("Failed to create template. Check that all required fields are filled in.");
+          return;
+        }
       }
       setShowModal(false);
     } finally {
@@ -169,6 +202,8 @@ export default function ExamTemplatesPage() {
       </div>
     );
   }
+
+  const isAdaptive = formData.delivery_mode === "adaptive";
 
   return (
     <div className="space-y-6">
@@ -204,8 +239,8 @@ export default function ExamTemplatesPage() {
               <p className="font-medium text-blue-900 dark:text-blue-100">About Exam Templates</p>
               <p className="text-blue-700 dark:text-blue-300 mt-1">
                 Templates define the structure and rules for exams. Once created, you can use templates to create
-                multiple exam instances. CAT templates use Item Response Theory (IRT) to adaptively select questions
-                based on student ability, similar to the actual NREMT exam.
+                multiple exam instances. Adaptive (CAT) templates use Item Response Theory (IRT) to adaptively select
+                questions based on student ability, similar to the actual NREMT exam.
               </p>
             </div>
           </div>
@@ -253,6 +288,12 @@ export default function ExamTemplatesPage() {
         size="lg"
       >
         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+          {submitError && (
+            <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+              {submitError}
+            </div>
+          )}
+
           {/* Basic Info */}
           <div className="space-y-4">
             <div>
@@ -290,14 +331,27 @@ export default function ExamTemplatesPage() {
                 <Label htmlFor="exam_type" required>Exam Type</Label>
                 <Select
                   id="exam_type"
-                  options={[
-                    { value: "standard", label: "Standard (Fixed Questions)" },
-                    { value: "cat", label: "CAT (Adaptive)" },
-                  ]}
+                  options={examTypeOptions}
                   value={formData.exam_type}
-                  onChange={(value) => handleExamTypeChange(value as "standard" | "cat")}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, exam_type: value as ExamType }))}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  What phase of the program this exam covers
+                </p>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="delivery_mode" required>Delivery Mode</Label>
+              <Select
+                id="delivery_mode"
+                options={deliveryModeOptions}
+                value={formData.delivery_mode}
+                onChange={(value) => handleDeliveryModeChange(value as DeliveryMode)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Standard = every student sees the same number of questions. Adaptive = length varies based on ability.
+              </p>
             </div>
           </div>
 
@@ -306,7 +360,7 @@ export default function ExamTemplatesPage() {
             <h4 className="font-medium">Exam Settings</h4>
 
             <div className="grid grid-cols-2 gap-4">
-              {formData.exam_type === "standard" ? (
+              {!isAdaptive ? (
                 <div>
                   <Label htmlFor="total_questions">Total Questions</Label>
                   <Input
@@ -327,15 +381,11 @@ export default function ExamTemplatesPage() {
                       id="min_questions"
                       type="number"
                       min={10}
-                      value={formData.cat_config?.min_questions || 70}
+                      value={formData.min_questions ?? 70}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          cat_config: {
-                            ...defaultCATConfig,
-                            ...prev.cat_config,
-                            min_questions: parseInt(e.target.value) || 70,
-                          },
+                          min_questions: parseInt(e.target.value) || 70,
                         }))
                       }
                     />
@@ -346,18 +396,17 @@ export default function ExamTemplatesPage() {
                       id="max_questions"
                       type="number"
                       min={20}
-                      value={formData.cat_config?.max_questions || 120}
-                      onChange={(e) =>
+                      value={formData.max_questions ?? 120}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 120;
                         setFormData((prev) => ({
                           ...prev,
-                          total_questions: parseInt(e.target.value) || 120,
-                          cat_config: {
-                            ...defaultCATConfig,
-                            ...prev.cat_config,
-                            max_questions: parseInt(e.target.value) || 120,
-                          },
-                        }))
-                      }
+                          max_questions: value,
+                          // Keep total_questions in sync with the cap so anything
+                          // that reads it as a display value still makes sense
+                          total_questions: value,
+                        }));
+                      }}
                     />
                   </div>
                 </>
@@ -370,7 +419,7 @@ export default function ExamTemplatesPage() {
                   type="number"
                   min={0}
                   placeholder="Leave empty for no limit"
-                  value={formData.time_limit_minutes || ""}
+                  value={formData.time_limit_minutes ?? ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
@@ -393,28 +442,11 @@ export default function ExamTemplatesPage() {
                   }
                 />
               </div>
-
-              <div>
-                <Label htmlFor="max_attempts">Max Attempts</Label>
-                <Input
-                  id="max_attempts"
-                  type="number"
-                  min={1}
-                  placeholder="Unlimited"
-                  value={formData.max_attempts || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      max_attempts: e.target.value ? parseInt(e.target.value) : null,
-                    }))
-                  }
-                />
-              </div>
             </div>
           </div>
 
           {/* CAT-specific settings */}
-          {formData.exam_type === "cat" && (
+          {isAdaptive && (
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-purple-600" />
@@ -432,13 +464,13 @@ export default function ExamTemplatesPage() {
                     id="initial_theta"
                     type="number"
                     step="0.1"
-                    value={formData.cat_config?.initial_theta || 0}
+                    value={formData.cat_settings?.initial_theta ?? 0}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        cat_config: {
-                          ...defaultCATConfig,
-                          ...prev.cat_config,
+                        cat_settings: {
+                          ...defaultCATSettings,
+                          ...prev.cat_settings,
                           initial_theta: parseFloat(e.target.value) || 0,
                         },
                       }))
@@ -457,13 +489,13 @@ export default function ExamTemplatesPage() {
                     step="0.05"
                     min={0.1}
                     max={1}
-                    value={formData.cat_config?.termination_se || 0.3}
+                    value={formData.cat_settings?.termination_se ?? 0.3}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        cat_config: {
-                          ...defaultCATConfig,
-                          ...prev.cat_config,
+                        cat_settings: {
+                          ...defaultCATSettings,
+                          ...prev.cat_settings,
                           termination_se: parseFloat(e.target.value) || 0.3,
                         },
                       }))
@@ -483,16 +515,16 @@ export default function ExamTemplatesPage() {
 
             <div className="space-y-3">
               <Checkbox
-                id="randomize_questions"
-                checked={formData.randomize_questions}
-                onChange={(checked) => setFormData((prev) => ({ ...prev, randomize_questions: checked }))}
+                id="shuffle_questions"
+                checked={formData.shuffle_questions}
+                onChange={(checked) => setFormData((prev) => ({ ...prev, shuffle_questions: checked }))}
                 label="Randomize question order"
               />
 
               <Checkbox
-                id="randomize_options"
-                checked={formData.randomize_options}
-                onChange={(checked) => setFormData((prev) => ({ ...prev, randomize_options: checked }))}
+                id="shuffle_options"
+                checked={formData.shuffle_options}
+                onChange={(checked) => setFormData((prev) => ({ ...prev, shuffle_options: checked }))}
                 label="Randomize answer options"
               />
 
@@ -503,6 +535,15 @@ export default function ExamTemplatesPage() {
                   setFormData((prev) => ({ ...prev, show_results_immediately: checked }))
                 }
                 label="Show results immediately after completion"
+              />
+
+              <Checkbox
+                id="show_correct_answers"
+                checked={formData.show_correct_answers}
+                onChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, show_correct_answers: checked }))
+                }
+                label="Show correct answers after completion"
               />
 
               <Checkbox
@@ -535,7 +576,9 @@ interface TemplateCardProps {
 }
 
 function TemplateCard({ template, onEdit, onDelete }: TemplateCardProps) {
-  const isCAT = template.exam_type === "cat";
+  const isAdaptive = template.delivery_mode === "adaptive";
+  const examTypeLabel =
+    examTypeOptions.find((o) => o.value === template.exam_type)?.label || template.exam_type;
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -545,16 +588,21 @@ function TemplateCard({ template, onEdit, onDelete }: TemplateCardProps) {
           <div className="flex items-center gap-3">
             <div
               className={`p-2 rounded-lg ${
-                isCAT ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"
+                isAdaptive ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"
               }`}
             >
-              {isCAT ? (
+              {isAdaptive ? (
                 <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               ) : (
                 <ClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
             </div>
-            <Badge variant={isCAT ? "default" : "secondary"}>{isCAT ? "CAT" : "Standard"}</Badge>
+            <div className="flex flex-col gap-1">
+              <Badge variant={isAdaptive ? "default" : "secondary"}>
+                {isAdaptive ? "CAT" : "Standard"}
+              </Badge>
+              <span className="text-xs text-muted-foreground">{examTypeLabel}</span>
+            </div>
           </div>
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -576,8 +624,8 @@ function TemplateCard({ template, onEdit, onDelete }: TemplateCardProps) {
           <div className="flex items-center gap-2 text-muted-foreground">
             <ClipboardList className="h-4 w-4" />
             <span>
-              {isCAT && template.cat_config
-                ? `${template.cat_config.min_questions}-${template.cat_config.max_questions}`
+              {isAdaptive && template.min_questions != null && template.max_questions != null
+                ? `${template.min_questions}-${template.max_questions}`
                 : template.total_questions}{" "}
               questions
             </span>
@@ -590,11 +638,6 @@ function TemplateCard({ template, onEdit, onDelete }: TemplateCardProps) {
             <Target className="h-4 w-4" />
             <span>{template.passing_score}% to pass</span>
           </div>
-          {template.max_attempts && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span>{template.max_attempts} attempts max</span>
-            </div>
-          )}
         </div>
 
         {/* Actions */}

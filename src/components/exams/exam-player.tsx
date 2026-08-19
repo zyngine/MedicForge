@@ -317,9 +317,9 @@ export function ExamPlayer({
     );
   }
 
-  const isCAT = attempt.template?.exam_type === "cat";
+  const isCAT = attempt.template?.delivery_mode === "adaptive";
   const progress = isCAT
-    ? (attempt.questions_answered / (attempt.template?.cat_config?.max_questions || 50)) * 100
+    ? (attempt.questions_answered / (attempt.template?.max_questions || 50)) * 100
     : (attempt.questions_answered / (attempt.template?.total_questions || 100)) * 100;
 
   return (
@@ -573,7 +573,7 @@ function ExamStartScreen({ templateId, onStart, isStarting }: ExamStartScreenPro
     );
   }
 
-  const isCAT = template.exam_type === "cat";
+  const isCAT = template.delivery_mode === "adaptive";
 
   return (
     <Card className="max-w-2xl mx-auto">
@@ -598,8 +598,8 @@ function ExamStartScreen({ templateId, onStart, isStarting }: ExamStartScreenPro
           <div className="p-4 bg-muted rounded-lg text-center">
             <p className="text-sm text-muted-foreground mb-1">Questions</p>
             <p className="text-2xl font-bold">
-              {isCAT
-                ? `${template.cat_config?.min_questions}-${template.cat_config?.max_questions}`
+              {isCAT && template.min_questions != null && template.max_questions != null
+                ? `${template.min_questions}-${template.max_questions}`
                 : template.total_questions}
             </p>
           </div>
@@ -614,10 +614,8 @@ function ExamStartScreen({ templateId, onStart, isStarting }: ExamStartScreenPro
             <p className="text-2xl font-bold">{template.passing_score}%</p>
           </div>
           <div className="p-4 bg-muted rounded-lg text-center">
-            <p className="text-sm text-muted-foreground mb-1">Attempts</p>
-            <p className="text-2xl font-bold">
-              {template.max_attempts ? `${template.max_attempts} max` : "Unlimited"}
-            </p>
+            <p className="text-sm text-muted-foreground mb-1">Delivery</p>
+            <p className="text-2xl font-bold">{isCAT ? "CAT" : "Standard"}</p>
           </div>
         </div>
 

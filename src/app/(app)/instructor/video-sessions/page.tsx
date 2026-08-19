@@ -52,7 +52,12 @@ export default function VideoSessionsPage() {
     startTime: "",
     endTime: "",
     manualLink: "",
+    isStanding: false,
   });
+
+  // Far-future sentinel used for "standing" links so they never expire
+  // and always appear Live in the status badge.
+  const STANDING_END_ISO = "2999-12-31T23:59:00.000Z";
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,17 +65,35 @@ export default function VideoSessionsPage() {
     setFormError(null);
 
     try {
-      if (!formData.title || !formData.date || !formData.startTime || !formData.endTime) {
-        setFormError("Please fill in all required fields");
+      if (!formData.title) {
+        setFormError("Please enter a title.");
         return;
       }
 
-      const scheduledStart = new Date(`${formData.date}T${formData.startTime}`);
-      const scheduledEnd = new Date(`${formData.date}T${formData.endTime}`);
+      let scheduledStartIso: string;
+      let scheduledEndIso: string;
 
-      if (scheduledEnd <= scheduledStart) {
-        setFormError("End time must be after start time");
-        return;
+      if (formData.isStanding) {
+        if (!formData.manualLink) {
+          setFormError("A meeting link is required for standing sessions.");
+          return;
+        }
+        // Always-on link: starts now, effectively never ends
+        scheduledStartIso = new Date().toISOString();
+        scheduledEndIso = STANDING_END_ISO;
+      } else {
+        if (!formData.date || !formData.startTime || !formData.endTime) {
+          setFormError("Please fill in date, start time, and end time (or enable Standing link).");
+          return;
+        }
+        const scheduledStart = new Date(`${formData.date}T${formData.startTime}`);
+        const scheduledEnd = new Date(`${formData.date}T${formData.endTime}`);
+        if (scheduledEnd <= scheduledStart) {
+          setFormError("End time must be after start time");
+          return;
+        }
+        scheduledStartIso = scheduledStart.toISOString();
+        scheduledEndIso = scheduledEnd.toISOString();
       }
 
       const result = await createSession({
@@ -78,8 +101,8 @@ export default function VideoSessionsPage() {
         description: formData.description || undefined,
         courseId: formData.courseId || undefined,
         sessionType: formData.sessionType,
-        scheduledStart: scheduledStart.toISOString(),
-        scheduledEnd: scheduledEnd.toISOString(),
+        scheduledStart: scheduledStartIso,
+        scheduledEnd: scheduledEndIso,
         manualLink: formData.manualLink || undefined,
         videoPlatform: "other",
       });
@@ -95,6 +118,7 @@ export default function VideoSessionsPage() {
           startTime: "",
           endTime: "",
           manualLink: "",
+          isStanding: false,
         });
       }
     } catch (err) {
@@ -342,52 +366,77 @@ export default function VideoSessionsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date" required>Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                min={new Date().toISOString().split("T")[0]}
-                required
+          {/* Standing link toggle */}
+          <div className="border rounded-lg p-3 bg-muted/30">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isStanding}
+                onChange={(e) => setFormData({ ...formData, isStanding: e.target.checked })}
+                className="mt-1"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="startTime" required>Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endTime" required>End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                required
-              />
-            </div>
+              <div>
+                <p className="text-sm font-medium">Standing link (always available)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Skip scheduling. Students can click the meeting link at any time — good for a permanent
+                  class URL that stays the same every session.
+                </p>
+              </div>
+            </label>
           </div>
 
+          {!formData.isStanding && (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date" required>Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  min={new Date().toISOString().split("T")[0]}
+                  required={!formData.isStanding}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="startTime" required>Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  required={!formData.isStanding}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endTime" required>End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  required={!formData.isStanding}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="manualLink">Meeting Link</Label>
+            <Label htmlFor="manualLink" required={formData.isStanding}>
+              Meeting Link{formData.isStanding ? "" : " (optional)"}
+            </Label>
             <Input
               id="manualLink"
               value={formData.manualLink}
               onChange={(e) => setFormData({ ...formData, manualLink: e.target.value })}
               placeholder="https://meet.google.com/... or Teams/Zoom link"
+              required={formData.isStanding}
             />
             <p className="text-xs text-muted-foreground">
               Paste a Google Meet, Microsoft Teams, Zoom, or any video meeting link.
+              {formData.isStanding && " Required for standing sessions."}
             </p>
           </div>
 

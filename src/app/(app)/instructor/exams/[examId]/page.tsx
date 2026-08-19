@@ -63,19 +63,28 @@ interface ExamDetails {
   template: {
     id: string;
     name: string;
-    exam_type: "standard" | "cat";
+    exam_type: "entrance" | "unit" | "comprehensive" | "practice" | "remediation";
+    delivery_mode: "standard" | "adaptive";
     certification_level: string;
     total_questions: number;
     time_limit_minutes: number | null;
     passing_score: number;
-    cat_min_questions: number | null;
-    cat_max_questions: number | null;
+    min_questions: number | null;
+    max_questions: number | null;
   } | null;
 }
 
 const examTypeLabels: Record<string, string> = {
+  practice: "Practice",
+  unit: "Unit Exam",
+  comprehensive: "Comprehensive",
+  entrance: "Entrance",
+  remediation: "Remediation",
+};
+
+const _deliveryModeLabels: Record<string, string> = {
   standard: "Standard",
-  cat: "Adaptive (CAT)",
+  adaptive: "Adaptive (CAT)",
 };
 
 const certificationColors: Record<string, string> = {
@@ -267,8 +276,8 @@ export default function InstructorExamDetailPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${template?.exam_type === "cat" ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
-                {template?.exam_type === "cat" ? (
+              <div className={`p-2 rounded-lg ${template?.delivery_mode === "adaptive" ? "bg-purple-100 dark:bg-purple-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
+                {template?.delivery_mode === "adaptive" ? (
                   <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 ) : (
                   <ClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -337,8 +346,8 @@ export default function InstructorExamDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Questions</p>
                 <p className="font-medium">
-                  {template.exam_type === "cat"
-                    ? `${template.cat_min_questions}-${template.cat_max_questions}`
+                  {template.delivery_mode === "adaptive" && template.min_questions != null && template.max_questions != null
+                    ? `${template.min_questions}-${template.max_questions}`
                     : template.total_questions}
                 </p>
               </div>

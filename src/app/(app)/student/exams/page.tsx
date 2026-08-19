@@ -219,10 +219,11 @@ function AvailableExamCard({ exam, attempts }: AvailableExamCardProps) {
   const examAttempts = attempts.filter((a) => a.template_id === exam.template_id);
   const hasInProgress = examAttempts.some((a) => a.status === "in_progress");
   const attemptsUsed = examAttempts.length;
-  const maxAttempts = template?.max_attempts;
-  const canTakeExam = !maxAttempts || attemptsUsed < maxAttempts;
+  // The template itself doesn't cap attempts; per-course/assignment
+  // attempt limits are enforced elsewhere. Always allow another attempt here.
+  const canTakeExam = true;
 
-  const isCAT = template?.exam_type === "cat";
+  const isCAT = template?.delivery_mode === "adaptive";
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -255,8 +256,8 @@ function AvailableExamCard({ exam, attempts }: AvailableExamCardProps) {
             <div className="flex items-center gap-2 text-muted-foreground">
               <ClipboardList className="h-4 w-4" />
               <span>
-                {isCAT
-                  ? `${template.cat_config?.min_questions}-${template.cat_config?.max_questions} Q`
+                {isCAT && template.min_questions != null && template.max_questions != null
+                  ? `${template.min_questions}-${template.max_questions} Q`
                   : `${template.total_questions} Q`}
               </span>
             </div>
@@ -271,7 +272,7 @@ function AvailableExamCard({ exam, attempts }: AvailableExamCardProps) {
             <div className="flex items-center gap-2 text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
               <span>
-                {attemptsUsed}/{maxAttempts || "∞"} attempts
+                {attemptsUsed} attempt{attemptsUsed === 1 ? "" : "s"}
               </span>
             </div>
           </div>
@@ -322,7 +323,7 @@ interface AttemptHistoryCardProps {
 
 function AttemptHistoryCard({ attempt }: AttemptHistoryCardProps) {
   const template = attempt.template;
-  const _isCAT = template?.exam_type === "cat";
+  const _isCAT = template?.delivery_mode === "adaptive";
 
   const statusIcon = {
     in_progress: <Clock className="h-5 w-5 text-yellow-500" />,
