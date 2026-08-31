@@ -51,10 +51,34 @@ async function main() {
   const ceFrom = process.env.CE_FROM_EMAIL || "noreply@medicforge.net";
   const ceAdmin = process.env.CE_ADMIN_EMAIL || "ce@medicforge.net";
 
+  const hookSecret = process.env.SEND_EMAIL_HOOK_SECRET;
+
   console.log(`  RESEND_API_KEY   ${mask(apiKey)}`);
   console.log(`  EMAIL_FROM       ${lmsFrom}${process.env.EMAIL_FROM ? "" : "   (default)"}`);
   console.log(`  CE_FROM_EMAIL    ${ceFrom}${process.env.CE_FROM_EMAIL ? "" : "   (default)"}`);
   console.log(`  CE_ADMIN_EMAIL   ${ceAdmin}${process.env.CE_ADMIN_EMAIL ? "" : "   (default)"}`);
+  console.log(`  SEND_EMAIL_HOOK_SECRET  ${mask(hookSecret)}`);
+
+  if (!hookSecret) {
+    console.log(
+      "\n  \x1b[33mThe Supabase Send Email hook is not configured here.\x1b[0m Invitations," +
+        "\n  password resets, signup confirmations and magic links are sent by Supabase" +
+        "\n  Auth, not by this app — without the hook they go over Supabase's built-in" +
+        "\n  SMTP, which is limited to a couple of messages an hour and only delivers to" +
+        "\n  project team members." +
+        "\n" +
+        "\n  Configure it at: Supabase dashboard -> Authentication -> Hooks -> Send Email" +
+        "\n    Type: HTTPS" +
+        "\n    URI:  https://www.medicforge.net/api/auth/hooks/send-email" +
+        "\n  then put the generated v1,whsec_... secret in SEND_EMAIL_HOOK_SECRET." +
+        "\n  Leave the Email provider itself enabled, or signups turn off entirely."
+    );
+  } else if (!hookSecret.startsWith("v1,whsec_")) {
+    console.log(
+      "\n  \x1b[31mSEND_EMAIL_HOOK_SECRET does not start with \"v1,whsec_\".\x1b[0m Paste the" +
+        "\n  whole value Supabase generated, prefix included.\n"
+    );
+  }
 
   if (!apiKey) {
     console.log(
