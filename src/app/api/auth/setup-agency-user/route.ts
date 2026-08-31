@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 function generateSlug(name: string): string {
   return name
@@ -10,11 +11,14 @@ function generateSlug(name: string): string {
     .slice(0, 50);
 }
 
+// An agency code is accepted by /api/auth/setup-user to place a new signup
+// into this tenant, so it has to be unguessable — Math.random() is not.
 function generateAgencyCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.randomBytes(8);
   let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(bytes[i] % chars.length);
   }
   return code;
 }

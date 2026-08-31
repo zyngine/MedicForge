@@ -31,15 +31,7 @@ import {
   useMarkLessonIncomplete,
 } from "@/lib/hooks/use-progress";
 import { useCourse } from "@/lib/hooks/use-courses";
-
-function sanitizeHTML(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
-    .replace(/on\w+\s*=\s*[^\s>]*/gi, "")
-    .replace(/javascript\s*:/gi, "")
-    .replace(/data\s*:/gi, "data-blocked:");
-}
+import { sanitizeHTML } from "@/lib/security/sanitize-html";
 
 function getLessonIcon(type: string) {
   switch (type) {

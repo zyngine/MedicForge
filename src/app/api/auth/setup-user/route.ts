@@ -3,13 +3,15 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
-// Generate a unique 8-character agency code
+// Generate a unique 8-character agency code.
+// One random byte per character: the previous version drew 5 bytes and indexed
+// them with i % 5, so characters 6-8 were always a literal repeat of 1-3.
 function generateAgencyCode(): string {
-  const bytes = crypto.randomBytes(5);
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = crypto.randomBytes(8);
   let code = "";
   for (let i = 0; i < 8; i++) {
-    code += chars.charAt(bytes[i % bytes.length] % chars.length);
+    code += chars.charAt(bytes[i] % chars.length);
   }
   return code;
 }
@@ -196,10 +198,10 @@ export async function POST(request: Request) {
 
     } else {
       console.error("[Setup User] Unknown registration type:", registrationType);
-      return NextResponse.json({
-        error: "Invalid registration type. Please register again.",
-        debug: { registrationType, metadata }
-      }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid registration type. Please register again." },
+        { status: 400 }
+      );
     }
 
   } catch (err) {

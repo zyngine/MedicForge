@@ -8,22 +8,70 @@
 -- ENUMS
 -- ============================================
 
-CREATE TYPE user_role AS ENUM ('admin', 'instructor', 'student');
-CREATE TYPE course_type AS ENUM ('EMR', 'EMT', 'AEMT', 'Paramedic', 'Custom');
-CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'institution', 'enterprise');
-CREATE TYPE subscription_status AS ENUM ('active', 'canceled', 'past_due', 'trialing');
-CREATE TYPE assignment_type AS ENUM ('quiz', 'written', 'skill_checklist', 'discussion');
-CREATE TYPE submission_status AS ENUM ('in_progress', 'submitted', 'graded', 'returned');
-CREATE TYPE question_type AS ENUM ('multiple_choice', 'true_false', 'matching', 'short_answer');
-CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped');
-CREATE TYPE skill_status AS ENUM ('passed', 'failed', 'needs_practice');
-CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected');
-CREATE TYPE content_type AS ENUM ('video', 'document', 'text', 'embed');
-CREATE TYPE event_type AS ENUM ('class', 'lab', 'clinical', 'exam', 'other');
-CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
-CREATE TYPE notification_type AS ENUM ('assignment', 'grade', 'announcement', 'reminder');
-CREATE TYPE file_context AS ENUM ('course', 'assignment', 'submission', 'profile');
-CREATE TYPE log_type AS ENUM ('hours', 'patient_contact');
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('admin', 'instructor', 'student');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE course_type AS ENUM ('EMR', 'EMT', 'AEMT', 'Paramedic', 'Custom');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'institution', 'enterprise');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE subscription_status AS ENUM ('active', 'canceled', 'past_due', 'trialing');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE assignment_type AS ENUM ('quiz', 'written', 'skill_checklist', 'discussion');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE submission_status AS ENUM ('in_progress', 'submitted', 'graded', 'returned');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE question_type AS ENUM ('multiple_choice', 'true_false', 'matching', 'short_answer');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE skill_status AS ENUM ('passed', 'failed', 'needs_practice');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE content_type AS ENUM ('video', 'document', 'text', 'embed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE event_type AS ENUM ('class', 'lab', 'clinical', 'exam', 'other');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE notification_type AS ENUM ('assignment', 'grade', 'announcement', 'reminder');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE file_context AS ENUM ('course', 'assignment', 'submission', 'profile');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE log_type AS ENUM ('hours', 'patient_contact');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================
 -- PLATFORM-LEVEL TABLES

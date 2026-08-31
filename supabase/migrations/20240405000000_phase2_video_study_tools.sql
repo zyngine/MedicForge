@@ -6,12 +6,15 @@
 -- =====================================================
 
 -- Video meeting status enum
-CREATE TYPE video_meeting_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE video_meeting_status AS ENUM (
   'scheduled',
   'live',
   'ended',
   'cancelled'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Video meetings table
 CREATE TABLE video_meetings (
@@ -59,11 +62,14 @@ CREATE TABLE video_meeting_participants (
 -- =====================================================
 
 -- Breakout room status
-CREATE TYPE breakout_room_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE breakout_room_status AS ENUM (
   'pending',
   'active',
   'closed'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Breakout rooms
 CREATE TABLE breakout_rooms (
@@ -157,12 +163,15 @@ CREATE TABLE flashcard_progress (
 -- =====================================================
 
 -- Practice exam mode enum
-CREATE TYPE practice_exam_mode AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE practice_exam_mode AS ENUM (
   'study', -- Show answers immediately
   'practice', -- Show answers at end
   'timed', -- Timed with no feedback until end
   'adaptive' -- Adjust difficulty based on performance
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Practice exam sessions
 CREATE TABLE practice_exam_sessions (

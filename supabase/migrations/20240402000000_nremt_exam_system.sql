@@ -5,24 +5,33 @@
 -- STANDARDIZED EXAM TYPES
 -- ============================================
 
-CREATE TYPE standardized_exam_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE standardized_exam_type AS ENUM (
   'entrance',           -- Pre-admission test
   'unit',              -- Module/unit exam
   'comprehensive',     -- Final readiness exam
   'practice',          -- Self-study practice
   'remediation'        -- Targeted remediation
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE exam_delivery_mode AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE exam_delivery_mode AS ENUM (
   'standard',          -- Fixed number of questions
   'adaptive'           -- Computer Adaptive Testing (CAT)
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE exam_security_level AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE exam_security_level AS ENUM (
   'low',               -- Self-paced, no proctoring
   'medium',            -- Lockdown browser
   'high'               -- Full proctoring with monitoring
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================
 -- STANDARDIZED EXAM TEMPLATES
@@ -83,7 +92,11 @@ CREATE TABLE IF NOT EXISTS standardized_questions (
   options JSONB NOT NULL DEFAULT '[]',
   correct_answer JSONB NOT NULL,
   rationale TEXT,
-  references TEXT[], -- Source materials
+  -- "references" is a reserved word in Postgres and has to be quoted; without
+  -- the quotes this CREATE TABLE is a syntax error and the whole migration
+  -- (standardized_questions, standardized_question_tags, standardized_exams,
+  -- and every policy below) never applies to a fresh database.
+  "references" TEXT[], -- Source materials
 
   -- Classification
   certification_level TEXT NOT NULL,
@@ -160,7 +173,8 @@ CREATE TABLE IF NOT EXISTS standardized_exams (
 -- EXAM ATTEMPTS (Student Sessions)
 -- ============================================
 
-CREATE TYPE attempt_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE attempt_status AS ENUM (
   'not_started',
   'in_progress',
   'submitted',
@@ -169,6 +183,8 @@ CREATE TYPE attempt_status AS ENUM (
   'graded',
   'invalidated'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS exam_attempts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

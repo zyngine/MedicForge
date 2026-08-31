@@ -2,7 +2,8 @@
 -- Migration: 20240315000000_attendance_tracking.sql
 
 -- Session types
-CREATE TYPE session_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE session_type AS ENUM (
   'lecture',
   'lab',
   'clinical',
@@ -10,15 +11,27 @@ CREATE TYPE session_type AS ENUM (
   'simulation',
   'other'
 );
-
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 -- Attendance status
-CREATE TYPE attendance_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE attendance_status AS ENUM (
   'present',
   'absent',
   'late',
   'excused',
   'left_early'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- 00001_initial_schema.sql already defines attendance_status without
+-- 'left_early', so on any database that ran it the CREATE TYPE above is a
+-- no-op. Add the value explicitly or the instructor attendance UI's
+-- "Left Early" option writes a status the enum does not accept.
+ALTER TYPE attendance_status ADD VALUE IF NOT EXISTS 'left_early';
+ALTER TYPE attendance_status ADD VALUE IF NOT EXISTS 'virtual';
+
 
 -- Attendance sessions table
 CREATE TABLE IF NOT EXISTS attendance_sessions (

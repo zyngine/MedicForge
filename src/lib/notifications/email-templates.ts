@@ -272,6 +272,42 @@ export function passwordResetEmail(data: {
   };
 }
 
+// Account invitation / set-your-password.
+//
+// Supabase's auth.admin.generateLink() only *builds* an action link — it does
+// not send anything. Routes that generate a link have to deliver it themselves,
+// and this is the template they use.
+export function inviteEmail(data: {
+  userName: string;
+  organizationName?: string;
+  inviteUrl: string;
+  role?: string;
+}): EmailTemplate {
+  const org = data.organizationName ? escapeHtml(data.organizationName) : "MedicForge";
+  const roleLine = data.role
+    ? `<p>You've been added as a${data.role === "instructor" ? "n" : ""} <strong>${escapeHtml(data.role)}</strong>.</p>`
+    : "";
+
+  const content = `
+    <h1>You're invited to ${org}</h1>
+    <p>Hi ${escapeHtml(data.userName)},</p>
+    ${roleLine}
+    <p>Click the button below to set your password and finish setting up your account.</p>
+    <div style="text-align: center;">
+      <a href="${data.inviteUrl}" class="button">Set Up My Account</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">This link expires in 24 hours. If the button doesn't work, copy and paste this address into your browser:</p>
+    <p class="muted" style="font-size: 12px; word-break: break-all;">${escapeHtml(data.inviteUrl)}</p>
+    <p class="muted" style="font-size: 14px;">If you weren't expecting this, you can safely ignore this email.</p>
+  `;
+
+  return {
+    subject: `Set up your ${org} account`,
+    html: wrapEmail(content, `Set up your ${org} account on MedicForge.`),
+    text: `Hi ${data.userName},\n\nYou've been invited to ${data.organizationName || "MedicForge"}.\n\nSet up your account: ${data.inviteUrl}\n\nThis link expires in 24 hours.`,
+  };
+}
+
 // Skill verification notification
 export function skillVerifiedEmail(data: {
   userName: string;

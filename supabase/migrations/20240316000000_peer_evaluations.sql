@@ -2,21 +2,27 @@
 -- Migration: 20240316000000_peer_evaluations.sql
 
 -- Evaluation types
-CREATE TYPE peer_eval_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE peer_eval_type AS ENUM (
   'team_exercise',
   'clinical_rotation',
   'simulation',
   'lab_partner',
   'general'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Evaluation status
-CREATE TYPE peer_eval_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE peer_eval_status AS ENUM (
   'pending',
   'in_progress',
   'completed',
   'expired'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Peer evaluation templates (criteria to evaluate)
 CREATE TABLE IF NOT EXISTS peer_eval_templates (

@@ -9,6 +9,7 @@ import { Button, Spinner, Alert } from "@/components/ui";
 import {
   CheckCircle, ChevronLeft, ChevronRight, BookOpen, Award, XCircle,
 } from "lucide-react";
+import { sanitizeHTML } from "@/lib/security/sanitize-html";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,19 +48,6 @@ interface Enrollment {
   id: string;
   completion_status: string;
   progress_percentage: number;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function sanitizeHTML(html: string): string {
-  // Remove <script> tags and their contents
-  let clean = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
-  // Remove event handler attributes (onclick, onerror, onload, etc.)
-  clean = clean.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  // Remove javascript: URLs
-  clean = clean.replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, 'href="#"');
-  clean = clean.replace(/src\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, 'src=""');
-  return clean;
 }
 
 function isEmbedUrl(url: string) {

@@ -23,11 +23,22 @@ export async function POST(request: Request) {
     // Verify enrollment belongs to this user
     const { data: enrollment } = await supabase
       .from("ce_enrollments")
-      .select("user_id")
+      .select("user_id, course_id")
       .eq("id", enrollmentId)
       .single();
     if (!enrollment || enrollment.user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // courseId comes from the client and drives which course the certificate
+    // is issued for. Without this check a learner could complete a free
+    // course's work while naming a paid, CAPCE-accredited course they never
+    // enrolled in, and be issued that course's certificate and CEH hours.
+    if (enrollment.course_id !== courseId) {
+      return NextResponse.json(
+        { error: "Course does not match this enrollment" },
+        { status: 403 }
+      );
     }
 
     // Upsert module progress

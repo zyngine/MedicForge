@@ -2,10 +2,16 @@
 -- Adds validated question bank with NREMT alignment, difficulty levels, and statistics
 
 -- Difficulty level enum
-CREATE TYPE question_difficulty AS ENUM ('easy', 'medium', 'hard', 'expert');
+DO $$ BEGIN
+    CREATE TYPE question_difficulty AS ENUM ('easy', 'medium', 'hard', 'expert');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Certification level for questions
-CREATE TYPE certification_level AS ENUM ('EMR', 'EMT', 'AEMT', 'Paramedic', 'All');
+DO $$ BEGIN
+    CREATE TYPE certification_level AS ENUM ('EMR', 'EMT', 'AEMT', 'Paramedic', 'All');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- NREMT Topic Categories
 CREATE TABLE question_bank_categories (

@@ -49,13 +49,16 @@ ON CONFLICT (standard_code) DO NOTHING;
 -- ACCREDITATION DOCUMENTS
 -- ============================================
 
-CREATE TYPE document_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE document_status AS ENUM (
   'draft',
   'under_review',
   'approved',
   'expired',
   'archived'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS accreditation_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -83,13 +86,16 @@ CREATE TABLE IF NOT EXISTS accreditation_documents (
 -- ACCREDITATION COMPLIANCE TRACKING
 -- ============================================
 
-CREATE TYPE compliance_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE compliance_status AS ENUM (
   'compliant',
   'partial',
   'non_compliant',
   'not_applicable',
   'pending_review'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS accreditation_compliance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -228,21 +234,27 @@ ON CONFLICT (code) DO NOTHING;
 -- AFFECTIVE EVALUATIONS
 -- ============================================
 
-CREATE TYPE evaluation_context AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE evaluation_context AS ENUM (
   'classroom',
   'lab',
   'clinical',
   'field',
   'simulation'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE evaluation_rating AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE evaluation_rating AS ENUM (
   'exceeds',      -- Consistently exceeds expectations
   'meets',        -- Meets expectations
   'developing',   -- Developing, shows improvement
   'below',        -- Below expectations
   'unacceptable'  -- Unacceptable, requires intervention
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS affective_evaluations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -281,12 +293,15 @@ CREATE TABLE IF NOT EXISTS affective_evaluations (
 -- AFFECTIVE INCIDENTS
 -- ============================================
 
-CREATE TYPE incident_severity AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE incident_severity AS ENUM (
   'minor',      -- Coaching needed
   'moderate',   -- Formal warning
   'major',      -- Remediation required
   'critical'    -- Immediate action/dismissal consideration
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS affective_incidents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

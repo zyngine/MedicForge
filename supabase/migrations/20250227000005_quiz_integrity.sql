@@ -2,7 +2,8 @@
 -- Tracks suspicious behavior during exams and provides review interface
 
 -- Integrity event types
-CREATE TYPE integrity_event_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE integrity_event_type AS ENUM (
   'blur',           -- Window lost focus
   'focus',          -- Window regained focus (tracked for context)
   'copy',           -- Copy attempt
@@ -18,12 +19,20 @@ CREATE TYPE integrity_event_type AS ENUM (
   'tab_hidden',     -- Tab became hidden
   'tab_visible'     -- Tab became visible
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Suspicion level
-CREATE TYPE suspicion_level AS ENUM ('low', 'medium', 'high');
+DO $$ BEGIN
+    CREATE TYPE suspicion_level AS ENUM ('low', 'medium', 'high');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Review decision
-CREATE TYPE integrity_review_decision AS ENUM ('cleared', 'warning', 'violation');
+DO $$ BEGIN
+    CREATE TYPE integrity_review_decision AS ENUM ('cleared', 'warning', 'violation');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Quiz integrity events table (individual events)
 CREATE TABLE IF NOT EXISTS quiz_integrity_events (

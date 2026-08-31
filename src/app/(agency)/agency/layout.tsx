@@ -255,7 +255,7 @@ export default function AgencyLayout({
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { profile, isLoading: userLoading } = useUser();
-  const { hasAgencyAccess: _hasAgencyAccess, isLoading: roleLoading } = useAgencyRole();
+  const { hasAgencyAccess, isLoading: roleLoading } = useAgencyRole();
 
   // Show loading while checking access
   if (tenantLoading || userLoading || roleLoading) {
@@ -294,6 +294,26 @@ export default function AgencyLayout({
           </p>
           <Button asChild>
             <Link href="/login">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // hasAgencyAccess was previously computed and then discarded, so any signed-in
+  // user on an agency tenant could load the portal. The middleware only checks
+  // for a session on /agency, so this is where the agency role is enforced.
+  if (!hasAgencyAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-xl font-semibold mb-2">Access Denied</h1>
+          <p className="text-muted-foreground mb-4">
+            Your account does not have access to the agency portal.
+          </p>
+          <Button asChild>
+            <Link href="/login">Sign In With Another Account</Link>
           </Button>
         </div>
       </div>

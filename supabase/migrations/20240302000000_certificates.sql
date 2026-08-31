@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS certificates (
   hours_completed DECIMAL(6,2),
 
   -- Template and styling
-  template_id UUID REFERENCES certificate_templates(id),
+  -- FK added after certificate_templates is created further down this file;
+  -- referencing it inline here fails because the table does not exist yet.
+  template_id UUID,
   custom_data JSONB DEFAULT '{}', -- Additional fields for certificate
 
   -- Verification
@@ -78,6 +80,14 @@ CREATE INDEX idx_certificates_student ON certificates(student_id);
 CREATE INDEX idx_certificates_course ON certificates(course_id);
 CREATE INDEX idx_certificates_verification ON certificates(verification_code);
 CREATE INDEX idx_certificate_templates_tenant ON certificate_templates(tenant_id);
+
+-- Now that certificate_templates exists, wire up the deferred foreign key.
+DO $$ BEGIN
+    ALTER TABLE certificates
+        ADD CONSTRAINT certificates_template_id_fkey
+        FOREIGN KEY (template_id) REFERENCES certificate_templates(id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- RLS Policies
 ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
@@ -184,7 +194,12 @@ CREATE TRIGGER certificates_before_insert_trigger
   FOR EACH ROW
   EXECUTE FUNCTION certificates_before_insert();
 
--- Insert default certificate template
+-- Seed the default template for every existing tenant.
+-- This used to insert a single row pinned to tenant_id
+-- '00000000-0000-0000-0000-000000000000' with the comment "Will be updated per
+-- tenant". No such tenant exists, so the insert failed the tenant_id foreign
+-- key and aborted the rest of this migration — the default template was never
+-- installed anywhere.
 INSERT INTO certificate_templates (
   id,
   tenant_id,
@@ -195,9 +210,10 @@ INSERT INTO certificate_templates (
   default_title,
   is_default,
   is_active
-) VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000000', -- Will be updated per tenant
+)
+SELECT
+  gen_random_uuid(),
+  t.id,
   'Default Completion Certificate',
   'Standard course completion certificate',
   'completion',
@@ -230,4 +246,8 @@ INSERT INTO certificate_templates (
   'Certificate of Completion',
   true,
   true
-) ON CONFLICT DO NOTHING;
+FROM tenants t
+WHERE NOT EXISTS (
+  SELECT 1 FROM certificate_templates ct
+  WHERE ct.tenant_id = t.id AND ct.is_default
+);

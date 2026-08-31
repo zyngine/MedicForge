@@ -80,9 +80,18 @@ export function useMDInvitations() {
         throw new Error(data.error || "Failed to create invitation");
       }
 
-      toast.success("Invitation Sent", {
-        description: `Invitation created for ${params.mdName}`,
-      });
+      if (data.emailSent === false) {
+        // The invitation code is valid, but nothing reached the inbox. Say so
+        // rather than showing a success toast for an email that never sent.
+        toast.warning("Invitation created, but the email did not send", {
+          description:
+            "Copy the registration link from the invitation list and send it to them directly.",
+        });
+      } else {
+        toast.success("Invitation Sent", {
+          description: `Invitation created for ${params.mdName}`,
+        });
+      }
 
       // Refresh the list
       await fetchInvitations();

@@ -2,7 +2,8 @@
 -- Migration: 20240314000000_accreditation_documents.sql
 
 -- Document categories
-CREATE TYPE accreditation_doc_category AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE accreditation_doc_category AS ENUM (
   'program_information',
   'personnel',
   'curriculum',
@@ -14,15 +15,20 @@ CREATE TYPE accreditation_doc_category AS ENUM (
   'meeting_minutes',
   'other'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Document status
-CREATE TYPE accreditation_doc_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE accreditation_doc_status AS ENUM (
   'draft',
   'pending_review',
   'approved',
   'expired',
   'archived'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Accreditation documents table
 CREATE TABLE IF NOT EXISTS accreditation_documents (

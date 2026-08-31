@@ -5,15 +5,19 @@
 -- SECURE PROCTORING SYSTEM
 -- ============================================
 
-CREATE TYPE proctoring_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE proctoring_type AS ENUM (
   'none',           -- No proctoring
   'lockdown',       -- Browser lockdown only
   'record',         -- Record webcam/screen
   'live',           -- Live proctor monitoring
   'ai_monitor'      -- AI-based monitoring
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE violation_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE violation_type AS ENUM (
   'tab_switch',         -- Switched browser tabs
   'window_focus',       -- Lost window focus
   'copy_paste',         -- Copy/paste attempted
@@ -28,13 +32,18 @@ CREATE TYPE violation_type AS ENUM (
   'vm_detected',        -- Virtual machine detected
   'other'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE violation_severity AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE violation_severity AS ENUM (
   'warning',        -- Minor, may be accidental
   'moderate',       -- Concerning, noted
   'severe',         -- Serious, may invalidate
   'critical'        -- Exam should be invalidated
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Proctoring sessions
 CREATE TABLE IF NOT EXISTS proctoring_sessions (

@@ -23,15 +23,32 @@ export async function POST(request: Request) {
     // Verify enrollment belongs to this user
     const { data: enrollment } = await supabase
       .from("ce_enrollments")
-      .select("user_id")
+      .select("user_id, course_id")
       .eq("id", enrollmentId)
       .single();
     if (!enrollment || enrollment.user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Load quiz settings
-    const { data: quiz } = await supabase.from("ce_quizzes").select("passing_score, max_attempts").eq("id", quizId).single();
+    // courseId comes from the client and drives which course the certificate
+    // is issued for. Without this check a learner could complete a free
+    // course's work while naming a paid, CAPCE-accredited course they never
+    // enrolled in, and be issued that course's certificate and CEH hours.
+    if (enrollment.course_id !== courseId) {
+      return NextResponse.json(
+        { error: "Course does not match this enrollment" },
+        { status: 403 }
+      );
+    }
+
+    // Load quiz settings — scoped to the course so a quiz from another course
+    // cannot be graded against this enrollment.
+    const { data: quiz } = await supabase
+      .from("ce_quizzes")
+      .select("passing_score, max_attempts")
+      .eq("id", quizId)
+      .eq("course_id", courseId)
+      .maybeSingle();
     if (!quiz) return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
 
     // Check attempt count
@@ -91,6 +108,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to record completion. Please contact support." }, { status: 500 });
       }
 
+      // Only ever one certificate per enrollment — a learner who passes again
+      // on a later attempt must not collect a second set of CEH hours.
+      const { data: existingCert } = await supabase
+        .from("ce_certificates")
+        .select("id")
+        .eq("enrollment_id", enrollmentId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingCert) {
+        return NextResponse.json({ score, passed, attemptNumber, passingScore: quiz.passing_score });
+      }
+
       // Get data needed for certificate
       const [_enrollRes, courseRes, userRes] = await Promise.all([
         supabase.from("ce_enrollments").select("enrolled_at").eq("id", enrollmentId).single(),
@@ -143,6 +173,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ score, passed, attemptNumber, passingScore: quiz.passing_score });
   } catch (err) {
     console.error("[CE submit-quiz] Unexpected error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "An unexpected error occurred." }, { status: 500 });
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }

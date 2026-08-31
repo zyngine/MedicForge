@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
 
 export interface APIContext {
@@ -25,7 +25,11 @@ export async function validateAPIKey(request: NextRequest): Promise<APIContext |
     return null;
   }
 
-  const supabase = await createClient();
+  // api_keys is protected by RLS that only admits a tenant admin's own session.
+  // External API callers authenticate with a bearer key and carry no Supabase
+  // session, so the lookup has to run with the service role or it matches no
+  // rows and every request 401s.
+  const supabase = createAdminClient();
 
   // Look up the API key in the database
   // Using type assertion since api_keys table is newly added
@@ -142,8 +146,14 @@ export function apiSuccess<T>(data: T, meta?: { page?: number; limit?: number; t
  */
 export function getPagination(request: NextRequest): { page: number; limit: number; offset: number } {
   const url = new URL(request.url);
-  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "20")));
+  // parseInt("abc") is NaN, and Math.max(1, NaN) is NaN — which would flow
+  // into .range() and produce an unusable query. Fall back to the defaults.
+  const parsedPage = parseInt(url.searchParams.get("page") || "1", 10);
+  const parsedLimit = parseInt(url.searchParams.get("limit") || "20", 10);
+  const page = Number.isFinite(parsedPage) ? Math.max(1, parsedPage) : 1;
+  const limit = Number.isFinite(parsedLimit)
+    ? Math.min(100, Math.max(1, parsedLimit))
+    : 20;
   const offset = (page - 1) * limit;
 
   return { page, limit, offset };

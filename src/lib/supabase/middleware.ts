@@ -377,54 +377,45 @@ async function lookupTenantBySlug(
   supabase: ReturnType<typeof createServerClient<Database>>,
   slug: string
 ): Promise<TenantInfo | null> {
-  try {
-    const { data, error } = await supabase
-      .from("tenants")
-      .select("id, name, slug, logo_url, primary_color, custom_domain, tenant_type")
-      .eq("slug", slug)
-      .single()
-
-    if (error || !data) {
-      return null
-    }
-
-    return {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      logo_url: data.logo_url,
-      primary_color: data.primary_color || "#C53030",
-      custom_domain: data.custom_domain,
-      tenant_type: (data.tenant_type as TenantInfo["tenant_type"]) || "education",
-    }
-  } catch {
-    return null
-  }
+  return lookupTenantPublic(supabase, { slug })
 }
 
 async function lookupTenantByCustomDomain(
   supabase: ReturnType<typeof createServerClient<Database>>,
   domain: string
 ): Promise<TenantInfo | null> {
+  return lookupTenantPublic(supabase, { domain })
+}
+
+// The tenants table is only readable by members of that tenant. Resolving a
+// subdomain happens before the visitor has signed in, so it goes through the
+// get_tenant_public() SECURITY DEFINER function, which returns branding fields
+// only — never agency_code, billing identifiers or settings.
+async function lookupTenantPublic(
+  supabase: ReturnType<typeof createServerClient<Database>>,
+  by: { slug?: string; domain?: string }
+): Promise<TenantInfo | null> {
   try {
     const { data, error } = await supabase
-      .from("tenants")
-      .select("id, name, slug, logo_url, primary_color, custom_domain, tenant_type")
-      .eq("custom_domain", domain)
-      .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .rpc("get_tenant_public" as any, {
+        p_slug: by.slug ?? null,
+        p_domain: by.domain ?? null,
+      })
 
-    if (error || !data) {
-      return null
-    }
+    if (error) return null
+
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) return null
 
     return {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      logo_url: data.logo_url,
-      primary_color: data.primary_color || "#C53030",
-      custom_domain: data.custom_domain,
-      tenant_type: (data.tenant_type as TenantInfo["tenant_type"]) || "education",
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      logo_url: row.logo_url,
+      primary_color: row.primary_color || "#C53030",
+      custom_domain: row.custom_domain,
+      tenant_type: (row.tenant_type as TenantInfo["tenant_type"]) || "education",
     }
   } catch {
     return null

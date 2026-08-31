@@ -174,6 +174,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           finalize(transformTenantData(tenantBySlug));
           return;
         }
+
         // Strategy 3 failed — log and continue to auth-based fallback
         if (slugError) {
           console.warn("[useTenant] Slug lookup failed:", slugError.message);
@@ -204,6 +205,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: { user } } = await (supabase as any).auth.getUser();
       if (!user) {
+        // Signed-out visitor. The tenants table is only readable by members of
+        // that tenant, so on a subdomain we resolve branding through the
+        // get_tenant_public() RPC, which returns logo/colour/type and nothing
+        // else. Without a slug this is the main marketing site.
+        if (tenantSlug) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: publicTenant } = await (supabase as any).rpc(
+            "get_tenant_public",
+            { p_slug: tenantSlug, p_domain: null }
+          );
+          const publicRow = Array.isArray(publicTenant) ? publicTenant[0] : publicTenant;
+          if (publicRow) {
+            finalize(transformTenantData(publicRow));
+            return;
+          }
+        }
+
         // No user, no cookies, no subdomain = main marketing site
         clearTenantCache();
         finalize(null);

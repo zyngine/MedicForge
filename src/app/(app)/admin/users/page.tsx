@@ -253,6 +253,12 @@ function useResendInvite() {
       const result = await response.json();
 
       if (!response.ok) {
+        // When Resend rejects the send the route still hands back a working
+        // invite link, so give the admin something they can act on instead of
+        // a bare failure.
+        if (result.inviteLink) {
+          throw new Error(`${result.error} ${result.inviteLink}`);
+        }
         throw new Error(result.error || "Failed to resend invite");
       }
 

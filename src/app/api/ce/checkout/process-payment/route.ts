@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       const expires = new Date(now);
       expires.setFullYear(expires.getFullYear() + 1);
 
-      await admin.from("ce_user_subscriptions").insert({
+      const { error: subInsertError } = await admin.from("ce_user_subscriptions").insert({
         user_id: ceUser.id,
         plan: "annual",
         price: 69.00,
@@ -123,6 +123,25 @@ export async function POST(request: Request) {
         last_payment_at: now.toISOString(),
         next_billing_at: nextBillingDate || expires.toISOString().slice(0, 10),
       });
+
+      // The card is already on file and the Square subscription exists. If we
+      // fail to record it the customer will be billed for something we have no
+      // record of, so surface it loudly rather than returning success.
+      if (subInsertError) {
+        console.error(
+          "[CE process-payment] Square subscription %s created but not recorded:",
+          subscriptionId,
+          subInsertError
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Your subscription was created but we could not finish setting up your account. Please contact support before trying again.",
+            subscriptionId,
+          },
+          { status: 500 }
+        );
+      }
 
       try {
         await sendSubscriptionReceipt(
@@ -178,7 +197,7 @@ export async function POST(request: Request) {
         note,
       });
 
-      await admin.from("ce_purchases").insert({
+      const { error: purchaseInsertError } = await admin.from("ce_purchases").insert({
         user_id: ceUser.id,
         course_id: courseId,
         amount: amountCents / 100,
@@ -186,6 +205,24 @@ export async function POST(request: Request) {
         purchased_at: new Date().toISOString(),
         refunded: false,
       });
+
+      // The card has been charged at this point. Never report success without
+      // the purchase row, or the learner pays and gets no access.
+      if (purchaseInsertError) {
+        console.error(
+          "[CE process-payment] Square payment %s captured but not recorded:",
+          paymentId,
+          purchaseInsertError
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Your payment went through but we could not unlock the course. Please contact support with this reference.",
+            paymentId,
+          },
+          { status: 500 }
+        );
+      }
 
       try {
         await sendCoursePurchaseReceipt(
@@ -207,7 +244,9 @@ export async function POST(request: Request) {
 
   } catch (err: unknown) {
     console.error("[CE process-payment]", err);
-    const msg = err instanceof Error ? err.message : "Payment processing failed. Please try again.";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: "Payment processing failed. Please try again." },
+      { status: 500 }
+    );
   }
 }

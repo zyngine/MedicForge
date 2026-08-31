@@ -94,13 +94,25 @@ export default function AdminLayout({
   // If loading finished but there is no profile, redirect to login instead of
   // showing an infinite spinner. This can happen when a profile DB fetch fails
   // (e.g. RLS issue, newly invited user whose session was not fully established).
+  //
+  // The middleware only checks that /admin has a session, so the role check has
+  // to happen here too: without it any signed-in student could load the whole
+  // admin shell (the data behind it is still protected by RLS, but the UI is
+  // not something they should see).
   React.useEffect(() => {
-    if (!isLoading && !profile) {
+    if (isLoading) return;
+    if (!profile) {
       router.replace("/login");
+      return;
+    }
+    if (profile.role !== "admin") {
+      router.replace(
+        profile.role === "instructor" ? "/instructor/dashboard" : "/student/dashboard"
+      );
     }
   }, [isLoading, profile, router]);
 
-  if (isLoading || !profile) {
+  if (isLoading || !profile || profile.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />

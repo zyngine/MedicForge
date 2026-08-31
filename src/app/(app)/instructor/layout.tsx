@@ -158,14 +158,22 @@ export default function InstructorLayout({
     window.location.href = "/login";
   };
 
-  // Redirect to login if auth finished but no profile (expired session, RLS error, etc.)
+  // Redirect to login if auth finished but no profile (expired session, RLS error, etc.).
+  // Admins keep access to the instructor portal (the admin nav links into it);
+  // students do not. The middleware only enforces "signed in" for /instructor,
+  // so the role check has to happen here.
   useEffect(() => {
-    if (!isLoading && !profile) {
+    if (isLoading) return;
+    if (!profile) {
       router.replace("/login");
+      return;
+    }
+    if (profile.role !== "instructor" && profile.role !== "admin") {
+      router.replace("/student/dashboard");
     }
   }, [isLoading, profile, router]);
 
-  if (isLoading || !profile) {
+  if (isLoading || !profile || (profile.role !== "instructor" && profile.role !== "admin")) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />

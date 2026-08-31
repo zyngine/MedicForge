@@ -2,13 +2,20 @@
 -- Migration: 20240320000000_plagiarism_detection.sql
 
 -- Plagiarism check status
-CREATE TYPE plagiarism_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE plagiarism_status AS ENUM (
   'pending',
   'processing',
   'completed',
   'failed',
   'skipped'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- 20240307000000_plagiarism_check.sql already defines plagiarism_status
+-- without 'skipped', so the CREATE TYPE above is a no-op there.
+ALTER TYPE plagiarism_status ADD VALUE IF NOT EXISTS 'skipped';
 
 -- Plagiarism reports table
 CREATE TABLE IF NOT EXISTS plagiarism_reports (

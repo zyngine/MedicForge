@@ -6,24 +6,31 @@
 -- ============================================
 
 -- Clinical site types
-CREATE TYPE clinical_site_type AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE clinical_site_type AS ENUM (
     'hospital',
     'ambulance_service',
     'fire_department',
     'urgent_care',
     'other'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Booking status for clinical shifts
-CREATE TYPE booking_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE booking_status AS ENUM (
     'booked',
     'completed',
     'cancelled',
     'no_show'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Patient age ranges per NREMT categories
-CREATE TYPE patient_age_range AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE patient_age_range AS ENUM (
     'neonate',      -- 0-1 month
     'infant',       -- 1 month - 1 year
     'toddler',      -- 1-3 years
@@ -33,6 +40,8 @@ CREATE TYPE patient_age_range AS ENUM (
     'adult',        -- 18-64 years
     'geriatric'     -- 65+ years
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================
 -- CLINICAL SITES TABLE

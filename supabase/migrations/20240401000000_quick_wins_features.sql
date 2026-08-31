@@ -58,10 +58,14 @@ INSERT INTO nremt_categories (code, name, certification_level, weight_percentage
 ON CONFLICT (code) DO NOTHING;
 
 -- Difficulty levels
-CREATE TYPE question_difficulty AS ENUM ('easy', 'medium', 'hard', 'expert');
+DO $$ BEGIN
+    CREATE TYPE question_difficulty AS ENUM ('easy', 'medium', 'hard', 'expert');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Cognitive levels (Bloom's Taxonomy)
-CREATE TYPE cognitive_level AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE cognitive_level AS ENUM (
   'remember',    -- Recall facts
   'understand',  -- Explain concepts
   'apply',       -- Use in new situations
@@ -69,6 +73,8 @@ CREATE TYPE cognitive_level AS ENUM (
   'evaluate',    -- Justify decisions
   'create'       -- Produce new work
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Add columns to quiz_questions if they don't exist
 DO $$
@@ -276,8 +282,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- QUICK WIN 5: Live Polling System
 -- ============================================
 
-CREATE TYPE poll_status AS ENUM ('draft', 'active', 'closed');
-CREATE TYPE poll_type AS ENUM ('single_choice', 'multiple_choice', 'word_cloud', 'rating', 'open_ended');
+DO $$ BEGIN
+    CREATE TYPE poll_status AS ENUM ('draft', 'active', 'closed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    CREATE TYPE poll_type AS ENUM ('single_choice', 'multiple_choice', 'word_cloud', 'rating', 'open_ended');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Polls table
 CREATE TABLE IF NOT EXISTS live_polls (
@@ -368,7 +380,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- QUICK WIN 6: Survey Tool (Non-Graded)
 -- ============================================
 
-CREATE TYPE survey_status AS ENUM ('draft', 'published', 'closed', 'archived');
+DO $$ BEGIN
+    CREATE TYPE survey_status AS ENUM ('draft', 'published', 'closed', 'archived');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Surveys table
 CREATE TABLE IF NOT EXISTS surveys (
@@ -495,7 +510,10 @@ CREATE TABLE IF NOT EXISTS gradebook_filters (
 -- QUICK WIN 8: Late Submission Policies
 -- ============================================
 
-CREATE TYPE late_policy_type AS ENUM ('none', 'percent_per_day', 'percent_per_hour', 'fixed_deduction', 'zero_after_deadline');
+DO $$ BEGIN
+    CREATE TYPE late_policy_type AS ENUM ('none', 'percent_per_day', 'percent_per_hour', 'fixed_deduction', 'zero_after_deadline');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Add late policy columns to assignments
 DO $$

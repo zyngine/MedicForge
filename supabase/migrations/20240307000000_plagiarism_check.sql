@@ -2,12 +2,15 @@
 -- Tracks plagiarism check results for submissions
 
 -- Plagiarism check status enum
-CREATE TYPE plagiarism_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE plagiarism_status AS ENUM (
   'pending',
   'processing',
   'completed',
   'failed'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Plagiarism checks table
 CREATE TABLE plagiarism_checks (

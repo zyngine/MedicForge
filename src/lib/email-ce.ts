@@ -29,10 +29,10 @@ async function sendEmail(
   subject: string,
   html: string,
   meta: EmailLogMeta
-): Promise<void> {
+): Promise<boolean> {
   if (!RESEND_API_KEY) {
     console.warn("[CE Email] RESEND_API_KEY not configured — skipping:", subject, "→", to);
-    return;
+    return false;
   }
 
   let status: string = "failed";
@@ -73,6 +73,8 @@ async function sendEmail(
   } catch (logErr) {
     console.error("[CE Email] Failed to log email to ce_email_log:", logErr);
   }
+
+  return status === "sent";
 }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +139,38 @@ export async function sendWelcomeEmail(to: string, firstName: string, userId?: s
 
   await sendEmail(to, "Welcome to MedicForge CE", html, {
     emailType: "welcome",
+    userId,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Committee member account setup
+//
+// Supabase's auth.admin.generateLink() builds an action link but sends nothing,
+// so the caller passes the link here to have it delivered through Resend.
+// ---------------------------------------------------------------------------
+
+export async function sendCommitteeSetupEmail(
+  to: string,
+  setupUrl: string,
+  userId?: string,
+): Promise<boolean> {
+  const html = layout(`
+    <h2 style="margin:0 0 8px;font-size:20px">Set up your account</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px">
+      You have been given access to the MedicForge CE review committee portal.
+      Use the button below to choose a password and sign in.
+    </p>
+    ${btn(setupUrl, "Set My Password")}
+    <p style="color:#6b7280;font-size:13px;margin-top:24px">
+      This link expires in 24 hours. If the button does not work, copy this
+      address into your browser:<br>
+      <span style="word-break:break-all">${setupUrl}</span>
+    </p>
+  `);
+
+  return sendEmail(to, "Set up your MedicForge CE account", html, {
+    emailType: "committee_setup",
     userId,
   });
 }

@@ -2,18 +2,24 @@
 -- Enables importing and tracking SCORM packages (1.2 and 2004)
 
 -- SCORM version enum
-CREATE TYPE scorm_version AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE scorm_version AS ENUM (
   'scorm_1.2',
   'scorm_2004'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- SCORM package status
-CREATE TYPE scorm_package_status AS ENUM (
+DO $$ BEGIN
+    CREATE TYPE scorm_package_status AS ENUM (
   'uploading',
   'processing',
   'ready',
   'error'
 );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- SCORM packages table
 CREATE TABLE scorm_packages (
