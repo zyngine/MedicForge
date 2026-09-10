@@ -264,52 +264,22 @@ CREATE TABLE portfolio_shares (
 -- COURSE TEMPLATES/BLUEPRINTS
 -- =====================================================
 
--- Course templates
-CREATE TABLE course_templates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  created_by UUID NOT NULL REFERENCES users(id),
-  title TEXT NOT NULL,
-  description TEXT,
-  course_type TEXT, -- 'EMR', 'EMT', 'AEMT', 'Paramedic', 'Custom'
-  thumbnail_url TEXT,
-  is_published BOOLEAN DEFAULT false,
-  is_official BOOLEAN DEFAULT false, -- MedicForge official templates
-  usage_count INTEGER DEFAULT 0,
-  template_data JSONB NOT NULL, -- Complete course structure
-  includes_content BOOLEAN DEFAULT true,
-  includes_assignments BOOLEAN DEFAULT true,
-  includes_rubrics BOOLEAN DEFAULT true,
-  tags TEXT[],
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Course templates are owned by 20250312000003_course_templates.sql, whose
+-- definition is the one production actually has. An earlier, richer design lived
+-- here (thumbnail_url, is_published, is_official, usage_count, includes_*, tags);
+-- because the later file uses CREATE TABLE IF NOT EXISTS, creating it here first
+-- won and its policies then failed on the missing is_shared column.
 
--- Blueprint courses (linked courses that sync)
-CREATE TABLE blueprint_courses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  blueprint_course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  associated_course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  sync_content BOOLEAN DEFAULT true,
-  sync_assignments BOOLEAN DEFAULT true,
-  sync_due_dates BOOLEAN DEFAULT false,
-  last_synced_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(blueprint_course_id, associated_course_id)
-);
+-- Blueprint courses are owned by 20250312000003_course_templates.sql, whose
+-- shape (template_id, course_id, sync_enabled, sync_settings) is the one
+-- production has. The abandoned design here paired two course ids instead, and
+-- because the later file uses CREATE TABLE IF NOT EXISTS, creating it first won
+-- and its index on template_id then failed.
 
 -- Blueprint sync history
-CREATE TABLE blueprint_sync_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  blueprint_course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  synced_by UUID NOT NULL REFERENCES users(id),
-  sync_type TEXT NOT NULL, -- 'full', 'content', 'assignments'
-  items_synced INTEGER DEFAULT 0,
-  errors JSONB,
-  synced_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- blueprint_sync_history is owned by 20250312000003_course_templates.sql, whose
+-- shape (blueprint_id, changes_applied, sync_type, synced_at, synced_by) is the
+-- one production has. The version here keyed off a course id instead.
 
 -- =====================================================
 -- PREREQUISITES & RELEASE CONDITIONS
@@ -448,40 +418,14 @@ CREATE TABLE gradebook_exports (
 -- PLAGIARISM DETECTION
 -- =====================================================
 
--- Plagiarism check settings
-CREATE TABLE plagiarism_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
-  is_enabled BOOLEAN DEFAULT false,
-  check_student_papers BOOLEAN DEFAULT true, -- Compare against other students
-  check_internet BOOLEAN DEFAULT true, -- Check against internet sources
-  check_publications BOOLEAN DEFAULT false, -- Check against publications database
-  exclude_quoted BOOLEAN DEFAULT true,
-  exclude_bibliography BOOLEAN DEFAULT true,
-  exclude_small_matches INTEGER DEFAULT 10, -- Words
-  allow_resubmission BOOLEAN DEFAULT true,
-  show_report_to_students BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(assignment_id)
-);
+-- plagiarism_settings is owned by 20240320000000_plagiarism_detection.sql, which
+-- creates it per tenant and defines its policies. A per-assignment variant lived
+-- here; the two are incompatible and neither is present in production, so this
+-- one is dropped rather than left to race the other.
 
--- Plagiarism reports
-CREATE TABLE plagiarism_reports (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
-  similarity_score DECIMAL(5,2), -- Overall percentage
-  status TEXT DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'error'
-  report_url TEXT,
-  sources JSONB, -- Array of {url, title, percentage, matched_text}
-  word_count INTEGER,
-  processed_at TIMESTAMPTZ,
-  error_message TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- plagiarism_reports is owned by 20240320000000_plagiarism_detection.sql, which
+-- creates it with IF NOT EXISTS and indexes it. Re-creating it bare here aborted
+-- this migration on any database that already had it.
 
 -- =====================================================
 -- INDEXES
@@ -511,8 +455,6 @@ CREATE INDEX idx_portfolio_artifacts_section ON portfolio_artifacts(section_id);
 CREATE INDEX idx_portfolio_shares_token ON portfolio_shares(share_token);
 
 -- Templates
-CREATE INDEX idx_course_templates_tenant ON course_templates(tenant_id);
-CREATE INDEX idx_blueprint_courses_blueprint ON blueprint_courses(blueprint_course_id);
 
 -- Prerequisites
 CREATE INDEX idx_prerequisites_target ON prerequisites(target_type, target_id);
@@ -527,7 +469,6 @@ CREATE INDEX idx_daily_metrics_date ON daily_metrics(metric_date);
 CREATE INDEX idx_student_engagement_student ON student_engagement(student_id);
 
 -- Plagiarism
-CREATE INDEX idx_plagiarism_reports_submission ON plagiarism_reports(submission_id);
 
 -- =====================================================
 -- FUNCTIONS
@@ -795,8 +736,6 @@ ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio_sections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio_artifacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio_shares ENABLE ROW LEVEL SECURITY;
-ALTER TABLE course_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE blueprint_courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prerequisites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE release_conditions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_content_access ENABLE ROW LEVEL SECURITY;
@@ -805,8 +744,6 @@ ALTER TABLE daily_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_engagement ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gradebook_export_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gradebook_exports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE plagiarism_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE plagiarism_reports ENABLE ROW LEVEL SECURITY;
 
 -- Peer reviews: Reviewers see assigned, authors see received
 CREATE POLICY "View peer review assignments"

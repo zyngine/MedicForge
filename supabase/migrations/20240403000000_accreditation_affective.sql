@@ -553,6 +553,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- accreditation_documents is created by 20240314000000_accreditation_documents.sql,
+-- so the CREATE TABLE IF NOT EXISTS above is a no-op on any database that ran it
+-- and the standard_id column it declares is never added. The index below needs
+-- it, and src/lib/hooks/use-accreditation.ts reads and writes it.
+ALTER TABLE accreditation_documents
+    ADD COLUMN IF NOT EXISTS standard_id UUID REFERENCES coaemsp_standards(id);
+
 -- ============================================
 -- INDEXES
 -- ============================================

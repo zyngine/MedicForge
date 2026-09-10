@@ -75,8 +75,10 @@ $$ LANGUAGE plpgsql VOLATILE;
 -- Idempotent: generate_attendance_sessions() skips dates that already have a
 -- session for the schedule, so calling this repeatedly is cheap and safe.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION ensure_attendance_window(
-    p_local_date DATE,
+DROP FUNCTION IF EXISTS ensure_attendance_window(DATE, INT);
+
+CREATE FUNCTION ensure_attendance_window(
+    p_local_date DATE DEFAULT NULL,
     p_days INT DEFAULT 60
 )
 RETURNS INT AS $$
@@ -95,6 +97,7 @@ BEGIN
 
     -- Guard against a caller asking for an unbounded window.
     p_days := LEAST(GREATEST(COALESCE(p_days, 60), 1), 365);
+    p_local_date := COALESCE(p_local_date, (now() AT TIME ZONE 'UTC')::DATE);
 
     FOR v_program_id IN
         SELECT DISTINCT program_id
@@ -123,9 +126,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- already has a code is skipped by the ON CONFLICT, which is what makes this
 -- safe to call from every page load and from several instructors at once.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION auto_open_due_sessions(
-    p_local_date DATE,
-    p_local_time TIME,
+DROP FUNCTION IF EXISTS auto_open_due_sessions(DATE, TIME, INT);
+
+CREATE FUNCTION auto_open_due_sessions(
+    p_local_date DATE DEFAULT NULL,
+    p_local_time TIME DEFAULT NULL,
     p_lead_minutes INT DEFAULT 15
 )
 -- The OUT columns are deliberately prefixed: a plain "session_id" here would
@@ -149,6 +154,11 @@ BEGIN
     END IF;
 
     p_lead_minutes := LEAST(GREATEST(COALESCE(p_lead_minutes, 15), 0), 120);
+
+    -- 20260910000002_tenant_timezone.sql supersedes these two arguments with the
+    -- tenant's own timezone; until then a caller must supply them.
+    p_local_date := COALESCE(p_local_date, (now() AT TIME ZONE 'UTC')::DATE);
+    p_local_time := COALESCE(p_local_time, (now() AT TIME ZONE 'UTC')::TIME);
 
     RETURN QUERY
     WITH due AS (
@@ -203,10 +213,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- partway through itself in any timezone behind UTC. This overload takes the
 -- date from the caller. The old signature is left alone so nothing breaks.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_todays_sessions(
+DROP FUNCTION IF EXISTS get_todays_sessions(UUID, UUID, DATE);
+
+CREATE FUNCTION get_todays_sessions(
     p_tenant_id UUID,
     p_instructor_id UUID,
-    p_local_date DATE
+    p_local_date DATE DEFAULT NULL
 ) RETURNS TABLE (
     id UUID,
     title TEXT,
@@ -221,6 +233,8 @@ CREATE OR REPLACE FUNCTION get_todays_sessions(
     check_in_count BIGINT,
     has_active_code BOOLEAN
 ) AS $$
+DECLARE
+    v_date DATE := COALESCE(p_local_date, (now() AT TIME ZONE 'UTC')::DATE);
 BEGIN
     RETURN QUERY
     SELECT
@@ -242,7 +256,7 @@ BEGIN
     FROM attendance_sessions s
     LEFT JOIN cohorts c ON c.id = s.program_id
     WHERE s.tenant_id = p_tenant_id
-      AND s.scheduled_date = p_local_date
+      AND s.scheduled_date = v_date
       AND (p_instructor_id IS NULL OR s.created_by = p_instructor_id OR c.id IN (
           SELECT DISTINCT co.id FROM cohorts co
           JOIN cohort_courses cc ON cc.cohort_id = co.id

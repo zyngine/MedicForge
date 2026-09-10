@@ -26,10 +26,19 @@ CREATE TABLE IF NOT EXISTS plagiarism_checks (
 );
 
 -- Add unique constraint if not exists
+-- A clashing UNIQUE constraint reports as duplicate_table, not duplicate_object,
+-- because the failure is on the backing index name. Check first instead of
+-- guessing which SQLSTATE comes back.
 DO $$ BEGIN
-  ALTER TABLE plagiarism_checks ADD CONSTRAINT plagiarism_checks_submission_id_key UNIQUE(submission_id);
-EXCEPTION
-  WHEN duplicate_object THEN null;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'plagiarism_checks_submission_id_key'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM pg_class WHERE relname = 'plagiarism_checks_submission_id_key'
+  ) THEN
+    ALTER TABLE plagiarism_checks
+      ADD CONSTRAINT plagiarism_checks_submission_id_key UNIQUE(submission_id);
+  END IF;
 END $$;
 
 -- Plagiarism sources table

@@ -129,5 +129,89 @@ BEGIN
     END IF;
 END $$;
 
+-- ---------------------------------------------------------------------------
+-- attendance_sessions.course_id must be nullable.
+--
+-- generate_attendance_sessions() (20250227000003_program_schedules.sql) inserts
+-- NULL here on purpose — a pre-scheduled class belongs to a program (a cohort),
+-- not to one course, and the function says so in a comment: "No specific course".
+-- But 20240315000000 declares the column NOT NULL, and production has it NOT NULL
+-- too, so that insert has always failed with a not-null violation. The
+-- "Generate sessions" action never created anything, in any environment.
+--
+-- Attendance for a specific course still sets course_id; the ad-hoc "Start
+-- Attendance" path always has one. Only program-level generated sessions leave it
+-- empty, which is what program_id is for.
+--
+-- After this, attendance_sessions.course_id is nullable, so
+-- src/types/database.types.ts should be regenerated — it currently types the
+-- column as non-null.
+-- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'attendance_sessions'
+          AND column_name = 'course_id'
+          AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE attendance_sessions ALTER COLUMN course_id DROP NOT NULL;
+    END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- Columns production stores as text where the migrations declare an enum.
+--
+-- Production has attendance_sessions.session_type, attendance_records.status and
+-- plagiarism_checks.status as plain text — the session_type enum does not exist
+-- there at all. A rebuild made them enums instead, which breaks real code:
+--
+--   * generate_attendance_sessions() copies program_schedules.session_type (text)
+--     into attendance_sessions.session_type, which fails against an enum
+--   * get_todays_sessions() declares session_type TEXT in its RETURNS TABLE, so
+--     an enum column fails the result-type check
+--   * the attendance UI offers statuses ("left_early", "virtual") that a strict
+--     enum rejects
+--
+-- Widening an enum column to text never loses data, and it makes a rebuilt
+-- database behave like production. The enum types themselves are left in place —
+-- other tables still use them.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT * FROM (VALUES
+            ('attendance_sessions', 'session_type'),
+            ('attendance_records',  'status'),
+            ('plagiarism_checks',   'status')
+        ) AS t(tbl, col)
+    LOOP
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = r.tbl
+              AND column_name = r.col
+              AND data_type = 'USER-DEFINED'
+        ) THEN
+            -- Drop the default first: it is an enum literal and cannot survive
+            -- the type change.
+            EXECUTE format('ALTER TABLE %I ALTER COLUMN %I DROP DEFAULT', r.tbl, r.col);
+            EXECUTE format('ALTER TABLE %I ALTER COLUMN %I TYPE TEXT USING %I::TEXT', r.tbl, r.col, r.col);
+            RAISE NOTICE 'Widened %.% from enum to text to match production', r.tbl, r.col;
+        END IF;
+    END LOOP;
+END $$;
+
+-- Restore the defaults the original declarations intended, now as text.
+DO $$
+BEGIN
+    ALTER TABLE attendance_sessions ALTER COLUMN session_type SET DEFAULT 'lecture';
+    ALTER TABLE attendance_records ALTER COLUMN status SET DEFAULT 'absent';
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_attendance_sessions_tenant_date
     ON attendance_sessions (tenant_id, scheduled_date);

@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS standardized_exam_templates (
   security_level exam_security_level NOT NULL DEFAULT 'medium',
 
   -- Question configuration
-  total_questions INTEGER NOT NULL DEFAULT 100,
+  -- Nullable on purpose: an adaptive exam has no fixed length, and the seed rows
+  -- below pass NULL for it. Production has this column nullable; declaring it
+  -- NOT NULL here made this migration abort on its own seed data.
+  total_questions INTEGER DEFAULT 100,
   min_questions INTEGER, -- For CAT: minimum questions
   max_questions INTEGER, -- For CAT: maximum questions
   time_limit_minutes INTEGER,
@@ -785,3 +788,12 @@ COMMENT ON FUNCTION select_next_cat_question IS 'Select optimal next question fo
 COMMENT ON FUNCTION update_cat_theta IS 'Update ability estimate after CAT response';
 COMMENT ON FUNCTION should_terminate_cat IS 'Check if CAT exam should terminate';
 COMMENT ON FUNCTION calculate_exam_result IS 'Calculate final exam results with category scores';
+
+-- Databases that ran an earlier version of this file have the NOT NULL still in
+-- place, which blocks the adaptive templates above and in
+-- 20250211110000_aemt_exam_templates.sql.
+DO $$
+BEGIN
+    ALTER TABLE standardized_exam_templates ALTER COLUMN total_questions DROP NOT NULL;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL;
+END $$;

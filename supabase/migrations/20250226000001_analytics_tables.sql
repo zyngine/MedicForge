@@ -124,6 +124,12 @@ CREATE POLICY "Admins can view all events" ON analytics_events
   );
 
 -- Function to calculate engagement score
+-- 20240406000000_phase3_peer_review_analytics.sql declares this same signature
+-- returning DECIMAL. CREATE OR REPLACE cannot change a function's return type, so
+-- drop the old one first. INTEGER is the intended result — the score is a whole
+-- number capped at 100.
+DROP FUNCTION IF EXISTS calculate_engagement_score(UUID, UUID, DATE);
+
 CREATE OR REPLACE FUNCTION calculate_engagement_score(
   p_student_id UUID,
   p_course_id UUID,

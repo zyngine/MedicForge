@@ -31,22 +31,6 @@ CREATE POLICY "Agency admins manage own custom materials"
     AND agency_id = get_ce_user_agency_id()
   );
 
-DROP POLICY IF EXISTS "Agency users view assigned custom materials" ON ce_custom_materials;
-CREATE POLICY "Agency users view assigned custom materials"
-  ON ce_custom_materials FOR SELECT
-  USING (
-    agency_id = get_ce_user_agency_id()
-    AND EXISTS (
-      SELECT 1 FROM ce_custom_assignments a
-      WHERE a.material_id = ce_custom_materials.id
-        AND (
-          (a.target_type = 'all_agency')
-          OR (a.target_type = 'user' AND a.target_value = (SELECT auth.uid())::text)
-          OR (a.target_type = 'certification' AND a.target_value = (SELECT certification_level FROM ce_users WHERE id = (SELECT auth.uid())))
-        )
-    )
-  );
-
 -- Quizzes
 CREATE TABLE IF NOT EXISTS ce_custom_quizzes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,6 +83,26 @@ CREATE TABLE IF NOT EXISTS ce_custom_assignments (
 CREATE INDEX IF NOT EXISTS idx_ce_custom_assignments_material ON ce_custom_assignments(material_id);
 CREATE INDEX IF NOT EXISTS idx_ce_custom_assignments_target ON ce_custom_assignments(target_type, target_value);
 ALTER TABLE ce_custom_assignments ENABLE ROW LEVEL SECURITY;
+
+-- Defined here rather than beside the other ce_custom_materials policies: it
+-- reads ce_custom_assignments, which is created just above. Declaring it earlier
+-- made the whole migration fail on a database being built from scratch.
+DROP POLICY IF EXISTS "Agency users view assigned custom materials" ON ce_custom_materials;
+CREATE POLICY "Agency users view assigned custom materials"
+  ON ce_custom_materials FOR SELECT
+  USING (
+    agency_id = get_ce_user_agency_id()
+    AND EXISTS (
+      SELECT 1 FROM ce_custom_assignments a
+      WHERE a.material_id = ce_custom_materials.id
+        AND (
+          (a.target_type = 'all_agency')
+          OR (a.target_type = 'user' AND a.target_value = (SELECT auth.uid())::text)
+          OR (a.target_type = 'certification' AND a.target_value = (SELECT certification_level FROM ce_users WHERE id = (SELECT auth.uid())))
+        )
+    )
+  );
+
 
 DROP POLICY IF EXISTS "CE admins manage all assignments" ON ce_custom_assignments;
 CREATE POLICY "CE admins manage all assignments"
