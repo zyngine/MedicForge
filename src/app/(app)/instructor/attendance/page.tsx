@@ -29,11 +29,17 @@ import {
   CalendarDays,
   Play,
   MapPin,
+  Zap,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
-import { useTodaysSessions, formatTimeDisplay, getSessionTypeLabel } from "@/lib/hooks/use-program-schedules";
+import {
+  useTodaysSessions,
+  useAttendanceAutoOpen,
+  formatTimeDisplay,
+  getSessionTypeLabel,
+} from "@/lib/hooks/use-program-schedules";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
@@ -381,6 +387,9 @@ export default function InstructorAttendancePage() {
   const startMutation = useStartAttendance();
   const openScheduledSession = useOpenScheduledSession();
   const [openingSessionId, setOpeningSessionId] = React.useState<string | null>(null);
+  // Tops up the rolling window of generated sessions and opens any scheduled
+  // class whose start time has arrived.
+  const { autoOpened, dismiss: dismissAutoOpened } = useAttendanceAutoOpen();
   const endMutation = useEndAttendance();
 
   const [showStartModal, setShowStartModal] = React.useState(false);
@@ -456,6 +465,34 @@ export default function InstructorAttendancePage() {
         )}
       </div>
 
+      {/* What auto-open just did, so it is never a silent change */}
+      {autoOpened.length > 0 && (
+        <Card className="border-success bg-success/5">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Zap className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">
+                    {autoOpened.length === 1
+                      ? "Attendance opened automatically"
+                      : `${autoOpened.length} classes opened automatically`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {autoOpened
+                      .map((s) => `${s.opened_title} (code ${s.opened_code})`)
+                      .join(", ")}
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={dismissAutoOpened}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Today's Scheduled Classes */}
       {!todaysLoading && todaysSessions.length > 0 && (
         <Card>
@@ -465,7 +502,8 @@ export default function InstructorAttendancePage() {
               Today&apos;s Scheduled Classes
             </CardTitle>
             <CardDescription>
-              Pre-scheduled sessions for today. Click &quot;Start&quot; to begin taking attendance.
+              Classes open on their own once the start time is near. Use
+              &quot;Start Attendance&quot; to open one early.
             </CardDescription>
           </CardHeader>
           <CardContent>

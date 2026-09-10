@@ -1,9 +1,11 @@
 "use client";
 
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
 import { useUser } from "./use-user";
+import { localDateString, localTimeString } from "@/lib/utils";
 
 // Helper to get supabase client with type assertion for tables not in generated types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -356,9 +358,14 @@ export function useTodaysSessions() {
 
       const supabase = getDb();
 
+      // Pass our own calendar date. The two-argument form of this function
+      // filters on CURRENT_DATE, which is the server's UTC date — an evening
+      // class drops off the list partway through itself in any timezone behind
+      // UTC, which is precisely the class night this list is for.
       const { data, error } = await supabase.rpc("get_todays_sessions", {
         p_tenant_id: tenant.id,
         p_instructor_id: user?.id || null,
+        p_local_date: localDateString(),
       });
 
       if (error) throw error;
@@ -445,4 +452,94 @@ export function groupSchedulesByDay(schedules: ProgramSchedule[]) {
   });
 
   return grouped;
+}
+
+// ========== Rolling window + auto-open ==========
+
+export interface AutoOpenedSession {
+  opened_session_id: string;
+  opened_title: string;
+  opened_code: string;
+  opened_expires_at: string;
+}
+
+/**
+ * Keep attendance running itself on a class night.
+ *
+ * Two RPCs, run once when the attendance page mounts:
+ *
+ *   ensure_attendance_window  tops the rolling window of generated sessions back
+ *                             up, so there is always a session for tonight even
+ *                             if nobody has run the generator in months.
+ *
+ *   auto_open_due_sessions    creates the check-in code for any scheduled class
+ *                             whose start time has arrived (with a lead), and
+ *                             moves it to in_progress.
+ *
+ * Both are idempotent and both derive the tenant from the signed-in user, so
+ * calling them on every visit is safe. This deliberately does not run on the
+ * 30-second poll: opening is a write, and once per visit is enough.
+ *
+ * The trade-off of doing this lazily rather than on a cron: check-in is never
+ * live with nobody around, but if no instructor opens the page the class is not
+ * opened either. The one-tap Start button remains for that case.
+ */
+export function useAttendanceAutoOpen(options?: { leadMinutes?: number; windowDays?: number }) {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  const leadMinutes = options?.leadMinutes ?? 15;
+  const windowDays = options?.windowDays ?? 60;
+
+  const [autoOpened, setAutoOpened] = React.useState<AutoOpenedSession[]>([]);
+  const hasRunRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!tenant?.id || !user?.id || hasRunRef.current) return;
+    hasRunRef.current = true;
+
+    let cancelled = false;
+
+    (async () => {
+      const supabase = getDb();
+      const today = localDateString();
+
+      // Top up the window first — auto-open has nothing to open otherwise.
+      const { error: windowError } = await supabase.rpc("ensure_attendance_window", {
+        p_local_date: today,
+        p_days: windowDays,
+      });
+      if (windowError) {
+        console.warn("[attendance] Could not top up the session window:", windowError.message);
+      }
+
+      const { data, error } = await supabase.rpc("auto_open_due_sessions", {
+        p_local_date: today,
+        p_local_time: localTimeString(),
+        p_lead_minutes: leadMinutes,
+      });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.warn("[attendance] Could not auto-open scheduled classes:", error.message);
+        return;
+      }
+
+      const opened = (data || []) as AutoOpenedSession[];
+      if (opened.length > 0) {
+        setAutoOpened(opened);
+        queryClient.invalidateQueries({ queryKey: ["todays-sessions"] });
+        queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+        queryClient.invalidateQueries({ queryKey: ["program-sessions"] });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant?.id, user?.id, leadMinutes, windowDays, queryClient]);
+
+  return { autoOpened, dismiss: () => setAutoOpened([]) };
 }

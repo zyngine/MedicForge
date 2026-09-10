@@ -12,6 +12,8 @@ import {
   isValidEmail,
   groupBy,
   generateEnrollmentCode,
+  localDateString,
+  localTimeString,
 } from "@/lib/utils";
 
 describe("slugify", () => {
@@ -186,5 +188,27 @@ describe("generateEnrollmentCode", () => {
     const allowed = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$/;
     const code = generateEnrollmentCode();
     expect(code).toMatch(allowed);
+  });
+});
+
+describe("localDateString / localTimeString", () => {
+  it("uses the local calendar date, not the UTC one", () => {
+    // 2026-09-16 21:30 local. toISOString() would report 2026-09-17 for any
+    // timezone behind UTC, which is the bug these helpers exist to avoid.
+    const evening = new Date(2026, 8, 16, 21, 30, 0);
+    expect(localDateString(evening)).toBe("2026-09-16");
+    expect(localTimeString(evening)).toBe("21:30");
+  });
+
+  it("zero-pads months, days, hours and minutes", () => {
+    const d = new Date(2026, 0, 5, 9, 7, 0);
+    expect(localDateString(d)).toBe("2026-01-05");
+    expect(localTimeString(d)).toBe("09:07");
+  });
+
+  it("reports midnight as the new day, not the previous one", () => {
+    const midnight = new Date(2026, 8, 17, 0, 5, 0);
+    expect(localDateString(midnight)).toBe("2026-09-17");
+    expect(localTimeString(midnight)).toBe("00:05");
   });
 });

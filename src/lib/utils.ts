@@ -39,6 +39,25 @@ export function formatRelativeTime(date: Date | string): string {
   return formatDate(date);
 }
 
+/**
+ * The viewer's own calendar date as YYYY-MM-DD.
+ *
+ * Not `toISOString().split("T")[0]` — that is the UTC date, which is a day ahead
+ * for any evening in a timezone behind UTC. An 8pm class in US Central is
+ * already "tomorrow" in UTC, so a UTC date makes the class disappear from
+ * today's schedule partway through itself.
+ */
+export function localDateString(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** The viewer's own wall-clock time as HH:MM, for comparing against a stored TIME. */
+export function localTimeString(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export function generateEnrollmentCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
