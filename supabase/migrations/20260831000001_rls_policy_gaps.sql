@@ -15,7 +15,16 @@
 --
 -- Every table below carries tenant_id, so the policies reuse the existing
 -- get_user_tenant_id() / get_user_role() SECURITY DEFINER helpers.
--- All statements are idempotent.
+-- All statements are idempotent, and every one is guarded on the table actually
+-- existing. That guard is not theoretical: the migration ledger records
+-- 20240405000000_phase2_video_study_tools and
+-- 20240406000000_phase3_peer_review_analytics as applied, but 26 of the tables
+-- they declare are absent from production — flashcards, podcasts, LTI, peer
+-- review, practice exams, breakout rooms, moderated grading, SpeedGrader
+-- annotations, prerequisites and release conditions among them. Those features
+-- have no tables at all in the live database, so there is nothing to add a policy
+-- to; without the guards this migration would abort on the first one and leave
+-- the rest of the policies unapplied.
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -40,6 +49,7 @@ DECLARE
     ];
 BEGIN
     FOREACH t IN ARRAY staff_tables LOOP
+        CONTINUE WHEN to_regclass('public.' || quote_ident(t)) IS NULL;
         EXECUTE format(
             'DROP POLICY IF EXISTS "Tenant members can view %1$s" ON %1$I', t);
         EXECUTE format(
@@ -79,6 +89,7 @@ DECLARE
     ];
 BEGIN
     FOREACH t IN ARRAY staff_only_tables LOOP
+        CONTINUE WHEN to_regclass('public.' || quote_ident(t)) IS NULL;
         EXECUTE format(
             'DROP POLICY IF EXISTS "Staff manage %1$s" ON %1$I', t);
         EXECUTE format(
@@ -112,6 +123,7 @@ BEGIN
     FOR i IN 1 .. array_length(owned_tables, 1) LOOP
         t := owned_tables[i][1];
         owner_col := owned_tables[i][2];
+        CONTINUE WHEN to_regclass('public.' || quote_ident(t)) IS NULL;
 
         EXECUTE format(
             'DROP POLICY IF EXISTS "Users manage own %1$s" ON %1$I', t);
@@ -141,33 +153,38 @@ END $$;
 
 -- practice_exam_questions: rows belong to a practice_exam_sessions row, which
 -- already carries the owning user.
-DROP POLICY IF EXISTS "Users manage own practice exam questions" ON practice_exam_questions;
-CREATE POLICY "Users manage own practice exam questions"
-    ON practice_exam_questions FOR ALL
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM practice_exam_sessions s
-            WHERE s.id = practice_exam_questions.session_id
-              AND s.user_id = auth.uid()
+DO $$
+BEGIN
+IF to_regclass('public.practice_exam_questions') IS NOT NULL AND to_regclass('public.practice_exam_sessions') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Users manage own practice exam questions" ON practice_exam_questions;
+    CREATE POLICY "Users manage own practice exam questions"
+        ON practice_exam_questions FOR ALL
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM practice_exam_sessions s
+                WHERE s.id = practice_exam_questions.session_id
+                  AND s.user_id = auth.uid()
+            )
         )
-    )
-    WITH CHECK (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM practice_exam_sessions s
-            WHERE s.id = practice_exam_questions.session_id
-              AND s.user_id = auth.uid()
-        )
-    );
+        WITH CHECK (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM practice_exam_sessions s
+                WHERE s.id = practice_exam_questions.session_id
+                  AND s.user_id = auth.uid()
+            )
+        );
 
-DROP POLICY IF EXISTS "Staff view practice exam questions" ON practice_exam_questions;
-CREATE POLICY "Staff view practice exam questions"
-    ON practice_exam_questions FOR SELECT
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND get_user_role() IN ('admin', 'instructor')
-    );
+    DROP POLICY IF EXISTS "Staff view practice exam questions" ON practice_exam_questions;
+    CREATE POLICY "Staff view practice exam questions"
+        ON practice_exam_questions FOR SELECT
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND get_user_role() IN ('admin', 'instructor')
+        );
+END IF;
+END $$;
 
 -- Portfolios: sections, artifacts and shares hang off a portfolio row. Owners
 -- manage their own; staff in the tenant can read.
@@ -180,6 +197,7 @@ DECLARE
     ];
 BEGIN
     FOREACH t IN ARRAY portfolio_tables LOOP
+        CONTINUE WHEN to_regclass('public.' || quote_ident(t)) IS NULL;
         EXECUTE format(
             'DROP POLICY IF EXISTS "Owners manage %1$s" ON %1$I', t);
         EXECUTE format(
@@ -211,81 +229,91 @@ BEGIN
 END $$;
 
 -- portfolio_artifacts is nested one level deeper (section -> portfolio).
-DROP POLICY IF EXISTS "Owners manage portfolio_artifacts" ON portfolio_artifacts;
-CREATE POLICY "Owners manage portfolio_artifacts"
-    ON portfolio_artifacts FOR ALL
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM portfolio_sections ps
-            JOIN portfolios p ON p.id = ps.portfolio_id
-            WHERE ps.id = portfolio_artifacts.section_id
-              AND p.owner_id = auth.uid()
+DO $$
+BEGIN
+IF to_regclass('public.portfolio_artifacts') IS NOT NULL AND to_regclass('public.portfolio_sections') IS NOT NULL AND to_regclass('public.portfolios') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Owners manage portfolio_artifacts" ON portfolio_artifacts;
+    CREATE POLICY "Owners manage portfolio_artifacts"
+        ON portfolio_artifacts FOR ALL
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM portfolio_sections ps
+                JOIN portfolios p ON p.id = ps.portfolio_id
+                WHERE ps.id = portfolio_artifacts.section_id
+                  AND p.owner_id = auth.uid()
+            )
         )
-    )
-    WITH CHECK (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM portfolio_sections ps
-            JOIN portfolios p ON p.id = ps.portfolio_id
-            WHERE ps.id = portfolio_artifacts.section_id
-              AND p.owner_id = auth.uid()
-        )
-    );
+        WITH CHECK (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM portfolio_sections ps
+                JOIN portfolios p ON p.id = ps.portfolio_id
+                WHERE ps.id = portfolio_artifacts.section_id
+                  AND p.owner_id = auth.uid()
+            )
+        );
 
-DROP POLICY IF EXISTS "Staff view portfolio_artifacts" ON portfolio_artifacts;
-CREATE POLICY "Staff view portfolio_artifacts"
-    ON portfolio_artifacts FOR SELECT
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND get_user_role() IN ('admin', 'instructor')
-    );
+    DROP POLICY IF EXISTS "Staff view portfolio_artifacts" ON portfolio_artifacts;
+    CREATE POLICY "Staff view portfolio_artifacts"
+        ON portfolio_artifacts FOR SELECT
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND get_user_role() IN ('admin', 'instructor')
+        );
+END IF;
+END $$;
 
 -- peer_reviews: the reviewer writes, staff read. Pair membership decides who
 -- may see a submitted review.
-DROP POLICY IF EXISTS "Reviewers manage own peer_reviews" ON peer_reviews;
-CREATE POLICY "Reviewers manage own peer_reviews"
-    ON peer_reviews FOR ALL
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM peer_review_pairs pr
-            WHERE pr.id = peer_reviews.peer_review_pair_id
-              AND pr.reviewer_id = auth.uid()
+DO $$
+BEGIN
+IF to_regclass('public.peer_reviews') IS NOT NULL AND to_regclass('public.peer_review_pairs') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Reviewers manage own peer_reviews" ON peer_reviews;
+    CREATE POLICY "Reviewers manage own peer_reviews"
+        ON peer_reviews FOR ALL
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM peer_review_pairs pr
+                WHERE pr.id = peer_reviews.peer_review_pair_id
+                  AND pr.reviewer_id = auth.uid()
+            )
         )
-    )
-    WITH CHECK (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM peer_review_pairs pr
-            WHERE pr.id = peer_reviews.peer_review_pair_id
-              AND pr.reviewer_id = auth.uid()
-        )
-    );
+        WITH CHECK (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM peer_review_pairs pr
+                WHERE pr.id = peer_reviews.peer_review_pair_id
+                  AND pr.reviewer_id = auth.uid()
+            )
+        );
 
-DROP POLICY IF EXISTS "Authors view peer_reviews" ON peer_reviews;
-CREATE POLICY "Authors view peer_reviews"
-    ON peer_reviews FOR SELECT
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND EXISTS (
-            SELECT 1 FROM peer_review_pairs pr
-            WHERE pr.id = peer_reviews.peer_review_pair_id
-              AND pr.author_id = auth.uid()
-        )
-    );
+    DROP POLICY IF EXISTS "Authors view peer_reviews" ON peer_reviews;
+    CREATE POLICY "Authors view peer_reviews"
+        ON peer_reviews FOR SELECT
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND EXISTS (
+                SELECT 1 FROM peer_review_pairs pr
+                WHERE pr.id = peer_reviews.peer_review_pair_id
+                  AND pr.author_id = auth.uid()
+            )
+        );
 
-DROP POLICY IF EXISTS "Staff manage peer_reviews" ON peer_reviews;
-CREATE POLICY "Staff manage peer_reviews"
-    ON peer_reviews FOR ALL
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND get_user_role() IN ('admin', 'instructor')
-    )
-    WITH CHECK (
-        tenant_id = get_user_tenant_id()
-        AND get_user_role() IN ('admin', 'instructor')
-    );
+    DROP POLICY IF EXISTS "Staff manage peer_reviews" ON peer_reviews;
+    CREATE POLICY "Staff manage peer_reviews"
+        ON peer_reviews FOR ALL
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND get_user_role() IN ('admin', 'instructor')
+        )
+        WITH CHECK (
+            tenant_id = get_user_tenant_id()
+            AND get_user_role() IN ('admin', 'instructor')
+        );
+END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- 2. Tables created without RLS enabled at all
@@ -293,37 +321,54 @@ CREATE POLICY "Staff manage peer_reviews"
 
 -- api_request_logs carries tenant_id, IP addresses and user agents and was
 -- readable by any anon PostgREST caller.
-ALTER TABLE api_request_logs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins view own tenant api logs" ON api_request_logs;
-CREATE POLICY "Admins view own tenant api logs"
-    ON api_request_logs FOR SELECT
-    USING (
-        tenant_id = get_user_tenant_id()
-        AND get_user_role() = 'admin'
-    );
+DO $$
+BEGIN
+IF to_regclass('public.api_request_logs') IS NOT NULL THEN
+    ALTER TABLE api_request_logs ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Admins view own tenant api logs" ON api_request_logs;
+    CREATE POLICY "Admins view own tenant api logs"
+        ON api_request_logs FOR SELECT
+        USING (
+            tenant_id = get_user_tenant_id()
+            AND get_user_role() = 'admin'
+        );
 
--- Shared reference data: readable by any signed-in user, writable only by
--- platform admins (the seed scripts use the service role and bypass RLS).
-ALTER TABLE nremt_categories ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Signed-in users read nremt_categories" ON nremt_categories;
-CREATE POLICY "Signed-in users read nremt_categories"
-    ON nremt_categories FOR SELECT
-    USING (auth.uid() IS NOT NULL);
+    -- Shared reference data: readable by any signed-in user, writable only by
+    -- platform admins (the seed scripts use the service role and bypass RLS).
+END IF;
+END $$;
 
-DROP POLICY IF EXISTS "Platform admins manage nremt_categories" ON nremt_categories;
-CREATE POLICY "Platform admins manage nremt_categories"
-    ON nremt_categories FOR ALL
-    USING (is_platform_admin())
-    WITH CHECK (is_platform_admin());
+DO $$
+BEGIN
+IF to_regclass('public.nremt_categories') IS NOT NULL THEN
+    ALTER TABLE nremt_categories ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Signed-in users read nremt_categories" ON nremt_categories;
+    CREATE POLICY "Signed-in users read nremt_categories"
+        ON nremt_categories FOR SELECT
+        USING (auth.uid() IS NOT NULL);
 
-ALTER TABLE standardized_question_tags ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Signed-in users read standardized_question_tags" ON standardized_question_tags;
-CREATE POLICY "Signed-in users read standardized_question_tags"
-    ON standardized_question_tags FOR SELECT
-    USING (auth.uid() IS NOT NULL);
+    DROP POLICY IF EXISTS "Platform admins manage nremt_categories" ON nremt_categories;
+    CREATE POLICY "Platform admins manage nremt_categories"
+        ON nremt_categories FOR ALL
+        USING (is_platform_admin())
+        WITH CHECK (is_platform_admin());
+END IF;
+END $$;
 
-DROP POLICY IF EXISTS "Platform admins manage standardized_question_tags" ON standardized_question_tags;
-CREATE POLICY "Platform admins manage standardized_question_tags"
-    ON standardized_question_tags FOR ALL
-    USING (is_platform_admin())
-    WITH CHECK (is_platform_admin());
+DO $$
+BEGIN
+IF to_regclass('public.standardized_question_tags') IS NOT NULL THEN
+    ALTER TABLE standardized_question_tags ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Signed-in users read standardized_question_tags" ON standardized_question_tags;
+    CREATE POLICY "Signed-in users read standardized_question_tags"
+        ON standardized_question_tags FOR SELECT
+        USING (auth.uid() IS NOT NULL);
+
+    DROP POLICY IF EXISTS "Platform admins manage standardized_question_tags" ON standardized_question_tags;
+    CREATE POLICY "Platform admins manage standardized_question_tags"
+        ON standardized_question_tags FOR ALL
+        USING (is_platform_admin())
+        WITH CHECK (is_platform_admin());
+END IF;
+END $$;
+
