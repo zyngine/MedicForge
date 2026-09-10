@@ -119,11 +119,12 @@ function useAttendanceSessionsWithCodes() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sessions || []).map(async (session: any) => {
           // Get check-in code
+          // Most sessions have no code yet, and .single() errors on zero rows.
           const { data: codeData } = await supabase
             .from("attendance_check_in_codes")
             .select("code, expires_at")
             .eq("session_id", session.id)
-            .single();
+            .maybeSingle();
 
           // Get record count
           const { count } = await supabase
@@ -205,6 +206,67 @@ function useStartAttendance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+    },
+  });
+}
+
+// Hook to open a pre-scheduled session for check-in.
+//
+// The "Start Attendance" button on a scheduled class used to pre-fill the
+// ad-hoc modal, which created a brand new session with no program_id or
+// schedule_id. The scheduled session stayed at "scheduled" forever (so it kept
+// offering to start), and the check-ins landed on the duplicate — leaving the
+// program's own session showing zero attendance.
+function useOpenScheduledSession() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (session: {
+      id: string;
+      scheduled_date: string;
+      end_time: string;
+    }) => {
+      if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
+
+      const supabase = getDb();
+
+      // The code should last until the class ends. If that moment has already
+      // passed (a late start), give it an hour from now instead.
+      const scheduledEnd = new Date(`${session.scheduled_date}T${session.end_time}`);
+      const expiresAt =
+        Number.isFinite(scheduledEnd.getTime()) && scheduledEnd > new Date()
+          ? scheduledEnd
+          : new Date(Date.now() + 60 * 60 * 1000);
+
+      const code = generateCode();
+
+      const { error: codeError } = await supabase
+        .from("attendance_check_in_codes")
+        .insert({
+          session_id: session.id,
+          tenant_id: tenant.id,
+          code,
+          expires_at: expiresAt.toISOString(),
+          created_by: user.id,
+        });
+
+      if (codeError) throw codeError;
+
+      const { error: statusError } = await supabase
+        .from("attendance_sessions")
+        .update({ session_status: "in_progress" })
+        .eq("id", session.id)
+        .eq("tenant_id", tenant.id);
+
+      if (statusError) throw statusError;
+
+      return { sessionId: session.id, code, expiresAt: expiresAt.toISOString() };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["todays-sessions"] });
     },
   });
 }
@@ -317,6 +379,8 @@ export default function InstructorAttendancePage() {
   const { data: courses = [] } = useInstructorCourses();
   const { data: todaysSessions = [], isLoading: todaysLoading } = useTodaysSessions();
   const startMutation = useStartAttendance();
+  const openScheduledSession = useOpenScheduledSession();
+  const [openingSessionId, setOpeningSessionId] = React.useState<string | null>(null);
   const endMutation = useEndAttendance();
 
   const [showStartModal, setShowStartModal] = React.useState(false);
@@ -444,10 +508,19 @@ export default function InstructorAttendancePage() {
                     ) : (
                       <Button
                         size="sm"
+                        isLoading={
+                          openScheduledSession.isPending &&
+                          openingSessionId === ts.id
+                        }
                         onClick={() => {
-                          // Pre-fill the start modal with session details
-                          setTitle(ts.title);
-                          setShowStartModal(true);
+                          // Open THIS session rather than creating a new one, so
+                          // check-ins are recorded against the scheduled class.
+                          setOpeningSessionId(ts.id);
+                          openScheduledSession.mutate({
+                            id: ts.id,
+                            scheduled_date: ts.scheduled_date,
+                            end_time: ts.end_time,
+                          });
                         }}
                       >
                         <Play className="h-4 w-4 mr-2" />
