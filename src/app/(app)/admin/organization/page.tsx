@@ -12,11 +12,18 @@ import {
   Label,
   Alert,
   Spinner,
+  Select,
 } from "@/components/ui";
-import { Building2, Save } from "lucide-react";
+import { Building2, Save, Clock } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import {
+  US_TIMEZONES,
+  timezoneForState,
+  isSplitTimezoneState,
+  timeInZone,
+} from "@/lib/timezones";
 
 export default function OrganizationPage() {
   const { tenant, isLoading: tenantLoading, error: tenantError, refetch } = useTenant();
@@ -34,6 +41,7 @@ export default function OrganizationPage() {
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [website, setWebsite] = useState("");
+  const [timezone, setTimezone] = useState("");
 
   // Initialize form with tenant data
   useEffect(() => {
@@ -48,6 +56,9 @@ export default function OrganizationPage() {
       setState(settings.state || "");
       setZipCode(settings.zip_code || "");
       setWebsite(settings.website || "");
+      // Fall back to the zone the state implies, so an organization that has
+      // never set one still sees a sensible value rather than a blank.
+      setTimezone(tenant.timezone || timezoneForState(settings.state) || "");
     }
   }, [tenant]);
 
@@ -84,6 +95,7 @@ export default function OrganizationPage() {
         .update({
           name: name.trim(),
           settings: updatedSettings,
+          timezone: timezone || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", tenant.id);
@@ -276,6 +288,50 @@ export default function OrganizationPage() {
                 placeholder="12345"
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Timezone */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Time Zone
+          </CardTitle>
+          <CardDescription>
+            Class schedules are stored as a date and a wall-clock time, so this is
+            what decides when a class night starts and ends. Attendance opens
+            itself against this zone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Time zone</Label>
+            <Select
+              id="timezone"
+              options={[...US_TIMEZONES]}
+              value={timezone}
+              onChange={setTimezone}
+              placeholder="Select a time zone"
+            />
+            {timezone && timeInZone(timezone) && (
+              <p className="text-xs text-muted-foreground">
+                It is currently {timeInZone(timezone)} there.
+              </p>
+            )}
+            {!timezone && (
+              <p className="text-xs text-muted-foreground">
+                Not set. Until you choose one, class nights follow whatever time
+                zone each person&apos;s own device is in.
+              </p>
+            )}
+            {isSplitTimezoneState(state) && (
+              <p className="text-xs text-warning">
+                {state.toUpperCase()} spans more than one time zone — check that
+                this matches where your classes actually meet.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

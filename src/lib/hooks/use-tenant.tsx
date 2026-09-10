@@ -35,6 +35,8 @@ export interface Tenant {
   subscription_status: "active" | "canceled" | "past_due" | "trialing";
   trial_ends_at: string | null;
   agency_code: string | null;
+  /** IANA timezone for this tenant's classes, e.g. America/Chicago. */
+  timezone: string | null;
   white_label_enabled: boolean;
   tenant_type: "education" | "agency" | "combined";
 }
@@ -389,6 +391,7 @@ function transformTenantData(data: any): Tenant {
     subscription_status: data.subscription_status as Tenant["subscription_status"],
     trial_ends_at: data.trial_ends_at,
     agency_code: data.agency_code || null,
+    timezone: data.timezone || null,
     white_label_enabled: data.white_label_enabled || false,
     tenant_type: (data.tenant_type as Tenant["tenant_type"]) || "education",
   };
