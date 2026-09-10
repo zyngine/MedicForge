@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useUser } from "./use-user";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { localDateString } from "@/lib/utils";
 
 export interface CalendarEvent {
   id: string;
@@ -229,7 +230,7 @@ export function useCalendarSync() {
           course:courses(id, title)
         `)
         .in("course_id", courseIds)
-        .gte("scheduled_date", now.toISOString().split("T")[0]);
+        .gte("scheduled_date", localDateString(now));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sessions?.forEach((session: any) => {

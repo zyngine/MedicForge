@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
+import { addDaysLocal } from "@/lib/utils";
 
 export interface AgencyEmployee {
   id: string;
@@ -323,8 +324,7 @@ export function useExpiringCertifications(daysAhead: number = 90) {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + daysAhead);
+      const futureDateStr = addDaysLocal(daysAhead);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -333,7 +333,7 @@ export function useExpiringCertifications(daysAhead: number = 90) {
         .eq("tenant_id", tenant.id)
         .eq("is_active", true)
         .not("certification_expiration", "is", null)
-        .lte("certification_expiration", futureDate.toISOString().split("T")[0])
+        .lte("certification_expiration", futureDateStr)
         .order("certification_expiration", { ascending: true });
 
       if (error) throw error;

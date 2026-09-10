@@ -26,6 +26,7 @@ import {
 import { useVideoSessions } from "@/lib/hooks/use-video-sessions";
 import { useCourses } from "@/lib/hooks/use-courses";
 import { format, formatDistanceToNow, isPast, isFuture } from "date-fns";
+import { localDateString } from "@/lib/utils";
 
 const SESSION_TYPES = [
   { value: "class", label: "Class Session" },
@@ -394,7 +395,7 @@ export default function VideoSessionsPage() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={localDateString()}
                   required={!formData.isStanding}
                 />
               </div>

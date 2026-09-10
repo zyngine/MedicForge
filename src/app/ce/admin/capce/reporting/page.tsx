@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
 import { Download, AlertCircle } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface UnreportedCompletion {
   id: string;
@@ -20,7 +21,7 @@ export default function CECapceReportingPage() {
   const [completions, setCompletions] = useState<UnreportedCompletion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
+  const [dateTo, setDateTo] = useState(localDateString());
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [missingNremt, setMissingNremt] = useState(0);
@@ -57,7 +58,7 @@ export default function CECapceReportingPage() {
 
   useEffect(() => {
     const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const firstOfMonth = localDateString(new Date(now.getFullYear(), now.getMonth(), 1));
     setDateFrom(firstOfMonth);
   }, []);
 
@@ -95,7 +96,7 @@ export default function CECapceReportingPage() {
     const { data: submission } = await supabase
       .from("ce_capce_submissions")
       .insert({
-        submission_date: new Date().toISOString().split("T")[0],
+        submission_date: localDateString(),
         period_start: dateFrom,
         period_end: dateTo,
         total_records: completions.length,
@@ -113,7 +114,7 @@ export default function CECapceReportingPage() {
         course_number: c.ce_courses?.course_number || "",
         course_title: c.ce_courses?.title || "",
         ceh_hours: c.ce_courses?.ceh_hours || 0,
-        completion_date: c.completed_at ? new Date(c.completed_at).toISOString().split("T")[0] : "",
+        completion_date: c.completed_at ? localDateString(new Date(c.completed_at)) : "",
         status: "reported",
       }));
       await supabase.from("ce_capce_submission_records").insert(records);

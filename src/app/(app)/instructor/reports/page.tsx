@@ -24,6 +24,7 @@ import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { useEnrollments } from "@/lib/hooks/use-enrollments";
+import { localDateString } from "@/lib/utils";
 
 export default function InstructorReportsPage() {
   const { data: courses = [], isLoading: coursesLoading } = useInstructorCourses();
@@ -117,7 +118,7 @@ export default function InstructorReportsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `reports-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `reports-${localDateString()}.csv`;
     a.click();
   };
 

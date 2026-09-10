@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email-service";
+import { tenantDatePlusDays } from "@/lib/tenant-time";
 import {
   expiringCertTemplate,
   pendingVerificationTemplate,
@@ -54,7 +55,9 @@ export async function POST(request: NextRequest) {
 
     // 1. Expiring certifications
     if (type === "expiring" || type === "all") {
-      const cutoff = new Date(Date.now() + reminderDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      // Tenant-local, not UTC: on the server "today" would already be tomorrow
+      // during a US evening, so a reminder window computed from it is a day off.
+      const cutoff = await tenantDatePlusDays(adminClient, profile.tenant_id, reminderDays);
 
       const { data: expiring } = await adminClient
         .from("agency_employees")

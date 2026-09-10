@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateICS, type CalendarEvent } from "@/lib/calendar-utils";
+import { tenantToday } from "@/lib/tenant-time";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -38,7 +39,9 @@ export async function GET(
       .in("status", ["booked", "poc_approved"])
       .not("shift", "is", null);
 
-    const today = new Date().toISOString().split("T")[0];
+    // shift_date is a plain DATE, so "upcoming" has to be judged in the
+    // tenant's timezone — a UTC today drops tonight's shift off the feed.
+    const today = await tenantToday(adminAny, sub.tenant_id);
     const upcomingBookings = (bookings || []).filter(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (b: any) => b.shift && b.shift.shift_date >= today

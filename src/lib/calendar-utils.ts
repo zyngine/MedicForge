@@ -1,3 +1,5 @@
+import { localDateString } from "@/lib/utils";
+
 /**
  * Calendar utilities for generating ICS files and calendar links
  */
@@ -116,7 +118,10 @@ function formatICSDate(date: Date): string {
  * Format date-only for all-day events
  */
 function formatICSDateOnly(date: Date): string {
-  return date.toISOString().split("T")[0].replace(/-/g, "");
+  // An all-day DTSTART;VALUE=DATE is a floating date with no zone, so it has to
+  // be the local calendar day. Converting to UTC first shifts an evening event
+  // onto the following day.
+  return localDateString(date).replace(/-/g, "");
 }
 
 /**

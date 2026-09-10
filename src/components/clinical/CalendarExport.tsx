@@ -5,6 +5,7 @@ import { useCalendarSubscription } from "@/lib/hooks/use-calendar-subscription";
 import { useShiftBookings } from "@/lib/hooks/use-shift-bookings";
 import { useUser } from "@/lib/hooks/use-user";
 import { downloadICS, type CalendarEvent } from "@/lib/calendar-utils";
+import { localDateString } from "@/lib/utils";
 
 type Platform = "ios" | "android" | "google" | "outlook";
 
@@ -62,7 +63,7 @@ export function CalendarExport() {
   const [copied, setCopied] = useState(false);
 
   const handleDownload = () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = localDateString();
     const events: CalendarEvent[] = bookings
       .filter(
         (b) =>

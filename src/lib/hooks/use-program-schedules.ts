@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
 import { useUser } from "./use-user";
-import { localDateString, localTimeString } from "@/lib/utils";
+import { addDaysLocal, localDateString, localTimeString } from "@/lib/utils";
 
 // Helper to get supabase client with type assertion for tables not in generated types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -388,10 +388,8 @@ export function useProgramSessions(programId: string | null, days: number = 14) 
       if (!tenant?.id || !programId) return [];
 
       const supabase = getDb();
-      const today = new Date().toISOString().split("T")[0];
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + days);
-      const endDateStr = endDate.toISOString().split("T")[0];
+      const today = localDateString();
+      const endDateStr = addDaysLocal(days);
 
       const { data, error } = await supabase
         .from("attendance_sessions")

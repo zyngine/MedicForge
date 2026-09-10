@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
 import { toast } from "sonner";
+import { localDateString } from "@/lib/utils";
 
 export type EvaluationContext = "classroom" | "lab" | "clinical" | "field" | "simulation";
 export type EvaluationRating = "exceeds" | "meets" | "developing" | "below" | "unacceptable";
@@ -223,7 +224,7 @@ export function useAffectiveEvaluations(options?: {
           student_id: input.student_id,
           course_id: input.course_id,
           evaluator_id: profile.id,
-          evaluation_date: input.evaluation_date || new Date().toISOString().split("T")[0],
+          evaluation_date: input.evaluation_date || localDateString(),
           context: input.context,
           shift_id: input.shift_id || null,
           ratings: input.ratings,
@@ -480,7 +481,7 @@ export function useAffectiveIncidents(options?: {
         .from("affective_incidents")
         .update({
           resolved: true,
-          resolution_date: new Date().toISOString().split("T")[0],
+          resolution_date: localDateString(),
           resolution_notes,
           resolved_by: profile.id,
         })
@@ -494,7 +495,7 @@ export function useAffectiveIncidents(options?: {
             ? {
                 ...i,
                 resolved: true,
-                resolution_date: new Date().toISOString().split("T")[0],
+                resolution_date: localDateString(),
                 resolution_notes,
               }
             : i
@@ -623,7 +624,7 @@ export function useRemediationPlans(options?: {
     if (!plan) return false;
 
     const newCheckpoint = {
-      date: new Date().toISOString().split("T")[0],
+      date: localDateString(),
       notes,
       evaluator_id: profile.id,
       progress_rating: progressRating,

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
 import { CheckCircle, AlertCircle, Upload } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface COIRecord {
   id: string;
@@ -35,7 +36,7 @@ export default function CECommitteeCOIPage() {
     entity_type: "member" as "member" | "instructor",
     member_id: "",
     instructor_id: "",
-    signed_date: new Date().toISOString().split("T")[0],
+    signed_date: localDateString(),
     expires_at: "",
     attestation_signed: true,
     document_url: "",
@@ -97,7 +98,7 @@ export default function CECommitteeCOIPage() {
     await supabase.from("ce_conflict_of_interest").insert(payload);
     setSaving(false);
     setShowForm(false);
-    setForm({ entity_type: "member", member_id: "", instructor_id: "", signed_date: new Date().toISOString().split("T")[0], expires_at: "", attestation_signed: true, document_url: "", notes: "" });
+    setForm({ entity_type: "member", member_id: "", instructor_id: "", signed_date: localDateString(), expires_at: "", attestation_signed: true, document_url: "", notes: "" });
     load();
   };
 

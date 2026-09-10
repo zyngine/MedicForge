@@ -14,6 +14,10 @@ import {
   generateEnrollmentCode,
   localDateString,
   localTimeString,
+  addDaysLocal,
+  startOfWeekLocal,
+  addCalendarMonths,
+  dateInTimeZone,
 } from "@/lib/utils";
 
 describe("slugify", () => {
@@ -210,5 +214,95 @@ describe("localDateString / localTimeString", () => {
     const midnight = new Date(2026, 8, 17, 0, 5, 0);
     expect(localDateString(midnight)).toBe("2026-09-17");
     expect(localTimeString(midnight)).toBe("00:05");
+  });
+});
+
+describe("addDaysLocal", () => {
+  it("steps forward and back on the local calendar", () => {
+    const base = new Date(2026, 8, 16, 21, 30);
+    expect(addDaysLocal(1, base)).toBe("2026-09-17");
+    expect(addDaysLocal(-1, base)).toBe("2026-09-15");
+    expect(addDaysLocal(0, base)).toBe("2026-09-16");
+  });
+
+  it("crosses month and year boundaries", () => {
+    expect(addDaysLocal(1, new Date(2026, 8, 30, 23, 59))).toBe("2026-10-01");
+    expect(addDaysLocal(1, new Date(2026, 11, 31, 23, 59))).toBe("2027-01-01");
+    expect(addDaysLocal(-1, new Date(2026, 0, 1, 0, 1))).toBe("2025-12-31");
+  });
+
+  it("handles a leap day", () => {
+    expect(addDaysLocal(1, new Date(2028, 1, 28))).toBe("2028-02-29");
+    expect(addDaysLocal(1, new Date(2028, 1, 29))).toBe("2028-03-01");
+  });
+
+  it("counts whole days across a DST change, not 24-hour blocks", () => {
+    // US DST springs forward on 2026-03-08. Adding milliseconds would land on
+    // the wrong calendar day for a late-evening start; calendar arithmetic does
+    // not. (In a UTC test runner there is no shift, so this asserts the
+    // calendar-stepping behaviour holds either way.)
+    expect(addDaysLocal(1, new Date(2026, 2, 7, 23, 0))).toBe("2026-03-08");
+    expect(addDaysLocal(2, new Date(2026, 2, 7, 23, 0))).toBe("2026-03-09");
+  });
+});
+
+describe("startOfWeekLocal", () => {
+  it("returns the Sunday of the current week by default", () => {
+    // 2026-09-16 is a Wednesday; the Sunday before is the 13th.
+    expect(startOfWeekLocal(new Date(2026, 8, 16, 21, 30))).toBe("2026-09-13");
+  });
+
+  it("returns the same day when already on the boundary", () => {
+    expect(startOfWeekLocal(new Date(2026, 8, 13, 23, 59))).toBe("2026-09-13");
+  });
+
+  it("does not roll into next week late on a Saturday evening", () => {
+    // The old code kept the current time and then went through UTC, which
+    // pushed a Saturday evening onto the following week.
+    expect(startOfWeekLocal(new Date(2026, 8, 19, 22, 0))).toBe("2026-09-13");
+  });
+
+  it("supports a Monday week start", () => {
+    expect(startOfWeekLocal(new Date(2026, 8, 16, 12, 0), 1)).toBe("2026-09-14");
+    expect(startOfWeekLocal(new Date(2026, 8, 13, 12, 0), 1)).toBe("2026-09-07");
+  });
+});
+
+describe("addCalendarMonths", () => {
+  it("adds whole calendar months, not 30-day blocks", () => {
+    // 24 months of 30 days is 720 days — nearly two weeks short of two years.
+    expect(addCalendarMonths(24, new Date(2026, 8, 16))).toBe("2028-09-16");
+    expect(addCalendarMonths(12, new Date(2026, 8, 16))).toBe("2027-09-16");
+    expect(addCalendarMonths(1, new Date(2026, 8, 16))).toBe("2026-10-16");
+  });
+
+  it("clamps a day that does not exist in the target month", () => {
+    expect(addCalendarMonths(1, new Date(2026, 0, 31))).toBe("2026-02-28");
+    expect(addCalendarMonths(1, new Date(2028, 0, 31))).toBe("2028-02-29");
+    expect(addCalendarMonths(1, new Date(2026, 4, 31))).toBe("2026-06-30");
+  });
+
+  it("handles zero and crossing a year", () => {
+    expect(addCalendarMonths(0, new Date(2026, 8, 16))).toBe("2026-09-16");
+    expect(addCalendarMonths(4, new Date(2026, 10, 30))).toBe("2027-03-30");
+  });
+});
+
+describe("dateInTimeZone", () => {
+  it("gives a different calendar date per zone for the same instant", () => {
+    // 2026-10-08T01:30Z is Thursday in UTC but still Wednesday in the Americas.
+    const instant = new Date("2026-10-08T01:30:00Z");
+    expect(dateInTimeZone(instant, "UTC")).toBe("2026-10-08");
+    expect(dateInTimeZone(instant, "America/Chicago")).toBe("2026-10-07");
+    expect(dateInTimeZone(instant, "America/New_York")).toBe("2026-10-07");
+    expect(dateInTimeZone(instant, "America/Los_Angeles")).toBe("2026-10-07");
+  });
+
+  it("zero-pads single-digit months and days", () => {
+    expect(dateInTimeZone(new Date("2026-01-05T12:00:00Z"), "UTC")).toBe("2026-01-05");
+  });
+
+  it("handles a zone ahead of UTC", () => {
+    expect(dateInTimeZone(new Date("2026-10-07T23:30:00Z"), "Asia/Tokyo")).toBe("2026-10-08");
   });
 });

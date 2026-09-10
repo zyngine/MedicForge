@@ -13,6 +13,7 @@ import {
   Select,
 } from "@/components/ui";
 import { useIssueCertificate, useCertificateTemplates } from "@/lib/hooks/use-certificates";
+import { localDateString } from "@/lib/utils";
 
 const formSchema = z.object({
   certificate_type: z.string().min(1),
@@ -57,7 +58,7 @@ export function IssueCertificateForm({
     defaultValues: {
       certificate_type: "completion",
       title: "",
-      completion_date: new Date().toISOString().split("T")[0],
+      completion_date: localDateString(),
       final_grade: defaultGrade?.toString() || "",
       hours_completed: defaultHours?.toString() || "",
       template_id: "",

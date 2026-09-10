@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./use-user";
+import { addDaysLocal, localDateString, startOfWeekLocal } from "@/lib/utils";
 
 export interface AnalyticsEvent {
   id: string;
@@ -152,15 +153,14 @@ export function useCourseAnalytics(courseId: string) {
       setIsLoading(true);
 
       // Fetch daily metrics for last 30 days
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = addDaysLocal(-30);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: metrics, error: metricsError } = await (supabase as any)
         .from("daily_metrics")
         .select("*")
         .eq("course_id", courseId)
-        .gte("metric_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .gte("metric_date", thirtyDaysAgoStr)
         .order("metric_date");
 
       // Silently fail if table doesn't exist (404) - analytics tables may not be set up
@@ -170,8 +170,7 @@ export function useCourseAnalytics(courseId: string) {
       setDailyMetrics(metrics || []);
 
       // Fetch student engagement for current week
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const weekStartStr = startOfWeekLocal();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: engagement, error: engagementError } = await (supabase as any)
@@ -181,7 +180,7 @@ export function useCourseAnalytics(courseId: string) {
           student:users!student_engagement_student_id_fkey(id, full_name, email)
         `)
         .eq("course_id", courseId)
-        .eq("week_start", weekStart.toISOString().split("T")[0])
+        .eq("week_start", weekStartStr)
         .order("engagement_score", { ascending: false });
 
       // Silently fail if table doesn't exist
@@ -350,14 +349,14 @@ export function useMyAnalytics(courseId?: string) {
         // Calculate login streak
         const loginDates = activityData
           ?.filter((e: AnalyticsEvent) => e.event_type === "page_view")
-          .map((e: AnalyticsEvent) => e.created_at.split("T")[0])
+          .map((e: AnalyticsEvent) => localDateString(new Date(e.created_at)))
           .filter((date: string, index: number, arr: string[]) => arr.indexOf(date) === index)
           .sort()
           .reverse() || [];
 
         let currentStreak = 0;
-        const today = new Date().toISOString().split("T")[0];
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+        const today = localDateString();
+        const yesterday = addDaysLocal(-1);
 
         if (loginDates[0] === today || loginDates[0] === yesterday) {
           currentStreak = 1;
@@ -428,8 +427,7 @@ export function useTenantAnalytics() {
         setIsLoading(true);
 
         // Fetch tenant-wide metrics
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgoStr = addDaysLocal(-30);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: metricsData } = await (supabase as any)
@@ -437,7 +435,7 @@ export function useTenantAnalytics() {
           .select("*")
           .eq("tenant_id", profile.tenant_id)
           .is("course_id", null) // Tenant-wide metrics
-          .gte("metric_date", thirtyDaysAgo.toISOString().split("T")[0])
+          .gte("metric_date", thirtyDaysAgoStr)
           .order("metric_date");
 
         setMetrics(metricsData || []);
@@ -513,15 +511,14 @@ export function useEngagementCalculator(courseId: string) {
     if (!profile?.tenant_id) return 0;
 
     try {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const weekStartStr = startOfWeekLocal();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .rpc("calculate_engagement_score", {
           p_student_id: studentId,
           p_course_id: courseId,
-          p_week_start: weekStart.toISOString().split("T")[0],
+          p_week_start: weekStartStr,
         });
 
       if (error) throw error;

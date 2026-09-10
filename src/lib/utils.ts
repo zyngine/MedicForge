@@ -52,6 +52,63 @@ export function localDateString(date: Date = new Date()): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/**
+ * The calendar date in a specific IANA timezone, as YYYY-MM-DD.
+ *
+ * Works in the browser and in Node. Use this on the server, where there is no
+ * viewer whose clock to borrow — pass the tenant's timezone.
+ */
+export function dateInTimeZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/**
+ * A local calendar date offset by a number of days, as YYYY-MM-DD.
+ *
+ * Uses date arithmetic on the local calendar rather than adding milliseconds, so
+ * it stays correct across a daylight-saving change — a day is not always 24
+ * hours long.
+ */
+export function addDaysLocal(days: number, from: Date = new Date()): string {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  d.setDate(d.getDate() + days);
+  return localDateString(d);
+}
+
+/**
+ * A date a whole number of calendar months from a starting date, as YYYY-MM-DD.
+ *
+ * Not `months * 30 days`: 24 months is 730 or 731 days, not 720, so the
+ * approximation drifts by nearly two weeks over a two-year certificate. Days
+ * that do not exist in the target month clamp to its last day, so 31 January
+ * plus one month is 28 (or 29) February rather than spilling into March.
+ */
+export function addCalendarMonths(months: number, from: Date = new Date()): string {
+  const year = from.getFullYear();
+  const month = from.getMonth();
+  const day = from.getDate();
+
+  const targetMonthLastDay = new Date(year, month + months + 1, 0).getDate();
+  const d = new Date(year, month + months, Math.min(day, targetMonthLastDay));
+  return localDateString(d);
+}
+
+/** The local calendar date of the most recent given weekday, as YYYY-MM-DD. */
+export function startOfWeekLocal(from: Date = new Date(), weekStartsOn: number = 0): string {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const diff = (d.getDay() - weekStartsOn + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return localDateString(d);
+}
+
 /** The viewer's own wall-clock time as HH:MM, for comparing against a stored TIME. */
 export function localTimeString(date: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0");

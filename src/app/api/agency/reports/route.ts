@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { tenantToday, tenantDatePlusDays } from "@/lib/tenant-time";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +19,9 @@ export async function GET(request: NextRequest) {
     if (!profile?.tenant_id || profile.agency_role !== "agency_admin") {
       return NextResponse.json({ error: "Forbidden — admin only" }, { status: 403 });
     }
+
+    // Stamp exports with the tenant's own date, not the server's UTC one.
+    const reportDate = await tenantToday(adminClient, profile.tenant_id);
 
     const type = request.nextUrl.searchParams.get("type") || "compliance";
     const cycleId = request.nextUrl.searchParams.get("cycle_id");
@@ -73,7 +77,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse(csv, {
           headers: {
             "Content-Type": "text/csv",
-            "Content-Disposition": `attachment; filename="compliance-report-${new Date().toISOString().split("T")[0]}.csv"`,
+            "Content-Disposition": `attachment; filename="compliance-report-${reportDate}.csv"`,
           },
         });
       }
@@ -83,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     if (type === "expiring") {
       const daysAhead = Math.min(365, Math.max(1, parseInt(request.nextUrl.searchParams.get("days") || "90")));
-      const cutoff = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const cutoff = await tenantDatePlusDays(adminClient, profile.tenant_id, daysAhead);
 
       const { data: expiring } = await adminClient
         .from("agency_employees")
@@ -101,7 +105,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse([header, ...csvRows].join("\n"), {
           headers: {
             "Content-Type": "text/csv",
-            "Content-Disposition": `attachment; filename="expiring-certs-${new Date().toISOString().split("T")[0]}.csv"`,
+            "Content-Disposition": `attachment; filename="expiring-certs-${reportDate}.csv"`,
           },
         });
       }

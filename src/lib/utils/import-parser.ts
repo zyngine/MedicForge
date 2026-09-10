@@ -5,6 +5,7 @@
 
 import Papa from "papaparse";
 import readXlsxFile from "read-excel-file/browser";
+import { localDateString } from "@/lib/utils";
 
 export type ValidationSeverity = "error" | "warning" | "info";
 
@@ -196,7 +197,9 @@ export function parseDate(dateStr: string): Date | null {
  * Format date to ISO string (YYYY-MM-DD)
  */
 export function formatDateISO(date: Date): string {
-  return date.toISOString().split("T")[0];
+  // parseDate() builds these as local midnight, so read them back locally.
+  // Going through UTC shifts the date by a day wherever the offset is positive.
+  return localDateString(date);
 }
 
 /**

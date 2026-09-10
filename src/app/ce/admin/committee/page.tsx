@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui";
 import { Users, Calendar, BookOpen, ClipboardList, AlertCircle, CheckCircle, Clock, ArrowRight } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface CommitteeStats {
   activeMembers: number;
@@ -45,7 +46,7 @@ export default function CECommitteeDashboardPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createCEClient();
-      const today = new Date().toISOString().split("T")[0];
+      const today = localDateString();
 
       const [membersRes, meetingsRes, pendingRes, actionRes] = await Promise.all([
         supabase.from("ce_committee_members").select("id", { count: "exact", head: true }).eq("status", "active"),

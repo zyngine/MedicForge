@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input, Select } from "@/components/ui";
 import { Building2, Plus, X, Copy, Check } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface Agency {
   id: string;
@@ -57,7 +58,7 @@ export default function CEAdminAgenciesPage() {
     zip: "",
     phone: "",
     subscription_tier: "starter",
-    subscription_start: new Date().toISOString().split("T")[0],
+    subscription_start: localDateString(),
     subscription_end: "",
     invite_code: generateInviteCode(),
   });
@@ -109,7 +110,7 @@ export default function CEAdminAgenciesPage() {
     if (error) { setSaveError("Failed to create agency."); }
     else {
       setShowForm(false);
-      setForm({ name: "", address: "", city: "", state: "", zip: "", phone: "", subscription_tier: "starter", subscription_start: new Date().toISOString().split("T")[0], subscription_end: "", invite_code: generateInviteCode() });
+      setForm({ name: "", address: "", city: "", state: "", zip: "", phone: "", subscription_tier: "starter", subscription_start: localDateString(), subscription_end: "", invite_code: generateInviteCode() });
       load();
     }
     setSaving(false);

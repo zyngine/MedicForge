@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner } from "@/components/ui";
 import { Calendar, Plus, CheckCircle, Clock } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface Meeting {
   id: string;
@@ -38,7 +39,7 @@ export default function CECommitteeMeetingsPage() {
     const load = async () => {
       setIsLoading(true);
       const supabase = createCEClient();
-      const today = new Date().toISOString().split("T")[0];
+      const today = localDateString();
       let q = supabase
         .from("ce_committee_meetings")
         .select("id, meeting_date, start_time, location, meeting_type, status, quorum_present, minutes_approved")

@@ -43,6 +43,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
+import { localDateString } from "@/lib/utils";
 
 // Helper to get supabase client with type assertion for tables not in generated types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,7 +182,7 @@ function useStartAttendance() {
           course_id: params.courseId || null,
           title: params.title,
           session_type: "lecture",
-          scheduled_date: now.toISOString().split("T")[0],
+          scheduled_date: localDateString(now),
           start_time: now.toTimeString().slice(0, 5),
           end_time: endTime.toTimeString().slice(0, 5),
           tardy_window_minutes: params.tardyWindowMinutes ?? 15,

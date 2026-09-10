@@ -22,6 +22,7 @@ import {
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { localDateString } from "@/lib/utils";
 
 // Hook to fetch admin stats
 function useAdminStats() {
@@ -129,7 +130,7 @@ export default function AdminReportsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `admin-report-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `admin-report-${localDateString()}.csv`;
     a.click();
   };
 

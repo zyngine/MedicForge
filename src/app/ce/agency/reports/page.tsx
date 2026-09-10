@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
 import { Download } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface ReportRow {
   employee: string;
@@ -23,7 +24,7 @@ export default function CEAgencyReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
+  const [dateTo, setDateTo] = useState(localDateString());
   const [agencyId, setAgencyId] = useState<string | null>(null);
 
   const load = async (aId: string) => {
@@ -58,7 +59,7 @@ export default function CEAgencyReportsPage() {
   useEffect(() => {
     const init = async () => {
       const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split("T")[0];
+      const from = localDateString(new Date(now.getFullYear(), now.getMonth() - 11, 1));
       setDateFrom(from);
       const supabase = createCEClient();
       const { data: me } = await supabase.from("ce_users").select("agency_id").eq("id", (await supabase.auth.getUser()).data.user?.id || "").single();

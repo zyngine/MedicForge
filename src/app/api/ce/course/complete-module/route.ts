@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendCourseCompletionEmail } from "@/lib/email-ce";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { addCalendarMonths } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
           const year = new Date().getFullYear();
           const certNumber = `MF-${year}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
           const expiresAt = course.expiration_months
-            ? new Date(Date.now() + course.expiration_months * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+            ? addCalendarMonths(course.expiration_months)
             : null;
 
           const verificationCode = crypto.randomBytes(16).toString("hex");

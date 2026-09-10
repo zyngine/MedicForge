@@ -10,6 +10,7 @@ import { useMyBookings } from "@/lib/hooks/use-shift-bookings";
 import { usePatientContacts } from "@/lib/hooks/use-patient-contacts";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { format } from "date-fns";
+import { localDateString } from "@/lib/utils";
 
 const siteTypeOptions = [
   { value: "hospital_er", label: "Hospital Emergency Room" },
@@ -286,7 +287,7 @@ function NewPatientContactContent() {
                   onChange={(e) =>
                     setManualData({ ...manualData, contact_date: e.target.value })
                   }
-                  max={new Date().toISOString().split("T")[0]}
+                  max={localDateString()}
                 />
               </div>
 

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { createCEClient } from "@/lib/supabase/client";
 import { Button, Spinner, Input } from "@/components/ui";
 import { ClipboardList } from "lucide-react";
+import { localDateString } from "@/lib/utils";
 
 interface NeedsAssessment {
   id: string;
@@ -29,7 +30,7 @@ export default function CECommitteeNeedsAssessmentPage() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
-    assessment_date: new Date().toISOString().split("T")[0],
+    assessment_date: localDateString(),
     conducted_by: "",
     method: "",
     target_population: "",
@@ -69,7 +70,7 @@ export default function CECommitteeNeedsAssessmentPage() {
     });
     setSaving(false);
     setShowForm(false);
-    setForm({ assessment_date: new Date().toISOString().split("T")[0], conducted_by: "", method: "", target_population: "", summary: "", identified_needs: "", recommended_topics: "", next_assessment_date: "", document_url: "" });
+    setForm({ assessment_date: localDateString(), conducted_by: "", method: "", target_population: "", summary: "", identified_needs: "", recommended_topics: "", next_assessment_date: "", document_url: "" });
     load();
   };
 

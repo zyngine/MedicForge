@@ -20,7 +20,7 @@ import {
   Line,
   Area,
 } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn, localDateString } from "@/lib/utils";
 
 // Engagement metrics chart (bar + line combo)
 interface EngagementChartProps {
@@ -409,7 +409,7 @@ export function ActivityHeatmap({
   for (let i = 0; i < weeks * 7; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = localDateString(date);
     const dayData = data.find((d) => d.date === dateStr) || { date: dateStr, count: 0 };
 
     const dayOfWeek = date.getDay();

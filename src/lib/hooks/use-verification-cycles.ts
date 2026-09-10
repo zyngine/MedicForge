@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
+import { addDaysLocal } from "@/lib/utils";
 
 export type VerificationCycleType = "initial" | "annual" | "remedial";
 export type CycleStatus = "draft" | "active" | "completed" | "archived";
@@ -541,8 +542,7 @@ export function useEndingCycles(daysAhead: number = 30) {
       if (!tenant?.id) return [];
 
       const supabase = createClient();
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + daysAhead);
+      const futureDateStr = addDaysLocal(daysAhead);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -550,7 +550,7 @@ export function useEndingCycles(daysAhead: number = 30) {
         .select("*")
         .eq("tenant_id", tenant.id)
         .eq("status", "active")
-        .lte("end_date", futureDate.toISOString().split("T")[0])
+        .lte("end_date", futureDateStr)
         .order("end_date", { ascending: true });
 
       if (error) throw error;
