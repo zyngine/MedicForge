@@ -541,3 +541,63 @@ export function useAttendanceAutoOpen(options?: { leadMinutes?: number; windowDa
 
   return { autoOpened, dismiss: () => setAutoOpened([]) };
 }
+
+// ========== Explicit class dates ==========
+
+export type ClassDateOutcome = "created" | "exists" | "excluded";
+
+export interface AddedClassDate {
+  class_date: string;
+  outcome: ClassDateOutcome;
+  session_id: string | null;
+}
+
+export { parseClassDates } from "@/lib/class-dates";
+
+/**
+ * Create one attendance session per supplied date.
+ *
+ * For programs whose calendar is a published list of dates rather than a weekly
+ * recurrence. The sessions are marked is_generated, so auto_open_due_sessions()
+ * opens them on the night — the same path a recurring schedule takes — and any
+ * instructor or admin in the tenant can open them, not only whoever created
+ * them.
+ *
+ * Safe to call twice with the same list: dates that already have a session at
+ * that start time come back as "exists" rather than being duplicated.
+ */
+export function useAddClassDates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      program_id: string;
+      dates: string[];
+      start_time: string;
+      end_time: string;
+      title?: string;
+      session_type?: string;
+      location?: string;
+    }) => {
+      const supabase = getDb();
+
+      const { data, error } = await supabase.rpc("add_program_class_dates", {
+        p_program_id: input.program_id,
+        p_dates: input.dates,
+        p_start_time: input.start_time,
+        p_end_time: input.end_time,
+        p_title: input.title || "Class",
+        p_session_type: input.session_type || "lecture",
+        p_location: input.location || null,
+      });
+
+      if (error) throw error;
+      return (data || []) as AddedClassDate[];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["program-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["todays-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+    },
+  });
+}
