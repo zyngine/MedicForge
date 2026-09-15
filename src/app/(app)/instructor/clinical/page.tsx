@@ -24,6 +24,7 @@ import {
   Upload,
   ShieldAlert,
   Star,
+  Activity,
 } from "lucide-react";
 import { format, addDays, startOfToday } from "date-fns";
 import { useClinicalSites } from "@/lib/hooks/use-clinical-sites";
@@ -110,6 +111,12 @@ export default function InstructorClinicalPage() {
             <Link href="/instructor/clinical/complaints">
               <ShieldAlert className="h-4 w-4 mr-2" />
               Complaints
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/instructor/clinical/vitals">
+              <Activity className="h-4 w-4 mr-2" />
+              Vital Signs
             </Link>
           </Button>
           <Button variant="outline" asChild>
