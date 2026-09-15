@@ -5,10 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
 import { useUser } from "./use-user";
 
-// student_vital_signs is newer than the last database.types.ts regeneration, so
-// the generated client does not know the table or the two RPCs yet.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getDb = () => createClient() as any;
 
 export const VITALS_CONTEXTS = [
   { value: "lab", label: "Skills lab" },
@@ -92,7 +88,7 @@ export function useMyVitalSigns(limit = 200) {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const supabase = getDb();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from("student_vital_signs")
         .select("*")
@@ -126,7 +122,7 @@ export function useVitalsProgress(studentId?: string) {
     queryFn: async () => {
       if (!target) return null;
 
-      const supabase = getDb();
+      const supabase = createClient();
       const { data, error } = await supabase.rpc("get_student_vitals_progress", {
         p_student_id: target,
       });
@@ -146,7 +142,7 @@ export function useCourseVitalsRoster(courseId: string | null) {
     queryFn: async () => {
       if (!courseId) return [];
 
-      const supabase = getDb();
+      const supabase = createClient();
       const { data, error } = await supabase.rpc("get_course_vitals_roster", {
         p_course_id: courseId,
       });
@@ -167,7 +163,7 @@ export function useCreateVitalSign() {
     mutationFn: async (input: VitalSignInput) => {
       if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
 
-      const supabase = getDb();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from("student_vital_signs")
         .insert({
@@ -194,7 +190,7 @@ export function useDeleteVitalSign() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const supabase = getDb();
+      const supabase = createClient();
       const { error } = await supabase.from("student_vital_signs").delete().eq("id", id);
       if (error) throw error;
       return id;

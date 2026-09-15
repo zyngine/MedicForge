@@ -32,6 +32,11 @@ export default function EditCoursePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
 
+  // Program requirements live on the course row but not in CourseForm, which is
+  // shared with the create flow. Held as a string so an empty box means "no
+  // requirement" rather than 0.
+  const [requiredVitalSigns, setRequiredVitalSigns] = React.useState("");
+
   const [formData, setFormData] = React.useState<CourseForm>({
     title: "",
     description: "",
@@ -54,6 +59,9 @@ export default function EditCoursePage() {
         endDate: course.end_date ? course.end_date.slice(0, 10) : "",
         maxStudents: course.max_students ?? 30,
       });
+      const required = (course as { required_vital_signs?: number | null })
+        .required_vital_signs;
+      setRequiredVitalSigns(required != null ? String(required) : "");
     }
   }, [course]);
 
@@ -78,6 +86,10 @@ export default function EditCoursePage() {
           start_date: formData.startDate || null,
           end_date: formData.endDate || null,
           max_students: formData.maxStudents || null,
+          // "" means no requirement, which is NULL — not 0, which would read as
+          // "this course requires zero sets" and show a met requirement.
+          required_vital_signs:
+            requiredVitalSigns.trim() === "" ? null : parseInt(requiredVitalSigns, 10),
         },
       });
       setSuccess(true);
@@ -208,6 +220,24 @@ export default function EditCoursePage() {
                 }
               />
               <p className="text-xs text-muted-foreground">Leave empty for unlimited enrollment.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="requiredVitalSigns">Required Vital Sign Sets</Label>
+              <Input
+                id="requiredVitalSigns"
+                type="number"
+                min={0}
+                max={2000}
+                value={requiredVitalSigns}
+                onChange={(e) => setRequiredVitalSigns(e.target.value)}
+                placeholder="e.g. 50"
+              />
+              <p className="text-xs text-muted-foreground">
+                How many documented sets students must accumulate. Counts sets they log on
+                their vital signs page and sets inside their patient contact reports. Leave
+                empty if this course has no requirement.
+              </p>
             </div>
 
             <div className="flex justify-end gap-3">

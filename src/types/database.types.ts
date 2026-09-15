@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -737,7 +737,7 @@ export type Database = {
       attendance_sessions: {
         Row: {
           allow_late_checkin: boolean | null
-          course_id: string
+          course_id: string | null
           created_at: string | null
           created_by: string
           end_time: string
@@ -759,7 +759,7 @@ export type Database = {
         }
         Insert: {
           allow_late_checkin?: boolean | null
-          course_id: string
+          course_id?: string | null
           created_at?: string | null
           created_by: string
           end_time: string
@@ -781,7 +781,7 @@ export type Database = {
         }
         Update: {
           allow_late_checkin?: boolean | null
-          course_id?: string
+          course_id?: string | null
           created_at?: string | null
           created_by?: string
           end_time?: string
@@ -1098,6 +1098,7 @@ export type Database = {
           subscription_end: string | null
           subscription_start: string | null
           subscription_tier: string | null
+          updated_at: string | null
           zip: string | null
         }
         Insert: {
@@ -1113,6 +1114,7 @@ export type Database = {
           subscription_end?: string | null
           subscription_start?: string | null
           subscription_tier?: string | null
+          updated_at?: string | null
           zip?: string | null
         }
         Update: {
@@ -1128,6 +1130,7 @@ export type Database = {
           subscription_end?: string | null
           subscription_start?: string | null
           subscription_tier?: string | null
+          updated_at?: string | null
           zip?: string | null
         }
         Relationships: []
@@ -2333,6 +2336,188 @@ export type Database = {
           },
         ]
       }
+      ce_custom_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          due_at: string | null
+          id: string
+          material_id: string
+          target_type: string
+          target_value: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          due_at?: string | null
+          id?: string
+          material_id: string
+          target_type: string
+          target_value?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          due_at?: string | null
+          id?: string
+          material_id?: string
+          target_type?: string
+          target_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_custom_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_custom_assignments_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "ce_custom_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_custom_completions: {
+        Row: {
+          completed_at: string | null
+          id: string
+          material_id: string
+          quiz_passed_at: string | null
+          quiz_score: number | null
+          updated_at: string | null
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          material_id: string
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          updated_at?: string | null
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          material_id?: string
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_custom_completions_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "ce_custom_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_custom_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_custom_materials: {
+        Row: {
+          agency_id: string
+          content_metadata: Json | null
+          content_type: string
+          content_url: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          content_metadata?: Json | null
+          content_type: string
+          content_url: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          content_metadata?: Json | null
+          content_type?: string
+          content_url?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_custom_materials_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "ce_agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ce_custom_materials_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "ce_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ce_custom_quizzes: {
+        Row: {
+          created_at: string | null
+          id: string
+          material_id: string
+          pass_threshold: number
+          questions: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          material_id: string
+          pass_threshold?: number
+          questions?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          material_id?: string
+          pass_threshold?: number
+          questions?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ce_custom_quizzes_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: true
+            referencedRelation: "ce_custom_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ce_discussion_likes: {
         Row: {
           created_at: string | null
@@ -2543,6 +2728,7 @@ export type Database = {
           enrolled_at: string | null
           id: string
           progress_percentage: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -2555,6 +2741,7 @@ export type Database = {
           enrolled_at?: string | null
           id?: string
           progress_percentage?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -2567,6 +2754,7 @@ export type Database = {
           enrolled_at?: string | null
           id?: string
           progress_percentage?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -3018,6 +3206,24 @@ export type Database = {
           },
         ]
       }
+      ce_platform_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       ce_purchases: {
         Row: {
           amount: number
@@ -3205,6 +3411,7 @@ export type Database = {
           randomize_questions: boolean | null
           show_answers_after: string | null
           title: string
+          updated_at: string | null
         }
         Insert: {
           course_id: string
@@ -3217,6 +3424,7 @@ export type Database = {
           randomize_questions?: boolean | null
           show_answers_after?: string | null
           title: string
+          updated_at?: string | null
         }
         Update: {
           course_id?: string
@@ -3229,6 +3437,7 @@ export type Database = {
           randomize_questions?: boolean | null
           show_answers_after?: string | null
           title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -3240,14 +3449,52 @@ export type Database = {
           },
         ]
       }
+      ce_square_webhook_events: {
+        Row: {
+          error: string | null
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          received_at: string | null
+        }
+        Insert: {
+          error?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          received_at?: string | null
+        }
+        Update: {
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string | null
+        }
+        Relationships: []
+      }
       ce_user_subscriptions: {
         Row: {
           auto_renew: boolean | null
+          canceled_at: string | null
+          card_brand: string | null
+          card_last_four: string | null
           created_at: string | null
           expires_at: string
+          grace_period_ends_at: string | null
           id: string
+          last_payment_at: string | null
+          next_billing_at: string | null
           plan: string
           price: number
+          square_card_id: string | null
+          square_customer_id: string | null
           square_subscription_id: string | null
           starts_at: string
           status: string | null
@@ -3255,11 +3502,19 @@ export type Database = {
         }
         Insert: {
           auto_renew?: boolean | null
+          canceled_at?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
           created_at?: string | null
           expires_at: string
+          grace_period_ends_at?: string | null
           id?: string
+          last_payment_at?: string | null
+          next_billing_at?: string | null
           plan: string
           price: number
+          square_card_id?: string | null
+          square_customer_id?: string | null
           square_subscription_id?: string | null
           starts_at: string
           status?: string | null
@@ -3267,11 +3522,19 @@ export type Database = {
         }
         Update: {
           auto_renew?: boolean | null
+          canceled_at?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
           created_at?: string | null
           expires_at?: string
+          grace_period_ends_at?: string | null
           id?: string
+          last_payment_at?: string | null
+          next_billing_at?: string | null
           plan?: string
           price?: number
+          square_card_id?: string | null
+          square_customer_id?: string | null
           square_subscription_id?: string | null
           starts_at?: string
           status?: string | null
@@ -3595,6 +3858,112 @@ export type Database = {
           },
         ]
       }
+      clinical_complaints: {
+        Row: {
+          booking_id: string | null
+          category: string
+          course_id: string | null
+          created_at: string | null
+          description: string
+          filed_by_user_id: string | null
+          filer_role: string
+          id: string
+          is_anonymous: boolean | null
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          subject_name: string | null
+          subject_type: string
+          subject_user_id: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          category: string
+          course_id?: string | null
+          created_at?: string | null
+          description: string
+          filed_by_user_id?: string | null
+          filer_role: string
+          id?: string
+          is_anonymous?: boolean | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          subject_name?: string | null
+          subject_type: string
+          subject_user_id?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          category?: string
+          course_id?: string | null
+          created_at?: string | null
+          description?: string
+          filed_by_user_id?: string | null
+          filer_role?: string
+          id?: string
+          is_anonymous?: boolean | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          subject_name?: string | null
+          subject_type?: string
+          subject_user_id?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_complaints_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shift_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_complaints_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_complaints_filed_by_user_id_fkey"
+            columns: ["filed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_complaints_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_complaints_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_complaints_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_logs: {
         Row: {
           activities: Json | null
@@ -3726,6 +4095,7 @@ export type Database = {
           dispatch_complaint: string | null
           disposition: string | null
           id: string
+          instructor_private_notes: string | null
           level_of_consciousness: string | null
           medications_given: Json | null
           mental_status: string | null
@@ -3746,6 +4116,7 @@ export type Database = {
           site_type: string | null
           skills_performed: Json | null
           student_id: string
+          submitted_due_at: string | null
           supervisor_credentials: string | null
           supervisor_name: string | null
           tenant_id: string
@@ -3758,6 +4129,7 @@ export type Database = {
           verified_at: string | null
           verified_by: string | null
           vitals: Json | null
+          was_submitted_late: boolean | null
           was_team_lead: boolean | null
         }
         Insert: {
@@ -3771,6 +4143,7 @@ export type Database = {
           dispatch_complaint?: string | null
           disposition?: string | null
           id?: string
+          instructor_private_notes?: string | null
           level_of_consciousness?: string | null
           medications_given?: Json | null
           mental_status?: string | null
@@ -3791,6 +4164,7 @@ export type Database = {
           site_type?: string | null
           skills_performed?: Json | null
           student_id: string
+          submitted_due_at?: string | null
           supervisor_credentials?: string | null
           supervisor_name?: string | null
           tenant_id: string
@@ -3803,6 +4177,7 @@ export type Database = {
           verified_at?: string | null
           verified_by?: string | null
           vitals?: Json | null
+          was_submitted_late?: boolean | null
           was_team_lead?: boolean | null
         }
         Update: {
@@ -3816,6 +4191,7 @@ export type Database = {
           dispatch_complaint?: string | null
           disposition?: string | null
           id?: string
+          instructor_private_notes?: string | null
           level_of_consciousness?: string | null
           medications_given?: Json | null
           mental_status?: string | null
@@ -3836,6 +4212,7 @@ export type Database = {
           site_type?: string | null
           skills_performed?: Json | null
           student_id?: string
+          submitted_due_at?: string | null
           supervisor_credentials?: string | null
           supervisor_name?: string | null
           tenant_id?: string
@@ -3848,6 +4225,7 @@ export type Database = {
           verified_at?: string | null
           verified_by?: string | null
           vitals?: Json | null
+          was_submitted_late?: boolean | null
           was_team_lead?: boolean | null
         }
         Relationships: [
@@ -3929,6 +4307,94 @@ export type Database = {
           },
           {
             foreignKeyName: "clinical_poc_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_preceptor_ratings: {
+        Row: {
+          booking_id: string | null
+          communication_rating: number
+          created_at: string | null
+          id: string
+          knowledge_rating: number
+          overall_comment: string | null
+          preceptor_name: string
+          professionalism_rating: number
+          shift_id: string | null
+          site_id: string | null
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          communication_rating: number
+          created_at?: string | null
+          id?: string
+          knowledge_rating: number
+          overall_comment?: string | null
+          preceptor_name: string
+          professionalism_rating: number
+          shift_id?: string | null
+          site_id?: string | null
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          communication_rating?: number
+          created_at?: string | null
+          id?: string
+          knowledge_rating?: number
+          overall_comment?: string | null
+          preceptor_name?: string
+          professionalism_rating?: number
+          shift_id?: string | null
+          site_id?: string | null
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_preceptor_ratings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shift_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_preceptor_ratings_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "available_clinical_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_preceptor_ratings_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_preceptor_ratings_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_preceptor_ratings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_preceptor_ratings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -4056,6 +4522,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           notes: string | null
+          paperwork_due_hours_after_shift: number | null
           shift_date: string
           site_id: string
           start_time: string
@@ -4072,6 +4539,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           notes?: string | null
+          paperwork_due_hours_after_shift?: number | null
           shift_date: string
           site_id: string
           start_time: string
@@ -4088,6 +4556,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           notes?: string | null
+          paperwork_due_hours_after_shift?: number | null
           shift_date?: string
           site_id?: string
           start_time?: string
@@ -4713,6 +5182,7 @@ export type Database = {
           original_tenant_name: string | null
           required_clinical_hours: number | null
           required_patient_contacts: number | null
+          required_vital_signs: number | null
           settings: Json | null
           share_description: string | null
           share_preview_enabled: boolean | null
@@ -4743,6 +5213,7 @@ export type Database = {
           original_tenant_name?: string | null
           required_clinical_hours?: number | null
           required_patient_contacts?: number | null
+          required_vital_signs?: number | null
           settings?: Json | null
           share_description?: string | null
           share_preview_enabled?: boolean | null
@@ -4773,6 +5244,7 @@ export type Database = {
           original_tenant_name?: string | null
           required_clinical_hours?: number | null
           required_patient_contacts?: number | null
+          required_vital_signs?: number | null
           settings?: Json | null
           share_description?: string | null
           share_preview_enabled?: boolean | null
@@ -5715,6 +6187,76 @@ export type Database = {
           },
         ]
       }
+      lesson_attachments: {
+        Row: {
+          bunny_video_id: string | null
+          created_at: string | null
+          file_size: number | null
+          file_url: string
+          id: string
+          kind: string
+          lesson_id: string
+          mime_type: string | null
+          order_index: number | null
+          storage_path: string | null
+          tenant_id: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bunny_video_id?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          file_url: string
+          id?: string
+          kind: string
+          lesson_id: string
+          mime_type?: string | null
+          order_index?: number | null
+          storage_path?: string | null
+          tenant_id: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bunny_video_id?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          kind?: string
+          lesson_id?: string
+          mime_type?: string | null
+          order_index?: number | null
+          storage_path?: string | null
+          tenant_id?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_attachments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_attachments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed_at: string | null
@@ -6254,48 +6796,66 @@ export type Database = {
       }
       plagiarism_checks: {
         Row: {
+          ai_provider: string | null
+          ai_score: number | null
           checked_at: string | null
+          citations_removed_words: number | null
           created_at: string | null
           error_message: string | null
           id: string
           matches: Json | null
           original_content: string | null
+          parsed_files: Json | null
           requested_by: string
           similarity_score: number | null
           status: string | null
           submission_id: string
           tenant_id: string
           updated_at: string | null
+          web_match_count: number | null
+          web_matches: Json | null
           word_count: number | null
         }
         Insert: {
+          ai_provider?: string | null
+          ai_score?: number | null
           checked_at?: string | null
+          citations_removed_words?: number | null
           created_at?: string | null
           error_message?: string | null
           id?: string
           matches?: Json | null
           original_content?: string | null
+          parsed_files?: Json | null
           requested_by: string
           similarity_score?: number | null
           status?: string | null
           submission_id: string
           tenant_id: string
           updated_at?: string | null
+          web_match_count?: number | null
+          web_matches?: Json | null
           word_count?: number | null
         }
         Update: {
+          ai_provider?: string | null
+          ai_score?: number | null
           checked_at?: string | null
+          citations_removed_words?: number | null
           created_at?: string | null
           error_message?: string | null
           id?: string
           matches?: Json | null
           original_content?: string | null
+          parsed_files?: Json | null
           requested_by?: string
           similarity_score?: number | null
           status?: string | null
           submission_id?: string
           tenant_id?: string
           updated_at?: string | null
+          web_match_count?: number | null
+          web_matches?: Json | null
           word_count?: number | null
         }
         Relationships: [
@@ -7384,6 +7944,7 @@ export type Database = {
           id: string
           low_suspicion_events: number | null
           medium_suspicion_events: number | null
+          notified_at: string | null
           paste_count: number | null
           review_decision:
             | Database["public"]["Enums"]["integrity_review_decision"]
@@ -7413,6 +7974,7 @@ export type Database = {
           id?: string
           low_suspicion_events?: number | null
           medium_suspicion_events?: number | null
+          notified_at?: string | null
           paste_count?: number | null
           review_decision?:
             | Database["public"]["Enums"]["integrity_review_decision"]
@@ -7442,6 +8004,7 @@ export type Database = {
           id?: string
           low_suspicion_events?: number | null
           medium_suspicion_events?: number | null
+          notified_at?: string | null
           paste_count?: number | null
           review_decision?:
             | Database["public"]["Enums"]["integrity_review_decision"]
@@ -9030,6 +9593,112 @@ export type Database = {
           },
         ]
       }
+      student_vital_signs: {
+        Row: {
+          blood_glucose: number | null
+          bp_diastolic: number | null
+          bp_method: string | null
+          bp_systolic: number | null
+          context: string
+          course_id: string | null
+          created_at: string
+          gcs: number | null
+          id: string
+          notes: string | null
+          pain_scale: number | null
+          pulse: number | null
+          pulse_quality: string | null
+          pupils: string | null
+          recorded_at: string
+          respiratory_rate: number | null
+          setting: string | null
+          skin: string | null
+          spo2: number | null
+          student_id: string
+          subject_age_range: string | null
+          subject_type: string | null
+          temperature: number | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          blood_glucose?: number | null
+          bp_diastolic?: number | null
+          bp_method?: string | null
+          bp_systolic?: number | null
+          context?: string
+          course_id?: string | null
+          created_at?: string
+          gcs?: number | null
+          id?: string
+          notes?: string | null
+          pain_scale?: number | null
+          pulse?: number | null
+          pulse_quality?: string | null
+          pupils?: string | null
+          recorded_at?: string
+          respiratory_rate?: number | null
+          setting?: string | null
+          skin?: string | null
+          spo2?: number | null
+          student_id: string
+          subject_age_range?: string | null
+          subject_type?: string | null
+          temperature?: number | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          blood_glucose?: number | null
+          bp_diastolic?: number | null
+          bp_method?: string | null
+          bp_systolic?: number | null
+          context?: string
+          course_id?: string | null
+          created_at?: string
+          gcs?: number | null
+          id?: string
+          notes?: string | null
+          pain_scale?: number | null
+          pulse?: number | null
+          pulse_quality?: string | null
+          pupils?: string | null
+          recorded_at?: string
+          respiratory_rate?: number | null
+          setting?: string | null
+          skin?: string | null
+          spo2?: number | null
+          student_id?: string
+          subject_age_range?: string | null
+          subject_type?: string | null
+          temperature?: number | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_vital_signs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_vital_signs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_vital_signs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           assignment_id: string
@@ -9237,6 +9906,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_tier"]
             | null
           tenant_type: string | null
+          timezone: string | null
           trial_ends_at: string | null
           updated_at: string | null
           white_label_enabled: boolean | null
@@ -9263,6 +9933,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_tier"]
             | null
           tenant_type?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
           white_label_enabled?: boolean | null
@@ -9289,6 +9960,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_tier"]
             | null
           tenant_type?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
           white_label_enabled?: boolean | null
@@ -9827,6 +10499,35 @@ export type Database = {
         Args: { p_invite_code: string; p_user_id: string }
         Returns: boolean
       }
+      add_program_class_dates: {
+        Args: {
+          p_dates: string[]
+          p_end_time: string
+          p_location?: string
+          p_program_id: string
+          p_session_type?: string
+          p_start_time: string
+          p_title?: string
+        }
+        Returns: {
+          class_date: string
+          outcome: string
+          session_id: string
+        }[]
+      }
+      auto_open_due_sessions: {
+        Args: {
+          p_lead_minutes?: number
+          p_local_date?: string
+          p_local_time?: string
+        }
+        Returns: {
+          opened_code: string
+          opened_expires_at: string
+          opened_session_id: string
+          opened_title: string
+        }[]
+      }
       book_clinical_shift: {
         Args: { p_shift_id: string; p_student_id: string; p_tenant_id: string }
         Returns: {
@@ -9968,6 +10669,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ensure_attendance_window: {
+        Args: { p_days?: number; p_local_date?: string }
+        Returns: number
+      }
       generate_agency_code: { Args: never; Returns: string }
       generate_attendance_sessions: {
         Args: {
@@ -9979,6 +10684,7 @@ export type Database = {
         }
         Returns: number
       }
+      generate_check_in_code: { Args: never; Returns: string }
       generate_invite_code: { Args: never; Returns: string }
       get_accreditation_compliance_summary: {
         Args: { p_tenant_id: string }
@@ -10012,6 +10718,20 @@ export type Database = {
           share_description: string
           share_tags: string[]
           tenant_name: string
+        }[]
+      }
+      get_course_vitals_roster: {
+        Args: { p_course_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          last_logged_at: string
+          logged_in_patient_contacts: number
+          logged_standalone: number
+          logged_total: number
+          remaining: number
+          required_total: number
+          student_id: string
         }[]
       }
       get_employee_cycle_completion: {
@@ -10186,8 +10906,35 @@ export type Database = {
           watch_percentage: number
         }[]
       }
+      get_student_vitals_progress: {
+        Args: { p_student_id?: string }
+        Returns: {
+          logged_in_patient_contacts: number
+          logged_standalone: number
+          logged_total: number
+          remaining: number
+          required_total: number
+          student_id: string
+        }[]
+      }
+      get_tenant_public: {
+        Args: { p_domain?: string; p_slug?: string }
+        Returns: {
+          custom_domain: string
+          id: string
+          logo_url: string
+          name: string
+          primary_color: string
+          slug: string
+          tenant_type: string
+        }[]
+      }
       get_todays_sessions: {
-        Args: { p_instructor_id?: string; p_tenant_id: string }
+        Args: {
+          p_instructor_id: string
+          p_local_date?: string
+          p_tenant_id: string
+        }
         Returns: {
           check_in_count: number
           end_time: string
@@ -10396,6 +11143,8 @@ export type Database = {
         }
         Returns: Json
       }
+      state_to_timezone: { Args: { p_state: string }; Returns: string }
+      tenant_local_now: { Args: { p_tenant_id: string }; Returns: string }
       toggle_course_sharing: {
         Args: {
           p_course_id: string
@@ -10555,12 +11304,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -10584,11 +11333,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -10609,11 +11358,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -10634,11 +11383,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -10651,11 +11400,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
