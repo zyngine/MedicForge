@@ -18,7 +18,7 @@ import {
   Label,
 } from "@/components/ui";
 import { QuizTimer, useQuizTimer } from "@/components/quiz/quiz-timer";
-import { gradeQuizAnswers, safeParseAnswer } from "@/lib/quiz-grading";
+import { gradeQuizAnswers, safeParseAnswer, toPercentage } from "@/lib/quiz-grading";
 import {
   CheckCircle,
   AlertCircle,
@@ -29,6 +29,7 @@ import {
   FileText,
   X,
   Paperclip,
+  Clock,
 } from "lucide-react";
 
 interface Question {
@@ -89,6 +90,7 @@ export default function AssignmentPage() {
     score: number;
     total: number;
     percentage: number;
+    pendingCount: number;
   } | null>(null);
 
   // Quiz timer hook - initialize with 0, will be set when quiz starts
@@ -267,6 +269,7 @@ export default function AssignmentPage() {
       // Calculate score for quiz
       let score = 0;
       let totalPoints = 0;
+      let pendingQuestionIds: string[] = [];
 
       if (assignment.type === "quiz") {
         // Fetch all correct answers in a single query (instead of N+1 per question)
@@ -289,6 +292,7 @@ export default function AssignmentPage() {
         const graded = gradeQuizAnswers(questions, answers, answerMap);
         score = graded.score;
         totalPoints = graded.totalPoints;
+        pendingQuestionIds = graded.pendingQuestionIds;
       }
 
       const attemptNumber = previousSubmissions.length + 1;
@@ -305,7 +309,14 @@ export default function AssignmentPage() {
       }
 
       // Calculate percentage score for quiz (final_score should be 0-100 percentage)
-      const percentageScore = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+      const percentageScore = toPercentage(score, totalPoints);
+
+      // A short answer the system could not match is the instructor's to judge,
+      // so the quiz is not finished being graded. Leaving final_score empty and
+      // the status at 'submitted' is what puts it in the instructor's grading
+      // queue (usePendingSubmissions filters on exactly that status); writing a
+      // percentage here would publish a score that ignores the pending marks.
+      const awaitingReview = assignment.type === "quiz" && pendingQuestionIds.length > 0;
 
       // Create submission
       const { data: createdSubmission, error: submitError } = await supabase
@@ -318,9 +329,11 @@ export default function AssignmentPage() {
           content,
           file_urls: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : null,
           submitted_at: new Date().toISOString(),
-          status: assignment.type === "quiz" ? "graded" : "submitted",
+          status: assignment.type === "quiz" && !awaitingReview ? "graded" : "submitted",
+          // raw_score carries the auto-graded points either way, so the
+          // instructor starts from what the system already established.
           raw_score: assignment.type === "quiz" ? score : null,
-          final_score: assignment.type === "quiz" ? percentageScore : null,
+          final_score: awaitingReview || assignment.type !== "quiz" ? null : percentageScore,
         })
         .select("id")
         .single();
@@ -347,7 +360,8 @@ export default function AssignmentPage() {
         setSubmissionResult({
           score,
           total: totalPoints,
-          percentage: totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0,
+          percentage: percentageScore,
+          pendingCount: pendingQuestionIds.length,
         });
       } else if (assignment.type === "written") {
         setWrittenSubmitted(true);
@@ -412,26 +426,55 @@ export default function AssignmentPage() {
 
   // Show quiz results after submission
   if (submissionResult) {
+    // A percentage shown while short answers are still unmarked is not this
+    // student's score — it is the score they would have if every pending answer
+    // were wrong. Showing it would read as a fail they have not been given.
+    const awaitingReview = submissionResult.pendingCount > 0;
+
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardContent className="p-8 text-center">
             <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
-              submissionResult.percentage >= 70 ? "bg-success/20" : "bg-warning/20"
+              awaitingReview
+                ? "bg-info/20"
+                : submissionResult.percentage >= 70
+                  ? "bg-success/20"
+                  : "bg-warning/20"
             }`}>
-              {submissionResult.percentage >= 70 ? (
+              {awaitingReview ? (
+                <Clock className="h-10 w-10 text-info" />
+              ) : submissionResult.percentage >= 70 ? (
                 <CheckCircle className="h-10 w-10 text-success" />
               ) : (
                 <AlertCircle className="h-10 w-10 text-warning" />
               )}
             </div>
-            <h2 className="text-2xl font-bold mb-2">Quiz Completed!</h2>
-            <p className="text-muted-foreground mb-4">
-              You scored {submissionResult.score} out of {submissionResult.total} points
-            </p>
-            <div className="text-4xl font-bold mb-6">
-              {submissionResult.percentage}%
-            </div>
+
+            {awaitingReview ? (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Quiz Submitted</h2>
+                <p className="text-muted-foreground mb-4">
+                  {submissionResult.pendingCount} written{" "}
+                  {submissionResult.pendingCount === 1 ? "answer needs" : "answers need"}{" "}
+                  to be marked by your instructor, so your score is not final yet.
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {submissionResult.score} of {submissionResult.total} points have been
+                  graded automatically so far.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Quiz Completed!</h2>
+                <p className="text-muted-foreground mb-4">
+                  You scored {submissionResult.score} out of {submissionResult.total} points
+                </p>
+                <div className="text-4xl font-bold mb-6">
+                  {submissionResult.percentage}%
+                </div>
+              </>
+            )}
             <div className="flex gap-4 justify-center">
               <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
