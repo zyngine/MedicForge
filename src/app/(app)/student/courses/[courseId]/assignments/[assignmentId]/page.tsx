@@ -15,8 +15,10 @@ import {
   Spinner,
   Badge,
   Textarea,
+  Label,
 } from "@/components/ui";
 import { QuizTimer, useQuizTimer } from "@/components/quiz/quiz-timer";
+import { gradeQuizAnswers, safeParseAnswer } from "@/lib/quiz-grading";
 import {
   CheckCircle,
   AlertCircle,
@@ -276,22 +278,17 @@ export default function AssignmentPage() {
         const answerMap = new Map(
           (allAnswers || []).map((a) => [
             a.id,
+            // A plain short-answer string is not valid JSON, so JSON.parse
+            // would throw on it and take the whole submission down with it.
             typeof a.correct_answer === "string"
-              ? JSON.parse(a.correct_answer)
+              ? safeParseAnswer(a.correct_answer)
               : a.correct_answer,
           ])
         );
 
-        for (const question of questions) {
-          const questionPoints = question.points ?? 1;
-          totalPoints += questionPoints;
-          const userAnswer = answers[question.id];
-          const correctAnswer = answerMap.get(question.id);
-
-          if (correctAnswer !== undefined && userAnswer === correctAnswer) {
-            score += questionPoints;
-          }
-        }
+        const graded = gradeQuizAnswers(questions, answers, answerMap);
+        score = graded.score;
+        totalPoints = graded.totalPoints;
       }
 
       const attemptNumber = previousSubmissions.length + 1;
@@ -584,6 +581,14 @@ export default function AssignmentPage() {
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
+    // True/False questions are sometimes stored without explicit options, so
+    // supply them rather than rendering an empty question.
+    const answerOptions =
+      currentQuestion.question_type === "true_false" &&
+      currentQuestion.options.length === 0
+        ? ["True", "False"]
+        : currentQuestion.options;
+
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Timer & Progress */}
@@ -620,32 +625,60 @@ export default function AssignmentPage() {
             <CardTitle className="text-xl mt-4">{currentQuestion.question_text}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswerSelect(currentQuestion.id, index)}
-                  className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                    answers[currentQuestion.id] === index
-                      ? "border-primary bg-primary/5"
-                      : "border-muted hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      answers[currentQuestion.id] === index
-                        ? "border-primary bg-primary text-white"
-                        : "border-muted"
-                    }`}>
-                      {answers[currentQuestion.id] === index && (
-                        <CheckCircle className="h-4 w-4" />
-                      )}
-                    </div>
-                    <span>{option}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {/* Short answer takes free text. This page used to render every
+                question as a list of options regardless of question_type, so a
+                short-answer question showed up as blank option buttons. */}
+            {currentQuestion.question_type === "short_answer" ? (
+              <div className="space-y-2">
+                <Label htmlFor={`answer-${currentQuestion.id}`}>Your answer</Label>
+                <Textarea
+                  id={`answer-${currentQuestion.id}`}
+                  value={
+                    typeof answers[currentQuestion.id] === "string"
+                      ? (answers[currentQuestion.id] as string)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleAnswerSelect(currentQuestion.id, e.target.value)
+                  }
+                  placeholder="Type your answer..."
+                  rows={4}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {answerOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    This question has no answer options yet. Let your instructor know.
+                  </p>
+                ) : (
+                  answerOptions.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(currentQuestion.id, index)}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
+                        answers[currentQuestion.id] === index
+                          ? "border-primary bg-primary/5"
+                          : "border-muted hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          answers[currentQuestion.id] === index
+                            ? "border-primary bg-primary text-white"
+                            : "border-muted"
+                        }`}>
+                          {answers[currentQuestion.id] === index && (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span>{option}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
