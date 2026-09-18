@@ -88,12 +88,21 @@ export function QuizBuilder({ questions, onChange, readOnly = false }: QuizBuild
   };
 
   const addQuestion = (type: QuestionType = "multiple_choice") => {
+    // Short answer has no options and its correct_answer is the expected text,
+    // not an option index. Seeding it with four blank options (as this used to)
+    // saved a short-answer question that looked like an empty multiple choice
+    // question to everything downstream.
     const newQuestion: QuizQuestion = {
       id: generateId(),
       question_text: "",
       question_type: type,
-      options: type === "true_false" ? ["True", "False"] : ["", "", "", ""],
-      correct_answer: type === "true_false" ? 0 : 0,
+      options:
+        type === "true_false"
+          ? ["True", "False"]
+          : type === "short_answer"
+            ? []
+            : ["", "", "", ""],
+      correct_answer: type === "short_answer" ? "" : 0,
       points: 1,
       explanation: "",
     };
