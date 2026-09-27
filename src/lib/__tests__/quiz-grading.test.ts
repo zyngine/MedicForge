@@ -3,6 +3,9 @@ import {
   gradeQuizAnswers,
   normalizeShortAnswer,
   safeParseAnswer,
+  shortAnswerMatches,
+  finalizeQuizScore,
+  toPercentage,
 } from "../quiz-grading";
 
 describe("safeParseAnswer", () => {
@@ -43,12 +46,22 @@ describe("gradeQuizAnswers", () => {
 
   it("credits a correct multiple choice answer by index", () => {
     const result = gradeQuizAnswers([mc], { q1: 1 }, new Map([["q1", 1]]));
-    expect(result).toEqual({ score: 2, totalPoints: 2 });
+    expect(result).toEqual({
+      score: 2,
+      totalPoints: 2,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
   });
 
   it("does not credit a wrong multiple choice answer", () => {
     const result = gradeQuizAnswers([mc], { q1: 0 }, new Map([["q1", 1]]));
-    expect(result).toEqual({ score: 0, totalPoints: 2 });
+    expect(result).toEqual({
+      score: 0,
+      totalPoints: 2,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
   });
 
   it("credits short answer case-insensitively and ignoring whitespace", () => {
@@ -57,21 +70,39 @@ describe("gradeQuizAnswers", () => {
       { q3: "  EPINEPHRINE " },
       new Map([["q3", "epinephrine"]])
     );
-    expect(result).toEqual({ score: 3, totalPoints: 3 });
+    expect(result).toEqual({
+      score: 3,
+      totalPoints: 3,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
   });
 
-  it("does not credit a blank short answer even against a blank key", () => {
+  it("sends a blank short answer to the instructor rather than scoring it zero", () => {
     const result = gradeQuizAnswers([sa], { q3: "   " }, new Map([["q3", ""]]));
-    expect(result).toEqual({ score: 0, totalPoints: 3 });
+    expect(result).toEqual({
+      score: 0,
+      totalPoints: 3,
+      pendingPoints: 3,
+      pendingQuestionIds: ["q3"],
+    });
   });
 
-  it("does not credit a wrong short answer", () => {
+  it("sends a non-matching short answer to the instructor rather than marking it wrong", () => {
+    // This is the behaviour the medication quizzes need: an expected answer of
+    // "Right Patient, Right Medication, ..." is not something a student types
+    // verbatim, and scoring it zero automatically is the wrong answer.
     const result = gradeQuizAnswers(
       [sa],
       { q3: "atropine" },
       new Map([["q3", "epinephrine"]])
     );
-    expect(result).toEqual({ score: 0, totalPoints: 3 });
+    expect(result).toEqual({
+      score: 0,
+      totalPoints: 3,
+      pendingPoints: 3,
+      pendingQuestionIds: ["q3"],
+    });
   });
 
   it("credits a short answer whose key was saved as a number by the old builder", () => {
@@ -79,12 +110,24 @@ describe("gradeQuizAnswers", () => {
     // existing questions can have a numeric key. A student typing "0" matches;
     // anything else does not, and neither should crash.
     const result = gradeQuizAnswers([sa], { q3: "0" }, new Map([["q3", 0]]));
-    expect(result).toEqual({ score: 3, totalPoints: 3 });
+    expect(result).toEqual({
+      score: 3,
+      totalPoints: 3,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
   });
 
   it("counts points for unanswered questions but awards none", () => {
     const result = gradeQuizAnswers([mc, sa], {}, new Map<string, unknown>([["q1", 1], ["q3", "x"]]));
-    expect(result).toEqual({ score: 0, totalPoints: 5 });
+    // The unanswered multiple choice scores zero outright; the unanswered short
+    // answer is the instructor's to judge.
+    expect(result).toEqual({
+      score: 0,
+      totalPoints: 5,
+      pendingPoints: 3,
+      pendingQuestionIds: ["q3"],
+    });
   });
 
   it("grades a mixed quiz", () => {
@@ -97,8 +140,13 @@ describe("gradeQuizAnswers", () => {
         ["q3", "epinephrine"],
       ])
     );
-    // mc correct (2) + tf wrong (0) + sa correct (3)
-    expect(result).toEqual({ score: 5, totalPoints: 6 });
+    // mc correct (2) + tf wrong (0) + sa matches exactly (3)
+    expect(result).toEqual({
+      score: 5,
+      totalPoints: 6,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
   });
 
   it("defaults missing points to 1", () => {
@@ -107,6 +155,83 @@ describe("gradeQuizAnswers", () => {
       { q9: 0 },
       new Map([["q9", 0]])
     );
-    expect(result).toEqual({ score: 1, totalPoints: 1 });
+    expect(result).toEqual({
+      score: 1,
+      totalPoints: 1,
+      pendingPoints: 0,
+      pendingQuestionIds: [],
+    });
+  });
+
+  it("lists pending questions in quiz order", () => {
+    const sa2 = { id: "q4", question_type: "short_answer" as const, points: 1 };
+    const result = gradeQuizAnswers(
+      [sa, mc, sa2],
+      { q3: "wrong", q1: 1, q4: "also wrong" },
+      new Map<string, unknown>([["q3", "a"], ["q1", 1], ["q4", "b"]])
+    );
+    expect(result.pendingQuestionIds).toEqual(["q3", "q4"]);
+    expect(result.score).toBe(2);
+    expect(result.pendingPoints).toBe(4);
+  });
+});
+
+describe("shortAnswerMatches", () => {
+  it("matches after trimming and case folding", () => {
+    expect(shortAnswerMatches("  EPINEPHRINE ", "epinephrine")).toBe(true);
+  });
+
+  it("does not match a blank answer, even against a blank expectation", () => {
+    expect(shortAnswerMatches("   ", "")).toBe(false);
+  });
+
+  it("does not match different text", () => {
+    expect(shortAnswerMatches("atropine", "epinephrine")).toBe(false);
+  });
+});
+
+describe("finalizeQuizScore", () => {
+  const mc = { id: "q1", question_type: "multiple_choice" as const, points: 2 };
+  const sa = { id: "q3", question_type: "short_answer" as const, points: 3 };
+
+  it("adds the instructor's awards to the auto-graded score", () => {
+    expect(finalizeQuizScore(2, { q3: 3 }, [mc, sa])).toEqual({
+      score: 5,
+      totalPoints: 5,
+    });
+  });
+
+  it("awards partial credit", () => {
+    expect(finalizeQuizScore(2, { q3: 1.5 }, [mc, sa])).toEqual({
+      score: 3.5,
+      totalPoints: 5,
+    });
+  });
+
+  it("clamps an award to the question's own points", () => {
+    // A slip in the grading form must not put a student above the maximum.
+    expect(finalizeQuizScore(2, { q3: 99 }, [mc, sa]).score).toBe(5);
+  });
+
+  it("clamps a negative award to zero", () => {
+    expect(finalizeQuizScore(2, { q3: -5 }, [mc, sa]).score).toBe(2);
+  });
+
+  it("ignores an award for a question that is not on the quiz", () => {
+    expect(finalizeQuizScore(2, { nope: 10 }, [mc, sa]).score).toBe(2);
+  });
+
+  it("ignores a non-numeric award rather than producing NaN", () => {
+    expect(finalizeQuizScore(2, { q3: Number.NaN }, [mc, sa]).score).toBe(2);
+  });
+});
+
+describe("toPercentage", () => {
+  it("rounds to a whole percent", () => {
+    expect(toPercentage(5, 6)).toBe(83);
+  });
+
+  it("returns 0 for a quiz worth no points rather than dividing by zero", () => {
+    expect(toPercentage(0, 0)).toBe(0);
   });
 });
