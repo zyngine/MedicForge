@@ -4,6 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "./use-tenant";
 import { useUser } from "./use-user";
+import { contactVitalsEntry, type VitalsMeasurements } from "@/lib/vitals-format";
+
+// Re-exported so callers keep importing vitals helpers from one place.
+export {
+  formatVitalsSummary,
+  contactVitalsEntry,
+  type VitalsMeasurements,
+} from "@/lib/vitals-format";
 
 
 export const VITALS_CONTEXTS = [
@@ -209,23 +217,96 @@ export function getContextLabel(value: string | null): string {
   return VITALS_CONTEXTS.find((c) => c.value === value)?.label ?? value;
 }
 
+// ========== One student's sets, for an instructor ==========
+
+export interface VitalsTimelineEntry {
+  /** Stable key for React; ids are not unique across the two sources. */
+  key: string;
+  /** When it was taken, ISO. Patient contact sets fall back to the report's date. */
+  recordedAt: string;
+  /** Wall-clock time the student wrote on the set, when there is one. */
+  timeLabel: string | null;
+  source: "log" | "patient_contact";
+  /** "Skills lab", or the patient contact's chief complaint. */
+  label: string;
+  measurements: VitalsMeasurements;
+  notes: string | null;
+}
+
 /**
- * Compact one-line summary of a set, for a table row.
+ * Every set one student has documented, from both places they live, newest
+ * first.
  *
- * Only shows what was actually recorded: a set taken without a thermometer
- * should read "128/82 · HR 76", not "128/82 · HR 76 · Temp —".
+ * The roster counts standalone rows and patient contact sets together, so
+ * opening a student has to show both — a student sitting at 10 whose drill-in
+ * listed only the 3 they typed here would look like a bug.
+ *
+ * Authorization is the RLS policies', not this query's: staff can read
+ * student_vital_signs in their tenant and all patient contacts in their tenant,
+ * and a student reaching for someone else gets nothing back.
  */
-export function formatVitalsSummary(v: VitalSignEntry): string {
-  const parts: string[] = [];
-  if (v.bp_systolic != null || v.bp_diastolic != null) {
-    parts.push(`${v.bp_systolic ?? "?"}/${v.bp_diastolic ?? "?"}`);
-  }
-  if (v.pulse != null) parts.push(`HR ${v.pulse}`);
-  if (v.respiratory_rate != null) parts.push(`RR ${v.respiratory_rate}`);
-  if (v.spo2 != null) parts.push(`SpO2 ${v.spo2}%`);
-  if (v.temperature != null) parts.push(`${v.temperature}°F`);
-  if (v.blood_glucose != null) parts.push(`BGL ${v.blood_glucose}`);
-  if (v.gcs != null) parts.push(`GCS ${v.gcs}`);
-  if (v.pain_scale != null) parts.push(`Pain ${v.pain_scale}`);
-  return parts.length > 0 ? parts.join(" · ") : "No values recorded";
+export function useStudentVitalsDetail(studentId: string | null) {
+  return useQuery({
+    queryKey: ["student-vitals-detail", studentId],
+    queryFn: async () => {
+      if (!studentId) return [];
+
+      const supabase = createClient();
+
+      const [{ data: logged, error: logError }, { data: contacts, error: contactError }] =
+        await Promise.all([
+          supabase
+            .from("student_vital_signs")
+            .select("*")
+            .eq("student_id", studentId)
+            .order("recorded_at", { ascending: false }),
+          supabase
+            .from("clinical_patient_contacts")
+            .select("id, vitals, chief_complaint, created_at")
+            .eq("student_id", studentId),
+        ]);
+
+      if (logError) throw logError;
+      if (contactError) throw contactError;
+
+      const entries: VitalsTimelineEntry[] = [];
+
+      for (const row of (logged || []) as VitalSignEntry[]) {
+        entries.push({
+          key: `log:${row.id}`,
+          recordedAt: row.recorded_at,
+          timeLabel: null,
+          source: "log",
+          label: [getContextLabel(row.context), row.setting].filter(Boolean).join(" · "),
+          measurements: row,
+          notes: row.notes,
+        });
+      }
+
+      for (const contact of contacts || []) {
+        const raw = (contact as { vitals?: unknown }).vitals;
+        if (!Array.isArray(raw)) continue;
+
+        raw.forEach((item, index) => {
+          const parsed = contactVitalsEntry(item);
+          const { time, ...measurements } = parsed;
+          entries.push({
+            key: `contact:${contact.id}:${index}`,
+            // A set inside a report carries a wall-clock time but no date, so
+            // the report's own date is the best anchor available.
+            recordedAt: contact.created_at as string,
+            timeLabel: time ?? null,
+            source: "patient_contact",
+            label: contact.chief_complaint || "Patient contact",
+            measurements,
+            notes: null,
+          });
+        });
+      }
+
+      entries.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
+      return entries;
+    },
+    enabled: !!studentId,
+  });
 }
