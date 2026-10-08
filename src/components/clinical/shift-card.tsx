@@ -12,6 +12,8 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  Phone,
+  Info,
 } from "lucide-react";
 import type { ClinicalShiftWithDetails } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -103,12 +105,36 @@ export function ShiftCard({
             </span>
           </div>
 
-          {shift.site?.city && (
-            <div className="flex items-center gap-2 text-muted-foreground col-span-2">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
+          {(shift.site?.address || shift.site?.city) && (
+            <div className="flex items-start gap-2 text-muted-foreground col-span-2">
+              <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <span>
-                {[shift.site.city, shift.site.state].filter(Boolean).join(", ")}
+                {[
+                  shift.site.address,
+                  [shift.site.city, shift.site.state].filter(Boolean).join(", "),
+                  shift.site.zip,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
+            </div>
+          )}
+
+          {/* Shown before booking, not only after: where a site is and who to
+              ask about it is part of deciding whether to take the shift. */}
+          {shift.site?.phone && (
+            <div className="flex items-center gap-2 text-muted-foreground col-span-2">
+              <Phone className="h-4 w-4 flex-shrink-0" />
+              <a href={`tel:${shift.site.phone}`} className="hover:text-primary">
+                {shift.site.phone}
+              </a>
+            </div>
+          )}
+
+          {shift.site?.notes && (
+            <div className="flex items-start gap-2 text-muted-foreground col-span-2">
+              <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <span className="whitespace-pre-wrap">{shift.site.notes}</span>
             </div>
           )}
 

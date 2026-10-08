@@ -14,6 +14,10 @@ import {
   FileText,
   Trash2,
   Hourglass,
+  Phone,
+  Mail,
+  User,
+  Info,
 } from "lucide-react";
 import type { ShiftBookingWithDetails, BookingStatus } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -143,18 +147,72 @@ export function BookingCard({
                 </span>
               </div>
 
-              {shift.site?.city && (
-                <div className="flex items-center gap-2 text-muted-foreground col-span-2">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
+              {(shift.site?.address || shift.site?.city) && (
+                <div className="flex items-start gap-2 text-muted-foreground col-span-2">
+                  <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <span>
-                    {[shift.site.city, shift.site.state]
+                    {/* The full address, not just the city: a student has to
+                        actually get there, and often on a first visit. */}
+                    {[
+                      shift.site.address,
+                      [shift.site.city, shift.site.state].filter(Boolean).join(", "),
+                      shift.site.zip,
+                    ]
                       .filter(Boolean)
-                      .join(", ")}
+                      .join(" · ")}
                   </span>
                 </div>
               )}
             </div>
           )}
+
+          {/* Who to call and what to know before turning up. Students could not
+              see any of this: the booking already loaded the whole site row, and
+              the card rendered only its name and city. */}
+          {shift?.site &&
+            (shift.site.phone ||
+              shift.site.contact_name ||
+              shift.site.contact_email ||
+              shift.site.notes) && (
+              <div className="mt-4 pt-4 border-t space-y-2 text-sm">
+                <p className="font-medium">Site contact</p>
+
+                {shift.site.contact_name && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-4 w-4 flex-shrink-0" />
+                    <span>{shift.site.contact_name}</span>
+                  </div>
+                )}
+
+                {shift.site.phone && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4 flex-shrink-0" />
+                    <a href={`tel:${shift.site.phone}`} className="hover:text-primary">
+                      {shift.site.phone}
+                    </a>
+                  </div>
+                )}
+
+                {shift.site.contact_email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4 flex-shrink-0" />
+                    <a
+                      href={`mailto:${shift.site.contact_email}`}
+                      className="hover:text-primary break-all"
+                    >
+                      {shift.site.contact_email}
+                    </a>
+                  </div>
+                )}
+
+                {shift.site.notes && (
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <span className="whitespace-pre-wrap">{shift.site.notes}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
           {booking.hours_completed !== null && (
             <div className="mt-4 pt-4 border-t">
