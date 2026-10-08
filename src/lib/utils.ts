@@ -174,3 +174,29 @@ export const SUBSCRIPTION_TIERS = [
 ] as const;
 
 export type SubscriptionTier = (typeof SUBSCRIPTION_TIERS)[number]["value"];
+
+/**
+ * Format an instant for a `<input type="datetime-local">` value.
+ *
+ * The input renders and returns *local* wall-clock time, so the value handed to
+ * it has to be local too. `toISOString().slice(0, 16)` is UTC, which is the same
+ * string shape and therefore silently wrong: an 11pm Eastern deadline loads as
+ * "04:00" the next day, and because the form saves whatever it is showing, every
+ * open-and-save shifted the stored time by the UTC offset again.
+ *
+ * Returns "" for a missing or unparseable value so a bad row renders an empty
+ * field rather than "Invalid Date".
+ */
+export function toDateTimeLocalValue(value: string | Date | null | undefined): string {
+  if (!value) return "";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}

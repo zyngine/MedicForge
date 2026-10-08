@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useSubmissions, usePendingSubmissions, useGradeSubmission, useApplyGradeCurve } from "@/lib/hooks/use-submissions";
 import { SubmissionPreview } from "@/components/grading/submission-preview";
+import { ShortAnswerGrader } from "@/components/grading/short-answer-grader";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { previewCurve, type CurveMethod, type ScoreInput, type CurveResult } from "@/lib/grading";
 
@@ -88,6 +89,7 @@ function formatDate(dateString: string) {
 interface SubmissionDisplay {
   id: string;
   student: { name: string; email: string };
+  assignmentId: string;
   assignment: string;
   assignmentType: string;
   course: string;
@@ -141,6 +143,7 @@ export default function GradingPage() {
       name: sub.student?.full_name || "Unknown Student",
       email: sub.student?.email || ""
     },
+    assignmentId: sub.assignment_id,
     assignment: sub.assignment?.title || "Unknown Assignment",
     assignmentType: sub.assignment?.type || "quiz",
     course: getCourseName(sub),
@@ -156,6 +159,7 @@ export default function GradingPage() {
       name: sub.student?.full_name || "Unknown Student",
       email: sub.student?.email || ""
     },
+    assignmentId: sub.assignment_id,
     assignment: sub.assignment?.title || "Unknown Assignment",
     assignmentType: sub.assignment?.type || "quiz",
     course: getCourseName(sub),
@@ -574,8 +578,24 @@ export default function GradingPage() {
               </div>
             </div>
 
-            {/* Submission content + plagiarism check */}
-            <SubmissionPreview submissionId={selectedSubmission.id} />
+            {/* A quiz is marked question by question, against each expected
+                answer. The plagiarism preview below is for written work, where
+                the submission is one body of prose. */}
+            {selectedSubmission.assignmentType === "quiz" ? (
+              <ShortAnswerGrader
+                submissionId={selectedSubmission.id}
+                assignmentId={selectedSubmission.assignmentId}
+                onGraded={() => {
+                  setSelectedSubmission(null);
+                  setGradeScore("");
+                  setGradeFeedback("");
+                  refetchPending();
+                  refetchGraded();
+                }}
+              />
+            ) : (
+              <SubmissionPreview submissionId={selectedSubmission.id} />
+            )}
 
             {/* Previous Grade (when editing) */}
             {selectedSubmission.gradedAt && selectedSubmission.rawScore !== null && (
@@ -615,7 +635,10 @@ export default function GradingPage() {
               </Card>
             )}
 
-            {/* Grading Form */}
+            {/* Grading Form — written work only. A quiz is scored by the
+                per-question marks above, and a second, free-form score box here
+                would let an instructor save a total that contradicts them. */}
+            {selectedSubmission.assignmentType !== "quiz" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -643,6 +666,7 @@ export default function GradingPage() {
                 />
               </div>
             </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
@@ -653,16 +677,20 @@ export default function GradingPage() {
               }}>
                 Cancel
               </Button>
-              {!selectedSubmission.gradedAt && (
-                <Button variant="outline">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Request Revision
-                </Button>
+              {selectedSubmission.assignmentType !== "quiz" && (
+                <>
+                  {!selectedSubmission.gradedAt && (
+                    <Button variant="outline">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Request Revision
+                    </Button>
+                  )}
+                  <Button onClick={handleGradeSubmit} isLoading={isGrading} disabled={!gradeScore}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {selectedSubmission.gradedAt ? "Update Grade" : "Submit Grade"}
+                  </Button>
+                </>
               )}
-              <Button onClick={handleGradeSubmit} isLoading={isGrading} disabled={!gradeScore}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {selectedSubmission.gradedAt ? "Update Grade" : "Submit Grade"}
-              </Button>
             </div>
           </div>
         )}

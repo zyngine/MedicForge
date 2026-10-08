@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { toDateTimeLocalValue } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -90,14 +91,14 @@ export default function EditAssignmentPage() {
       setDescription(assignment.description || "");
       setModuleId(assignment.module_id || "");
 
-      // Parse dates for datetime-local input
+      // Parse dates for datetime-local input, in local time — see
+      // toDateTimeLocalValue. Using a UTC string here shifted the stored time by
+      // the UTC offset on every save.
       if (assignment.due_date) {
-        const dueDateTime = new Date(assignment.due_date);
-        setDueDate(dueDateTime.toISOString().slice(0, 16));
+        setDueDate(toDateTimeLocalValue(assignment.due_date));
       }
       if (assignment.available_from) {
-        const availableFromDateTime = new Date(assignment.available_from);
-        setAvailableFrom(availableFromDateTime.toISOString().slice(0, 16));
+        setAvailableFrom(toDateTimeLocalValue(assignment.available_from));
       }
 
       // Parse settings
@@ -107,8 +108,7 @@ export default function EditAssignmentPage() {
         show_correct_answers?: boolean;
       };
       if (settings.available_until) {
-        const availableUntilDateTime = new Date(settings.available_until);
-        setAvailableUntil(availableUntilDateTime.toISOString().slice(0, 16));
+        setAvailableUntil(toDateTimeLocalValue(settings.available_until));
       }
       setShuffleQuestions(settings.shuffle_questions || false);
       setShowCorrectAnswers(settings.show_correct_answers !== false);

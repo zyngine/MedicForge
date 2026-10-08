@@ -494,10 +494,16 @@ function QuestionEditor({
           {question.question_type === "short_answer" && (
             <div className="space-y-2">
               <Label>Expected Answer</Label>
-              <Input
+              {/* A single-line Input could not show these: the expected answers
+                  programs write run to several clauses — "Right Patient, Right
+                  Medication, Right Dose, Right Route, Right Time, Right
+                  Documentation" — and an instructor could only see the tail end
+                  of what they had typed. */}
+              <Textarea
                 value={question.correct_answer as string}
                 onChange={(e) => onChange({ correct_answer: e.target.value })}
                 placeholder="Enter the expected answer..."
+                rows={3}
                 disabled={readOnly}
               />
               <p className="text-xs text-muted-foreground">
