@@ -38,6 +38,7 @@ import Link from "next/link";
 import { useMyClinicalLogs, useCreateClinicalLog } from "@/lib/hooks/use-clinical-logs";
 import { useMyPatientContacts } from "@/lib/hooks/use-patient-contacts";
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
+import { useVitalsProgress } from "@/lib/hooks/use-vital-signs";
 import { formatDate } from "@/lib/utils";
 
 // TODO: These should come from course/program configuration
@@ -70,6 +71,7 @@ export default function ClinicalTrackerPage() {
   const { mutateAsync: createLog } = useCreateClinicalLog();
   const { contacts, isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useMyPatientContacts();
   const { data: enrollments = [] } = useMyEnrollments();
+  const { data: vitalsProgress } = useVitalsProgress();
 
   const [showLogModal, setShowLogModal] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -206,6 +208,12 @@ export default function ClinicalTrackerPage() {
               Log Patient Contact
             </Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link href="/student/clinical/vitals">
+              <Activity className="h-4 w-4 mr-2" />
+              Vital Signs
+            </Link>
+          </Button>
           <Button onClick={() => setShowLogModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Log Clinical Hours
@@ -214,7 +222,7 @@ export default function ClinicalTrackerPage() {
       </div>
 
       {/* Progress Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
@@ -270,6 +278,50 @@ export default function ClinicalTrackerPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               From {hoursLogs.length} clinical sessions
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Vital signs. The total counts sets logged on the vitals page and sets
+            documented inside patient contact reports, so it does not double-count
+            and does not ask the student to re-enter anything. */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-lg bg-warning/10 text-warning">
+                <Activity className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Vital Sign Sets</p>
+                <p className="text-2xl font-bold">
+                  {vitalsProgress?.logged_total ?? 0}
+                  {vitalsProgress?.required_total != null && (
+                    <span className="text-muted-foreground">
+                      /{vitalsProgress.required_total}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            {vitalsProgress?.required_total != null && vitalsProgress.required_total > 0 ? (
+              <Progress
+                value={Math.min(
+                  (vitalsProgress.logged_total / vitalsProgress.required_total) * 100,
+                  100
+                )}
+                size="md"
+                variant={
+                  vitalsProgress.logged_total >= vitalsProgress.required_total
+                    ? "success"
+                    : "warning"
+                }
+              />
+            ) : null}
+            <p className="text-xs text-muted-foreground mt-2">
+              <Link href="/student/clinical/vitals" className="hover:text-primary underline">
+                {vitalsProgress?.logged_standalone ?? 0} logged directly,{" "}
+                {vitalsProgress?.logged_in_patient_contacts ?? 0} from patient contacts
+              </Link>
             </p>
           </CardContent>
         </Card>
