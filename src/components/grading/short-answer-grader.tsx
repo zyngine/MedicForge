@@ -203,6 +203,8 @@ export function ShortAnswerGrader({ submissionId, assignmentId, onGraded }: Prop
 
     try {
       const { score, totalPoints } = finalizeQuizScore(autoScore, numericGrades, questions);
+      // Shown to the instructor only. final_score below is stored in points,
+      // which is the unit every reader divides by points_possible.
       const percentage = toPercentage(score, totalPoints);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,7 +217,7 @@ export function ShortAnswerGrader({ submissionId, assignmentId, onGraded }: Prop
         .from("submissions")
         .update({
           raw_score: score,
-          final_score: percentage,
+          final_score: score,
           status: "graded",
           graded_by: user?.id ?? null,
           graded_at: new Date().toISOString(),

@@ -333,7 +333,12 @@ export default function AssignmentPage() {
           // raw_score carries the auto-graded points either way, so the
           // instructor starts from what the system already established.
           raw_score: assignment.type === "quiz" ? score : null,
-          final_score: awaitingReview || assignment.type !== "quiz" ? null : percentageScore,
+          // final_score is POINTS, not a percentage. Every reader divides it by
+          // assignments.points_possible to get a percentage — the student grade
+          // list, the gradebook and the v1 API all do — so storing a percentage
+          // here made a 1-of-7 quiz render as "14.0 / 7". This path was the only
+          // writer in the codebase using the other unit.
+          final_score: awaitingReview || assignment.type !== "quiz" ? null : score,
         })
         .select("id")
         .single();
