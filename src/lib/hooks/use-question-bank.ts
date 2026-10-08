@@ -12,6 +12,18 @@ import { toast } from "sonner";
 
 export type QuestionDifficulty = "easy" | "medium" | "hard" | "expert";
 export type CertificationLevel = "EMR" | "EMT" | "AEMT" | "Paramedic" | "All";
+/**
+ * Escape a value for use inside a PostgREST `or=(...)` filter.
+ *
+ * Values there are double-quoted, so a quote or backslash the instructor typed
+ * would otherwise end the value early and produce a malformed filter — which
+ * PostgREST rejects with a 400, turning a stray `"` in the search box into a
+ * broken page rather than no results.
+ */
+export function escapePostgrestOrValue(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 export type QuestionType = "multiple_choice" | "true_false" | "matching" | "short_answer";
 
 export interface QuestionBankCategory {
@@ -196,7 +208,13 @@ export function useQuestionBank(filters?: QuestionBankFilters) {
         query = query.overlaps("tags", filters.tags);
       }
       if (filters?.search) {
-        query = query.ilike("question_text", `%${filters.search}%`);
+        // Match the question text OR one of its tags. Searching the text alone
+        // was the reported problem: tags could be added to a question but never
+        // found again, because nothing ever read the column back.
+        const term = escapePostgrestOrValue(filters.search);
+        query = query.or(
+          `question_text.ilike."%${term}%",tags.cs.{"${term}"}`
+        );
       }
 
       const { data, error: fetchError, count } = await query
@@ -602,4 +620,45 @@ export function convertToQuizQuestion(question: QuestionBankItem) {
     explanation: question.explanation || "",
     source_question_id: question.id,
   };
+}
+
+/**
+ * Tags in use on the question bank, most-used first, narrowed by what the
+ * instructor has typed.
+ *
+ * Backed by get_question_bank_tags() rather than filtered in the browser: the
+ * tags live in an array column across thousands of rows, and the point is to
+ * find a tag you only half remember — "Chapter 7" should surface
+ * "AEMT Bank 3 Chapter 7" — which needs the match to happen in the database.
+ */
+export function useQuestionBankTags(search: string) {
+  const { tenant } = useTenant();
+  const [tags, setTags] = useState<{ tag: string; question_count: number }[]>([]);
+
+  useEffect(() => {
+    if (!tenant?.id) return;
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createClient() as any;
+      const { data, error } = await supabase.rpc("get_question_bank_tags", {
+        p_search: search || null,
+        p_limit: 50,
+      });
+      if (cancelled) return;
+      if (error) {
+        console.warn("[question-bank] Could not load tags:", error.message);
+        return;
+      }
+      setTags(data || []);
+    }, 200);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search, tenant?.id]);
+
+  return tags;
 }

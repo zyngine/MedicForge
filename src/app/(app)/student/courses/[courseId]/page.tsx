@@ -37,7 +37,10 @@ import {
 } from "lucide-react";
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useModule } from "@/lib/hooks/use-modules";
-import { useAssignments } from "@/lib/hooks/use-assignments";
+import { useAssignments, type AssignmentWithDetails } from "@/lib/hooks/use-assignments";
+
+/** How the Assignments tab is ordered. */
+type AssignmentSort = "due_date" | "title" | "assigned";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { useCourseProgress } from "@/lib/hooks/use-progress";
 import { useMyCertificates } from "@/lib/hooks/use-certificates";
@@ -70,6 +73,44 @@ export default function StudentCourseDetailPage() {
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
   const { data: modules = [], isLoading: modulesLoading } = useModules(courseId);
   const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments({ courseId });
+  const [assignmentSort, setAssignmentSort] = React.useState<AssignmentSort>("due_date");
+
+  /**
+   * The list the Assignments tab shows.
+   *
+   * Only due-date order existed before, which is the wrong order for finding a
+   * specific assignment by name, or for seeing what was handed out most
+   * recently. Sorting is done here rather than re-querying: the whole list is
+   * already loaded, and it keeps the control instant.
+   *
+   * Assignments with no date sort last in either date order — "no due date" is
+   * not the same as "due at the epoch", and putting them first would bury the
+   * ones that are actually due.
+   */
+  const sortedAssignments = React.useMemo(() => {
+    const published = assignments.filter((a) => a.is_published);
+
+    const byDate = (key: "due_date" | "available_from") => (a: AssignmentWithDetails, b: AssignmentWithDetails) => {
+      const av = a[key];
+      const bv = b[key];
+      if (!av && !bv) return a.title.localeCompare(b.title);
+      if (!av) return 1;
+      if (!bv) return -1;
+      return key === "available_from"
+        ? bv.localeCompare(av) // most recently assigned first
+        : av.localeCompare(bv); // soonest due first
+    };
+
+    const sorted = [...published];
+    if (assignmentSort === "title") {
+      sorted.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    } else if (assignmentSort === "assigned") {
+      sorted.sort(byDate("available_from"));
+    } else {
+      sorted.sort(byDate("due_date"));
+    }
+    return sorted;
+  }, [assignments, assignmentSort]);
   const { data: submissions = [] } = useMySubmissions();
   const { data: progress } = useCourseProgress(courseId);
   const { data: certificates = [] } = useMyCertificates();
@@ -321,8 +362,27 @@ export default function StudentCourseDetailPage() {
         <TabsContent value="assignments">
           <Card>
             <CardHeader>
-              <CardTitle>All Assignments</CardTitle>
-              <CardDescription>View and submit your assignments</CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle>All Assignments</CardTitle>
+                  <CardDescription>View and submit your assignments</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="assignment-sort" className="text-sm text-muted-foreground">
+                    Sort by
+                  </label>
+                  <select
+                    id="assignment-sort"
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={assignmentSort}
+                    onChange={(e) => setAssignmentSort(e.target.value as AssignmentSort)}
+                  >
+                    <option value="due_date">Due date</option>
+                    <option value="title">Title (A–Z)</option>
+                    <option value="assigned">Date assigned</option>
+                  </select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {assignments.length === 0 ? (
@@ -332,7 +392,7 @@ export default function StudentCourseDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {assignments.filter(a => a.is_published).map((assignment) => {
+                  {sortedAssignments.map((assignment) => {
                     const submission = courseSubmissions.find(s => s.assignment_id === assignment.id);
                     return (
                       <Link

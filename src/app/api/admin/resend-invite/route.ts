@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { sendEmail, inviteEmail } from "@/lib/notifications/email-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +79,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Resend the invitation without deleting the auth user.
-    // generateLink creates a new invite link and sends the invite email.
+    //
+    // NOTE: auth.admin.generateLink() only *builds* the action link — Supabase
+    // does not send anything for it (unlike inviteUserByEmail). This route used
+    // to stop here and return "Invitation resent successfully", so no email was
+    // ever delivered. We now send the generated link ourselves through Resend,
+    // which also sidesteps Supabase's built-in SMTP rate limit.
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "invite",
       email: userToInvite.email,
@@ -104,6 +110,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Failed to generate new invitation link" },
         { status: 500 }
+      );
+    }
+
+    const inviteLinkUrl: string | undefined = linkData.properties?.action_link;
+
+    if (!inviteLinkUrl) {
+      return NextResponse.json(
+        { error: "Failed to generate new invitation link" },
+        { status: 500 }
+      );
+    }
+
+    const { data: tenantName } = await supabaseAdmin
+      .from("tenants")
+      .select("name")
+      .eq("id", tenant_id)
+      .single();
+
+    const emailResult = await sendEmail({
+      to: userToInvite.email,
+      template: inviteEmail({
+        userName: userToInvite.full_name || userToInvite.email,
+        organizationName: tenantName?.name,
+        inviteUrl: inviteLinkUrl,
+        role: userToInvite.role || undefined,
+      }),
+    });
+
+    if (!emailResult.success) {
+      console.error("Resend invite email error:", emailResult.error);
+      // Hand the link back so the admin can share it manually rather than
+      // reporting a success that never reached the invitee's inbox.
+      return NextResponse.json(
+        {
+          error:
+            "Could not send the invitation email. Share this link with the user directly.",
+          inviteLink: inviteLinkUrl,
+        },
+        { status: 502 }
       );
     }
 

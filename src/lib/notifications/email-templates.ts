@@ -272,6 +272,133 @@ export function passwordResetEmail(data: {
   };
 }
 
+// Account invitation / set-your-password.
+//
+// Supabase's auth.admin.generateLink() only *builds* an action link — it does
+// not send anything. Routes that generate a link have to deliver it themselves,
+// and this is the template they use.
+export function inviteEmail(data: {
+  userName: string;
+  organizationName?: string;
+  inviteUrl: string;
+  role?: string;
+}): EmailTemplate {
+  const org = data.organizationName ? escapeHtml(data.organizationName) : "MedicForge";
+  const roleLine = data.role
+    ? `<p>You've been added as a${data.role === "instructor" ? "n" : ""} <strong>${escapeHtml(data.role)}</strong>.</p>`
+    : "";
+
+  const content = `
+    <h1>You're invited to ${org}</h1>
+    <p>Hi ${escapeHtml(data.userName)},</p>
+    ${roleLine}
+    <p>Click the button below to set your password and finish setting up your account.</p>
+    <div style="text-align: center;">
+      <a href="${data.inviteUrl}" class="button">Set Up My Account</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">This link expires in 24 hours. If the button doesn't work, copy and paste this address into your browser:</p>
+    <p class="muted" style="font-size: 12px; word-break: break-all;">${escapeHtml(data.inviteUrl)}</p>
+    <p class="muted" style="font-size: 14px;">If you weren't expecting this, you can safely ignore this email.</p>
+  `;
+
+  return {
+    subject: `Set up your ${org} account`,
+    html: wrapEmail(content, `Set up your ${org} account on MedicForge.`),
+    text: `Hi ${data.userName},\n\nYou've been invited to ${data.organizationName || "MedicForge"}.\n\nSet up your account: ${data.inviteUrl}\n\nThis link expires in 24 hours.`,
+  };
+}
+
+// Supabase Auth actions that don't map onto one of the templates above:
+// signup confirmation, magic link, email change and reauthentication.
+export type AuthActionKind =
+  | "signup"
+  | "magiclink"
+  | "email_change"
+  | "email_change_new"
+  | "reauthentication";
+
+export function authActionEmail(data: {
+  kind: AuthActionKind;
+  userName: string;
+  actionUrl: string;
+  token: string;
+  newEmail?: string;
+}): EmailTemplate {
+  const name = escapeHtml(data.userName);
+
+  // Reauthentication is a code, not a link — there is nothing to click.
+  if (data.kind === "reauthentication") {
+    const content = `
+      <h1>Your verification code</h1>
+      <p>Hi ${name},</p>
+      <p>Enter this code to confirm it's you:</p>
+      <p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; text-align: center; margin: 24px 0;">${escapeHtml(data.token)}</p>
+      <p class="muted" style="font-size: 14px;">The code expires shortly. If you didn't ask for it, ignore this email.</p>
+    `;
+    return {
+      subject: `${data.token} is your MedicForge verification code`,
+      html: wrapEmail(content, "Your MedicForge verification code"),
+      text: `Hi ${data.userName},\n\nYour verification code is ${data.token}.\n\nIf you didn't ask for it, ignore this email.`,
+    };
+  }
+
+  const copy: Record<Exclude<AuthActionKind, "reauthentication">, {
+    subject: string;
+    heading: string;
+    body: string;
+    cta: string;
+  }> = {
+    signup: {
+      subject: "Confirm your MedicForge email address",
+      heading: "Confirm your email address",
+      body: "Confirm this address to finish setting up your MedicForge account.",
+      cta: "Confirm Email Address",
+    },
+    magiclink: {
+      subject: "Your MedicForge sign-in link",
+      heading: "Sign in to MedicForge",
+      body: "Use the button below to sign in. The link works once and expires shortly.",
+      cta: "Sign In",
+    },
+    email_change: {
+      subject: "Confirm your new MedicForge email address",
+      heading: "Confirm your email change",
+      body: data.newEmail
+        ? `Confirm that you want to change your MedicForge address to ${escapeHtml(data.newEmail)}.`
+        : "Confirm that you want to change the email address on your MedicForge account.",
+      cta: "Confirm Email Change",
+    },
+    email_change_new: {
+      subject: "Confirm your new MedicForge email address",
+      heading: "Confirm your new email address",
+      body: data.newEmail
+        ? `Confirm ${escapeHtml(data.newEmail)} as the address on your MedicForge account.`
+        : "Confirm this address as the one on your MedicForge account.",
+      cta: "Confirm Email Address",
+    },
+  };
+
+  const c = copy[data.kind];
+  const content = `
+    <h1>${c.heading}</h1>
+    <p>Hi ${name},</p>
+    <p>${c.body}</p>
+    <div style="text-align: center;">
+      <a href="${data.actionUrl}" class="button">${c.cta}</a>
+    </div>
+    <p class="muted" style="font-size: 14px;">Or enter this code instead: <strong>${escapeHtml(data.token)}</strong></p>
+    <p class="muted" style="font-size: 14px;">If the button doesn't work, copy this address into your browser:</p>
+    <p class="muted" style="font-size: 12px; word-break: break-all;">${escapeHtml(data.actionUrl)}</p>
+    <p class="muted" style="font-size: 14px;">If you weren't expecting this, you can safely ignore this email.</p>
+  `;
+
+  return {
+    subject: c.subject,
+    html: wrapEmail(content, c.subject),
+    text: `Hi ${data.userName},\n\n${c.body}\n\n${data.actionUrl}\n\nOr use this code: ${data.token}`,
+  };
+}
+
 // Skill verification notification
 export function skillVerifiedEmail(data: {
   userName: string;
