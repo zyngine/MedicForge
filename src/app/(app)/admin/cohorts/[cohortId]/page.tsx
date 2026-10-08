@@ -22,6 +22,7 @@ import {
   TabsTrigger,
   TabsContent,
   Checkbox,
+  Textarea,
 } from "@/components/ui";
 import {
   ArrowLeft,
@@ -42,6 +43,7 @@ import {
   Play,
   CalendarDays,
   XCircle,
+  ListPlus,
 } from "lucide-react";
 import {
   useCohort,
@@ -69,12 +71,14 @@ import {
   useAddExcludedDate,
   useRemoveExcludedDate,
   useGenerateSessions,
+  useAddClassDates,
   DAYS_OF_WEEK,
   SESSION_TYPES,
   ProgramSchedule,
   getSessionTypeLabel,
   formatTimeDisplay,
 } from "@/lib/hooks/use-program-schedules";
+import { parseClassDates } from "@/lib/class-dates";
 import { formatDate } from "@/lib/utils";
 
 const MEMBER_STATUSES = [
@@ -125,6 +129,7 @@ export default function CohortDetailPage() {
   const addExcludedDateMutation = useAddExcludedDate();
   const removeExcludedDateMutation = useRemoveExcludedDate();
   const generateSessionsMutation = useGenerateSessions();
+  const addClassDatesMutation = useAddClassDates();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddMembersModal, setShowAddMembersModal] = useState(false);
@@ -153,6 +158,15 @@ export default function CohortDetailPage() {
   const [generateForm, setGenerateForm] = useState({
     start_date: "",
     end_date: "",
+  });
+  const [showDateListModal, setShowDateListModal] = useState(false);
+  const [dateListForm, setDateListForm] = useState({
+    dates: "",
+    title: "Class",
+    start_time: "18:00",
+    end_time: "22:00",
+    session_type: "lecture",
+    location: "",
   });
   const [showExcludedDateModal, setShowExcludedDateModal] = useState(false);
   const [excludedDateForm, setExcludedDateForm] = useState({
@@ -458,6 +472,48 @@ export default function CohortDetailPage() {
       setGenerateForm({ start_date: "", end_date: "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate sessions");
+    }
+  };
+
+  // Parsed live so the admin sees what their paste turned into before committing
+  // to it, including any line that did not read as a date.
+  const parsedClassDates = parseClassDates(dateListForm.dates);
+
+  const handleAddClassDates = async () => {
+    if (parsedClassDates.dates.length === 0) {
+      setError("Enter at least one class date");
+      return;
+    }
+
+    if (dateListForm.end_time <= dateListForm.start_time) {
+      setError("Class end time must be after the start time");
+      return;
+    }
+
+    try {
+      const results = await addClassDatesMutation.mutateAsync({
+        program_id: cohortId,
+        dates: parsedClassDates.dates,
+        start_time: dateListForm.start_time,
+        end_time: dateListForm.end_time,
+        title: dateListForm.title,
+        session_type: dateListForm.session_type,
+        location: dateListForm.location,
+      });
+
+      const created = results.filter((r) => r.outcome === "created").length;
+      const existing = results.filter((r) => r.outcome === "exists").length;
+      const excluded = results.filter((r) => r.outcome === "excluded").length;
+
+      const parts = [`Added ${created} class ${created === 1 ? "night" : "nights"}`];
+      if (existing > 0) parts.push(`${existing} already scheduled`);
+      if (excluded > 0) parts.push(`${excluded} skipped as an excluded date`);
+      setSuccess(parts.join(" · "));
+
+      setShowDateListModal(false);
+      setDateListForm({ ...dateListForm, dates: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add class dates");
     }
   };
 
@@ -803,6 +859,10 @@ export default function CohortDetailPage() {
                   Generate Sessions
                 </Button>
               )}
+              <Button variant="outline" onClick={() => setShowDateListModal(true)}>
+                <ListPlus className="h-4 w-4 mr-2" />
+                Add Class Dates
+              </Button>
             </div>
             <Button onClick={() => handleOpenScheduleModal()}>
               <Plus className="h-4 w-4 mr-2" />
@@ -1417,6 +1477,146 @@ export default function CohortDetailPage() {
                 <Play className="h-4 w-4 mr-2" />
               )}
               Generate Sessions
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Class Dates Modal */}
+      <Modal
+        isOpen={showDateListModal}
+        onClose={() => setShowDateListModal(false)}
+        title="Add Class Dates"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg text-sm text-muted-foreground">
+            For a program whose calendar is a list of dates rather than a weekly
+            pattern. Paste the dates below — one per line, or separated by commas —
+            and a class night is created for each one. Any instructor or admin can
+            open these on the night, so a substitute does not need the regular
+            instructor to start attendance.
+          </div>
+
+          <div className="space-y-2">
+            <Label>Class Dates</Label>
+            <Textarea
+              rows={7}
+              className="font-mono text-sm"
+              placeholder={"2026-11-17\n11/19/2026\nNovember 24, 2026"}
+              value={dateListForm.dates}
+              onChange={(e) => setDateListForm({ ...dateListForm, dates: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Accepts 2026-11-17, 11/17/2026 or November 17, 2026.
+            </p>
+          </div>
+
+          {/* What the paste actually turned into, before anything is created. */}
+          {dateListForm.dates.trim().length > 0 && (
+            <div className="space-y-2">
+              {parsedClassDates.dates.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">
+                    {parsedClassDates.dates.length} date
+                    {parsedClassDates.dates.length === 1 ? "" : "s"} recognized
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                    {parsedClassDates.dates.map((d) => (
+                      <Badge key={d} variant="outline" className="text-xs">
+                        {formatDate(d)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {parsedClassDates.invalid.length > 0 && (
+                <Alert variant="warning">
+                  <p className="text-sm font-medium">
+                    {parsedClassDates.invalid.length} line
+                    {parsedClassDates.invalid.length === 1 ? "" : "s"} could not be read
+                    and will be skipped:
+                  </p>
+                  <p className="text-sm mt-1 font-mono">
+                    {parsedClassDates.invalid.slice(0, 8).join(", ")}
+                    {parsedClassDates.invalid.length > 8 && ` +${parsedClassDates.invalid.length - 8} more`}
+                  </p>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Time</Label>
+              <Input
+                type="time"
+                value={dateListForm.start_time}
+                onChange={(e) => setDateListForm({ ...dateListForm, start_time: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End Time</Label>
+              <Input
+                type="time"
+                value={dateListForm.end_time}
+                onChange={(e) => setDateListForm({ ...dateListForm, end_time: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={dateListForm.title}
+                onChange={(e) => setDateListForm({ ...dateListForm, title: e.target.value })}
+                placeholder="Class"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Session Type</Label>
+              <Select
+                value={dateListForm.session_type}
+                onChange={(v) => setDateListForm({ ...dateListForm, session_type: v })}
+                options={SESSION_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Location (optional)</Label>
+            <Input
+              value={dateListForm.location}
+              onChange={(e) => setDateListForm({ ...dateListForm, location: e.target.value })}
+              placeholder="Room 3"
+            />
+          </div>
+
+          {excludedDates.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {excludedDates.length} excluded date(s) on this program will be skipped.
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowDateListModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddClassDates}
+              disabled={
+                addClassDatesMutation.isPending || parsedClassDates.dates.length === 0
+              }
+            >
+              {addClassDatesMutation.isPending ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <ListPlus className="h-4 w-4 mr-2" />
+              )}
+              Add {parsedClassDates.dates.length > 0 ? parsedClassDates.dates.length : ""} Class
+              {parsedClassDates.dates.length === 1 ? " Night" : " Nights"}
             </Button>
           </div>
         </div>

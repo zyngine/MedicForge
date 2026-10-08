@@ -29,14 +29,21 @@ import {
   CalendarDays,
   Play,
   MapPin,
+  Zap,
 } from "lucide-react";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { useUser } from "@/lib/hooks/use-user";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
-import { useTodaysSessions, formatTimeDisplay, getSessionTypeLabel } from "@/lib/hooks/use-program-schedules";
+import {
+  useTodaysSessions,
+  useAttendanceAutoOpen,
+  formatTimeDisplay,
+  getSessionTypeLabel,
+} from "@/lib/hooks/use-program-schedules";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
+import { localDateString } from "@/lib/utils";
 
 // Helper to get supabase client with type assertion for tables not in generated types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,11 +126,12 @@ function useAttendanceSessionsWithCodes() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sessions || []).map(async (session: any) => {
           // Get check-in code
+          // Most sessions have no code yet, and .single() errors on zero rows.
           const { data: codeData } = await supabase
             .from("attendance_check_in_codes")
             .select("code, expires_at")
             .eq("session_id", session.id)
-            .single();
+            .maybeSingle();
 
           // Get record count
           const { count } = await supabase
@@ -174,7 +182,7 @@ function useStartAttendance() {
           course_id: params.courseId || null,
           title: params.title,
           session_type: "lecture",
-          scheduled_date: now.toISOString().split("T")[0],
+          scheduled_date: localDateString(now),
           start_time: now.toTimeString().slice(0, 5),
           end_time: endTime.toTimeString().slice(0, 5),
           tardy_window_minutes: params.tardyWindowMinutes ?? 15,
@@ -205,6 +213,67 @@ function useStartAttendance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+    },
+  });
+}
+
+// Hook to open a pre-scheduled session for check-in.
+//
+// The "Start Attendance" button on a scheduled class used to pre-fill the
+// ad-hoc modal, which created a brand new session with no program_id or
+// schedule_id. The scheduled session stayed at "scheduled" forever (so it kept
+// offering to start), and the check-ins landed on the duplicate — leaving the
+// program's own session showing zero attendance.
+function useOpenScheduledSession() {
+  const { tenant } = useTenant();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (session: {
+      id: string;
+      scheduled_date: string;
+      end_time: string;
+    }) => {
+      if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
+
+      const supabase = getDb();
+
+      // The code should last until the class ends. If that moment has already
+      // passed (a late start), give it an hour from now instead.
+      const scheduledEnd = new Date(`${session.scheduled_date}T${session.end_time}`);
+      const expiresAt =
+        Number.isFinite(scheduledEnd.getTime()) && scheduledEnd > new Date()
+          ? scheduledEnd
+          : new Date(Date.now() + 60 * 60 * 1000);
+
+      const code = generateCode();
+
+      const { error: codeError } = await supabase
+        .from("attendance_check_in_codes")
+        .insert({
+          session_id: session.id,
+          tenant_id: tenant.id,
+          code,
+          expires_at: expiresAt.toISOString(),
+          created_by: user.id,
+        });
+
+      if (codeError) throw codeError;
+
+      const { error: statusError } = await supabase
+        .from("attendance_sessions")
+        .update({ session_status: "in_progress" })
+        .eq("id", session.id)
+        .eq("tenant_id", tenant.id);
+
+      if (statusError) throw statusError;
+
+      return { sessionId: session.id, code, expiresAt: expiresAt.toISOString() };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instructor-attendance-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["todays-sessions"] });
     },
   });
 }
@@ -265,10 +334,74 @@ function useSessionCheckIns(sessionId: string | null) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const studentMap = new Map((students || []).map((s: any) => [s.id, s]));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (data || []).map((record: any) => ({
+      const checkedIn = (data || []).map((record: any) => ({
         ...record,
         student: studentMap.get(record.student_id) || null,
       }));
+
+      // Everyone who was meant to be there, not only those who turned up.
+      //
+      // A student who misses a class has no attendance_records row at all —
+      // production holds 17 records and every one of them is 'present'. So
+      // listing only check-ins meant the people an instructor actually needs to
+      // act on were the ones who could not be seen: the student who watched the
+      // recording afterwards was not on the list to be marked present.
+      //
+      // The roster comes from the session's cohort when it has one, falling back
+      // to the course's enrolments, because a generated class night belongs to a
+      // program rather than to a single course.
+      const { data: session } = await supabase
+        .from("attendance_sessions")
+        .select("program_id, course_id")
+        .eq("id", sessionId)
+        .maybeSingle();
+
+      let rosterIds: string[] = [];
+      if (session?.program_id) {
+        const { data: members } = await supabase
+          .from("cohort_members")
+          .select("student_id")
+          .eq("cohort_id", session.program_id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rosterIds = (members || []).map((m: any) => m.student_id);
+      } else if (session?.course_id) {
+        const { data: enrolled } = await supabase
+          .from("enrollments")
+          .select("student_id")
+          .eq("course_id", session.course_id)
+          .eq("status", "active");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rosterIds = (enrolled || []).map((e: any) => e.student_id);
+      }
+
+      const recorded = new Set(checkedIn.map((r: { student_id: string }) => r.student_id));
+      const missingIds = rosterIds.filter((id) => !recorded.has(id));
+
+      if (missingIds.length === 0) return checkedIn;
+
+      const { data: missingStudents } = await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .in("id", missingIds);
+
+      // id is null for these: there is no row yet, and saving one creates it.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const notRecorded = (missingStudents || []).map((student: any) => ({
+        id: null,
+        status: "absent",
+        check_in_time: null,
+        recorded_at: null,
+        student_id: student.id,
+        was_late: false,
+        notes: null,
+        student,
+      }));
+
+      notRecorded.sort((a: { student: { full_name?: string } }, b: { student: { full_name?: string } }) =>
+        (a.student.full_name || "").localeCompare(b.student.full_name || "")
+      );
+
+      return [...checkedIn, ...notRecorded];
     },
     enabled: !!sessionId && !!tenant?.id,
     refetchInterval: 5000, // Poll for new check-ins
@@ -279,14 +412,21 @@ function useSessionCheckIns(sessionId: string | null) {
 // (e.g. "watched recorded lecture, marked present retroactively").
 function useUpdateAttendanceStatus() {
   const queryClient = useQueryClient();
+  const { tenant } = useTenant();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async ({
       recordId,
+      sessionId,
+      studentId,
       status,
       notes,
     }: {
-      recordId: string;
+      // null for a student with no record yet — the row is created instead.
+      recordId: string | null;
+      sessionId: string;
+      studentId: string;
       status: string;
       notes?: string | null;
     }) => {
@@ -299,11 +439,30 @@ function useUpdateAttendanceStatus() {
       // Only touch `notes` when explicitly passed — omitting preserves existing.
       if (notes !== undefined) update.notes = notes || null;
 
-      const { error } = await supabase
-        .from("attendance_records")
-        .update(update)
-        .eq("id", recordId);
+      if (recordId) {
+        const { error } = await supabase
+          .from("attendance_records")
+          .update({
+            ...update,
+            // Whoever changed it last, and when — a retroactive mark should not
+            // look like the student checked in on the night.
+            recorded_by: user?.id ?? null,
+            recorded_at: new Date().toISOString(),
+          })
+          .eq("id", recordId);
+        if (error) throw error;
+        return;
+      }
 
+      if (!tenant?.id || !user?.id) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("attendance_records").insert({
+        ...update,
+        tenant_id: tenant.id,
+        session_id: sessionId,
+        student_id: studentId,
+        recorded_by: user.id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -317,6 +476,11 @@ export default function InstructorAttendancePage() {
   const { data: courses = [] } = useInstructorCourses();
   const { data: todaysSessions = [], isLoading: todaysLoading } = useTodaysSessions();
   const startMutation = useStartAttendance();
+  const openScheduledSession = useOpenScheduledSession();
+  const [openingSessionId, setOpeningSessionId] = React.useState<string | null>(null);
+  // Tops up the rolling window of generated sessions and opens any scheduled
+  // class whose start time has arrived.
+  const { autoOpened, dismiss: dismissAutoOpened } = useAttendanceAutoOpen();
   const endMutation = useEndAttendance();
 
   const [showStartModal, setShowStartModal] = React.useState(false);
@@ -392,6 +556,34 @@ export default function InstructorAttendancePage() {
         )}
       </div>
 
+      {/* What auto-open just did, so it is never a silent change */}
+      {autoOpened.length > 0 && (
+        <Card className="border-success bg-success/5">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Zap className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">
+                    {autoOpened.length === 1
+                      ? "Attendance opened automatically"
+                      : `${autoOpened.length} classes opened automatically`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {autoOpened
+                      .map((s) => `${s.opened_title} (code ${s.opened_code})`)
+                      .join(", ")}
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={dismissAutoOpened}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Today's Scheduled Classes */}
       {!todaysLoading && todaysSessions.length > 0 && (
         <Card>
@@ -401,7 +593,8 @@ export default function InstructorAttendancePage() {
               Today&apos;s Scheduled Classes
             </CardTitle>
             <CardDescription>
-              Pre-scheduled sessions for today. Click &quot;Start&quot; to begin taking attendance.
+              Classes open on their own once the start time is near. Use
+              &quot;Start Attendance&quot; to open one early.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -444,10 +637,19 @@ export default function InstructorAttendancePage() {
                     ) : (
                       <Button
                         size="sm"
+                        isLoading={
+                          openScheduledSession.isPending &&
+                          openingSessionId === ts.id
+                        }
                         onClick={() => {
-                          // Pre-fill the start modal with session details
-                          setTitle(ts.title);
-                          setShowStartModal(true);
+                          // Open THIS session rather than creating a new one, so
+                          // check-ins are recorded against the scheduled class.
+                          setOpeningSessionId(ts.id);
+                          openScheduledSession.mutate({
+                            id: ts.id,
+                            scheduled_date: ts.scheduled_date,
+                            end_time: ts.end_time,
+                          });
                         }}
                       >
                         <Play className="h-4 w-4 mr-2" />
@@ -784,8 +986,9 @@ function SessionDetails({
   const [pendingStatus, setPendingStatus] = React.useState<string>("");
   const [pendingNotes, setPendingNotes] = React.useState<string>("");
 
-  const startEditing = (recordId: string, currentStatus: string, currentNotes: string | null) => {
-    setEditingId(recordId);
+  const startEditing = (studentId: string, currentStatus: string, currentNotes: string | null) => {
+    // Keyed by student, not record: a student with no row yet has no record id.
+    setEditingId(studentId);
     setPendingStatus(currentStatus);
     setPendingNotes(currentNotes || "");
   };
@@ -796,10 +999,12 @@ function SessionDetails({
     setPendingNotes("");
   };
 
-  const handleSave = async (recordId: string) => {
+  const handleSave = async (recordId: string | null, studentId: string) => {
     try {
       await updateStatusMutation.mutateAsync({
         recordId,
+        sessionId: session.id,
+        studentId,
         status: pendingStatus,
         notes: pendingNotes.trim() || null,
       });
@@ -870,7 +1075,8 @@ function SessionDetails({
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {checkIns.map((checkin: any) => {
-              const isEditing = editingId === checkin.id;
+              const isEditing = editingId === checkin.student_id;
+              const notRecorded = checkin.id === null;
               return (
                 <div key={checkin.id} className="p-3 rounded border">
                   <div className="flex items-start justify-between gap-3">
@@ -886,16 +1092,23 @@ function SessionDetails({
                       {!isEditing && (
                         <>
                           <Badge
-                            variant={getStatusBadgeVariant(checkin.status)}
+                            variant={
+                              // "Not recorded" is not the same claim as "absent":
+                              // nobody has said anything about this student yet.
+                              notRecorded ? "secondary" : getStatusBadgeVariant(checkin.status)
+                            }
                             className="cursor-pointer hover:opacity-80"
-                            onClick={() => startEditing(checkin.id, checkin.status, checkin.notes)}
+                            onClick={() =>
+                              startEditing(checkin.student_id, checkin.status, checkin.notes)
+                            }
                           >
-                            {getStatusLabel(checkin.status)}
+                            {notRecorded ? "Not recorded" : getStatusLabel(checkin.status)}
                             {checkin.was_late && checkin.status === "present" && " (was late)"}
                           </Badge>
                           <div className="text-xs text-muted-foreground min-w-[60px]">
-                            {checkin.recorded_at &&
-                              format(new Date(checkin.recorded_at), "h:mm a")}
+                            {checkin.recorded_at
+                              ? format(new Date(checkin.recorded_at), "h:mm a")
+                              : ""}
                           </div>
                         </>
                       )}
@@ -938,7 +1151,7 @@ function SessionDetails({
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => handleSave(checkin.id)}
+                          onClick={() => handleSave(checkin.id, checkin.student_id)}
                           disabled={updateStatusMutation.isPending}
                         >
                           {updateStatusMutation.isPending ? "Saving…" : "Save"}
