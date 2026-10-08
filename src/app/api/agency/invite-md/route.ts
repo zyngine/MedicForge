@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: email.toLowerCase(),
       template: mdInviteTemplate({
         mdName,
@@ -147,8 +147,17 @@ export async function POST(request: Request) {
       }),
     });
 
+    // The invitation row is created either way — the code stays valid and the
+    // admin can share registrationUrl by hand — but say so instead of reporting
+    // a clean success the medical director never saw.
+    if (!emailResult.success) {
+      console.error("[invite-md] Invitation email failed:", emailResult.error);
+    }
+
     return NextResponse.json({
       success: true,
+      emailSent: emailResult.success,
+      emailError: emailResult.success ? undefined : emailResult.error,
       invitation: {
         id: invitation.id,
         email: invitation.email,

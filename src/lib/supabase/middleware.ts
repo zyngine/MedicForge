@@ -122,6 +122,13 @@ export async function updateSession(request: NextRequest) {
   // ROUTE PROTECTION (existing logic)
   // ============================================
 
+  // Supabase Auth calls the send-email hook machine-to-machine. It carries a
+  // Standard Webhooks signature rather than a session, and verifies that
+  // itself, so keep the middleware out of the way entirely.
+  if (pathname === "/api/auth/hooks/send-email") {
+    return supabaseResponse
+  }
+
   // Certificate verification is public on ALL domains (main + subdomains)
   if (pathname.startsWith("/verify")) {
     applyTenantCookies()

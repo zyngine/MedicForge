@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import {
   useQuestionBank,
+  useQuestionBankTags,
   useQuestionBankCategories,
   type QuestionBankItem,
   type QuestionBankFilters,
@@ -53,6 +54,31 @@ const certificationColors: Record<CertificationLevel, string> = {
 
 export default function QuestionBankPage() {
   const [filters, setFilters] = useState<QuestionBankFilters>({});
+  // Held separately from `filters` so the box shows what was typed while the
+  // query runs on the parsed list.
+  const [tagInput, setTagInput] = useState("");
+
+  const availableTags = useQuestionBankTags(tagInput);
+
+  /** Add or remove one tag. Several selected tags match any of them. */
+  const toggleTag = (tag: string) => {
+    setFilters((prev) => {
+      const current = prev.tags ?? [];
+      const without = current.filter((t) => t !== tag);
+      const next = { ...prev };
+      if (without.length === current.length) next.tags = [...current, tag];
+      else if (without.length === 0) delete next.tags;
+      else next.tags = without;
+      return next;
+    });
+    setShowFilters(true);
+  };
+
+  /** Clicking a tag on a question jumps straight to that filter. */
+  const applyTagFilter = (tag: string) => {
+    setFilters((prev) => ({ ...prev, tags: [tag] }));
+    setShowFilters(true);
+  };
   const [showFilters, setShowFilters] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [showImporter, setShowImporter] = useState(false);
@@ -122,7 +148,7 @@ export default function QuestionBankPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search questions..."
+                placeholder="Search question text or a tag..."
                 className="pl-10"
                 value={filters.search || ""}
                 onChange={handleSearch}
@@ -186,6 +212,51 @@ export default function QuestionBankPage() {
                   ]}
                 />
               </div>
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium mb-1 block">Tags</label>
+                <Input
+                  placeholder="Type to find a tag, e.g. Chapter 7"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                />
+                {/* Suggestions come from the database, so a half-remembered tag
+                    still finds its full name. */}
+                <div className="flex flex-wrap gap-1.5 mt-2 max-h-28 overflow-y-auto">
+                  {availableTags.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">
+                      {tagInput ? "No tags match that." : "No tags on this question bank yet."}
+                    </span>
+                  ) : (
+                    availableTags.map(({ tag, question_count }) => (
+                      <Badge
+                        key={tag}
+                        variant={filters.tags?.includes(tag) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => toggleTag(tag)}
+                      >
+                        {tag}
+                        <span className="ml-1 opacity-70">{question_count}</span>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+                {(filters.tags?.length ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline mt-2"
+                    onClick={() =>
+                      setFilters((prev) => {
+                        const next = { ...prev };
+                        delete next.tags;
+                        return next;
+                      })
+                    }
+                  >
+                    Clear {filters.tags!.length} selected tag
+                    {filters.tags!.length === 1 ? "" : "s"}
+                  </button>
+                )}
+              </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Status</label>
                 <FilterSelect
@@ -245,6 +316,19 @@ export default function QuestionBankPage() {
                       ) : (
                         <Badge variant="secondary">Pending Review</Badge>
                       )}
+                      {question.tags?.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="cursor-pointer hover:bg-primary/15"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            applyTagFilter(tag);
+                          }}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
                       {question.category && (
                         <Badge variant="outline">{question.category.name}</Badge>
                       )}

@@ -18,7 +18,12 @@ import {
   Label,
 } from "@/components/ui";
 import { QuizTimer, useQuizTimer } from "@/components/quiz/quiz-timer";
-import { gradeQuizAnswers, safeParseAnswer, toPercentage } from "@/lib/quiz-grading";
+import {
+  gradeQuizAnswers,
+  safeParseAnswer,
+  shortAnswerMatches,
+  toPercentage,
+} from "@/lib/quiz-grading";
 import {
   CheckCircle,
   AlertCircle,
@@ -39,6 +44,9 @@ interface Question {
   options: string[];
   points: number | null;
   order_index: number | null;
+  // Only fetched once the quiz is over — see loadReview.
+  correct_answer?: unknown;
+  explanation?: string | null;
 }
 
 interface Assignment {
@@ -48,6 +56,8 @@ interface Assignment {
   instructions: string | null;
   type: "quiz" | "written" | "skill_checklist" | "discussion" | null;
   points_possible: number | null;
+  // jsonb; narrowed where it is read, the way the instructor edit form does.
+  settings: unknown;
   time_limit_minutes: number | null;
   attempts_allowed: number | null;
   due_date: string | null;
@@ -57,8 +67,10 @@ interface Submission {
   id: string;
   attempt_number: number | null;
   status: string | null;
+  raw_score: number | null;
   final_score: number | null;
   submitted_at: string | null;
+  content: unknown;
 }
 
 interface UploadedFile {
@@ -78,6 +90,13 @@ export default function AssignmentPage() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [previousSubmissions, setPreviousSubmissions] = useState<Submission[]>([]);
+  // The attempt being reviewed, with the correct answers fetched alongside.
+  const [reviewing, setReviewing] = useState<{
+    submission: Submission;
+    questions: Question[];
+    answers: Record<string, number | string>;
+  } | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,6 +186,52 @@ export default function AssignmentPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /**
+   * Open a finished attempt for review.
+   *
+   * correct_answer and explanation are deliberately not fetched with the quiz
+   * itself — they would sit in the browser while the student is still taking
+   * it. They are only read here, after the attempt is submitted, and only when
+   * the instructor has left "show correct answers" on.
+   */
+  const loadReview = async (submission: Submission) => {
+    setReviewError(null);
+    const supabase = createClient();
+
+    const { data: questionRows, error } = await supabase
+      .from("quiz_questions")
+      .select("id, question_text, question_type, options, points, order_index, correct_answer, explanation")
+      .eq("assignment_id", assignmentId)
+      .order("order_index");
+
+    if (error) {
+      setReviewError("Could not load the answers for this attempt.");
+      return;
+    }
+
+    let parsedContent: unknown = submission.content;
+    if (typeof parsedContent === "string") {
+      try {
+        parsedContent = JSON.parse(parsedContent);
+      } catch {
+        parsedContent = {};
+      }
+    }
+    const answers =
+      parsedContent && typeof parsedContent === "object" && "answers" in parsedContent
+        ? ((parsedContent as { answers?: Record<string, number | string> }).answers ?? {})
+        : {};
+
+    setReviewing({
+      submission,
+      answers,
+      questions: (questionRows || []).map((q) => ({
+        ...q,
+        options: typeof q.options === "string" ? JSON.parse(q.options) : q.options || [],
+      })) as Question[],
+    });
   };
 
   const handleStartQuiz = () => {
@@ -373,6 +438,11 @@ export default function AssignmentPage() {
       }
 
       setIsStarted(false);
+
+      // Pull the attempt list forward so "Review Answers" opens the attempt
+      // just submitted rather than the one before it, and so the attempts
+      // remaining count is right if they go back.
+      await fetchAssignment();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit");
     } finally {
@@ -429,6 +499,99 @@ export default function AssignmentPage() {
     );
   }
 
+  // Reviewing a finished attempt
+  if (reviewing) {
+    const { submission, questions: reviewQuestions, answers: reviewAnswers } = reviewing;
+
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <Button variant="ghost" onClick={() => setReviewing(null)}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {assignment.title} — Attempt {submission.attempt_number ?? 1}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {submission.raw_score !== null && assignment.points_possible
+                ? `${submission.raw_score} of ${assignment.points_possible} points`
+                : "Awaiting grading"}
+            </p>
+          </CardHeader>
+        </Card>
+
+        {reviewQuestions.map((question, index) => {
+          const given = reviewAnswers[question.id];
+          const expected =
+            typeof question.correct_answer === "string"
+              ? safeParseAnswer(question.correct_answer)
+              : question.correct_answer;
+
+          const isShortAnswer = question.question_type === "short_answer";
+          // A short answer the grader could not settle is with the instructor,
+          // so calling it wrong here would contradict the score.
+          const pending = isShortAnswer && !shortAnswerMatches(given, expected);
+          const correct = isShortAnswer
+            ? shortAnswerMatches(given, expected)
+            : given !== undefined && given === expected;
+
+          const label = (value: unknown) =>
+            typeof value === "number" ? question.options?.[value] ?? `Option ${value + 1}` : String(value ?? "");
+
+          return (
+            <Card key={question.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <CardTitle className="text-base">
+                    {index + 1}. {question.question_text}
+                  </CardTitle>
+                  {pending ? (
+                    <Badge variant="secondary" className="shrink-0">Awaiting instructor</Badge>
+                  ) : correct ? (
+                    <Badge variant="success" className="shrink-0">Correct</Badge>
+                  ) : (
+                    <Badge variant="warning" className="shrink-0">Incorrect</Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Your answer</p>
+                  <p className="text-sm p-3 rounded-md bg-muted/50 whitespace-pre-wrap">
+                    {given === undefined || String(given).trim() === "" ? (
+                      <span className="italic text-muted-foreground">Left blank</span>
+                    ) : (
+                      label(given)
+                    )}
+                  </p>
+                </div>
+
+                {!correct && !pending && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Correct answer</p>
+                    <p className="text-sm p-3 rounded-md bg-success/5 border border-success/20 whitespace-pre-wrap">
+                      {label(expected)}
+                    </p>
+                  </div>
+                )}
+
+                {question.explanation && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Explanation</p>
+                    <p className="text-sm">{question.explanation}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  }
+
   // Show quiz results after submission
   if (submissionResult) {
     // A percentage shown while short answers are still unmarked is not this
@@ -480,11 +643,22 @@ export default function AssignmentPage() {
                 </div>
               </>
             )}
-            <div className="flex gap-4 justify-center">
+            <div className="flex gap-4 justify-center flex-wrap">
               <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Course
               </Button>
+              {((assignment.settings as { show_correct_answers?: boolean } | null)
+                ?.show_correct_answers ?? true) &&
+                previousSubmissions.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => loadReview(previousSubmissions[0])}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Review Answers
+                  </Button>
+                )}
               {previousSubmissions.length < (assignment.attempts_allowed || 1) && (
                 <Button onClick={() => {
                   setSubmissionResult(null);
@@ -785,6 +959,10 @@ export default function AssignmentPage() {
 
   // Pre-assignment screen (for all types)
   const canAttempt = previousSubmissions.length < (assignment.attempts_allowed ?? 1);
+  // Defaults to on, matching the instructor edit form's own default.
+  const showCorrectAnswers =
+    ((assignment.settings as { show_correct_answers?: boolean } | null)
+      ?.show_correct_answers ?? true) && assignment.type === "quiz";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -842,6 +1020,8 @@ export default function AssignmentPage() {
             )}
           </div>
 
+          {reviewError && <Alert variant="error">{reviewError}</Alert>}
+
           {/* Previous attempts */}
           {previousSubmissions.length > 0 && (
             <div>
@@ -864,10 +1044,22 @@ export default function AssignmentPage() {
                           {sub.status}
                         </Badge>
                       )}
-                      {sub.final_score !== null && (
-                        <Badge variant={sub.final_score >= 70 ? "success" : "warning"}>
-                          {sub.final_score}%
+                      {sub.final_score !== null && assignment.points_possible ? (
+                        <Badge
+                          variant={
+                            sub.final_score / assignment.points_possible >= 0.7
+                              ? "success"
+                              : "warning"
+                          }
+                        >
+                          {sub.final_score} / {assignment.points_possible}
                         </Badge>
+                      ) : null}
+                      {showCorrectAnswers && (
+                        <Button size="sm" variant="outline" onClick={() => loadReview(sub)}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Review
+                        </Button>
                       )}
                     </div>
                   </div>
