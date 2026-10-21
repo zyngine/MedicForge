@@ -38,6 +38,7 @@ import {
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useModule } from "@/lib/hooks/use-modules";
 import { useAssignments, type AssignmentWithDetails } from "@/lib/hooks/use-assignments";
+import { formatScorePercentage, weightedScorePercentage } from "@/lib/grading";
 
 /** How the Assignments tab is ordered. */
 type AssignmentSort = "due_date" | "title" | "assigned";
@@ -141,10 +142,20 @@ export default function StudentCourseDetailPage() {
   );
 
   // Calculate grade
+  //
+  // final_score is points, so this has to go through each assignment's own
+  // points_possible. Averaging the raw numbers mixed scales — a 95 on a
+  // 125-point exam and a 7 on a 14-point quiz averaged to "51%", which is
+  // neither score nor a percentage of anything — and the letter grade below
+  // was read off that same figure.
   const gradedSubmissions = courseSubmissions.filter(s => s.final_score !== null);
-  const averageGrade = gradedSubmissions.length > 0
-    ? Math.round(gradedSubmissions.reduce((sum, s) => sum + (s.final_score || 0), 0) / gradedSubmissions.length)
-    : null;
+  const courseGrade = weightedScorePercentage(
+    gradedSubmissions.map((s) => ({
+      score: s.final_score,
+      pointsPossible: assignments.find((a) => a.id === s.assignment_id)?.points_possible,
+    }))
+  );
+  const averageGrade = courseGrade === null ? null : Math.round(courseGrade);
 
   if (isLoading) {
     return (
@@ -427,7 +438,10 @@ export default function StudentCourseDetailPage() {
                               (submission.final_score / (assignment.points_possible || 1)) >= 0.7 ? "warning" :
                               "destructive"
                             }>
-                              {submission.final_score}/{assignment.points_possible}
+                              {formatScorePercentage(
+                                submission.final_score,
+                                assignment.points_possible
+                              )}
                             </Badge>
                           ) : submission?.status === "submitted" ? (
                             <Badge variant="info">Submitted</Badge>
@@ -518,9 +532,11 @@ export default function StudentCourseDetailPage() {
                             percentage >= 70 ? "text-warning" :
                             "text-destructive"
                           }`}>
+                            {percentage}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">
                             {submission.final_score}/{assignment.points_possible}
                           </p>
-                          <p className="text-xs text-muted-foreground">{percentage}%</p>
                         </div>
                       </div>
                     );

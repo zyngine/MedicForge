@@ -29,6 +29,7 @@ import {
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
+import { averageScorePercentage } from "@/lib/grading";
 
 export default function InstructorStudentsPage() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
@@ -59,8 +60,16 @@ export default function InstructorStudentsPage() {
     studentIds.forEach(studentId => {
       const studentSubs = courseSubmissions.filter(s => s.student_id === studentId);
       if (studentSubs.length > 0) {
-        const avg = studentSubs.reduce((sum, s) => sum + (s.final_score || 0), 0) / studentSubs.length;
-        grades.set(studentId, Math.round(avg * 10) / 10);
+        // Percentages, not raw points: final_score is out of each assignment's
+        // own total, so averaging the numbers themselves compares a 125-point
+        // exam against a 14-point quiz as though they were the same scale.
+        const avg = averageScorePercentage(
+          studentSubs.map((sub) => ({
+            score: sub.final_score,
+            pointsPossible: sub.assignment?.points_possible,
+          }))
+        );
+        if (avg !== null) grades.set(studentId, Math.round(avg * 10) / 10);
       }
     });
 

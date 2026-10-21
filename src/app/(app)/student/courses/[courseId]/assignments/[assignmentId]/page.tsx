@@ -18,6 +18,7 @@ import {
   Label,
 } from "@/components/ui";
 import { QuizTimer, useQuizTimer } from "@/components/quiz/quiz-timer";
+import { formatScorePercentage } from "@/lib/grading";
 import {
   gradeQuizAnswers,
   safeParseAnswer,
@@ -1052,7 +1053,10 @@ export default function AssignmentPage() {
                               : "warning"
                           }
                         >
-                          {sub.final_score} / {assignment.points_possible}
+                          {formatScorePercentage(
+                            sub.final_score,
+                            assignment.points_possible
+                          )}
                         </Badge>
                       ) : null}
                       {showCorrectAnswers && (

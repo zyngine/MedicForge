@@ -311,3 +311,90 @@ export function letterGradeToGPA(letterGrade: string): number {
   };
   return gpaMap[letterGrade] ?? 0.0;
 }
+
+// ---------------------------------------------------------------------------
+// Scores as percentages
+//
+// submissions.final_score is points earned, and assignments.points_possible is
+// what the assignment is out of. Those two together are the only way to get a
+// percentage: final_score on its own is not comparable between assignments, so
+// averaging it, or testing it against a letter-grade threshold, is wrong unless
+// every assignment happens to be out of the same number of points.
+// ---------------------------------------------------------------------------
+
+/**
+ * A submission's score as a percentage, or null when it cannot be worked out.
+ *
+ * Returns null rather than 0 for an ungraded submission or an assignment with
+ * no points: 0 would read as a score of zero and drag an average down, when the
+ * truth is that there is no score to report.
+ */
+export function scorePercentage(
+  score: number | null | undefined,
+  pointsPossible: number | null | undefined
+): number | null {
+  if (score === null || score === undefined) return null;
+  if (!pointsPossible || pointsPossible <= 0) return null;
+  return (score / pointsPossible) * 100;
+}
+
+/** The same, rounded to a whole percent for display. */
+export function scorePercentageRounded(
+  score: number | null | undefined,
+  pointsPossible: number | null | undefined
+): number | null {
+  const pct = scorePercentage(score, pointsPossible);
+  return pct === null ? null : Math.round(pct);
+}
+
+/**
+ * Mean percentage across submissions, each weighted equally.
+ *
+ * Submissions with no usable percentage are left out entirely rather than
+ * counted as zero. Returns null when none remain, so a caller can say "no
+ * grades yet" instead of showing 0%.
+ */
+export function averageScorePercentage(
+  submissions: { score: number | null | undefined; pointsPossible: number | null | undefined }[]
+): number | null {
+  const percentages = submissions
+    .map((s) => scorePercentage(s.score, s.pointsPossible))
+    .filter((p): p is number => p !== null);
+
+  if (percentages.length === 0) return null;
+  return percentages.reduce((a, b) => a + b, 0) / percentages.length;
+}
+
+/**
+ * Points earned over points available, as a percentage.
+ *
+ * Weights each assignment by what it is worth, which is how a course grade is
+ * normally computed — a 100-point final counts for more than a 10-point quiz.
+ * Use this for a course total; use averageScorePercentage when every assignment
+ * should count the same.
+ */
+export function weightedScorePercentage(
+  submissions: { score: number | null | undefined; pointsPossible: number | null | undefined }[]
+): number | null {
+  let earned = 0;
+  let available = 0;
+
+  for (const s of submissions) {
+    if (s.score === null || s.score === undefined) continue;
+    if (!s.pointsPossible || s.pointsPossible <= 0) continue;
+    earned += s.score;
+    available += s.pointsPossible;
+  }
+
+  if (available <= 0) return null;
+  return (earned / available) * 100;
+}
+
+/** "50%" for display, or a dash when there is no score. */
+export function formatScorePercentage(
+  score: number | null | undefined,
+  pointsPossible: number | null | undefined
+): string {
+  const pct = scorePercentageRounded(score, pointsPossible);
+  return pct === null ? "—" : `${pct}%`;
+}

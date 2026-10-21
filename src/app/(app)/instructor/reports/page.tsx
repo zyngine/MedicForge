@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";
+import { averageScorePercentage, scorePercentage } from "@/lib/grading";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { useEnrollments } from "@/lib/hooks/use-enrollments";
 
@@ -56,11 +57,21 @@ export default function InstructorReportsPage() {
   const gradedSubmissions = filteredSubmissions.filter(s => s.status === "graded");
   const pendingSubmissions = filteredSubmissions.filter(s => s.status === "submitted");
 
-  // Calculate average score
-  const scoresWithGrades = gradedSubmissions.filter(s => s.final_score != null);
-  const averageScore = scoresWithGrades.length > 0
-    ? Math.round(scoresWithGrades.reduce((sum, s) => sum + (s.final_score || 0), 0) / scoresWithGrades.length)
-    : 0;
+  // final_score is points earned, so every figure on this page has to go
+  // through the assignment's own points_possible before it means anything.
+  // Averaging the raw numbers mixed scales across assignments, and the grade
+  // distribution below read letter grades straight off them — a 95 on a
+  // 125-point exam counted as an A at 76%.
+  const pointsPossibleById = new Map(
+    filteredAssignments.map((a) => [a.id, a.points_possible])
+  );
+
+  const gradedPercentages = gradedSubmissions.map((s) => ({
+    score: s.final_score,
+    pointsPossible: pointsPossibleById.get(s.assignment_id),
+  }));
+
+  const averageScore = Math.round(averageScorePercentage(gradedPercentages) ?? 0);
 
   // Calculate completion rate
   const expectedSubmissions = totalStudents * totalAssignments;
@@ -68,22 +79,28 @@ export default function InstructorReportsPage() {
     ? Math.round((totalSubmissions / expectedSubmissions) * 100)
     : 0;
 
-  // Grade distribution
+  // Grade distribution, by percentage. Ungraded submissions are left out
+  // rather than counted as an F.
+  const distributionPercentages = gradedPercentages
+    .map((g) => scorePercentage(g.score, g.pointsPossible))
+    .filter((p): p is number => p !== null);
+
   const gradeDistribution = {
-    A: gradedSubmissions.filter(s => (s.final_score || 0) >= 90).length,
-    B: gradedSubmissions.filter(s => (s.final_score || 0) >= 80 && (s.final_score || 0) < 90).length,
-    C: gradedSubmissions.filter(s => (s.final_score || 0) >= 70 && (s.final_score || 0) < 80).length,
-    D: gradedSubmissions.filter(s => (s.final_score || 0) >= 60 && (s.final_score || 0) < 70).length,
-    F: gradedSubmissions.filter(s => (s.final_score || 0) < 60).length,
+    A: distributionPercentages.filter(p => p >= 90).length,
+    B: distributionPercentages.filter(p => p >= 80 && p < 90).length,
+    C: distributionPercentages.filter(p => p >= 70 && p < 80).length,
+    D: distributionPercentages.filter(p => p >= 60 && p < 70).length,
+    F: distributionPercentages.filter(p => p < 60).length,
   };
 
   // Assignment performance
   const assignmentPerformance = filteredAssignments.map(assignment => {
     const assignmentSubmissions = filteredSubmissions.filter(s => s.assignment_id === assignment.id);
     const graded = assignmentSubmissions.filter(s => s.status === "graded" && s.final_score != null);
-    const avgScore = graded.length > 0
-      ? Math.round(graded.reduce((sum, s) => sum + (s.final_score || 0), 0) / graded.length)
-      : null;
+    const avgPercentage = averageScorePercentage(
+      graded.map((s) => ({ score: s.final_score, pointsPossible: assignment.points_possible }))
+    );
+    const avgScore = avgPercentage === null ? null : Math.round(avgPercentage);
 
     return {
       id: assignment.id,

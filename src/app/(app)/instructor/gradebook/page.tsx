@@ -45,6 +45,7 @@ import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useEnrollments } from "@/lib/hooks/use-enrollments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
+import { averageScorePercentage } from "@/lib/grading";
 
 const AVAILABLE_FIELDS = [
   { id: "student_name", label: "Student Name", category: "student" },
@@ -145,9 +146,15 @@ export default function InstructorGradebookPage() {
         (s) => s.student_id === enrollment.student_id
       );
 
-      const scores = studentSubmissions
+      // Averaged as percentages, not points: final_score is out of each
+      // assignment's own points_possible, so the raw numbers are not
+      // comparable between a 125-point exam and a 14-point quiz.
+      const gradedForAverage = studentSubmissions
         .filter((s) => s.final_score != null)
-        .map((s) => s.final_score!);
+        .map((s) => ({
+          score: s.final_score,
+          pointsPossible: s.assignment?.points_possible,
+        }));
 
       studentMap.set(enrollment.student_id, {
         name: enrollment.student.full_name,
@@ -161,9 +168,7 @@ export default function InstructorGradebookPage() {
             : null,
           submitted: s.submitted_at,
         })),
-        averageScore: scores.length > 0
-          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-          : 0,
+        averageScore: Math.round(averageScorePercentage(gradedForAverage) ?? 0),
       });
     }
 
@@ -580,8 +585,13 @@ export default function InstructorGradebookPage() {
                         {sub.score !== null ? (
                           <>
                             <p className={`font-bold ${getScoreColor(sub.percentage || 0)}`}>
-                              {sub.score}
-                              {sub.percentage !== null && ` (${sub.percentage}%)`}
+                              {sub.percentage !== null ? `${sub.percentage}%` : sub.score}
+                              {sub.percentage !== null && (
+                                <span className="font-normal text-muted-foreground">
+                                  {" "}
+                                  ({sub.score})
+                                </span>
+                              )}
                             </p>
                             {sub.submitted && (
                               <p className="text-xs text-muted-foreground">
