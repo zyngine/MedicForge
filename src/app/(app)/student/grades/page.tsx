@@ -25,6 +25,7 @@ import {
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
+import { scorePercentage, formatScorePercentage } from "@/lib/grading";
 
 export default function StudentGradesPage() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useMyEnrollments();
@@ -273,16 +274,18 @@ export default function StudentGradesPage() {
                               {submission.status === "graded" ? (
                                 <Badge
                                   variant={
-                                    ((submission.final_score || 0) /
-                                      (submission.assignment?.points_possible || 1)) *
-                                      100 >=
-                                    70
+                                    (scorePercentage(
+                                      submission.final_score,
+                                      submission.assignment?.points_possible
+                                    ) ?? 0) >= 70
                                       ? "success"
                                       : "warning"
                                   }
                                 >
-                                  {submission.final_score?.toFixed(1)} /{" "}
-                                  {submission.assignment?.points_possible}
+                                  {formatScorePercentage(
+                                    submission.final_score,
+                                    submission.assignment?.points_possible
+                                  )}
                                 </Badge>
                               ) : (
                                 <Badge variant="secondary">{submission.status}</Badge>
@@ -338,17 +341,25 @@ export default function StudentGradesPage() {
                         <div className="flex items-center gap-3">
                           {submission.status === "graded" ? (
                             <>
+                              {/* The percentage leads; the points stay as the
+                                  detail behind it. A bare "7 / 14" made the
+                                  student work out their own grade. */}
                               <span
                                 className={`text-xl font-bold ${getGradeColor(
-                                  ((submission.final_score || 0) /
-                                    (submission.assignment?.points_possible || 1)) *
-                                    100
+                                  scorePercentage(
+                                    submission.final_score,
+                                    submission.assignment?.points_possible
+                                  ) ?? 0
                                 )}`}
                               >
-                                {submission.final_score?.toFixed(1)}
+                                {formatScorePercentage(
+                                  submission.final_score,
+                                  submission.assignment?.points_possible
+                                )}
                               </span>
-                              <span className="text-muted-foreground">
-                                / {submission.assignment?.points_possible}
+                              <span className="text-sm text-muted-foreground">
+                                {submission.final_score?.toFixed(1)} /{" "}
+                                {submission.assignment?.points_possible}
                               </span>
                             </>
                           ) : (
