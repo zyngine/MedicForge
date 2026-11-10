@@ -25,7 +25,7 @@ import {
 import { useMyEnrollments } from "@/lib/hooks/use-enrollments";
 import { useMySubmissions } from "@/lib/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
-import { scorePercentage, formatScorePercentage } from "@/lib/grading";
+import { scorePercentage, formatScorePercentage, onlyGraded } from "@/lib/grading";
 
 export default function StudentGradesPage() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useMyEnrollments();
@@ -55,8 +55,11 @@ export default function StudentGradesPage() {
     > = {};
 
     enrollments.forEach((enrollment) => {
-      const courseSubmissions = submissions.filter(
-        (s) => s.assignment?.module?.course_id === enrollment.course_id
+      // Practice work is still listed below; it just does not move the grade.
+      const courseSubmissions = onlyGraded(
+        submissions.filter(
+          (s) => s.assignment?.module?.course_id === enrollment.course_id
+        )
       );
 
       const totalPoints = courseSubmissions.reduce(
@@ -86,11 +89,12 @@ export default function StudentGradesPage() {
   // Overall GPA calculation
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const overallStats = React.useMemo(() => {
-    const totalPoints = submissions.reduce(
+    const gradedOnly = onlyGraded(submissions);
+    const totalPoints = gradedOnly.reduce(
       (sum, s) => sum + (s.assignment?.points_possible || 0),
       0
     );
-    const earnedPoints = submissions.reduce(
+    const earnedPoints = gradedOnly.reduce(
       (sum, s) => sum + (s.final_score || 0),
       0
     );

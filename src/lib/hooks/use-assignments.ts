@@ -27,6 +27,7 @@ interface AssignmentForm {
   type?: AssignmentType;
   // Nullable so a date can be removed: undefined means "leave it alone" in the
   // update below, which is what made clearing a due date impossible.
+  counts_toward_grade?: boolean;
   due_date?: string | null;
   available_from?: string | null;
   points_possible?: number;
@@ -190,6 +191,7 @@ export function useCreateAssignment() {
           description: data.description || null,
           instructions: data.instructions || null,
           type: data.type || "quiz",
+          counts_toward_grade: data.counts_toward_grade ?? true,
           due_date: data.due_date || null,
           available_from: data.available_from || null,
           points_possible: data.points_possible || 100,
@@ -243,6 +245,8 @@ export function useUpdateAssignment() {
       if (data.settings !== undefined) updateData.settings = data.settings;
       if (data.rubric !== undefined) updateData.rubric = data.rubric;
       if (data.is_published !== undefined) updateData.is_published = data.is_published;
+      if (data.counts_toward_grade !== undefined)
+        updateData.counts_toward_grade = data.counts_toward_grade;
 
       const { data: assignment, error } = await supabase
         .from("assignments")

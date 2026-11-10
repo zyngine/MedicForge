@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useAssignments } from "@/lib/hooks/use-assignments";
-import { averageScorePercentage, scorePercentage } from "@/lib/grading";
+import { averageScorePercentage, scorePercentage, onlyGraded } from "@/lib/grading";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { useEnrollments } from "@/lib/hooks/use-enrollments";
 
@@ -66,7 +66,9 @@ export default function InstructorReportsPage() {
     filteredAssignments.map((a) => [a.id, a.points_possible])
   );
 
-  const gradedPercentages = gradedSubmissions.map((s) => ({
+  // Practice work is excluded from the average and the grade distribution; it
+  // is still counted in the submission totals above, which is what they are for.
+  const gradedPercentages = onlyGraded(gradedSubmissions).map((s) => ({
     score: s.final_score,
     pointsPossible: pointsPossibleById.get(s.assignment_id),
   }));
@@ -97,6 +99,8 @@ export default function InstructorReportsPage() {
   const assignmentPerformance = filteredAssignments.map(assignment => {
     const assignmentSubmissions = filteredSubmissions.filter(s => s.assignment_id === assignment.id);
     const graded = assignmentSubmissions.filter(s => s.status === "graded" && s.final_score != null);
+    // Per-assignment average still shown for practice: an instructor wants to
+    // know how a practice quiz went even though it does not count.
     const avgPercentage = averageScorePercentage(
       graded.map((s) => ({ score: s.final_score, pointsPossible: assignment.points_possible }))
     );

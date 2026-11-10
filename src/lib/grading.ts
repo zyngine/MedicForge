@@ -398,3 +398,24 @@ export function formatScorePercentage(
   const pct = scorePercentageRounded(score, pointsPossible);
   return pct === null ? "—" : `${pct}%`;
 }
+
+/**
+ * Does this assignment count towards the grade?
+ *
+ * assignments.counts_toward_grade is NOT NULL DEFAULT true, but a submission
+ * can arrive with its assignment missing from the join, and an older cached
+ * row may not carry the field at all. Treat anything unstated as counting,
+ * which matches the column default and never silently drops work from a grade.
+ */
+export function countsTowardGrade(
+  assignment: { counts_toward_grade?: boolean | null } | null | undefined
+): boolean {
+  return assignment?.counts_toward_grade !== false;
+}
+
+/** Keep only the submissions whose assignment counts towards the grade. */
+export function onlyGraded<
+  T extends { assignment?: { counts_toward_grade?: boolean | null } | null }
+>(submissions: T[]): T[] {
+  return submissions.filter((s) => countsTowardGrade(s.assignment));
+}

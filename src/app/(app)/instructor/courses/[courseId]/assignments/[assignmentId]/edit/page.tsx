@@ -75,6 +75,7 @@ export default function EditAssignmentPage() {
   const [shuffleQuestions, setShuffleQuestions] = React.useState(false);
   const [showCorrectAnswers, setShowCorrectAnswers] = React.useState(true);
   const [isPublished, setIsPublished] = React.useState(false);
+  const [countsTowardGradeValue, setCountsTowardGrade] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [showTemplateBrowser, setShowTemplateBrowser] = React.useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = React.useState(false);
@@ -120,6 +121,11 @@ export default function EditAssignmentPage() {
           : (assignment.attempts_allowed?.toString() || "1")
       );
       setIsPublished(assignment.is_published || false);
+      // Defaults to counting, matching the column, so an older assignment that
+      // predates the field is not silently dropped from the grade.
+      setCountsTowardGrade(
+        (assignment as { counts_toward_grade?: boolean | null }).counts_toward_grade !== false
+      );
 
       setIsInitialized(true);
     }
@@ -211,6 +217,7 @@ export default function EditAssignmentPage() {
             available_until: fromDateTimeLocalValue(availableUntil),
           },
           is_published: isPublished,
+          counts_toward_grade: countsTowardGradeValue,
         },
       });
 
@@ -655,6 +662,19 @@ export default function EditAssignmentPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Students can only see published assignments
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <Checkbox
+                  id="countsTowardGrade"
+                  label="Counts toward the grade"
+                  checked={countsTowardGradeValue}
+                  onChange={(checked) => setCountsTowardGrade(checked)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Untick for practice work. Students still take it and still see
+                  their score; it is left out of course grades and averages.
                 </p>
               </div>
             </CardContent>

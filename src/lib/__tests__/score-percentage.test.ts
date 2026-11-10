@@ -5,6 +5,8 @@ import {
   averageScorePercentage,
   weightedScorePercentage,
   formatScorePercentage,
+  countsTowardGrade,
+  onlyGraded,
 } from "../grading";
 
 describe("scorePercentage", () => {
@@ -109,5 +111,37 @@ describe("formatScorePercentage", () => {
 
   it("shows a dash rather than 0% when there is no score", () => {
     expect(formatScorePercentage(null, 14)).toBe("—");
+  });
+});
+
+describe("countsTowardGrade", () => {
+  it("counts an assignment that says so", () => {
+    expect(countsTowardGrade({ counts_toward_grade: true })).toBe(true);
+  });
+
+  it("excludes one explicitly turned off", () => {
+    expect(countsTowardGrade({ counts_toward_grade: false })).toBe(false);
+  });
+
+  it("counts anything unstated, matching the column default", () => {
+    // A submission can arrive with its assignment missing from the join, or
+    // from a cache written before the column existed. Dropping those from the
+    // grade would quietly lower it.
+    expect(countsTowardGrade({})).toBe(true);
+    expect(countsTowardGrade(null)).toBe(true);
+    expect(countsTowardGrade(undefined)).toBe(true);
+    expect(countsTowardGrade({ counts_toward_grade: null })).toBe(true);
+  });
+});
+
+describe("onlyGraded", () => {
+  it("keeps counting work and drops practice", () => {
+    const rows = [
+      { id: "a", assignment: { counts_toward_grade: true } },
+      { id: "b", assignment: { counts_toward_grade: false } },
+      { id: "c", assignment: {} },
+      { id: "d", assignment: null },
+    ];
+    expect(onlyGraded(rows).map((r) => r.id)).toEqual(["a", "c", "d"]);
   });
 });
