@@ -45,7 +45,7 @@ import { useInstructorCourses } from "@/lib/hooks/use-courses";
 import { useEnrollments } from "@/lib/hooks/use-enrollments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
-import { averageScorePercentage } from "@/lib/grading";
+import { averageScorePercentage, onlyGraded, countsTowardGrade } from "@/lib/grading";
 
 const AVAILABLE_FIELDS = [
   { id: "student_name", label: "Student Name", category: "student" },
@@ -97,6 +97,7 @@ export default function InstructorGradebookPage() {
       type: string;
       score: number | null;
       percentage: number | null;
+      countsTowardGrade: boolean;
       submitted: string | null;
     }>;
     averageScore: number;
@@ -134,6 +135,7 @@ export default function InstructorGradebookPage() {
         type: string;
         score: number | null;
         percentage: number | null;
+        countsTowardGrade: boolean;
         submitted: string | null;
       }>;
       averageScore: number;
@@ -149,7 +151,7 @@ export default function InstructorGradebookPage() {
       // Averaged as percentages, not points: final_score is out of each
       // assignment's own points_possible, so the raw numbers are not
       // comparable between a 125-point exam and a 14-point quiz.
-      const gradedForAverage = studentSubmissions
+      const gradedForAverage = onlyGraded(studentSubmissions)
         .filter((s) => s.final_score != null)
         .map((s) => ({
           score: s.final_score,
@@ -162,6 +164,7 @@ export default function InstructorGradebookPage() {
         submissions: studentSubmissions.map((s) => ({
           assignment: s.assignment?.title || "Assignment",
           type: s.assignment?.type || "unknown",
+          countsTowardGrade: countsTowardGrade(s.assignment),
           score: s.final_score,
           percentage: s.assignment?.points_possible
             ? Math.round((s.final_score || 0) / s.assignment.points_possible * 100)
@@ -577,9 +580,18 @@ export default function InstructorGradebookPage() {
                     >
                       <div>
                         <p className="font-medium">{sub.assignment}</p>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {sub.type}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {sub.type}
+                          </Badge>
+                          {/* The reported doubt was "unsure if they are
+                              calculating into the grade" — so say which. */}
+                          {!sub.countsTowardGrade && (
+                            <Badge variant="secondary" className="text-xs">
+                              Practice · not counted
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="text-right">
                         {sub.score !== null ? (

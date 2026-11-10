@@ -59,6 +59,7 @@ export default function NewAssignmentPage() {
   const [dueDate, setDueDate] = React.useState("");
   const [availableFrom, setAvailableFrom] = React.useState("");
   const [availableUntil, setAvailableUntil] = React.useState("");
+  const [countsTowardGradeValue, setCountsTowardGrade] = React.useState(true);
   const [timeLimit, setTimeLimit] = React.useState("");
   const [attempts, setAttempts] = React.useState("1");
   const [shuffleQuestions, setShuffleQuestions] = React.useState(false);
@@ -143,6 +144,7 @@ export default function NewAssignmentPage() {
             available_until: fromDateTimeLocalValue(availableUntil),
           },
           is_published: publishImmediately,
+          counts_toward_grade: countsTowardGradeValue,
         },
       });
 
@@ -466,6 +468,19 @@ export default function NewAssignmentPage() {
                       checked={showCorrectAnswers}
                       onChange={(checked) => setShowCorrectAnswers(checked)}
                     />
+                    <div>
+                      <Checkbox
+                        id="countsTowardGrade"
+                        label="Counts toward the grade"
+                        checked={countsTowardGradeValue}
+                        onChange={(checked) => setCountsTowardGrade(checked)}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Untick for a practice quiz. Students still take it and
+                        still see their score; it is left out of course grades
+                        and averages.
+                      </p>
+                    </div>
                   </div>
                 </>
               )}

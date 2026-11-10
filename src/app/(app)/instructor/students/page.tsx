@@ -29,7 +29,7 @@ import {
 import { useCourses } from "@/lib/hooks/use-courses";
 import { useCourseEnrollments } from "@/lib/hooks/use-enrollments";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
-import { averageScorePercentage } from "@/lib/grading";
+import { averageScorePercentage, onlyGraded } from "@/lib/grading";
 
 export default function InstructorStudentsPage() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
@@ -64,7 +64,7 @@ export default function InstructorStudentsPage() {
         // own total, so averaging the numbers themselves compares a 125-point
         // exam against a 14-point quiz as though they were the same scale.
         const avg = averageScorePercentage(
-          studentSubs.map((sub) => ({
+          onlyGraded(studentSubs).map((sub) => ({
             score: sub.final_score,
             pointsPossible: sub.assignment?.points_possible,
           }))

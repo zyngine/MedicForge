@@ -38,7 +38,12 @@ import {
 import { useCourse } from "@/lib/hooks/use-courses";
 import { useModules, useModule } from "@/lib/hooks/use-modules";
 import { useAssignments, type AssignmentWithDetails } from "@/lib/hooks/use-assignments";
-import { formatScorePercentage, weightedScorePercentage } from "@/lib/grading";
+import {
+  formatScorePercentage,
+  weightedScorePercentage,
+  onlyGraded,
+  countsTowardGrade,
+} from "@/lib/grading";
 
 /** How the Assignments tab is ordered. */
 type AssignmentSort = "due_date" | "title" | "assigned";
@@ -148,7 +153,10 @@ export default function StudentCourseDetailPage() {
   // 125-point exam and a 7 on a 14-point quiz averaged to "51%", which is
   // neither score nor a percentage of anything — and the letter grade below
   // was read off that same figure.
-  const gradedSubmissions = courseSubmissions.filter(s => s.final_score !== null);
+  // Practice assignments stay in the lists; they are left out of the grade.
+  const gradedSubmissions = onlyGraded(
+    courseSubmissions.filter(s => s.final_score !== null)
+  );
   const courseGrade = weightedScorePercentage(
     gradedSubmissions.map((s) => ({
       score: s.final_score,
@@ -431,7 +439,12 @@ export default function StudentCourseDetailPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex items-center gap-2">
+                          {/* Says so on the row itself, rather than leaving a
+                              student to wonder whether it counted. */}
+                          {!countsTowardGrade(assignment) && (
+                            <Badge variant="secondary">Practice</Badge>
+                          )}
                           {submission?.final_score !== null && submission?.final_score !== undefined ? (
                             <Badge variant={
                               (submission.final_score / (assignment.points_possible || 1)) >= 0.9 ? "success" :
