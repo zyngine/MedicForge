@@ -12,8 +12,15 @@ import {
   Label,
   Alert,
   Spinner,
+  Select,
 } from "@/components/ui";
-import { Building2, Save } from "lucide-react";
+import { Building2, Save, Clock } from "lucide-react";
+import {
+  US_TIMEZONES,
+  timezoneForState,
+  isSplitTimezoneState,
+  timeInZone,
+} from "@/lib/timezones";
 import { useTenant } from "@/lib/hooks/use-tenant";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -32,6 +39,7 @@ export default function OrganizationPage() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [timezone, setTimezone] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -46,6 +54,9 @@ export default function OrganizationPage() {
       setAddress(settings.address || "");
       setCity(settings.city || "");
       setState(settings.state || "");
+      // timezone is a column, not part of settings — attendance reads it to
+      // decide when a class night starts.
+      setTimezone((tenant as { timezone?: string | null }).timezone || "");
       setZipCode(settings.zip_code || "");
       setWebsite(settings.website || "");
     }
@@ -84,6 +95,7 @@ export default function OrganizationPage() {
         .update({
           name: name.trim(),
           settings: updatedSettings,
+          timezone: timezone || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", tenant.id);
@@ -99,6 +111,8 @@ export default function OrganizationPage() {
       setIsSaving(false);
     }
   };
+
+  const suggestedTimezone = timezoneForState(state);
 
   if (tenantLoading) {
     return (
@@ -277,6 +291,66 @@ export default function OrganizationPage() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Time zone
+          This is what decides when a class night starts and closes, so it
+          belongs to the organization rather than to whoever is looking —
+          an instructor travelling should not move everyone's class. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Time Zone
+          </CardTitle>
+          <CardDescription>
+            Used for class schedules and attendance — when a class night opens and closes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Time Zone</Label>
+            <Select
+              id="timezone"
+              value={timezone}
+              onChange={setTimezone}
+              placeholder="Select a time zone"
+              options={US_TIMEZONES.map((tz) => ({ value: tz.value, label: tz.label }))}
+            />
+            {timezone ? (
+              <p className="text-xs text-muted-foreground">
+                It is currently {timeInZone(timezone) ?? "—"} there.
+              </p>
+            ) : (
+              <p className="text-xs text-warning">
+                Not set. Class nights fall back to each viewer&apos;s own clock, so
+                two people in different time zones can disagree about which day it is.
+              </p>
+            )}
+          </div>
+
+          {/* Offer the state's zone when none is set, rather than guessing for
+              them — twelve states straddle a boundary. */}
+          {!timezone && suggestedTimezone && (
+            <Alert variant="info">
+              Based on {state}, this is most likely{" "}
+              <strong>
+                {US_TIMEZONES.find((t) => t.value === suggestedTimezone)?.label ??
+                  suggestedTimezone}
+              </strong>
+              .{" "}
+              {isSplitTimezoneState(state) &&
+                `${state} spans more than one time zone, so check this is right for your location. `}
+              <button
+                type="button"
+                className="underline font-medium"
+                onClick={() => setTimezone(suggestedTimezone)}
+              >
+                Use it
+              </button>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 

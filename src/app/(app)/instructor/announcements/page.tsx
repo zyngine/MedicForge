@@ -35,6 +35,7 @@ import {
   type Announcement,
 } from "@/lib/hooks/use-announcements";
 import { useInstructorCourses } from "@/lib/hooks/use-courses";
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/utils";
 
 export default function InstructorAnnouncementsPage() {
   const { data: announcements = [], isLoading } = useInstructorAnnouncements();
@@ -82,7 +83,7 @@ export default function InstructorAnnouncementsPage() {
       title: announcement.title,
       content: announcement.content,
       is_pinned: announcement.is_pinned,
-      publish_at: announcement.publish_at || "",
+      publish_at: toDateTimeLocalValue(announcement.publish_at),
     });
     setShowCreateModal(true);
   };
@@ -98,7 +99,7 @@ export default function InstructorAnnouncementsPage() {
           title: formData.title,
           content: formData.content,
           is_pinned: formData.is_pinned,
-          publish_at: formData.publish_at || null,
+          publish_at: fromDateTimeLocalValue(formData.publish_at),
         });
       } else {
         await createAnnouncement({
@@ -106,7 +107,7 @@ export default function InstructorAnnouncementsPage() {
           title: formData.title,
           content: formData.content,
           is_pinned: formData.is_pinned,
-          publish_at: formData.publish_at || null,
+          publish_at: fromDateTimeLocalValue(formData.publish_at),
         });
       }
       setShowCreateModal(false);
