@@ -25,8 +25,10 @@ interface AssignmentForm {
   description?: string;
   instructions?: string;
   type?: AssignmentType;
-  due_date?: string;
-  available_from?: string;
+  // Nullable so a date can be removed: undefined means "leave it alone" in the
+  // update below, which is what made clearing a due date impossible.
+  due_date?: string | null;
+  available_from?: string | null;
   points_possible?: number;
   time_limit_minutes?: number;
   attempts_allowed?: number;

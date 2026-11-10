@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { toDateTimeLocalValue } from "@/lib/utils";
+import { toDateTimeLocalValue, fromDateTimeLocalValue } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -194,15 +194,21 @@ export default function EditAssignmentPage() {
         data: {
           title,
           description,
-          due_date: dueDate || undefined,
-          available_from: availableFrom || undefined,
+          // fromDateTimeLocalValue attaches the browser's offset, so the
+          // instant stored is the one the instructor picked rather than the
+          // same clock reading in UTC. It returns null for an empty box, which
+          // is what lets a due date be removed: "" used to become undefined,
+          // and the update skipped undefined keys, so clearing silently
+          // reverted.
+          due_date: fromDateTimeLocalValue(dueDate),
+          available_from: fromDateTimeLocalValue(availableFrom),
           points_possible: totalPoints || 100,
           time_limit_minutes: timeLimit ? parseInt(timeLimit) : undefined,
           attempts_allowed: attempts === "unlimited" ? 999 : parseInt(attempts),
           settings: {
             shuffle_questions: shuffleQuestions,
             show_correct_answers: showCorrectAnswers,
-            available_until: availableUntil || null,
+            available_until: fromDateTimeLocalValue(availableUntil),
           },
           is_published: isPublished,
         },

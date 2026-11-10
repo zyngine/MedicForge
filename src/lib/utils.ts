@@ -276,3 +276,28 @@ export function toDateTimeLocalValue(value: string | Date | null | undefined): s
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`
   );
 }
+
+/**
+ * Turn a `<input type="datetime-local">` value into an instant to store.
+ *
+ * The counterpart to toDateTimeLocalValue. The input gives back local wall-clock
+ * time with no zone on it — "2026-11-17T23:00" — and sending that string
+ * straight to a timestamptz column stores it as 23:00 *UTC*, because that is how
+ * Postgres reads a zoneless value. An 11pm Eastern deadline came back out as
+ * 6pm Eastern, and because the form then saved what it was showing, it moved
+ * again on every save.
+ *
+ * `new Date(...)` on that string parses it as local time, which is exactly the
+ * instant the person meant, so toISOString() carries the right offset.
+ *
+ * Returns null for an empty value, so clearing the field clears the column
+ * rather than being dropped from the update.
+ */
+export function fromDateTimeLocalValue(value: string | null | undefined): string | null {
+  if (!value || value.trim() === "") return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toISOString();
+}

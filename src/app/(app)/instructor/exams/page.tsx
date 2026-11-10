@@ -35,6 +35,7 @@ import {
   type StandardizedExam,
 } from "@/lib/hooks/use-standardized-exams";
 import { formatDate } from "@/lib/utils";
+import { fromDateTimeLocalValue } from "@/lib/utils";
 
 const examTypeLabels: Record<string, string> = {
   practice: "Practice",
@@ -87,8 +88,8 @@ export default function InstructorExamsPage() {
       template_id: selectedTemplate,
       title: newExam.title,
       description: newExam.description || null,
-      available_from: newExam.available_from || null,
-      available_until: newExam.available_until || null,
+      available_from: fromDateTimeLocalValue(newExam.available_from),
+      available_until: fromDateTimeLocalValue(newExam.available_until),
       is_published: false,
     });
 
