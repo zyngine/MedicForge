@@ -113,6 +113,8 @@ export default function GradingPage() {
   const [gradeScore, setGradeScore] = React.useState("");
   const [gradeFeedback, setGradeFeedback] = React.useState("");
   const [isGrading, setIsGrading] = React.useState(false);
+  // Whether the score override is showing, for a quiz.
+  const [overrideOpen, setOverrideOpen] = React.useState(false);
   const [selectedAssignmentForCurve, setSelectedAssignmentForCurve] = React.useState<string>("all");
   const [curvePreview, setCurvePreview] = React.useState<CurveResult | null>(null);
   const [isApplyingCurve, setIsApplyingCurve] = React.useState(false);
@@ -301,6 +303,7 @@ export default function GradingPage() {
       setSelectedSubmission(null);
       setGradeScore("");
       setGradeFeedback("");
+      setOverrideOpen(false);
       refetchPending();
       refetchGraded();
     } catch (error) {
@@ -453,6 +456,7 @@ export default function GradingPage() {
                         // Pre-fill auto score if available
                         setGradeScore(submission.autoScore?.toString() || "");
                         setGradeFeedback("");
+                        setOverrideOpen(false);
                         setSelectedSubmission(submission);
                       }}
                     >
@@ -551,6 +555,7 @@ export default function GradingPage() {
           setSelectedSubmission(null);
           setGradeScore("");
           setGradeFeedback("");
+          setOverrideOpen(false);
         }}
         title={selectedSubmission?.gradedAt ? "Edit Grade" : "Grade Submission"}
         size="lg"
@@ -589,6 +594,7 @@ export default function GradingPage() {
                   setSelectedSubmission(null);
                   setGradeScore("");
                   setGradeFeedback("");
+                  setOverrideOpen(false);
                   refetchPending();
                   refetchGraded();
                 }}
@@ -635,10 +641,25 @@ export default function GradingPage() {
               </Card>
             )}
 
-            {/* Grading Form — written work only. A quiz is scored by the
-                per-question marks above, and a second, free-form score box here
-                would let an instructor save a total that contradicts them. */}
-            {selectedSubmission.assignmentType !== "quiz" && (
+            {/* A quiz is normally scored by the per-question marks above. But
+                hiding this outright left no way to revise a quiz score at all:
+                once every short answer was marked, the grader said "nothing to
+                mark here" and there was no other control, so an instructor
+                revising a grade changed nothing. It is collapsed behind a
+                disclosure for quizzes instead — available when needed, and not
+                sitting next to the per-question marks inviting a total that
+                contradicts them. */}
+            {selectedSubmission.assignmentType === "quiz" && !overrideOpen && (
+              <button
+                type="button"
+                className="text-sm underline text-muted-foreground"
+                onClick={() => setOverrideOpen(true)}
+              >
+                Override the total score instead
+              </button>
+            )}
+
+            {(selectedSubmission.assignmentType !== "quiz" || overrideOpen) && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -649,6 +670,11 @@ export default function GradingPage() {
                     value={gradeScore}
                     onChange={(e) => setGradeScore(e.target.value)}
                   />
+                  {selectedSubmission.assignmentType === "quiz" && (
+                    <p className="text-xs text-muted-foreground">
+                      Replaces the total from the per-question marks.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Max Points</Label>
@@ -674,17 +700,19 @@ export default function GradingPage() {
                 setSelectedSubmission(null);
                 setGradeScore("");
                 setGradeFeedback("");
+                setOverrideOpen(false);
               }}>
                 Cancel
               </Button>
-              {selectedSubmission.assignmentType !== "quiz" && (
+              {(selectedSubmission.assignmentType !== "quiz" || overrideOpen) && (
                 <>
-                  {!selectedSubmission.gradedAt && (
-                    <Button variant="outline">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Request Revision
-                    </Button>
-                  )}
+                  {selectedSubmission.assignmentType !== "quiz" &&
+                    !selectedSubmission.gradedAt && (
+                      <Button variant="outline">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Request Revision
+                      </Button>
+                    )}
                   <Button onClick={handleGradeSubmit} isLoading={isGrading} disabled={!gradeScore}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     {selectedSubmission.gradedAt ? "Update Grade" : "Submit Grade"}
