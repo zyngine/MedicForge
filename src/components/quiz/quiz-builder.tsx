@@ -437,10 +437,17 @@ function QuestionEditor({
                       <CheckCircle className="h-4 w-4" />
                     )}
                   </button>
-                  <Input
+                  {/* The answer options, not just the short-answer expected
+                      answer, which is what "enlarge the answer field" was about.
+                      These run long in a medication quiz — "Right Patient,
+                      Right Medication, Right Dose, ..." — and a single-line box
+                      showed only the tail of what had been typed. */}
+                  <Textarea
                     value={option}
                     onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
                     placeholder={`Option ${optionIndex + 1}`}
+                    rows={2}
+                    className="min-h-0 resize-y"
                     disabled={readOnly}
                   />
                   {!readOnly && question.options.length > 2 && (
